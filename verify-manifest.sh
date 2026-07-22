@@ -69,8 +69,8 @@ soft vendor/README.md
 
 section "Pre-launch"
 n=$(grep -rl 'nose\.example' . 2>/dev/null | wc -l | tr -d ' ')
-[ "$n" -gt 0 ] && echo "  TODO  nose.example in $n file(s) — swap for the real domain" \
-               || echo "  ok    no nose.example placeholders"
+[ "$n" -gt 0 ] && echo "  TODO  curious-crumble-352160.netlify.app in $n file(s) — swap for the real domain" \
+               || echo "  ok    no curious-crumble-352160.netlify.app placeholders"
 grep -rq 'font-src' _headers 2>/dev/null \
   && echo "  ok    CSP has font-src" \
   || echo "  note  no font-src in CSP — self-hosted webfonts would be blocked"

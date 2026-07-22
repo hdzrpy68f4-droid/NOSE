@@ -25,9 +25,9 @@ The privacy page documents exactly this, including the error beacon.
 1. **Run `./build.sh`** — vendors the QR library (deliberately uncommitted so it
    cannot go stale) and re-fingerprints bundles. The scanner is inert until then;
    it degrades to a message rather than breaking.
-2. **Replace `nose.example`** — 60+ occurrences across canonicals, Open Graph,
+2. **Replace `curious-crumble-352160.netlify.app`** — 60+ occurrences across canonicals, Open Graph,
    JSON-LD, `robots.txt` and `sitemap.xml`.
-   `grep -rl 'nose.example' . | xargs sed -i 's/nose\.example/YOURDOMAIN/g'`
+   `grep -rl 'curious-crumble-352160.netlify.app' . | xargs sed -i 's/nose\.example/YOURDOMAIN/g'`
 3. **Wire `persist()`** in `netlify/functions/match-feedback.js` to real storage.
    Until then the validation loop thanks people and discards their vote.
 4. **Contact address** on `/privacy/` (deletion requests) and `/terms/`.

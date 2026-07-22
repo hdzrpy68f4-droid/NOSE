@@ -6,4 +6,4 @@ Allow: /
 Disallow: /vendor/
 Disallow: /.netlify/
 
-Sitemap: https://nose.example/sitemap.xml
+Sitemap: https://curious-crumble-352160.netlify.app/sitemap.xml

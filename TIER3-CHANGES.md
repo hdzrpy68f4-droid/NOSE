@@ -73,4 +73,4 @@ re-fingerprints both bundles and rewrites references.
 3. Point `client-error.js` at a real sink if you want retention beyond logs.
 4. Re-export family photography at ~1240px and add `srcset` — the `<picture>`
    markup already accepts it. Current sources are 620px; I did not upscale.
-5. Replace `nose.example` with the real domain in canonicals, OG tags, JSON-LD.
+5. Replace `curious-crumble-352160.netlify.app` with the real domain in canonicals, OG tags, JSON-LD.
