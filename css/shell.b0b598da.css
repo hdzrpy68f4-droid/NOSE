@@ -666,4 +666,6 @@
 .u-brand-light{color:#fff;text-decoration:none}
 .u-accent{color:#82C59A}
 .u-hero-h2{font-size:clamp(2.5rem,7vw,4.5rem);line-height:.96}
-.note.u-mt-18{margin-top:26px;display:block;width:fit-content}
+.famcard{display:flex;flex-direction:column;align-items:flex-start}
+.famcard .note.u-mt-18{margin-top:auto;padding-top:14px;display:inline-block;width:fit-content}
+
