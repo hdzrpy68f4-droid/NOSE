@@ -75,8 +75,15 @@ grep -q "style-src 'self';"  _headers || { echo "FAIL: style-src loosened";  exi
 # Executable inline scripts only. type="application/ld+json" is structured data,
 # is never executed, and is not covered by script-src — see [FIX] note above.
 for f in "${HTML[@]}"; do
-  if grep -oE '<script[^>]*>[^<]' "$f" | grep -qv 'application/ld+json'; then
-    echo "FAIL: inline script in $f"; exit 1
+  # --- TEMPORARY DEBUG: print every script-tag match and whether it trips ---
+  matches=$(grep -oE '<script[^>]*>[^<]' "$f" || true)
+  if [ -n "$matches" ]; then
+    tripped=$(printf '%s\n' "$matches" | grep -v 'application/ld+json' || true)
+    if [ -n "$tripped" ]; then
+      echo "DEBUG >>> $f has non-JSON-LD script matches:"
+      printf '%s\n' "$tripped" | sed 's/^/DEBUG >>>   /'
+      echo "FAIL: inline script in $f"; exit 1
+    fi
   fi
 done
 
