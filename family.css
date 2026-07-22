@@ -32,7 +32,9 @@
 .famcard-herbal{--family:#4E8D99;--family-text:#316068}
 .sw-herbal{background:#4E8D99}
 .ink-herbal{color:#316068}
-.famcard{text-decoration:none;display:block}
+.famcard{text-decoration:none;display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.famcard .note.u-mt-18{margin-top:8px}
+
 .sw{display:block;width:36px;height:36px;border-radius:11px;margin-bottom:16px}
 .fam-anchor{font-size:0.875rem;margin-bottom:10px}
 .u-mt-30{margin-top:30px}
