@@ -1,0 +1,40 @@
+/* NOSE age gate — external styles (CSP: style-src 'self' forbids injected CSS). */
+#nose-ag{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;
+  justify-content:center;padding:24px;
+  background:radial-gradient(120% 120% at 50% 0%,rgba(20,28,23,.90),rgba(15,21,15,.97));
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  animation:nose-ag-fade .25s ease}
+@keyframes nose-ag-fade{from{opacity:0}to{opacity:1}}
+#nose-ag .ag-card{width:min(480px,100%);background:#F2F4F1;color:#141C17;
+  border-radius:26px;padding:44px 38px;text-align:center;position:relative;overflow:hidden;
+  box-shadow:0 50px 110px -30px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.04)}
+#nose-ag .ag-card:before{content:"";position:absolute;left:0;right:0;top:0;height:6px;
+  background:linear-gradient(90deg,#D19412 0 16.66%,#9C6B3F 16.66% 33.33%,#C25B2E 33.33% 50%,
+  #3E7A54 50% 66.66%,#8A6BBE 66.66% 83.33%,#4E8D99 83.33% 100%)}
+#nose-ag .ag-bars{display:flex;gap:4px;justify-content:center;margin:6px 0 24px}
+#nose-ag .ag-bars i{width:9px;height:34px;border-radius:4px;display:block}
+#nose-ag h2{margin:0 0 12px;font-size:2rem;line-height:1.08;letter-spacing:-.045em;
+  font-weight:800;color:#141C17}
+#nose-ag p{margin:0 0 28px;color:#3A463D;font-size:1.05rem;line-height:1.55;
+  max-width:38ch;margin-left:auto;margin-right:auto}
+#nose-ag .ag-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+#nose-ag button{min-height:52px;padding:0 30px;border-radius:999px;border:0;
+  font-weight:800;font-size:1.05rem;cursor:pointer;font-family:inherit;
+  letter-spacing:-.01em;transition:transform .08s ease,filter .15s ease}
+#nose-ag button:active{transform:translateY(1px)}
+#nose-ag .ag-yes{background:#2F6144;color:#fff}
+#nose-ag .ag-yes:hover{filter:brightness(1.08)}
+#nose-ag .ag-no{background:transparent;color:#141C17;box-shadow:inset 0 0 0 1.5px rgba(20,28,23,.25)}
+#nose-ag .ag-no:hover{box-shadow:inset 0 0 0 1.5px rgba(20,28,23,.5)}
+#nose-ag .ag-yes:focus-visible,#nose-ag .ag-no:focus-visible{outline:3px solid #2F6144;outline-offset:3px}
+#nose-ag .ag-fine{margin:26px 0 0;font-size:.8rem;color:#6E655C;letter-spacing:.04em;text-transform:uppercase}
+#nose-ag .ag-deny h2{font-size:1.85rem}
+@media(max-width:520px){
+  #nose-ag{padding:16px}
+  #nose-ag .ag-card{padding:36px 24px;border-radius:22px}
+  #nose-ag h2{font-size:1.6rem}
+  #nose-ag p{font-size:1rem}
+  #nose-ag .ag-btns{flex-direction:column}
+  #nose-ag button{width:100%}
+}
