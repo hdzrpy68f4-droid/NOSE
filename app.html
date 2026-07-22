@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#F3F3EE">
+  <title>Start Matching — NOSE Aroma &amp; Terpene Comparison Tool</title>
+  <link rel="canonical" href="https://nose.example/app">
+<meta name="robots" content="index,follow">
+<meta name="description" content="Turn a cannabis lab report into a flavor fingerprint and compare new flower with strains you already enjoy. Aroma matching without effect claims.">
+  <meta property="og:title" content="NOSE — Match Cannabis Flower by Aroma">
+  <meta property="og:description" content="Compare cannabis flower by terpene profile, not strain name. Aroma matching without effect claims.">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="stylesheet" href="/css/shell.42615259.css">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebApplication", "name": "NOSE aroma matcher", "url": "https://nose.example/app", "applicationCategory": "UtilitiesApplication", "operatingSystem": "Any modern browser", "description": "Turn a cannabis Certificate of Analysis into an aroma fingerprint and compare it with flower you already enjoy.", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"}, "browserRequirements": "Requires JavaScript."}</script>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="site-header has-menu">
+    <div class="wrap nav">
+      <a class="brand route-link" href="/" aria-label="NOSE home">
+        <span class="brand-bars" aria-hidden="true">
+          <i class="bg-citrus"></i><i class="bg-earthy"></i><i class="bg-spice"></i><i class="bg-pine"></i><i class="bg-floral"></i><i class="bg-herbal"></i>
+        </span>
+        NOSE
+      </a>
+      <nav class="nav-links" aria-label="Primary navigation">
+        <a class="route-link" href="/aromas/">Aroma families</a>
+        <a class="route-link" href="/learn/">Learn</a>
+        <a class="route-link" href="/methodology/">Methodology</a>
+        <a class="route-link" href="/about/">About</a>
+        <a class="route-link nav-cta" href="/app">Start matching</a>
+      </nav>
+      <button class="menu-button" id="menuButton" type="button" aria-expanded="false" aria-controls="mobileMenu" aria-label="Open navigation menu">
+        <span aria-hidden="true">☰</span>
+      </button>
+    </div>
+    <nav class="mobile-menu" id="mobileMenu" aria-label="Mobile navigation" data-open="false">
+      <a class="route-link" href="/app">Start matching</a>
+      <a class="route-link" href="/aromas/">Aroma families</a>
+      <a class="route-link" href="/learn/">Learn</a>
+      <a class="route-link" href="/methodology/">Methodology</a>
+      <a class="route-link" href="/about/">About</a>
+    </nav>
+  </header>
+
+  <main id="main-content" tabindex="-1">
+    <!-- The marketing homepage lives at / (index.html). -->
+
+    <div data-page="app">
+      <section class="page-head">
+        <div class="wrap">
+          <p class="eyebrow">Palate matcher</p>
+          <h1>Compare the profile, not the name.</h1>
+          <p>Scan a COA QR code, choose a sample, or enter terpene values manually.</p>
+        </div>
+      </section>
+      <section class="section-tight">
+        <div class="wrap app-grid">
+          <aside class="card panel" aria-label="Input methods">
+            <h2 class="u-fs-20">Add a report</h2>
+            <p class="small">Choose the easiest method. Camera permission is never required.</p>
+            <div class="tab-list" role="tablist" aria-label="Report input methods">
+              <button class="tab-button" role="tab" aria-selected="true" aria-controls="samplePanel" id="sampleTab" data-tab="sample">Samples <span aria-hidden="true">→</span></button>
+              <button class="tab-button" role="tab" aria-selected="false" aria-controls="scanPanel" id="scanTab" data-tab="scan">Scan QR <span aria-hidden="true">→</span></button>
+              <button class="tab-button" role="tab" aria-selected="false" aria-controls="urlPanel" id="urlTab" data-tab="url">COA link <span aria-hidden="true">→</span></button>
+              <button class="tab-button" role="tab" aria-selected="false" aria-controls="uploadPanel" id="uploadTab" data-tab="upload">Upload <span aria-hidden="true">→</span></button>
+              <button class="tab-button" role="tab" aria-selected="false" aria-controls="manualPanel" id="manualTab" data-tab="manual">Manual <span aria-hidden="true">→</span></button>
+            </div>
+            <div class="saved-palate-block">
+              <hr class="u-hr">
+              <h3 class="u-fs-16">Saved palate</h3>
+              <p class="small" id="savedPalateSummary">Nothing saved yet.</p>
+              <div class="button-row">
+                <button class="button button-quiet" id="exportButton" type="button">Export</button>
+                <button class="button button-quiet" id="importButton" type="button">Import</button>
+                <button class="button button-quiet" id="clearButton" type="button">Delete</button>
+              </div>
+              <input type="file" id="importFile" accept="application/json" hidden>
+            </div>
+          </aside>
+
+          <div>
+            <section class="card panel input-panel" role="tabpanel" id="samplePanel" aria-labelledby="sampleTab">
+              <h2>Try a sample</h2>
+              <p class="small">Choose a saved favorite, then choose a new jar to compare.</p>
+              <h3 class="u-fs-15 u-mt-22">Your favorite</h3>
+              <p class="mono u-summary" id="palateSummaryLine" aria-live="polite"></p>
+<div class="sample-grid" id="palateSamples"></div>
+              <h3 class="u-fs-15 u-mt-22">New jar</h3>
+              <div class="sample-grid" id="candidateSamples"></div>
+            </section>
+
+            <section class="card panel input-panel" role="tabpanel" id="scanPanel" aria-labelledby="scanTab" hidden>
+              <h2>Scan a QR code</h2>
+              <p class="small">Use the rear camera to scan a COA QR code, or choose a saved QR image. Camera access is requested only after you press Start camera.</p>
+              <div class="scanner-shell">
+                <div id="qrReader" class="scanner-reader" aria-label="QR camera preview"></div>
+                <div class="camera-picker" id="cameraPicker" hidden>
+                  <label for="cameraSelect">Camera</label>
+                  <select id="cameraSelect" aria-label="Choose camera"></select>
+                </div>
+                <div class="scanner-actions">
+                  <button class="button button-primary" id="startScannerButton" type="button">Restart camera</button>
+                  <button class="button button-secondary" id="stopScannerButton" type="button" disabled>Stop camera</button>
+                  <button class="button button-quiet" id="chooseQrImageButton" type="button">Choose QR image</button>
+                </div>
+                <input id="qrImageFile" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" hidden>
+                <p class="scanner-note">Camera scanning requires HTTPS, which Netlify provides automatically.</p>
+                <div id="scannerMessage" class="inline-message scanner-result" aria-live="polite" hidden></div>
+              </div>
+            </section>
+
+            <section class="card panel input-panel" role="tabpanel" id="urlPanel" aria-labelledby="urlTab" hidden>
+              <h2>Paste a COA link</h2>
+              <p class="small">Only secure HTTPS links are accepted. The static preview validates the address but does not fetch remote reports.</p>
+              <label for="coaUrl">Secure report URL</label>
+              <input id="coaUrl" type="url" inputmode="url" placeholder="https://lab.example/report/…" autocomplete="url">
+              <div class="button-row u-mt-14"><button class="button button-primary" id="validateUrlButton" type="button">Validate link</button></div>
+              <div id="urlMessage" class="inline-message" hidden></div>
+            </section>
+
+            <section class="card panel input-panel" role="tabpanel" id="uploadPanel" aria-labelledby="uploadTab" hidden>
+              <h2>Upload a report</h2>
+              <p class="small">Choose a PDF, JPG, PNG, or WebP file under 10 MB. The file remains local in this static preview.</p>
+              <label for="reportFile">COA file</label>
+              <input id="reportFile" type="file" accept="application/pdf,image/jpeg,image/png,image/webp">
+              <div id="uploadMessage" class="inline-message" hidden></div>
+            </section>
+
+            <section class="card panel input-panel" role="tabpanel" id="manualPanel" aria-labelledby="manualTab" hidden>
+              <h2>Enter values manually</h2>
+              <p class="small">Enter the compounds included on the report. Duplicate compounds are rejected.</p>
+              <label for="manualName">Jar name</label>
+              <input id="manualName" type="text" maxlength="80" placeholder="Example: Lemon Tart — May batch">
+              <div class="data-table-wrap">
+                <table class="manual-table">
+                  <thead><tr><th>Terpene</th><th>Value</th><th>Unit</th><th><span class="sr-only">Remove</span></th></tr></thead>
+                  <tbody id="manualRows"></tbody>
+                </table>
+              </div>
+              <div class="button-row u-mt-14">
+                <button class="button button-secondary" id="addRowButton" type="button">Add compound</button>
+                <button class="button button-primary" id="saveManualButton" type="button">Save to palate</button>
+              </div>
+              <div id="manualMessage" class="inline-message" hidden></div>
+            </section>
+
+            <section class="card result-panel" id="fullResult" aria-labelledby="resultTitle" hidden>
+              <div class="result-head">
+                <div><p class="eyebrow u-mb-8">Match result</p><h2 id="resultTitle" class="u-fs-34">Aroma similarity</h2><p class="small" id="resultNames"></p></div>
+                <span class="badge" id="resultBadge">Strong match</span>
+              </div>
+              <p class="profile-label mono">Your palate</p><div id="resultPalateBar"></div>
+              <p class="profile-label mono">New jar</p><div id="resultCandidateBar"></div>
+              <div class="score-row">
+                <div class="score"><span id="resultScore">0</span><small>%</small></div>
+                <div><div class="score-label" id="resultSummary"></div><p class="score-copy" id="resultExplanation"></p></div>
+              </div>
+              <div class="result-details">
+                <div class="result-detail"><span>Shared backbone</span><strong id="sharedBackbone"></strong></div>
+                <div class="result-detail"><span>Biggest difference</span><strong id="biggestDifference"></strong></div>
+                <div class="result-detail"><span>Confidence</span><strong id="resultConfidence"></strong></div>
+              </div>
+              <div class="data-table-wrap">
+                <table class="data-table">
+                  <caption class="sr-only">Accessible comparison of aroma family shares</caption>
+                  <thead><tr><th>Aroma family</th><th>Your palate</th><th>New jar</th><th>Difference</th></tr></thead>
+                  <tbody id="accessibleResultRows"></tbody>
+                </table>
+              </div>
+              <div class="match-feedback" id="matchFeedback">
+                <p class="match-feedback-q">This score is a hypothesis, not a proven prediction. Did this match reflect your experience?</p>
+                <div class="match-feedback-actions" role="group" aria-label="Was this match accurate?">
+                  <button type="button" class="feedback-btn" data-vote="up" aria-pressed="false">
+                    <span aria-hidden="true">👍</span> Matched
+                  </button>
+                  <button type="button" class="feedback-btn" data-vote="down" aria-pressed="false">
+                    <span aria-hidden="true">👎</span> Didn’t match
+                  </button>
+                </div>
+                <p class="match-feedback-ack" id="feedbackAck" hidden role="status"></p>
+              </div>
+            </section>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- aromas: now a static page at /aromas/ (router forwards legacy #/aromas) -->
+
+    <!-- methodology: now a static page at /methodology/ (router forwards legacy #/methodology) -->
+
+    <!-- learn: now a static page at /learn/ (router forwards legacy #/learn) -->
+
+    <!-- about: now a static page at /about/ (router forwards legacy #/about) -->
+  </main>
+
+  <footer class="footer">
+    <div class="spectrum" aria-hidden="true"><span class="bg-citrus"></span><span class="bg-earthy"></span><span class="bg-spice"></span><span class="bg-pine"></span><span class="bg-floral"></span><span class="bg-herbal"></span></div>
+    <div class="wrap footer-main">
+      <div class="footer-grid">
+        <div><a class="brand route-link u-white" href="/"><span class="brand-bars" aria-hidden="true"><i class="bg-citrus"></i><i class="bg-earthy"></i><i class="bg-spice"></i><i class="bg-pine"></i><i class="bg-floral"></i><i class="bg-herbal"></i></span>NOSE</a><h2>We’ll tell you what a jar smells like. We won’t tell you how it will make you feel.</h2></div>
+        <div class="footer-links">
+          <div><h3>Explore</h3><a class="route-link" href="/app">Start matching</a><a class="route-link" href="/aromas/">Aroma families</a></div>
+          <div><h3>Learn</h3><a class="route-link" href="/learn/">Guides</a><a class="route-link" href="/methodology/">Methodology</a></div>
+          <div><h3>About</h3><a class="route-link" href="/about/">Why NOSE</a><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a></div>
+        </div>
+      </div>
+      <div class="footer-bottom"><span>Match by terpene profile, not by name.</span><span>21+ · Educational tool · Not medical advice</span></div>
+    </div>
+  </footer>
+
+  <!-- privacy now lives at /privacy/ as a real, crawlable page -->
+
+  <!-- Self-hosted so no third-party origin runs JS on a camera-enabled page.
+     Populate vendor/html5-qrcode.min.js at build time (see vendor/README.md).
+     The scanner code guards on typeof Html5Qrcode, so if the file is missing
+     the QR path degrades to a message and the rest of the app is unaffected. -->
+<script src="/vendor/html5-qrcode.min.js" defer></script>
+  <script src="/js/nose.076868f0.js" defer></script>
+</body>
+</html>

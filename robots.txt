@@ -1,0 +1,9 @@
+# NOSE — aroma matching for cannabis flower
+User-agent: *
+Allow: /
+
+# Nothing to gain from crawling the app shell's asset bundles.
+Disallow: /vendor/
+Disallow: /.netlify/
+
+Sitemap: https://nose.example/sitemap.xml

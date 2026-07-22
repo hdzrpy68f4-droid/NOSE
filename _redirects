@@ -1,0 +1,13 @@
+# /app is the SPA shell; serve it without a redirect hop.
+/app        /app.html   200
+/app/       /app.html   200
+
+# Old single-file hash routes now have real static pages. These catch anyone
+# who bookmarked the .html entry; the SPA router also forwards #/hash at runtime.
+/index.html            /            301
+/aromas.html           /aromas/     301
+
+# Fingerprinted bundle: keep the unhashed path working if anything references it.
+/js/nose.js  /js/nose.076868f0.js  302
+
+# Netlify serves /404.html automatically for unmatched paths.
