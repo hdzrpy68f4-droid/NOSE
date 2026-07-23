@@ -57,7 +57,9 @@
 }
 
 @media (max-width:640px){
-  .hero-eq{ height:46%; }             /* more breathing room on small screens */
+   .hero-eq{ height:30%; }
+  .hero{ min-height:auto; padding-bottom:120px; }
+            /* more breathing room on small screens */
   .hero-scrim{
     background:linear-gradient(180deg,rgba(15,21,15,.92) 0%,rgba(15,21,15,.5) 40%,transparent 74%);
   }
