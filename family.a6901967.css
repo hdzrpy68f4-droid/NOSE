@@ -89,3 +89,11 @@ body.theme-herbal{--family:#4E8D99;--family-text:#2C565E}
 @media (prefers-reduced-motion: reduce){
   .brand-bars i{ animation:none; }
 }
+
+/* Wordmark bar colours — family pages don't load the shell stylesheet. */
+.bg-citrus{background:#D19412}
+.bg-earthy{background:#9C6B3F}
+.bg-spice{background:#C25B2E}
+.bg-pine{background:#3E7A54}
+.bg-floral{background:#8A6BBE}
+.bg-herbal{background:#4E8D99}
