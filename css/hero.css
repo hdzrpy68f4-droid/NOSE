@@ -1,0 +1,59 @@
+/* NOSE hero — dark "loudness" treatment with animated equalizer background.
+   External file: CSP is style-src 'self', so no inline styles anywhere.
+   Everything is scoped under .hero so the rest of the page is untouched. */
+
+.hero{
+  position:relative;
+  overflow:hidden;
+  background:
+    radial-gradient(130% 80% at 50% 108%, rgba(47,97,68,.22), transparent 55%),
+    linear-gradient(180deg,#0F150F 0%,#101710 60%,#0d130d 100%);
+  border-bottom:1px solid rgba(233,238,233,.14);
+}
+
+/* canvas sits behind everything, dissolving upward */
+.hero-eq{
+  position:absolute; inset:0; z-index:0;
+  width:100%; height:100%;
+  -webkit-mask-image:linear-gradient(180deg,transparent 6%,#000 52%);
+  mask-image:linear-gradient(180deg,transparent 6%,#000 52%);
+}
+
+/* legibility scrim over the copy area */
+.hero-scrim{
+  position:absolute; inset:0; z-index:1; pointer-events:none;
+  background:
+    linear-gradient(180deg,rgba(15,21,15,.90) 0%,rgba(15,21,15,.55) 34%,rgba(15,21,15,.05) 62%,transparent 78%),
+    linear-gradient(90deg,rgba(15,21,15,.55) 0%,transparent 46%);
+}
+
+/* lift real content above canvas + scrim */
+.hero > .wrap,
+.hero .hero-grid{ position:relative; z-index:2; }
+
+/* type, recoloured for the dark field */
+.hero .eyebrow{ color:#82C59A; letter-spacing:.2em; }
+.hero h1{ color:#E9EEE9; letter-spacing:-.045em; line-height:.98; max-width:15ch; }
+.hero .hero-copy{ color:#cdd7ce; }
+.hero .hero-note{ color:#93A497; }
+
+/* buttons on dark */
+.hero .button-primary{ background:#82C59A; color:#0d130d; }
+.hero .button-secondary{
+  background:#1b2a20; color:#E9EEE9;
+  border:1px solid rgba(233,238,233,.16);
+}
+.hero .button:focus-visible{ outline:2px solid #82C59A; outline-offset:3px; }
+
+/* the demo card stays light and now reads as a panel floating on the dark field */
+.hero .demo-card{
+  box-shadow:0 40px 90px -34px rgba(0,0,0,.75);
+  border-color:rgba(233,238,233,.10);
+}
+
+@media (max-width:640px){
+  .hero-scrim{
+    background:linear-gradient(180deg,rgba(15,21,15,.92) 0%,rgba(15,21,15,.5) 40%,transparent 74%);
+  }
+  .hero h1{ max-width:none; }
+}
