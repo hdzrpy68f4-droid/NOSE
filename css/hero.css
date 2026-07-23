@@ -73,4 +73,11 @@
     background:linear-gradient(180deg,rgba(15,21,15,.92) 0%,rgba(15,21,15,.5) 34%,transparent 62%);
   }
   .hero h1{ max-width:none; }
+
+  /* Centre the hero copy on phones (desktop keeps its left-aligned column). */
+  .hero .eyebrow,
+  .hero h1,
+  .hero .hero-copy,
+  .hero .hero-note{ text-align:center; margin-left:auto; margin-right:auto; }
+  .hero .button-row{ justify-content:center; }
 }
