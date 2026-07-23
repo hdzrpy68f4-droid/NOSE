@@ -715,3 +715,12 @@
   .tab-list{ flex-wrap:wrap; overflow-x:visible; }
   .tab-list .tab-button{ width:auto; flex:0 0 auto; }
 }
+
+/* QR scan region was rendering as a wide rectangle: the viewfinder was forced
+   into a 4:3 box with object-fit:cover, which scales the video non-uniformly,
+   while html5-qrcode draws its (square) scan overlay in the video's own
+   coordinate space. Let the video keep its natural ratio and the box is square. */
+@media (max-width:720px){
+  .scanner-reader{ aspect-ratio:auto; max-height:none; }
+  .scanner-reader video{ height:auto !important; object-fit:contain; }
+}
