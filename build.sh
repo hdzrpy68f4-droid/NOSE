@@ -40,27 +40,68 @@ curl -fsSL https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js \
   -o vendor/html5-qrcode.min.js
 test -s vendor/html5-qrcode.min.js || { echo "FAIL: QR library empty"; exit 1; }
 
-fingerprint() { # $1=dir $2=prefix $3=ext
-  local dir=$1 prefix=$2 ext=$3 old new hash
+# Content-hash a bundle and rewrite every reference to it.
+#   $1 = directory ("" for repo root)   $2 = filename stem   $3 = extension
+#
+# Accepts the source file either un-hashed (css/hero.css — what you get after
+# uploading a fresh copy) or already hashed (css/hero.a1b2c3d4.css — what is in
+# the repo after a previous build). The un-hashed name wins when both exist,
+# because that is the newly uploaded file; stale hashed siblings are deleted so
+# orphans do not pile up.
+#
+# The rewrite also strips any ?v=N cache-busting query, which is no longer
+# needed once the filename itself changes on every edit.
+fingerprint() {
+  local dir=$1 prefix=$2 ext=$3
+  local base="" old new hash m
+  [ -n "$dir" ] && base="$dir/"
+
+  # NB: nullglob only drops *wildcard* patterns that match nothing, so the
+  # un-hashed literal name must be tested with -f before being added.
   local matches=()
+  [ -f "${base}${prefix}.${ext}" ] && matches+=("${base}${prefix}.${ext}")
   shopt -s nullglob
-  matches=("$dir/$prefix".*."$ext")
+  matches+=("${base}${prefix}".*."${ext}")
   shopt -u nullglob
   if [ ${#matches[@]} -eq 0 ]; then
-    echo "FAIL: no $dir/$prefix.*.$ext to fingerprint"; exit 1
+    echo "FAIL: no ${base}${prefix}.${ext} (or ${base}${prefix}.<hash>.${ext}) to fingerprint"
+    exit 1
   fi
+
   old=${matches[0]}
   hash=$(sha256sum "$old" | cut -c1-8)
-  new="$dir/$prefix.$hash.$ext"
-  [ "$old" != "$new" ] && mv "$old" "$new"
-  for f in "${HTML[@]}" _redirects; do
-    [ -f "$f" ] || continue
-    sed -i -E "s#/(${dir}/)?${prefix}\.[0-9a-f]+\.${ext}#/${new}#g" "$f"
+  new="${base}${prefix}.${hash}.${ext}"
+
+  # drop any other copies (stale hashes from earlier builds)
+  for m in "${matches[@]}"; do
+    [ "$m" = "$old" ] && continue
+    rm -f "$m"
   done
+
+  [ "$old" != "$new" ] && mv "$old" "$new"
+
+  # HTML: match the un-hashed name, any old hash, and any ?v=N query.
+  for f in "${HTML[@]}"; do
+    [ -f "$f" ] || continue
+    sed -i -E "s#/${base}${prefix}(\\.[0-9a-f]+)?\\.${ext}(\\?v=[0-9]+)?#/${new}#g" "$f"
+  done
+
+  # _redirects: only ever rewrite an already-hashed target. The un-hashed
+  # /js/nose.js on the left-hand side is a deliberate legacy alias — rewriting
+  # it would point the redirect at itself.
+  if [ -f _redirects ]; then
+    sed -i -E "s#/${base}${prefix}\\.[0-9a-f]+\\.${ext}#/${new}#g" _redirects
+  fi
   echo "==> $new"
 }
-fingerprint js  nose  js
-fingerprint css shell css
+
+fingerprint js  nose    js
+fingerprint css shell   css
+fingerprint css hero    css
+fingerprint js  hero    js
+fingerprint css agegate css
+fingerprint js  agegate js
+fingerprint ""  family  css
 
 echo "==> sanity checks"
 
@@ -75,15 +116,8 @@ grep -q "style-src 'self';"  _headers || { echo "FAIL: style-src loosened";  exi
 # Executable inline scripts only. type="application/ld+json" is structured data,
 # is never executed, and is not covered by script-src — see [FIX] note above.
 for f in "${HTML[@]}"; do
-  # --- TEMPORARY DEBUG: print every script-tag match and whether it trips ---
-  matches=$(grep -oE '<script[^>]*>[^<]' "$f" || true)
-  if [ -n "$matches" ]; then
-    tripped=$(printf '%s\n' "$matches" | grep -v 'application/ld+json' || true)
-    if [ -n "$tripped" ]; then
-      echo "DEBUG >>> $f has non-JSON-LD script matches:"
-      printf '%s\n' "$tripped" | sed 's/^/DEBUG >>>   /'
-      echo "FAIL: inline script in $f"; exit 1
-    fi
+  if grep -oE '<script[^>]*>[^<]' "$f" | grep -qv 'application/ld+json'; then
+    echo "FAIL: inline script in $f"; exit 1
   fi
 done
 
