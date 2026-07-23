@@ -668,3 +668,30 @@
 .u-hero-h2{font-size:clamp(2.5rem,7vw,4.5rem);line-height:.96}
 .famcard,.famcard *{text-decoration:none}
 
+
+/* ---- Equalizer wordmark ---- */
+.brand-bars{ align-items:flex-end; }
+.brand-bars i{ transform-origin:bottom; will-change:transform; }
+.brand-bars i.bg-citrus{ height:10px; }
+.brand-bars i.bg-earthy{ height:17px; }
+.brand-bars i.bg-spice { height:7px; }
+.brand-bars i.bg-pine  { height:21px; }
+.brand-bars i.bg-floral{ height:13px; }
+.brand-bars i.bg-herbal{ height:16px; }
+@keyframes nose-eq{
+  0%,100%{ transform:scaleY(.52) }
+  22%    { transform:scaleY(1) }
+  44%    { transform:scaleY(.68) }
+  66%    { transform:scaleY(.94) }
+  84%    { transform:scaleY(.60) }
+}
+.brand-bars i{ animation:nose-eq 2.4s ease-in-out infinite; }
+.brand-bars i.bg-citrus{ animation-duration:2.3s; animation-delay:-.20s; }
+.brand-bars i.bg-earthy{ animation-duration:2.7s; animation-delay:-1.10s; }
+.brand-bars i.bg-spice { animation-duration:2.1s; animation-delay:-.60s; }
+.brand-bars i.bg-pine  { animation-duration:2.9s; animation-delay:-1.60s; }
+.brand-bars i.bg-floral{ animation-duration:2.5s; animation-delay:-.90s; }
+.brand-bars i.bg-herbal{ animation-duration:2.6s; animation-delay:-1.35s; }
+@media (prefers-reduced-motion: reduce){
+  .brand-bars i{ animation:none; }
+}

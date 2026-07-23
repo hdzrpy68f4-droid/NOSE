@@ -12,8 +12,31 @@
 #nose-ag .ag-card:before{content:"";position:absolute;left:0;right:0;top:0;height:6px;
   background:linear-gradient(90deg,#D19412 0 16.66%,#9C6B3F 16.66% 33.33%,#C25B2E 33.33% 50%,
   #3E7A54 50% 66.66%,#8A6BBE 66.66% 83.33%,#4E8D99 83.33% 100%)}
-#nose-ag .ag-bars{display:flex;gap:4px;justify-content:center;margin:6px 0 24px}
-#nose-ag .ag-bars i{width:9px;height:34px;border-radius:4px;display:block}
+#nose-ag .ag-bars{display:flex;gap:4px;justify-content:center;align-items:flex-end;margin:6px 0 24px}
+#nose-ag .ag-bars i{width:9px;border-radius:4px;display:block}
+/* colours live here, not in a style="" attribute — CSP is style-src 'self' */
+#nose-ag .ag-bars i.ag-citrus{height:16px;background:#D19412}
+#nose-ag .ag-bars i.ag-earthy{height:28px;background:#9C6B3F}
+#nose-ag .ag-bars i.ag-spice {height:11px;background:#C25B2E}
+#nose-ag .ag-bars i.ag-pine  {height:34px;background:#3E7A54}
+#nose-ag .ag-bars i.ag-floral{height:22px;background:#8A6BBE}
+#nose-ag .ag-bars i.ag-herbal{height:26px;background:#4E8D99}
+/* same level-meter motion as the nav wordmark */
+#nose-ag .ag-bars i{transform-origin:bottom;animation:nose-eq-ag 2.4s ease-in-out infinite}
+@keyframes nose-eq-ag{
+  0%,100%{transform:scaleY(.52)} 22%{transform:scaleY(1)}
+  44%{transform:scaleY(.68)} 66%{transform:scaleY(.94)} 84%{transform:scaleY(.60)}
+}
+#nose-ag .ag-bars i.ag-citrus{animation-duration:2.3s;animation-delay:-.20s}
+#nose-ag .ag-bars i.ag-earthy{animation-duration:2.7s;animation-delay:-1.10s}
+#nose-ag .ag-bars i.ag-spice {animation-duration:2.1s;animation-delay:-.60s}
+#nose-ag .ag-bars i.ag-pine  {animation-duration:2.9s;animation-delay:-1.60s}
+#nose-ag .ag-bars i.ag-floral{animation-duration:2.5s;animation-delay:-.90s}
+#nose-ag .ag-bars i.ag-herbal{animation-duration:2.6s;animation-delay:-1.35s}
+@media (prefers-reduced-motion: reduce){
+  #nose-ag .ag-bars i{animation:none}
+  #nose-ag{animation:none}
+}
 #nose-ag h2{margin:0 0 12px;font-size:2rem;line-height:1.08;letter-spacing:-.045em;
   font-weight:800;color:#141C17}
 #nose-ag p{margin:0 0 28px;color:#3A463D;font-size:1.05rem;line-height:1.55;

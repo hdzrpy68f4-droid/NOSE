@@ -9,8 +9,10 @@
   function lock()   { document.documentElement.style.overflow = 'hidden'; }
   function unlock() { document.documentElement.style.overflow = ''; }
 
-  var fam = ['#D19412','#9C6B3F','#C25B2E','#3E7A54','#8A6BBE','#4E8D99'];
-  var bars = fam.map(function (c) { return '<i style="background:' + c + '"></i>'; }).join('');
+  /* Classes, not inline styles: CSP style-src 'self' blocks style="" attrs,
+     which was silently rendering these bars colourless. */
+  var fam  = ['citrus','earthy','spice','pine','floral','herbal'];
+  var bars = fam.map(function (n) { return '<i class="ag-' + n + '"></i>'; }).join('');
 
   var ask =
     '<div class="ag-card" role="dialog" aria-modal="true" aria-labelledby="ag-t" aria-describedby="ag-d">' +
