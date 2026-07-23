@@ -61,7 +61,14 @@
    set an exact pixel height that stops just above the card. */
 @media (max-width:640px){
   .hero-eq{ top:0; bottom:auto; height:50%; }   /* JS overrides height in px */
-  .hero{ min-height:auto; }
+
+  /* Pull the copy up under the nav so the reclaimed space goes to the bars. */
+  .hero{ min-height:auto; padding-top:14px; padding-bottom:0; }
+
+  /* Reserve a clean strip between the last line of copy and the demo card.
+     The JS sizes the band to end just above the card and caps the bars at
+     150px, so ~166px of clearance keeps them off the note text entirely. */
+  .hero .hero-note{ margin-bottom:132px; }
   .hero-scrim{
     background:linear-gradient(180deg,rgba(15,21,15,.92) 0%,rgba(15,21,15,.5) 34%,transparent 62%);
   }
