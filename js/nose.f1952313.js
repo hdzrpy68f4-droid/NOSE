@@ -460,7 +460,7 @@
         const cameraConfig=chosen ? {deviceId:{exact:chosen}} : {facingMode:{ideal:'environment'}};
         const config={
           fps:15,
-          qrbox:(w,h)=>{ const el=document.getElementById('qrReader');const avail=el&&el.clientWidth&&el.clientHeight?Math.min(el.clientWidth,el.clientHeight):Math.min(w,h);const size=Math.max(160,Math.floor(avail*0.78)); return {width:size,height:size}; },
+          
           aspectRatio:1.333333,
           disableFlip:false,
           experimentalFeatures:{useBarCodeDetectorIfSupported:true}
@@ -474,7 +474,7 @@
         // Some iPhones reject an exact device id before labels are available. Retry by facing mode.
         try {
           qrScanner ||= new Html5Qrcode('qrReader', {formatsToSupport:[Html5QrcodeSupportedFormats.QR_CODE],verbose:false});
-          const config={fps:15,qrbox:(w,h)=>{ const el=document.getElementById('qrReader');const avail=el&&el.clientWidth&&el.clientHeight?Math.min(el.clientWidth,el.clientHeight):Math.min(w,h);const size=Math.max(160,Math.floor(avail*0.78)); return {width:size,height:size}; },aspectRatio:1.333333,disableFlip:false,experimentalFeatures:{useBarCodeDetectorIfSupported:true}};
+          const config={fps:15,aspectRatio:1.333333,disableFlip:false,experimentalFeatures:{useBarCodeDetectorIfSupported:true}};
           await qrScanner.start({facingMode:'environment'},config,handleQrResult,()=>{});
           setScannerButtons(true);
           await loadCameraChoices();
