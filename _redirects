@@ -8,6 +8,6 @@
 /aromas.html           /aromas/     301
 
 # Fingerprinted bundle: keep the unhashed path working if anything references it.
-/js/nose.js  /js/nose.076868f0.js  302
+/js/nose.js  /js/nose.d075ea2b.js  302
 
 # Netlify serves /404.html automatically for unmatched paths.
