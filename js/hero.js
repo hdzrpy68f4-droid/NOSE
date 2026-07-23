@@ -6,7 +6,8 @@
   var canvas = document.getElementById('hero-eq');
   if (!hero || !canvas || !canvas.getContext) return;   // fail safe: no canvas, no harm
 
-  var ctx = canvas.getContext('2d');
+  var ctx  = canvas.getContext('2d');
+  var card = hero.querySelector('.demo-card');   /* mobile: band stops above this */
   var FILLS = ['#D19412','#9C6B3F','#C25B2E','#3E7A54','#8A6BBE','#4E8D99'];
   var reduce = window.matchMedia &&
                window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -36,10 +37,27 @@
     }
   }
 
+  function isMobile(){ return window.innerWidth <= 640; }
+
+  /* On mobile the demo card stacks below the copy. CSS can't know where it
+     starts, so measure it and end the band just above it. Desktop keeps the
+     CSS height (band anchored to the bottom of the banner). */
+  function fitBand(){
+    if (isMobile() && card){
+      var hr = hero.getBoundingClientRect();
+      var cr = card.getBoundingClientRect();
+      var h  = Math.max(90, (cr.top - hr.top) - 14);
+      canvas.style.height = h + 'px';
+    } else {
+      canvas.style.height = '';
+    }
+  }
+
   function resize(){
     dpr = Math.min(window.devicePixelRatio || 1, 2);
-    /* Measure the CANVAS, not the hero: the canvas is a band sized in CSS so
-       the bars stop above the demo card instead of drawing behind it. */
+    fitBand();
+    /* Measure the CANVAS, not the hero — the canvas is a band whose size is
+       set above, so the bars land exactly where we want them. */
     W = canvas.clientWidth; H = canvas.clientHeight;
     if (!W || !H) return;
     canvas.width = Math.round(W*dpr); canvas.height = Math.round(H*dpr);
@@ -82,7 +100,7 @@
     if (!W || !H) return;
     ctx.clearRect(0,0,W,H);
     var padX = Math.max(10, W*0.015);
-    var areaH = H*0.72;   /* of the band, which is itself short */
+    var areaH = Math.min(H*0.72, isMobile() ? 150 : 1e9);   /* condensed on mobile */
     var groups = FILLS.length;
     var groupGap = Math.max(8, W*0.014);
     var barGap = Math.max(2.5, W*0.0035);
@@ -130,6 +148,8 @@
   window.addEventListener('resize', function(){ clearTimeout(rz); rz = setTimeout(resize, 120); });
 
   resize();
+  setTimeout(resize, 350);            /* layout settles after webfonts/images */
+  window.addEventListener('load', resize);
   if (reduce){ staticState(); draw(); }
   else { raf = requestAnimationFrame(frame); }
 })();

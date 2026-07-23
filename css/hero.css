@@ -1,4 +1,4 @@
-/* NOSE hero — dark "loudness" treatment with animated equalizer background.
+/* NOSE hero — dark "loudness" treatment with animated equalizer.
    External file: CSP is style-src 'self', so no inline styles anywhere.
    Everything is scoped under .hero so the rest of the page is untouched. */
 
@@ -11,15 +11,15 @@
   border-bottom:1px solid rgba(233,238,233,.14);
 }
 
-/* Canvas is a BAND, not a full-bleed layer. It is anchored to the top of the
-   hero and stops well short of the bottom, so on mobile — where the demo card
-   stacks underneath the copy — the bars never draw behind the card.
-   The JS measures this element, so changing the height here is all it takes. */
+/* DESKTOP: the band is anchored to the BOTTOM of the hero, so the bars sit
+   flush against the bottom edge of the dark banner. Height controls how tall
+   the band is; the JS measures this element, so changing it here is enough. */
 .hero-eq{
-  position:absolute; left:0; right:0; top:0; z-index:0;
+  position:absolute; left:0; right:0; bottom:0; top:auto; z-index:0;
   width:100%; height:64%;
-  -webkit-mask-image:linear-gradient(180deg,transparent 10%,#000 60%,#000 88%,transparent 100%);
-  mask-image:linear-gradient(180deg,transparent 10%,#000 60%,#000 88%,transparent 100%);
+  /* fade only at the TOP — the bottom must reach the banner edge cleanly */
+  -webkit-mask-image:linear-gradient(180deg,transparent 0%,#000 46%);
+  mask-image:linear-gradient(180deg,transparent 0%,#000 46%);
 }
 
 /* legibility scrim over the copy area */
@@ -48,20 +48,22 @@
 }
 .hero .button:focus-visible{ outline:2px solid #82C59A; outline-offset:3px; }
 
-/* the demo card stays light and now reads as a panel floating on the dark field */
+/* the demo card stays light and floats on the dark field */
 .hero .demo-card{
   position:relative; z-index:3;
-  background:#fff;                    /* opaque: nothing shows through */
+  background:#fff;
   box-shadow:0 40px 90px -34px rgba(0,0,0,.75);
   border-color:rgba(233,238,233,.10);
 }
 
+/* MOBILE: the demo card stacks under the copy, so a percentage height can
+   never land in the right place. Anchor the band to the TOP and let the JS
+   set an exact pixel height that stops just above the card. */
 @media (max-width:640px){
-   .hero-eq{ height:30%; }
-  .hero{ min-height:auto; padding-bottom:120px; }
-            /* more breathing room on small screens */
+  .hero-eq{ top:0; bottom:auto; height:50%; }   /* JS overrides height in px */
+  .hero{ min-height:auto; }
   .hero-scrim{
-    background:linear-gradient(180deg,rgba(15,21,15,.92) 0%,rgba(15,21,15,.5) 40%,transparent 74%);
+    background:linear-gradient(180deg,rgba(15,21,15,.92) 0%,rgba(15,21,15,.5) 34%,transparent 62%);
   }
   .hero h1{ max-width:none; }
 }
