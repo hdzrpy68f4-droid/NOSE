@@ -695,3 +695,14 @@
 @media (prefers-reduced-motion: reduce){
   .brand-bars i{ animation:none; }
 }
+
+/* Matcher horizontal-overflow fix.
+   A 1fr grid track carries an implicit min-width:auto, so the horizontally
+   scrolling sample row stretched its column — and the whole page — instead of
+   scrolling inside it. minmax(0,1fr) plus min-width:0 lets it contain itself. */
+@media (max-width:900px){
+  .app-grid,.footer-grid{ grid-template-columns:minmax(0,1fr); }
+  .app-grid > *,
+  .app-grid .card,
+  .app-grid .panel{ min-width:0; }
+}
