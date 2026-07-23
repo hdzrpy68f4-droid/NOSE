@@ -706,3 +706,12 @@
   .app-grid .card,
   .app-grid .panel{ min-width:0; }
 }
+
+/* Report-method tabs on narrow screens.
+   The base .tab-button{width:100%} was never overridden inside the flex
+   scroller, so each pill filled the screen and the remaining four were parked
+   off-canvas with no affordance. Size them to content and wrap instead. */
+@media (max-width:720px){
+  .tab-list{ flex-wrap:wrap; overflow-x:visible; }
+  .tab-list .tab-button{ width:auto; flex:0 0 auto; }
+}
