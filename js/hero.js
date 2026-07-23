@@ -20,7 +20,8 @@
   function rgba(a,al){ var A=hx(a); return 'rgba('+A[0]+','+A[1]+','+A[2]+','+al+')'; }
 
   function buildColumns(){
-    perFam = hero.clientWidth < 560 ? 3 : (hero.clientWidth < 900 ? 4 : 5);
+    var cw = canvas.clientWidth || hero.clientWidth;
+    perFam = cw < 560 ? 3 : (cw < 900 ? 4 : 5);
     cols = []; famOf = [];
     var n = FILLS.length * perFam;
     for (var c = 0; c < n; c++){
@@ -37,7 +38,9 @@
 
   function resize(){
     dpr = Math.min(window.devicePixelRatio || 1, 2);
-    W = hero.clientWidth; H = hero.clientHeight;
+    /* Measure the CANVAS, not the hero: the canvas is a band sized in CSS so
+       the bars stop above the demo card instead of drawing behind it. */
+    W = canvas.clientWidth; H = canvas.clientHeight;
     if (!W || !H) return;
     canvas.width = Math.round(W*dpr); canvas.height = Math.round(H*dpr);
     ctx.setTransform(dpr,0,0,dpr,0,0);
@@ -79,7 +82,7 @@
     if (!W || !H) return;
     ctx.clearRect(0,0,W,H);
     var padX = Math.max(10, W*0.015);
-    var areaH = H*0.55;
+    var areaH = H*0.72;   /* of the band, which is itself short */
     var groups = FILLS.length;
     var groupGap = Math.max(8, W*0.014);
     var barGap = Math.max(2.5, W*0.0035);
