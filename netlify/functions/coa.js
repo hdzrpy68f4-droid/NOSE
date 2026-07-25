@@ -168,15 +168,11 @@ exports.handler = async function(event){
 
   let text;
   try {
-    /* extractCoaText returns { text, pages }, not a bare string. Passing the
-       object straight to parseCoa finds no terpenes in it and yields a
-       confident, wrong refusal — the failure hides behind a sensible message. */
-    const extracted = await extractCoaText(fetched.buffer);
-    text = typeof extracted === 'string' ? extracted : (extracted && extracted.text);
+    text = await extractCoaText(fetched.buffer);
   } catch {
     return json(422, { error: 'That PDF could not be read. It may be a scan rather than a text document.' });
   }
-  if (typeof text !== 'string' || text.length < 200)
+  if (!text || text.length < 200)
     return json(422, { error: 'That PDF has no readable text. Scanned reports are not supported.' });
 
   let result;
