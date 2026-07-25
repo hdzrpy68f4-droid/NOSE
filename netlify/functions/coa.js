@@ -93,7 +93,7 @@ function validateUrl(raw){
 }
 
 /* Follow redirects by hand so each hop can be re-validated. */
-async function fetchPdf(startUrl){
+async function fetchOnce(startUrl){
   let current = startUrl;
 
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++){
@@ -104,7 +104,7 @@ async function fetchPdf(startUrl){
       res = await fetch(current.toString(), {
         redirect: 'manual',
         signal: controller.signal,
-        headers: { 'Accept': 'application/pdf,*/*' }
+        headers: { 'Accept': 'application/pdf,text/html;q=0.8,*/*;q=0.5' }
       });
     } catch (err) {
       clearTimeout(timer);
@@ -129,7 +129,6 @@ async function fetchPdf(startUrl){
     if (!res.ok)
       return { error: `The lab server returned ${res.status} for that link.` };
 
-    // Size cap before reading: trust Content-Length when it is offered.
     const declared = Number(res.headers.get('content-length'));
     if (Number.isFinite(declared) && declared > MAX_BYTES)
       return { error: 'That file is larger than this tool will fetch.' };
@@ -137,17 +136,88 @@ async function fetchPdf(startUrl){
     const buf = Buffer.from(await res.arrayBuffer());
     if (buf.length > MAX_BYTES)
       return { error: 'That file is larger than this tool will fetch.' };
-    if (buf.length < 1024)
+    if (buf.length < 512)
       return { error: 'That link did not return a document.' };
 
-    // Magic bytes, not Content-Type: a header is trivially wrong or spoofed.
-    if (buf.subarray(0, 5).toString('latin1') !== '%PDF-')
-      return { error: 'That link is not a PDF. Lab reports must be the PDF itself, not a page about one.' };
-
-    return { buffer: buf, finalUrl: current.toString() };
+    return { buffer: buf, finalUrl: current };
   }
 
   return { error: 'That link redirected too many times.' };
+}
+
+const isPdf = buf => buf.subarray(0, 5).toString('latin1') === '%PDF-';
+
+function looksLikeHtml(buf){
+  const head = buf.subarray(0, 400).toString('latin1').toLowerCase();
+  return head.includes('<!doctype html') || head.includes('<html');
+}
+
+/* Several labs put a VIEWER PAGE behind their QR code rather than the file —
+ * Kaycha's codes resolve to yourcoa.com/coa/coa-view?sample=<lab id>, which is
+ * HTML wrapping a PDF.js viewer. So when a fetch lands on a page instead of a
+ * document, look once for the document it is displaying.
+ *
+ * Order matters. The query-parameter transform is tried first because it is
+ * cheap and survives a redesign of the page; markup scraping is the fallback.
+ * Either way the result is re-validated by the same guards and must still
+ * present PDF magic bytes, so a wrong guess fails safely rather than quietly.
+ */
+function resolvePdfFromPage(buf, pageUrl){
+  const html = buf.toString('utf8').slice(0, 400000);
+  const unescape = t => t.replace(/&amp;/g, '&').replace(/&#38;/g, '&');
+  const candidates = [];
+
+  // 1. yourcoa.com viewer: the sample id in the query is the download path
+  if (/(^|\.)yourcoa\.com$/i.test(pageUrl.hostname)){
+    const sample = pageUrl.searchParams.get('sample');
+    if (sample && /^[A-Za-z0-9._-]{4,64}$/.test(sample))
+      candidates.push(`/coa/coa-download/${encodeURIComponent(sample)}?wl_id=0&mrk=0&is_view=1`);
+  }
+
+  // 2. an explicit download or .pdf link in the markup
+  const linkRe = /(?:href|src)\s*=\s*"([^"]+)"/gi;
+  let m;
+  while ((m = linkRe.exec(html)) !== null){
+    const raw = unescape(m[1]);
+    if (/coa-download|\.pdf(\?|$)/i.test(raw)) candidates.push(raw);
+  }
+
+  // 3. a PDF.js viewer embed carries the real file in ?file=
+  const viewerRe = /viewer\.html\?file=([^"'&]+)/i;
+  const viewer = viewerRe.exec(html);
+  if (viewer){
+    try { candidates.push(decodeURIComponent(unescape(viewer[1]))); } catch {}
+  }
+
+  for (const candidate of candidates){
+    let next;
+    try { next = new URL(candidate, pageUrl); } catch { continue; }
+    if (next.protocol !== 'https:' || isBlockedHost(next.hostname)) continue;
+    return next;
+  }
+  return null;
+}
+
+async function fetchPdf(startUrl){
+  const first = await fetchOnce(startUrl);
+  if (first.error) return first;
+  if (isPdf(first.buffer))
+    return { buffer: first.buffer, finalUrl: first.finalUrl.toString() };
+
+  if (looksLikeHtml(first.buffer)){
+    const resolved = resolvePdfFromPage(first.buffer, first.finalUrl);
+    if (!resolved)
+      return { error: 'That link opens a page rather than a report, and no report could be found on it. Open the page yourself and paste the PDF link.' };
+
+    // One resolution hop only — no chasing pages that link to pages.
+    const second = await fetchOnce(resolved);
+    if (second.error) return second;
+    if (!isPdf(second.buffer))
+      return { error: 'That page pointed at something that is not a PDF.' };
+    return { buffer: second.buffer, finalUrl: second.finalUrl.toString(), viaPage: first.finalUrl.toString() };
+  }
+
+  return { error: 'That link is not a PDF. Lab reports must be the report itself, not a page about one.' };
 }
 
 exports.handler = async function(event){
@@ -168,11 +238,15 @@ exports.handler = async function(event){
 
   let text;
   try {
-    text = await extractCoaText(fetched.buffer);
+    /* extractCoaText returns { text, pages }, not a bare string. Passing the
+       object straight to parseCoa finds no terpenes in it and yields a
+       confident, wrong refusal — the failure hides behind a sensible message. */
+    const extracted = await extractCoaText(fetched.buffer);
+    text = typeof extracted === 'string' ? extracted : (extracted && extracted.text);
   } catch {
     return json(422, { error: 'That PDF could not be read. It may be a scan rather than a text document.' });
   }
-  if (!text || text.length < 200)
+  if (typeof text !== 'string' || text.length < 200)
     return json(422, { error: 'That PDF has no readable text. Scanned reports are not supported.' });
 
   let result;
@@ -228,6 +302,7 @@ exports.handler = async function(event){
     waterActivity: result.freshnessApplies ? result.waterActivity : null,
     freshnessApplies: result.freshnessApplies,
     layout: result.layout,
-    source: fetched.finalUrl
+    source: fetched.finalUrl,
+    viaPage: fetched.viaPage || null
   });
 };
