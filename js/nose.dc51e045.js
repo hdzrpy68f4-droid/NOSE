@@ -414,6 +414,159 @@
       }
     }
 
+    /* ---- COA reading -----------------------------------------------------
+       The endpoint fetches the PDF, extracts its text and parses it. It fails
+       CLOSED: anything it cannot read reliably comes back as an error with the
+       parser's own reasons, never as a guess. On success the values are shown
+       for confirmation rather than written straight into the palate — a wrong
+       column read is only ever caught by a person looking at the paper. */
+    let coaPending=null;
+
+    function hideCoaConfirm(){
+      coaPending=null;
+      const card=$id('coaConfirm');
+      if(card) card.hidden=true;
+    }
+
+    async function fetchCoaReport(href,messageId){
+      hideCoaConfirm();
+      showMessage(messageId,'Reading the lab report\u2026','neutral');
+      let res,data;
+      try{
+        res=await fetch('/.netlify/functions/coa',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({url:href})
+        });
+        data=await res.json();
+      }catch{
+        showMessage(messageId,'Could not reach the report reader. Check your connection, or enter the values manually.','error');
+        return;
+      }
+      if(!res.ok||!data||!data.terps){
+        const why=Array.isArray(data&&data.reasons)&&data.reasons.length
+          ? ' '+data.reasons.join('; ')+'.'
+          : '';
+        showMessage(messageId,((data&&data.error)||'That report could not be read.')+why,'error');
+        return;
+      }
+      renderCoaConfirmation(data,messageId);
+    }
+
+    function renderCoaConfirmation(data,messageId){
+      const card=$id('coaConfirm');
+      if(!card) return;
+      coaPending={data:data,messageId:messageId};
+
+      const known={};
+      Object.keys(data.terps||{}).forEach(key=>{ if(TERPENES[key]) known[key]=data.terps[key]; });
+
+      $id('coaConfirmLead').textContent=
+        `${data.lab||'This lab'} reported this batch. Nothing is added to your palate until you confirm it.`;
+
+      const meta=$id('coaConfirmMeta');
+      meta.textContent='';
+      const rows=[
+        ['Strain as printed',data.strain||'not stated'],
+        ['Batch',data.batch||'not stated'],
+        ['Lab ID',data.labId||'not stated'],
+        ['Product',data.productClass||'unknown'],
+        ['Total terpenes',data.totalTerpenes!=null?`${data.totalTerpenes}% \u2014 intensity, not shape`:'not printed']
+      ];
+      if(data.freshnessApplies){
+        rows.push(['Moisture',data.moisture!=null?`${data.moisture}%`:'not printed']);
+        rows.push(['Water activity',data.waterActivity!=null?String(data.waterActivity):'not printed']);
+      }
+      rows.forEach(([label,value])=>{
+        const dt=document.createElement('dt'); dt.textContent=label;
+        const dd=document.createElement('dd'); dd.textContent=value;
+        meta.append(dt,dd);
+      });
+
+      renderBar('coaConfirmBar',known);
+
+      /* Several labs publish only a top ten. When the fingerprint rests on a
+         partial panel the person is told, rather than left to assume. */
+      const cov=$id('coaConfirmCoverage');
+      if(data.coverage==null){
+        cov.textContent='This report prints no total terpene figure, so how complete the fingerprint is cannot be known.';
+        cov.setAttribute('data-partial','true');
+      }else{
+        const pct=Math.round(Math.min(data.coverage,1)*100);
+        const extra=(data.unmapped&&data.unmapped.length)
+          ? ` Measured but outside the six families: ${data.unmapped.join(', ')}.`
+          : '';
+        if(pct>=95){
+          cov.textContent=`This covers ${pct}% of the terpene mass the lab measured.`+extra;
+          cov.removeAttribute('data-partial');
+        }else{
+          cov.textContent=`This covers ${pct}% of the terpene mass the lab measured, so the shape rests on a partial panel and is not directly comparable with a full one.`+extra;
+          cov.setAttribute('data-partial','true');
+        }
+      }
+
+      $id('coaConfirmName').value=data.strain||'';
+
+      const holder=$id('coaConfirmRows');
+      holder.textContent='';
+      Object.keys(known).sort((a,b)=>known[b]-known[a]).forEach(key=>{
+        const row=document.createElement('div');
+        row.className='coa-row';
+        const id='coaTerp-'+key;
+        const label=document.createElement('label');
+        label.htmlFor=id; label.textContent=TERPENES[key].name;
+        const input=document.createElement('input');
+        input.type='number'; input.step='0.001'; input.min='0';
+        input.id=id; input.value=String(known[key]);
+        input.setAttribute('data-key',key);
+        row.append(label,input);
+        holder.append(row);
+      });
+
+      card.hidden=false;
+      showMessage(messageId,`${data.lab||'Report'} read. Check the values below, then add the jar.`,'success');
+      card.scrollIntoView({block:'nearest'});
+      $id('coaConfirmName').focus();
+    }
+
+    function commitCoaProfile(){
+      if(!coaPending) return;
+      const messageId=coaPending.messageId;
+      const name=$id('coaConfirmName').value.trim();
+      if(!name){ showMessage(messageId,'Give the jar a name before adding it.','error'); return; }
+
+      const terps={};
+      $id('coaConfirmRows').querySelectorAll('input[data-key]').forEach(input=>{
+        const value=Number(input.value);
+        if(Number.isFinite(value)&&value>0) terps[input.getAttribute('data-key')]=value;
+      });
+      if(!Object.keys(terps).length){
+        showMessage(messageId,'Every value is zero or blank, so there is no profile to compare.','error');
+        return;
+      }
+
+      /* Same shape and same save path as a manually entered jar, so a scanned
+         profile behaves identically everywhere downstream. */
+      const profile={id:`saved-${slugify(name)}-${Date.now()}`,name,
+        subtitle:`${Object.keys(terps).length} measured compounds`,terps};
+      state.saved.push(profile);
+      const persisted=persistSaved();
+      if(!state.palateIds.includes(profile.id)) state.palateIds.push(profile.id);
+      updateSavedSummary(); renderSampleButtons(); updateFullResult();
+      hideCoaConfirm();
+      showMessage(messageId,`${name} was added ${persisted?'and saved in this browser':'for this session'}.`,'success');
+    }
+
+    (function bindCoaConfirm(){
+      const accept=$id('coaConfirmAccept'), cancel=$id('coaConfirmCancel');
+      if(accept) accept.onclick=commitCoaProfile;
+      if(cancel) cancel.onclick=function(){
+        const id=coaPending&&coaPending.messageId;
+        hideCoaConfirm();
+        if(id) showMessage(id,'Discarded. Nothing was added to your palate.','neutral');
+      };
+    })();
+
     function handleQrResult(decodedText){
       if(qrScanLocked) return;
       const value=String(decodedText||'').trim();
@@ -421,17 +574,13 @@
       qrScanLocked=true;
       try {
         const url=new URL(value);
-        if(!checkCoaUrl(url.href).ok) throw new Error('not-allowed');
-        document.getElementById('coaUrl').value=url.href;
-        showMessage('scannerMessage',`QR code found: ${url.hostname}. Opening the COA-link step…`,'success');
+        const check=checkCoaUrl(url.href);
+        if(!check.ok) throw new Error('not-allowed');
+        const target=$id('coaUrl'); if(target) target.value=url.href;
         if(navigator.vibrate) navigator.vibrate(120);
-        stopQrScanner().finally(()=>{
-          setTimeout(()=>{
-            setTab('url');
-            showMessage('urlMessage',`Scanned secure link: ${url.hostname}.`,'success');
-            { const u=$id('coaUrl'); if(u) u.focus(); }
-          },250);
-        });
+        /* Stop the camera first: the fetch and the confirmation card want the
+           screen, and a live preview behind them is just noise. */
+        stopQrScanner().finally(()=>{ fetchCoaReport(url.href,'scannerMessage'); });
       } catch {
         qrScanLocked=false;
         showMessage('scannerMessage','That QR code was read, but it does not contain a secure HTTPS COA link. Keep the code centered or choose a different image.','error');
@@ -591,7 +740,11 @@
       const host=url.hostname.toLowerCase();
       return {ok:true,url,message:`${host} looks like a valid secure link.`};
     }
-    function validateUrl(){ const r=checkCoaUrl(document.getElementById('coaUrl').value); showMessage('urlMessage',r.message,r.ok?'success':'error'); }
+    function validateUrl(){
+      const r=checkCoaUrl(document.getElementById('coaUrl').value);
+      if(!r.ok){ showMessage('urlMessage',r.message,'error'); hideCoaConfirm(); return; }
+      fetchCoaReport(r.url.href,'urlMessage');
+    }
     function validateUpload(file){ if(!file){ document.getElementById('uploadMessage').hidden=true; return; } const allowed=['application/pdf','image/jpeg','image/png','image/webp']; if(!allowed.includes(file.type)){ showMessage('uploadMessage','Use a PDF, JPG, PNG, or WebP file.','error'); return; } if(file.size>10*1024*1024){ showMessage('uploadMessage','The selected file is larger than 10 MB.','error'); return; } showMessage('uploadMessage',`${file.name} selected. The file remains local in this static preview.`,'success'); }
 
     /* Routing after the Tier-2 split.

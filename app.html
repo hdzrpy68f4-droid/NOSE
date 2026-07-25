@@ -13,7 +13,7 @@
   <meta property="og:description" content="Compare cannabis flower by terpene profile, not strain name. Aroma matching without effect claims.">
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
-  <link rel="stylesheet" href="/css/shell.38ceebc2.css">
+  <link rel="stylesheet" href="/css/shell.7b06506d.css">
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebApplication", "name": "NOSE aroma matcher", "url": "https://curious-crumble-352160.netlify.app/app", "applicationCategory": "UtilitiesApplication", "operatingSystem": "Any modern browser", "description": "Turn a cannabis Certificate of Analysis into an aroma fingerprint and compare it with flower you already enjoy.", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"}, "browserRequirements": "Requires JavaScript."}</script>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/agegate.451aca9a.css">
@@ -117,6 +117,24 @@
                 <input id="qrImageFile" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" hidden>
                 <p class="scanner-note">Camera scanning requires HTTPS, which Netlify provides automatically.</p>
                 <div id="scannerMessage" class="inline-message scanner-result" aria-live="polite" hidden></div>
+
+                <section id="coaConfirm" class="coa-confirm" aria-labelledby="coaConfirmTitle" hidden>
+                  <h3 id="coaConfirmTitle" class="u-fs-15">Check this before you add it</h3>
+                  <p class="small" id="coaConfirmLead"></p>
+                  <dl class="coa-meta" id="coaConfirmMeta"></dl>
+                  <p class="coa-label mono">Aroma fingerprint</p>
+                  <div id="coaConfirmBar"></div>
+                  <p class="coa-coverage" id="coaConfirmCoverage"></p>
+                  <label class="coa-label" for="coaConfirmName">Jar name</label>
+                  <input id="coaConfirmName" type="text" autocomplete="off">
+                  <p class="coa-label mono">Measured terpenes (% of weight)</p>
+                  <p class="small" id="coaConfirmEditNote">Correct anything that does not match the report in your hand.</p>
+                  <div id="coaConfirmRows" class="coa-rows"></div>
+                  <div class="buttons">
+                    <button class="button button-primary" id="coaConfirmAccept" type="button">Use this jar</button>
+                    <button class="button button-secondary" id="coaConfirmCancel" type="button">Discard</button>
+                  </div>
+                </section>
               </div>
             </section>
 
@@ -227,7 +245,7 @@
      The scanner code guards on typeof Html5Qrcode, so if the file is missing
      the QR path degrades to a message and the rest of the app is unaffected. -->
 <script src="/vendor/html5-qrcode.min.js" defer></script>
-  <script src="/js/nose.4ee0a102.js" defer></script>
+  <script src="/js/nose.dc51e045.js" defer></script>
   <script src="/js/agegate.86760e1d.js" defer></script>
 </body>
 </html>

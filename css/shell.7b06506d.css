@@ -724,3 +724,58 @@
   .scanner-reader{ aspect-ratio:auto; max-height:none; }
   .scanner-reader video{ height:auto !important; object-fit:contain; }
 }
+
+
+/* ---- COA confirmation card ---------------------------------------------
+   Shown after a scan or a pasted link parses. The parser proposes; the
+   person decides. Values stay editable because "the parser matched our
+   fixtures" is not the same claim as "this matches the paper in your hand". */
+.coa-confirm{
+  margin-top:18px; padding:20px;
+  border:1px solid var(--line); border-radius:16px;
+  background:var(--surface);
+}
+.coa-confirm > h3{ margin:0 0 6px; }
+.coa-confirm > .small{ margin:0 0 16px; color:var(--muted); }
+.coa-label{
+  margin:18px 0 8px; font-size:0.75rem; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--muted);
+}
+.coa-meta{
+  display:grid; grid-template-columns:auto 1fr; gap:6px 16px;
+  margin:0; font-size:0.9375rem;
+}
+.coa-meta dt{ color:var(--muted); }
+.coa-meta dd{ margin:0; font-weight:650; }
+.coa-coverage{
+  margin:12px 0 0; padding:12px 14px; border-radius:12px;
+  background:var(--surface-2); color:var(--ink);
+  font-size:0.9375rem; line-height:1.5;
+}
+.coa-coverage[data-partial="true"]{
+  box-shadow:inset 0 0 0 1px color-mix(in srgb, #8A8377 45%, transparent);
+}
+#coaConfirmName{
+  width:100%; min-height:46px; padding:0 12px;
+  border:1px solid var(--line); border-radius:12px;
+  background:var(--surface); color:var(--ink);
+  font:inherit; font-size:1rem;
+}
+.coa-rows{ display:grid; gap:8px; }
+.coa-row{
+  display:grid; grid-template-columns:1fr 96px; gap:10px; align-items:center;
+}
+.coa-row label{ font-size:0.9375rem; }
+.coa-row input{
+  min-height:42px; padding:0 10px; text-align:right;
+  border:1px solid var(--line); border-radius:10px;
+  background:var(--surface); color:var(--ink);
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:0.9375rem;
+}
+.coa-row input:focus-visible,#coaConfirmName:focus-visible{
+  outline:3px solid rgba(47,97,68,.38); outline-offset:2px;
+}
+@media (max-width:520px){
+  .coa-meta{ grid-template-columns:1fr; gap:2px 0; }
+  .coa-meta dd{ margin-bottom:8px; }
+}
