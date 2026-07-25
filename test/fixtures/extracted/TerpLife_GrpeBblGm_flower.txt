@@ -1,0 +1,1663 @@
+Sample ID: T5K0315-01 CCB ID:Parent ID 7114 5092 9180 7362
+Matrix: Flower Inhalable
+MÜV
+Client Lic#: MMTC-2017-0010
+5909 N US Highway 41 Apollo Beach,
+FL 33572
+(813) 476-1757
+Compliance
+Seed to Sale : 7968742689054215
+Retail Batch#: BU101025-3979GBG
+Retail Batch Total Wt/Vol: 4546.5g
+Retail Batch Total Units 1299
+Retail Batch Date: 10/10/2025
+Cultivation Facility: MUV- Ruskin
+Processing Facility: MUV- Ruskin
+Cultivar: GrpeBblGm
+Sampling SOP 1260
+Compliance for Retail:
+PASS
+Date Reported:
+11/17/2025
+Date Received:
+Date Sampled:
+11/13/2025
+11/13/2025
+Total Sample Received: 28g
+Total Units Received: 8
+Unit Weight: 3.5g
+Savvy Flower - 3.5g - GrpeBblGm
+Certificate of Analysis
+Lab State Certification/License: CMTL-00010
+T5K0315
+Potency Summary
+0
+10
+20
+30
+40
+50
+60
+70
+80
+90
+100
+Total THC
+Total THC
+26.5%
+927.50 mg/Unit
+0
+10
+20
+30
+40
+50
+60
+70
+80
+90
+100
+Total CBD
+0.0588%
+Total CBD
+2.06 mg/Unit
+Terpenes Summary
+Analyte
+LOD
+Results
+Prep/Analysis Method: SOP1360
+Lab Batch: 2546112
+Specimen Wt: 0.51 g
+Instrument: GCMS
+Date Prepared: 11/13/2025 11:23
+Prep ID: 4599
+Date Analyzed: 11/14/2025 03:39
+Analyzed ID: 11083
+Dilution
+%
+%
+D-Limonene
+1
+0.473
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+0.00567
+beta-Myrcene
+1
+0.402
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+0.00567
+E-Caryophyllene
+1
+0.333
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+0.00567
+Farnesene
+1
+0.151
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+0.0283
+alpha-Humulene
+1
+0.129
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+0.00567
+beta-Pinene
+1
+0.108
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+0.00567
+alpha-Pinene
+1
+0.102
+█
+█
+█
+█
+█
+█
+█
+█
+█
+0.00567
+beta-Ocimene
+1
+0.101
+█
+█
+█
+█
+█
+█
+█
+█
+█
+0.00567
+Guaiol
+1
+0.0807
+█
+█
+█
+█
+█
+█
+█
+0.00567
+alpha-Fenchyl alcohol, (+)-
+1
+0.0611
+█
+█
+█
+█
+█
+0.00567
+alpha Bisabolol, L
+1
+0.0606
+█
+█
+█
+█
+█
+0.00567
+alpha-Terpineol
+1
+0.0503
+█
+█
+█
+█
+0.00567
+Linalool
+1
+0.0381
+█
+█
+█
+0.00567
+Camphene
+1
+0.0155
+█
+0.00567
+Borneol
+1
+0.0147
+█
+0.00567
+Total Terpenes
+2.150
+75.25 mg/Unit
+Terpene results are provided for informational purposes only.
+LOD = Limit of Detection; ND = Not Detected.
+Unless otherwise stated all quality control samples performed within specifications established by the Laboratory.
+Foreign
+Materials
+PASS
+Heavy Metals
+PASS
+Microbials
+PASS
+Homogeneity
+NOT TESTED
+Label Claim
+NOT TESTED
+Moisture
+Content
+PASS
+Safety Summary
+Mycotoxins
+PASS
+Pesticides
+PASS
+Residual
+Solvents
+NOT TESTED
+TCL
+PASS
+Terpenes
+TESTED
+Water
+Activity
+PASS
+0
+10
+20
+30
+40
+50
+60
+70
+80
+90
+100
+T5K0315-01
+Total Cannabinoids
+31.1%
+1,088.50 mg/Unit
+Cannabinoids
+Analyte
+LOD
+Result
+Date Prepared: 11/13/2025 11:19
+Prep ID: 4599
+Date Analyzed: 11/13/2025 16:54
+Analyst ID: 5047
+Specimen Wt: 0.444 g
+Instrument: HPLC VWD
+Dilution
+Prep/Analysis Method: SOP 1357
+Lab Batch: 2546111
+%
+%
+mg/g
+Results
+%
+Cannabichromene (CBC)
+1
+0.0131
+ND
+ND
+Cannabidiol (CBD)
+1
+0.0131
+ND
+ND
+Cannabidiolic acid (CBDA)
+1
+0.0131
+0.0671
+0.671
+Cannabidivarin (CBDV)
+1
+0.0131
+ND
+ND
+Cannabigerol (CBG)
+1
+0.0131
+0.129
+1.29
+Cannabigerolic acid (CBGA)
+1
+0.0131
+0.764
+7.64
+Cannabinol (CBN)
+1
+0.0131
+ND
+ND
+d8 - Tetrahydrocannabinoid (d8-THC)
+1
+0.0131
+ND
+ND
+d9 - Tetrahydrocannabinoid (d9-THC)
+1
+0.0131
+0.731
+7.31
+d9 - Tetrahydrocannabinolic acid (THCA)
+1
+0.0131
+29.4
+294
+Tetrahydrocannabivarin (THCV)
+1
+0.0131
+ND
+ND
+Total THC
+Total Cannabinoids
+Total CBD
+26.5
+265
+0.0588
+0.588
+31.1
+311
+Total THC= THCa * 0.877 + d9-THC. Total CBD= CBDa * 0.877 + CBD.
+mg/Unit = Unit Weight g * Total THC/CBD mg/g
+LOD = Limit of Detection; ND = Not Detected.
+Unless otherwise stated all quality control samples performed within specifications established by the Laboratory.
+The data contained therein are based on sound scientific analytical procedures and judgment. Terplife Labs strives to deliver high quality results.
+This report shall not be reproduced without written consent from TerpLife Labs. The results of this report relate only to the material or product
+received and analyzed. Test Results are confidential unless explicitly waived otherwise. This laboratory is accredited in accordance with the
+recognised International Standard ISO/IEC 17025. This accreditation demonstrates technical competence for a defined scope and the operation of
+a laboratory quality management system (refer to joint ISOILAC-IAF Communiqué dated April 2017)
+Brian C. Spann
+Laboratory Director
+TerpLife Labs
+10350 Fisher Ave, Tampa, Florida 33619
+813-726-3103 / www.terplifelabs.com
+1 of 4
+Sample ID: T5K0315-01 CCB ID:Parent ID 7114 5092 9180 7362
+Matrix: Flower Inhalable
+MÜV
+Client Lic#: MMTC-2017-0010
+5909 N US Highway 41 Apollo Beach,
+FL 33572
+(813) 476-1757
+Compliance
+Seed to Sale : 7968742689054215
+Retail Batch#: BU101025-3979GBG
+Retail Batch Total Wt/Vol: 4546.5g
+Retail Batch Total Units 1299
+Retail Batch Date: 10/10/2025
+Cultivation Facility: MUV- Ruskin
+Processing Facility: MUV- Ruskin
+Cultivar: GrpeBblGm
+Sampling SOP 1260
+Compliance for Retail:
+PASS
+Date Reported:
+11/17/2025
+Date Received:
+Date Sampled:
+11/13/2025
+11/13/2025
+Total Sample Received: 28g
+Total Units Received: 8
+Unit Weight: 3.5g
+Savvy Flower - 3.5g - GrpeBblGm
+Certificate of Analysis
+Lab State Certification/License: CMTL-00010
+T5K0315
+Pesticides
+Pass
+Analyzed
+Analyst
+Prepped
+Prepped By
+Batch
+Specimen Wt. (g)
+Instrument
+Analysis SOP
+Prep Mehtod: SOP 1363
+2546113
+Pesticide LCQQQ
+11/13/2025
+9:24:37PM
+2670-10866
+11/13/2025 11:24:00AM
+4599
+1.01
+SOP1350
+LCMSMS
+2546114
+Pesticides GCQQQ
+11/13/2025
+8:44:39PM
+2670-10866
+11/13/2025 11:28:00AM
+4599
+1.01
+*
+SOP1356
+GCMSMS
+Analyte
+LOD
+Action Limit
+Results
+ppb
+ppb
+ppb
+Status
+ppb
+ppb
+ppb
+Analyte
+Results
+Status
+DIL
+DIL
+Action Limi
+LOD
+10
+Pass
+100
+ND
+1
+Abamectin
+10
+Pass
+100
+ND
+1
+Acephate
+10
+Pass
+100
+ND
+1
+Acequinocyl
+10
+Pass
+100
+ND
+1
+Acetamiprid
+10
+Pass
+100
+ND
+1
+Aldicarb
+10
+Pass
+100
+ND
+1
+Azoxystrobin
+10
+Pass
+100
+ND
+1
+Bifenazate
+10
+Pass
+100
+ND
+1
+Bifenthrin
+10
+Pass
+100
+ND
+1
+Boscalid
+50
+Pass
+500
+ND
+1
+Carbaryl
+10
+Pass
+100
+ND
+1
+Carbofuran
+100
+Pass
+1000
+ND
+1
+Chlorantraniliprole
+100
+Pass
+1000
+ND
+1
+Chlormequat Chloride
+10
+Pass
+100
+ND
+1
+Chlorpyrifos
+20
+Pass
+200
+ND
+1
+Clofentezine
+10
+Pass
+100
+ND
+1
+Coumaphos
+50
+Pass
+500
+ND
+1
+Cyfluthrin
+50
+Pass
+500
+ND
+1
+Cypermethrin
+10
+Pass
+100
+ND
+1
+Daminozide
+10
+Pass
+100
+ND
+1
+Diazinon
+10
+Pass
+100
+ND
+1
+Dichlorvos
+10
+Pass
+100
+ND
+1
+Dimethoate
+20
+Pass
+200
+ND
+1
+Dimethomorph
+10
+Pass
+100
+ND
+1
+Ethoprophos
+10
+Pass
+100
+ND
+1
+Etofenprox
+10
+Pass
+100
+ND
+1
+Etoxazole
+10
+Pass
+100
+ND
+1
+Fenhexamid
+10
+Pass
+100
+ND
+1
+Fenoxycarb
+10
+Pass
+100
+ND
+1
+Fenpyroximate
+10
+Pass
+100
+ND
+1
+Fipronil
+10
+Pass
+100
+ND
+1
+Flonicamid
+10
+Pass
+100
+ND
+1
+Fludioxonil
+10
+Pass
+100
+ND
+1
+Hexythiazox
+10
+Pass
+100
+ND
+1
+Imazalil
+40
+Pass
+400
+ND
+1
+Imidacloprid
+10
+Pass
+100
+ND
+1
+Kresoxim-methyl
+20
+Pass
+200
+ND
+1
+Malathion
+10
+Pass
+100
+ND
+1
+Metalaxyl
+10
+Pass
+100
+ND
+1
+Methiocarb
+10
+Pass
+100
+ND
+1
+Methomyl
+10
+Pass
+100
+ND
+1
+Mevinphos
+10
+Pass
+100
+ND
+1
+Myclobutanil
+25
+Pass
+250
+ND
+1
+Naled
+50
+Pass
+500
+ND
+1
+Oxamyl
+10
+Pass
+100
+ND
+1
+Paclobutrazol
+10
+Pass
+100
+ND
+1
+Permethrin
+10
+Pass
+100
+ND
+1
+Phosmet
+300
+Pass
+3000
+ND
+1
+Piperonyl butoxide
+10
+Pass
+100
+ND
+1
+Prallethrin
+10
+Pass
+100
+ND
+1
+Propiconazole
+10
+Pass
+100
+ND
+1
+Propoxur
+50
+Pass
+500
+ND
+1
+Pyrethrins
+20
+Pass
+200
+ND
+1
+Pyridaben
+20
+Pass
+200
+ND
+1
+Spinetoram, total
+10
+Pass
+100
+ND
+1
+Spinosad, total
+10
+Pass
+100
+ND
+1
+Spiromesifen
+10
+Pass
+100
+ND
+1
+Spirotetramat
+10
+Pass
+100
+ND
+1
+Spiroxamine
+10
+Pass
+100
+ND
+1
+Tebuconazole
+10
+Pass
+100
+ND
+1
+Thiacloprid
+50
+Pass
+500
+ND
+1
+Thiamethoxam
+10
+Pass
+100
+ND
+1
+Trifloxystrobin
+70
+Pass
+700
+ND
+1
+Captan*
+10
+Pass
+100
+ND
+1
+Chlordane*
+10
+Pass
+100
+ND
+1
+Chlorfenapyr*
+10
+Pass
+100
+ND
+1
+Methyl parathion*
+15
+Pass
+150
+ND
+1
+Pentachloronitrobenzene*
+LOD = Limit of Detection; ND = Not Detected.
+Unless otherwise stated all quality control samples performed within specifications established by the Laboratory.
+* - GCMSMS Pesticides
+The data contained therein are based on sound scientific analytical procedures and judgment. Terplife Labs strives to deliver high quality results.
+This report shall not be reproduced without written consent from TerpLife Labs. The results of this report relate only to the material or product
+received and analyzed. Test Results are confidential unless explicitly waived otherwise. This laboratory is accredited in accordance with the
+recognised International Standard ISO/IEC 17025. This accreditation demonstrates technical competence for a defined scope and the operation of
+a laboratory quality management system (refer to joint ISOILAC-IAF Communiqué dated April 2017)
+Brian C. Spann
+Laboratory Director
+TerpLife Labs
+10350 Fisher Ave, Tampa, Florida 33619
+813-726-3103 / www.terplifelabs.com
+2 of 4
+Sample ID: T5K0315-01 CCB ID:Parent ID 7114 5092 9180 7362
+Matrix: Flower Inhalable
+MÜV
+Client Lic#: MMTC-2017-0010
+5909 N US Highway 41 Apollo Beach,
+FL 33572
+(813) 476-1757
+Compliance
+Seed to Sale : 7968742689054215
+Retail Batch#: BU101025-3979GBG
+Retail Batch Total Wt/Vol: 4546.5g
+Retail Batch Total Units 1299
+Retail Batch Date: 10/10/2025
+Cultivation Facility: MUV- Ruskin
+Processing Facility: MUV- Ruskin
+Cultivar: GrpeBblGm
+Sampling SOP 1260
+Compliance for Retail:
+PASS
+Date Reported:
+11/17/2025
+Date Received:
+Date Sampled:
+11/13/2025
+11/13/2025
+Total Sample Received: 28g
+Total Units Received: 8
+Unit Weight: 3.5g
+Savvy Flower - 3.5g - GrpeBblGm
+Certificate of Analysis
+Lab State Certification/License: CMTL-00010
+T5K0315
+Mycotoxins
+Pass
+Analyte
+Action Limit
+LOD
+Results
+Status
+Specimen Wt: 1.01 g
+Instrument: LCMSMS
+Date Prepared: 11/13/2025 11:24
+Prepped By: 4599
+Date Analyzed: 11/13/2025 21:24
+Analyzed By: 2670-10866
+Prep Method: SOP 1363 Analysis Method: SOP 1350
+Lab Batch: 2546113
+DIL
+ppb
+ppb
+ppb
+Aflatoxin B1
+2
+Pass
+20.0
+ND
+1
+Aflatoxin B2
+2
+Pass
+20.0
+ND
+1
+Aflatoxin G1
+2
+Pass
+20.0
+ND
+1
+Aflatoxin G2
+2
+Pass
+20.0
+ND
+1
+Ochratoxin A
+2
+Pass
+20.0
+ND
+1
+LOD = Limit of Detection; ND = Not Detected.
+Unless otherwise stated all quality control samples performed within specifications established by the Laboratory.
+Moisture Content
+Pass
+Analyte
+Result
+%
+Action Limit
+%
+Date Prepared: 11/13/2025 15:49
+Prep ID: 10791
+Date Analyzed: 11/13/2025 15:49
+Analyst ID: 10791
+Lab Batch: 2546123
+Analysis Method: SOP 1355
+Specimen Wt: 0.81 g
+Instrument: Moisture Oven
+Status
+Percent Moisture
+14.2
+15.0
+Pass
+Unless otherwise stated all quality control samples performed within specifications
+established by the Laboratory.
+Water Activity
+Pass
+Analyte
+Result
+Action Limit
+Date Prepared: 11/13/2025 12:40
+Prep ID: 10990
+Date Analyzed: 11/13/2025 12:40
+Analyst ID: 3780
+Specimen Wt: 0.50 g
+Instrument: Water Activity Meter
+Analysis Method: SOP1355
+Lab Batch: 2546116
+Status
+aW
+aW
+Water Activity
+0.65
+0.49
+Pass
+ND = Not Detected.
+Unless otherwise stated all quality control samples performed within specifications established by the
+Laboratory.
+Foreign Materials
+Pass
+Analyte
+Results
+Action Limit (% by wt)
+Date Prepared: 11/13/2025 12:27
+Prep ID: 10990
+Date Analyzed: 11/13/2025 13:14
+Analyst ID: 3780
+Instrument: Visual Inspection
+Analysis Method: SOP1359
+Lab Batch: 2546116
+Status
+Foreign Material
+1.00
+ND
+Pass
+ND = Not Detected.
+Unless otherwise stated all quality control samples performed within specifications established by the
+Laboratory.
+Pass
+Heavy Metals
+Analyte
+Action Limit
+LOD
+Results
+Status
+Specimen Wt: 0.60 g
+Instrument: ICPMS
+Date Prepared: 11/13/2025 16:05
+Prepped By: 1094
+Date Analyzed: 11/14/2025 13:38
+Analyzed By: 1094
+Prep Method: SOP 1362 Analysis Method: SOP1358
+Lab Batch: 2546129
+DIL
+ppb
+ppb
+ppb
+Arsenic
+20
+Pass
+200
+ND
+1
+Cadmium
+20
+Pass
+200
+ND
+1
+Lead
+50
+Pass
+500
+ND
+1
+Mercury
+20
+Pass
+200
+ND
+1
+LOD = Limit of Detection; ND = Not Detected.
+Unless otherwise stated all quality control samples performed within specifications established by the Laboratory.
+Microbials
+Pass
+Analyte
+Action Limit
+LOD
+Status
+Results
+cfu/g
+cfu/g
+Specimen Wt: 1.00 g
+Instrument: qPCR
+Date Prepared: 11/13/2025 15:12
+Prep ID: 1093
+Date Analyzed: 11/14/2025 14:42
+Analyst ID: 1093
+Analysis Method: SOP1353/1364/1352
+Lab Batch: 2546124
+cfu/g
+Pass
+1
+1
+Absent in 1 gram
+Aspergillus Flavus
+Pass
+1
+1
+Absent in 1 gram
+Aspergillus Fumigatus
+Pass
+1
+1
+Absent in 1 gram
+Aspergillus Niger
+Pass
+1
+1
+Absent in 1 gram
+Aspergillus Terreus
+Pass
+1
+1
+Absent in 1 gram
+Salmonella
+Pass
+1
+1
+Absent in 1 gram
+Shiga Toxin producing E. Coli
+10000
+Pass
+100000
+<LOD
+Total Yeast and Mold*
+LOD = Limit of Detection; ND = Not Detected.
+Unless otherwise stated all quality control samples performed within specifications established by the
+Laboratory.
+* Analyzed by Plating
+Total Contaminant Load
+Results
+Action Limit
+ppb
+Status
+Pass
+Total Contaminant Load
+Heavy Metals & Pesticides
+ND
+5,000.00
+The data contained therein are based on sound scientific analytical procedures and judgment. Terplife Labs strives to deliver high quality results.
+This report shall not be reproduced without written consent from TerpLife Labs. The results of this report relate only to the material or product
+received and analyzed. Test Results are confidential unless explicitly waived otherwise. This laboratory is accredited in accordance with the
+recognised International Standard ISO/IEC 17025. This accreditation demonstrates technical competence for a defined scope and the operation of
+a laboratory quality management system (refer to joint ISOILAC-IAF Communiqué dated April 2017)
+Brian C. Spann
+Laboratory Director
+TerpLife Labs
+10350 Fisher Ave, Tampa, Florida 33619
+813-726-3103 / www.terplifelabs.com
+3 of 4
+Sample ID: T5K0315-01 CCB ID:Parent ID 7114 5092 9180 7362
+Matrix: Flower Inhalable
+MÜV
+Client Lic#: MMTC-2017-0010
+5909 N US Highway 41 Apollo Beach,
+FL 33572
+(813) 476-1757
+Compliance
+Seed to Sale : 7968742689054215
+Retail Batch#: BU101025-3979GBG
+Retail Batch Total Wt/Vol: 4546.5g
+Retail Batch Total Units 1299
+Retail Batch Date: 10/10/2025
+Cultivation Facility: MUV- Ruskin
+Processing Facility: MUV- Ruskin
+Cultivar: GrpeBblGm
+Sampling SOP 1260
+Compliance for Retail:
+PASS
+Date Reported:
+11/17/2025
+Date Received:
+Date Sampled:
+11/13/2025
+11/13/2025
+Total Sample Received: 28g
+Total Units Received: 8
+Unit Weight: 3.5g
+Savvy Flower - 3.5g - GrpeBblGm
+Certificate of Analysis
+Lab State Certification/License: CMTL-00010
+T5K0315
+Terpenes Summary
+Analyte
+LOD
+Results
+Prep/Analysis Method: SOP1360
+Lab Batch: 2546112
+Specimen Wt: 0.51 g
+Instrument: GCMS
+Date Prepared: 11/13/2025 11:23
+Prep ID: 4599
+Date Analyzed: 11/14/2025 03:39
+Analyzed ID: 11083
+Dilution
+%
+%
+D-Limonene
+1
+0.473
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+0.00567
+beta-Myrcene
+1
+0.402
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+0.00567
+E-Caryophyllene
+1
+0.333
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+0.00567
+Farnesene
+1
+0.151
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+0.0283
+alpha-Humulene
+1
+0.129
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+0.00567
+beta-Pinene
+1
+0.108
+█
+█
+█
+█
+█
+█
+█
+█
+█
+█
+0.00567
+alpha-Pinene
+1
+0.102
+█
+█
+█
+█
+█
+█
+█
+█
+█
+0.00567
+beta-Ocimene
+1
+0.101
+█
+█
+█
+█
+█
+█
+█
+█
+█
+0.00567
+Guaiol
+1
+0.0807
+█
+█
+█
+█
+█
+█
+█
+0.00567
+alpha-Fenchyl alcohol, (+)-
+1
+0.0611
+█
+█
+█
+█
+█
+0.00567
+alpha Bisabolol, L
+1
+0.0606
+█
+█
+█
+█
+█
+0.00567
+alpha-Terpineol
+1
+0.0503
+█
+█
+█
+█
+0.00567
+Linalool
+1
+0.0381
+█
+█
+█
+0.00567
+Camphene
+1
+0.0155
+█
+0.00567
+Borneol
+1
+0.0147
+█
+0.00567
+Caryophyllene Oxide
+1
+0.0114
+0.00567
+Fenchone
+1
+0.0107
+0.00567
+Terpinolene
+1
+0.00815
+0.00567
+3-Carene (+)-
+1
+ND
+0.00567
+alpha-Cedrene
+1
+ND
+0.00567
+alpha-Phellandrene
+1
+ND
+0.00567
+alpha-Terpinene
+1
+ND
+0.00567
+Camphor
+1
+ND
+0.00567
+Cedrol
+1
+ND
+0.00567
+E-Nerolidol
+1
+ND
+0.00567
+Eucalyptol
+1
+ND
+0.00567
+gamma-Terpinene
+1
+ND
+0.00567
+Geraniol
+1
+ND
+0.00567
+Geranyl Acetate
+1
+ND
+0.00567
+Isoborneol
+1
+ND
+0.00567
+Isopulegol
+1
+ND
+0.00567
+Menthol
+1
+ND
+0.00567
+Nerol
+1
+ND
+0.00567
+p-Cymene
+1
+ND
+0.00567
+Pulegone
+1
+ND
+0.00567
+Sabinene
+1
+ND
+0.00567
+Sabinene hydrate
+1
+ND
+0.00567
+Valencene
+1
+ND
+0.00567
+Z-Nerolidol
+1
+ND
+0.00567
+Total Terpenes
+2.150
+75.25 mg/Unit
+Terpene results are provided for informational purposes only.
+LOD = Limit of Detection; ND = Not Detected.
+Unless otherwise stated all quality control samples performed within specifications established by the
+Laboratory.
+The data contained therein are based on sound scientific analytical procedures and judgment. Terplife Labs strives to deliver high quality results.
+This report shall not be reproduced without written consent from TerpLife Labs. The results of this report relate only to the material or product
+received and analyzed. Test Results are confidential unless explicitly waived otherwise. This laboratory is accredited in accordance with the
+recognised International Standard ISO/IEC 17025. This accreditation demonstrates technical competence for a defined scope and the operation of
+a laboratory quality management system (refer to joint ISOILAC-IAF Communiqué dated April 2017)
+Brian C. Spann
+Laboratory Director
+TerpLife Labs
+10350 Fisher Ave, Tampa, Florida 33619
+813-726-3103 / www.terplifelabs.com
+4 of 4

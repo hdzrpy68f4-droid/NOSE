@@ -1,0 +1,1484 @@
+Tests Summary
+Cannabinoids
+Tested
+Moisture
+Not Tested
+Microbials
+Pass
+Water Activity
+Tested
+Foreign Matter
+Pass
+Terpenes
+Tested
+Contaminant Load
+Not Tested
+Residual Solvents
+Pass
+Mycotoxins
+Pass
+Heavy Metals
+Pass
+Pesticides
+Pass
+Label Claim
+Not Tested
+Results
+591 mg/unit
+CBD
+19.4 mg/unit
+CBG
+591 mg/unit
+Total CBD
+11.2 mg/unit
+Total THC
+637 mg/unit
+Total Cannabinoids
+0.206%
+Total Terpenes
+Dominant Terpenes
+Limonene
+0.118%
+a-Bisabolol
+0.0280%
+b-Caryophyllene
+0.0270%
+Others
+0.0230%
+Guaiol
+0.00900%
+Compliance
+Certificate of Analysis
+sunflora
+Order No.: OFLSUN0724-0007853
+8413 Laurel Circle
+Tampa, Florida, 33610
+2057897495
+Sample: SFLSUN0724-ITIN-0002257
+Unit Weight: 30.0000g , Sample Size for Testing: 2.0000 Units
+Batch#: 0425BSWS
+Date Sampled: 07/24/2025 13:51, Sample Received: 07/24/2025 14:22 , Report
+Created: 07/31/2025 14:10
+MMTC Information
+Cultivation Facility: , Processing Facility:
+CMTL-0004
+ACT Laboratories (FL)
+4001 SW 47th Ave Suite 208, Davie,
+Florida
+8448228522
+kharil@actlab.com
+SNF - BS Strawberry-lime WS 600mg Tin
+Ingestible, Tincture
+K'hari Leno
+Sr. Lab Supervisor
+♦ indicates ISO/IEC 17025:2017 accreditation is pending. This sample has been tested by ACT Laboratories using valid, ISO/IEC 17025:2017 accredited testing methodologies and
+a quality system as required by state law. Values reported relate only to the sample tested. Results are deemed acceptable if they fall within the specified acceptance criteria as
+defined by the applicable regulatory limit or client specification, with no measurement uncertainty applied. ACT Laboratories makes no claims as to the efficacy, safety or other
+risks associated with any detected or non-detected levels of any compounds reported herein. This Certificate shall not be reproduced except in full, without the written approval
+of ACT Laboratories. The authenticity of this document is only guaranteed if issued from an @actlab.com email address.
+1 of 11
+Sample Prep
+Tech:
+4509
+SOP:
+SOP 801
+Batch Number:
+WCNDFL-FL0725-0004334
+Batch Date:
+07/25/2025 02:04
+Sample Analysis
+Date/Time:
+07/31/2025 14:08
+Tech:
+4509
+SOP:
+SOP 801
+Instrument:
+HPLC - 3013
+Final Weight:
+1.008 g
+Dilution Factor for Sample:
+240
+Cannabinoids
+Tested
+Analyte
+LOD (mg/g)
+LOQ (mg/g)
+%
+mg/g
+mg/unit
+CBDV
+0.00238
+0.11909
+0.0146
+0.146
+4.39
+CBDa
+181.02400
+1,190.94900
+ND
+ND
+ND
+CBGa
+89.55900
+1,190.94900
+ND
+ND
+ND
+CBG
+0.01948
+0.11909
+0.0645
+0.645
+19.4
+CBD
+0.03311
+0.11909
+1.97
+19.7
+591
+THCV
+77.17300
+1,190.94900
+ND
+ND
+ND
+THCVa
+64.31100
+1,190.94900
+ND
+ND
+ND
+CBN
+0.00350
+0.11909
+< LOQ
+< LOQ
+< LOQ
+D9-THC
+0.01724
+0.11909
+0.0372
+0.372
+11.2
+D8-THC
+200.31800
+1,190.94900
+ND
+ND
+ND
+CBC
+0.01289
+0.11909
+0.0365
+0.365
+11.0
+THCa
+0.01967
+0.11909
+< LOQ
+< LOQ
+< LOQ
+CBCa
+326.55800
+1,190.94900
+ND
+ND
+ND
+Total CBD
+1.97
+19.7
+591
+Total THC
+0.0372
+0.372
+11.2
+Total Cannabinoids
+2.12
+21.2
+637
+Compliance
+Certificate of Analysis
+sunflora
+Order No.: OFLSUN0724-0007853
+8413 Laurel Circle
+Tampa, Florida, 33610
+2057897495
+Sample: SFLSUN0724-ITIN-0002257
+Unit Weight: 30.0000g , Sample Size for Testing: 2.0000 Units
+Batch#: 0425BSWS
+Date Sampled: 07/24/2025 13:51, Sample Received: 07/24/2025 14:22 , Report
+Created: 07/31/2025 14:10
+MMTC Information
+Cultivation Facility: , Processing Facility:
+CMTL-0004
+ACT Laboratories (FL)
+4001 SW 47th Ave Suite 208, Davie,
+Florida
+8448228522
+kharil@actlab.com
+SNF - BS Strawberry-lime WS 600mg Tin
+Ingestible, Tincture
+K'hari Leno
+Sr. Lab Supervisor
+♦ indicates ISO/IEC 17025:2017 accreditation is pending. This sample has been tested by ACT Laboratories using valid, ISO/IEC 17025:2017 accredited testing methodologies and
+a quality system as required by state law. Values reported relate only to the sample tested. Results are deemed acceptable if they fall within the specified acceptance criteria as
+defined by the applicable regulatory limit or client specification, with no measurement uncertainty applied. ACT Laboratories makes no claims as to the efficacy, safety or other
+risks associated with any detected or non-detected levels of any compounds reported herein. This Certificate shall not be reproduced except in full, without the written approval
+of ACT Laboratories. The authenticity of this document is only guaranteed if issued from an @actlab.com email address.
+2 of 11
+Sample Prep
+Tech:
+4509
+SOP:
+SOP 406
+Batch Number:
+WINCFL-FL0725-0002905
+Batch Date:
+07/25/2025 02:08
+Sample Analysis
+Date/Time:
+07/25/2025 02:11
+Tech:
+4509
+SOP:
+SOP 406
+Instrument:
+AriaMx Real-Time PCR System - 2958 / Revco RDE Series Ultra-Low Temperature Freezer - 2876/ Isotemp Undercounter Lab Refrigera
+Final Weight:
+2.022 g
+Dilution Factor for Sample:
+10
+Microbials
+Pass
+Analyte
+Limit (CFU/g)
+Result
+Status
+Yeast & Mold
+100,000
+ND
+Passed
+Salmonella
+1
+Absence
+Passed
+Aspergillus Flavus
+1
+Absence
+Passed
+Aspergillus Fumigatus
+1
+Absence
+Passed
+Aspergillus Niger
+1
+Absence
+Passed
+Aspergillus Terreus
+1
+Absence
+Passed
+STEC E. Coli
+1
+Absence
+Passed
+Compliance
+Certificate of Analysis
+sunflora
+Order No.: OFLSUN0724-0007853
+8413 Laurel Circle
+Tampa, Florida, 33610
+2057897495
+Sample: SFLSUN0724-ITIN-0002257
+Unit Weight: 30.0000g , Sample Size for Testing: 2.0000 Units
+Batch#: 0425BSWS
+Date Sampled: 07/24/2025 13:51, Sample Received: 07/24/2025 14:22 , Report
+Created: 07/31/2025 14:10
+MMTC Information
+Cultivation Facility: , Processing Facility:
+CMTL-0004
+ACT Laboratories (FL)
+4001 SW 47th Ave Suite 208, Davie,
+Florida
+8448228522
+kharil@actlab.com
+SNF - BS Strawberry-lime WS 600mg Tin
+Ingestible, Tincture
+K'hari Leno
+Sr. Lab Supervisor
+♦ indicates ISO/IEC 17025:2017 accreditation is pending. This sample has been tested by ACT Laboratories using valid, ISO/IEC 17025:2017 accredited testing methodologies and
+a quality system as required by state law. Values reported relate only to the sample tested. Results are deemed acceptable if they fall within the specified acceptance criteria as
+defined by the applicable regulatory limit or client specification, with no measurement uncertainty applied. ACT Laboratories makes no claims as to the efficacy, safety or other
+risks associated with any detected or non-detected levels of any compounds reported herein. This Certificate shall not be reproduced except in full, without the written approval
+of ACT Laboratories. The authenticity of this document is only guaranteed if issued from an @actlab.com email address.
+3 of 11
+Sample Prep
+Tech:
+4511
+SOP:
+SOP 407
+Batch Number:
+WMWAFL-FL0724-0004460
+Batch Date:
+07/24/2025 16:59
+Sample Analysis
+Date/Time:
+07/25/2025 01:11
+Tech:
+4509
+SOP:
+SOP 407
+Instrument:
+Smart Water Activity Meter HD-6 - 3021
+Final Weight:
+1.003 g
+Water Activity
+Tested
+Analyte
+Limit (aw)
+aw
+Status
+Water Activity
+0.85
+0.89
+Tested
+Compliance
+Certificate of Analysis
+sunflora
+Order No.: OFLSUN0724-0007853
+8413 Laurel Circle
+Tampa, Florida, 33610
+2057897495
+Sample: SFLSUN0724-ITIN-0002257
+Unit Weight: 30.0000g , Sample Size for Testing: 2.0000 Units
+Batch#: 0425BSWS
+Date Sampled: 07/24/2025 13:51, Sample Received: 07/24/2025 14:22 , Report
+Created: 07/31/2025 14:10
+MMTC Information
+Cultivation Facility: , Processing Facility:
+CMTL-0004
+ACT Laboratories (FL)
+4001 SW 47th Ave Suite 208, Davie,
+Florida
+8448228522
+kharil@actlab.com
+SNF - BS Strawberry-lime WS 600mg Tin
+Ingestible, Tincture
+K'hari Leno
+Sr. Lab Supervisor
+♦ indicates ISO/IEC 17025:2017 accreditation is pending. This sample has been tested by ACT Laboratories using valid, ISO/IEC 17025:2017 accredited testing methodologies and
+a quality system as required by state law. Values reported relate only to the sample tested. Results are deemed acceptable if they fall within the specified acceptance criteria as
+defined by the applicable regulatory limit or client specification, with no measurement uncertainty applied. ACT Laboratories makes no claims as to the efficacy, safety or other
+risks associated with any detected or non-detected levels of any compounds reported herein. This Certificate shall not be reproduced except in full, without the written approval
+of ACT Laboratories. The authenticity of this document is only guaranteed if issued from an @actlab.com email address.
+4 of 11
+Sample Prep/Analysis
+Tech:
+4511
+SOP:
+SOP 409
+Batch Date:
+07/24/2025 14:22
+Foreign Matter
+Pass
+Analyte
+Result
+FM
+Absent
+Compliance
+Certificate of Analysis
+sunflora
+Order No.: OFLSUN0724-0007853
+8413 Laurel Circle
+Tampa, Florida, 33610
+2057897495
+Sample: SFLSUN0724-ITIN-0002257
+Unit Weight: 30.0000g , Sample Size for Testing: 2.0000 Units
+Batch#: 0425BSWS
+Date Sampled: 07/24/2025 13:51, Sample Received: 07/24/2025 14:22 , Report
+Created: 07/31/2025 14:10
+MMTC Information
+Cultivation Facility: , Processing Facility:
+CMTL-0004
+ACT Laboratories (FL)
+4001 SW 47th Ave Suite 208, Davie,
+Florida
+8448228522
+kharil@actlab.com
+SNF - BS Strawberry-lime WS 600mg Tin
+Ingestible, Tincture
+K'hari Leno
+Sr. Lab Supervisor
+♦ indicates ISO/IEC 17025:2017 accreditation is pending. This sample has been tested by ACT Laboratories using valid, ISO/IEC 17025:2017 accredited testing methodologies and
+a quality system as required by state law. Values reported relate only to the sample tested. Results are deemed acceptable if they fall within the specified acceptance criteria as
+defined by the applicable regulatory limit or client specification, with no measurement uncertainty applied. ACT Laboratories makes no claims as to the efficacy, safety or other
+risks associated with any detected or non-detected levels of any compounds reported herein. This Certificate shall not be reproduced except in full, without the written approval
+of ACT Laboratories. The authenticity of this document is only guaranteed if issued from an @actlab.com email address.
+5 of 11
+Sample Prep
+Tech:
+4509, 3358
+SOP:
+SOP 419
+Batch Number:
+WLTRFL-FL0724-0004095
+Batch Date:
+07/24/2025 16:51
+Sample Analysis
+Date/Time:
+07/25/2025 09:13
+Tech:
+3358
+SOP:
+SOP 419
+Instrument:
+GC-FID - 3010
+Final Weight:
+0.396 g
+Dilution Factor for Sample:
+10
+Terpenes
+Tested
+Analyte
+LOD (%)
+LOQ (%)
+%
+Total Terpenes
+0.206
+Limonene
+0.001
+0.004
+0.118
+a-Bisabolol
+0.001
+0.004
+0.0280
+b-Caryophyllene
+0.001
+0.004
+0.0270
+Guaiol
+0.001
+0.004
+0.00900
+Caryophyllene Oxide
+0.001
+0.004
+0.00700
+Terpineol
+0.001
+0.004
+0.00600
+a-Humulene
+0.001
+0.004
+0.00500
+Cedrol
+0.001
+0.004
+0.00500
+a-Pinene
+0.001
+0.004
+< LOQ
+Camphene
+0.001
+0.004
+ND
+b-Pinene
+0.001
+0.004
+ND
+b-Myrcene
+0.001
+0.004
+ND
+a-Phellandrene
+0.001
+0.004
+ND
+d-3-Carene
+0.001
+0.004
+ND
+a-Terpinene
+0.001
+0.004
+ND
+Eucalyptol
+0.001
+0.004
+ND
+g-Terpinene
+0.001
+0.004
+ND
+Terpinolene
+0.001
+0.004
+ND
+Fenchol
+0.001
+0.004
+ND
+Sabinene Hydrate
+0.001
+0.004
+ND
+Linalool
+0.001
+0.004
+ND
+Fenchone
+0.001
+0.004
+ND
+Isopulegol
+0.001
+0.004
+ND
+Camphor
+0.001
+0.004
+< LOQ
+Isoborneol
+0.001
+0.004
+ND
+DL-Menthol
+0.001
+0.004
+< LOQ
+Borneol
+0.001
+0.004
+ND
+Nerol
+0.001
+0.004
+ND
+Pulegone
+0.001
+0.004
+ND
+Geraniol
+0.001
+0.004
+ND
+Geranyl Acetate
+0.001
+0.004
+ND
+a-Cedrene
+0.001
+0.004
+< LOQ
+Valencene
+0.001
+0.004
+< LOQ
+cis-Nerolidol
+0.001
+0.004
+< LOQ
+trans-Nerolidol
+0.001
+0.004
+< LOQ
+trans-b-Ocimene
+0.001
+0.004
+ND
+cis-b-Ocimene
+0.001
+0.004
+ND
+Compliance
+Certificate of Analysis
+sunflora
+Order No.: OFLSUN0724-0007853
+8413 Laurel Circle
+Tampa, Florida, 33610
+2057897495
+Sample: SFLSUN0724-ITIN-0002257
+Unit Weight: 30.0000g , Sample Size for Testing: 2.0000 Units
+Batch#: 0425BSWS
+Date Sampled: 07/24/2025 13:51, Sample Received: 07/24/2025 14:22 , Report
+Created: 07/31/2025 14:10
+MMTC Information
+Cultivation Facility: , Processing Facility:
+CMTL-0004
+ACT Laboratories (FL)
+4001 SW 47th Ave Suite 208, Davie,
+Florida
+8448228522
+kharil@actlab.com
+SNF - BS Strawberry-lime WS 600mg Tin
+Ingestible, Tincture
+K'hari Leno
+Sr. Lab Supervisor
+♦ indicates ISO/IEC 17025:2017 accreditation is pending. This sample has been tested by ACT Laboratories using valid, ISO/IEC 17025:2017 accredited testing methodologies and
+a quality system as required by state law. Values reported relate only to the sample tested. Results are deemed acceptable if they fall within the specified acceptance criteria as
+defined by the applicable regulatory limit or client specification, with no measurement uncertainty applied. ACT Laboratories makes no claims as to the efficacy, safety or other
+risks associated with any detected or non-detected levels of any compounds reported herein. This Certificate shall not be reproduced except in full, without the written approval
+of ACT Laboratories. The authenticity of this document is only guaranteed if issued from an @actlab.com email address.
+6 of 11
+Sample Prep
+Tech:
+4509, 3358
+SOP:
+SOP 405
+Batch Number:
+WRSVFL-FL0724-0003441
+Batch Date:
+07/24/2025 15:09
+Sample Analysis
+Date/Time:
+07/25/2025 09:13
+Tech:
+3358
+SOP:
+SOP 405
+Instrument:
+GCMS-HS - 3015
+Final Weight:
+0.104 g
+Dilution Factor for Sample:
+1
+Residual Solvents
+Pass
+Analyte
+LOD (ppm)
+LOQ (ppm)
+Limit (ppm)
+ppm
+Status
+1,2-Dichloroethane
+0.7
+1.0
+2.0
+ND
+Passed
+Acetone
+2.0
+20.0
+750.0
+ND
+Passed
+Acetonitrile
+2.0
+20.0
+60.0
+ND
+Passed
+Benzene
+0.2
+0.4
+1.0
+ND
+Passed
+Butane
+10.0
+20.0
+5,000.0
+ND
+Passed
+Chloroform
+0.2
+0.4
+2.0
+ND
+Passed
+Ethanol
+20.0
+40.0
+5,000.0
+1,610
+Passed
+Ethyl Acetate
+2.0
+20.0
+400.0
+ND
+Passed
+Ethyl Ether
+20.0
+40.0
+500.0
+ND
+Passed
+Ethylene Oxide
+0.7
+2.0
+5.0
+ND
+Passed
+Heptane
+20.0
+40.0
+5,000.0
+ND
+Passed
+Hexanes
+4.0
+8.0
+250.0
+ND
+Passed
+Isopropyl Alcohol
+20.0
+40.0
+500.0
+ND
+Passed
+Methanol
+20.0
+40.0
+250.0
+ND
+Passed
+Methylene Chloride
+20.0
+40.0
+125.0
+ND
+Passed
+Pentanes
+6.7
+13.3
+750.0
+ND
+Passed
+Propane
+2.0
+20.0
+5,000.0
+ND
+Passed
+Toluene
+2.0
+20.0
+150.0
+ND
+Passed
+Trichloroethylene
+1.0
+2.0
+25.0
+ND
+Passed
+Total Xylenes
+5.0
+10.0
+150.0
+ND
+Passed
+1,1-Dichloroethene
+0.7
+2.0
+8.0
+ND
+Passed
+Compliance
+Certificate of Analysis
+sunflora
+Order No.: OFLSUN0724-0007853
+8413 Laurel Circle
+Tampa, Florida, 33610
+2057897495
+Sample: SFLSUN0724-ITIN-0002257
+Unit Weight: 30.0000g , Sample Size for Testing: 2.0000 Units
+Batch#: 0425BSWS
+Date Sampled: 07/24/2025 13:51, Sample Received: 07/24/2025 14:22 , Report
+Created: 07/31/2025 14:10
+MMTC Information
+Cultivation Facility: , Processing Facility:
+CMTL-0004
+ACT Laboratories (FL)
+4001 SW 47th Ave Suite 208, Davie,
+Florida
+8448228522
+kharil@actlab.com
+SNF - BS Strawberry-lime WS 600mg Tin
+Ingestible, Tincture
+K'hari Leno
+Sr. Lab Supervisor
+♦ indicates ISO/IEC 17025:2017 accreditation is pending. This sample has been tested by ACT Laboratories using valid, ISO/IEC 17025:2017 accredited testing methodologies and
+a quality system as required by state law. Values reported relate only to the sample tested. Results are deemed acceptable if they fall within the specified acceptance criteria as
+defined by the applicable regulatory limit or client specification, with no measurement uncertainty applied. ACT Laboratories makes no claims as to the efficacy, safety or other
+risks associated with any detected or non-detected levels of any compounds reported herein. This Certificate shall not be reproduced except in full, without the written approval
+of ACT Laboratories. The authenticity of this document is only guaranteed if issued from an @actlab.com email address.
+7 of 11
+Sample Prep
+Tech:
+4509
+SOP:
+SOP 424
+Batch Number:
+WPMCFL-FL0724-0003295
+Batch Date:
+07/24/2025 16:36
+Sample Analysis
+Date/Time:
+07/25/2025 09:12
+Tech:
+3358
+SOP:
+SOP 424
+Instrument:
+LC-MS/MS - 2894
+Final Weight:
+0.104 g
+Dilution Factor for Sample:
+2.5
+Mycotoxins
+Pass
+Analyte
+LOD (ppb)
+LOQ (ppb)
+Limit (ppb)
+ppb
+Status
+B1
+1.914
+9.569
+20.000
+ND
+Passed
+B2
+1.914
+9.569
+20.000
+ND
+Passed
+G1
+1.914
+9.569
+20.000
+ND
+Passed
+G2
+1.914
+9.569
+20.000
+ND
+Passed
+Ochratoxin A
+1.914
+9.569
+20.000
+ND
+Passed
+Compliance
+Certificate of Analysis
+sunflora
+Order No.: OFLSUN0724-0007853
+8413 Laurel Circle
+Tampa, Florida, 33610
+2057897495
+Sample: SFLSUN0724-ITIN-0002257
+Unit Weight: 30.0000g , Sample Size for Testing: 2.0000 Units
+Batch#: 0425BSWS
+Date Sampled: 07/24/2025 13:51, Sample Received: 07/24/2025 14:22 , Report
+Created: 07/31/2025 14:10
+MMTC Information
+Cultivation Facility: , Processing Facility:
+CMTL-0004
+ACT Laboratories (FL)
+4001 SW 47th Ave Suite 208, Davie,
+Florida
+8448228522
+kharil@actlab.com
+SNF - BS Strawberry-lime WS 600mg Tin
+Ingestible, Tincture
+K'hari Leno
+Sr. Lab Supervisor
+♦ indicates ISO/IEC 17025:2017 accreditation is pending. This sample has been tested by ACT Laboratories using valid, ISO/IEC 17025:2017 accredited testing methodologies and
+a quality system as required by state law. Values reported relate only to the sample tested. Results are deemed acceptable if they fall within the specified acceptance criteria as
+defined by the applicable regulatory limit or client specification, with no measurement uncertainty applied. ACT Laboratories makes no claims as to the efficacy, safety or other
+risks associated with any detected or non-detected levels of any compounds reported herein. This Certificate shall not be reproduced except in full, without the written approval
+of ACT Laboratories. The authenticity of this document is only guaranteed if issued from an @actlab.com email address.
+8 of 11
+Sample Prep
+Tech:
+4510
+SOP:
+SOP 428
+Batch Number:
+WMTLFL-FL0724-0003434
+Batch Date:
+07/24/2025 18:28
+Sample Analysis
+Date/Time:
+07/25/2025 01:11
+Tech:
+4509
+SOP:
+SOP 428
+Instrument:
+ICP-MS - 2837
+Final Weight:
+0.216 g
+Dilution Factor for Sample:
+60
+Heavy Metals
+Pass
+Analyte
+LOD (ppb)
+LOQ (ppb)
+Limit (ppb)
+ppb
+Status
+Arsenic
+18.611
+69.444
+1,500.000
+ND
+Passed
+Cadmium
+18.611
+69.444
+500.000
+ND
+Passed
+Mercury
+18.611
+69.444
+3,000.000
+ND
+Passed
+Lead
+18.611
+69.444
+500.000
+< LOQ
+Passed
+Compliance
+Certificate of Analysis
+sunflora
+Order No.: OFLSUN0724-0007853
+8413 Laurel Circle
+Tampa, Florida, 33610
+2057897495
+Sample: SFLSUN0724-ITIN-0002257
+Unit Weight: 30.0000g , Sample Size for Testing: 2.0000 Units
+Batch#: 0425BSWS
+Date Sampled: 07/24/2025 13:51, Sample Received: 07/24/2025 14:22 , Report
+Created: 07/31/2025 14:10
+MMTC Information
+Cultivation Facility: , Processing Facility:
+CMTL-0004
+ACT Laboratories (FL)
+4001 SW 47th Ave Suite 208, Davie,
+Florida
+8448228522
+kharil@actlab.com
+SNF - BS Strawberry-lime WS 600mg Tin
+Ingestible, Tincture
+K'hari Leno
+Sr. Lab Supervisor
+♦ indicates ISO/IEC 17025:2017 accreditation is pending. This sample has been tested by ACT Laboratories using valid, ISO/IEC 17025:2017 accredited testing methodologies and
+a quality system as required by state law. Values reported relate only to the sample tested. Results are deemed acceptable if they fall within the specified acceptance criteria as
+defined by the applicable regulatory limit or client specification, with no measurement uncertainty applied. ACT Laboratories makes no claims as to the efficacy, safety or other
+risks associated with any detected or non-detected levels of any compounds reported herein. This Certificate shall not be reproduced except in full, without the written approval
+of ACT Laboratories. The authenticity of this document is only guaranteed if issued from an @actlab.com email address.
+9 of 11
+Sample Prep
+Tech:
+4509
+SOP:
+SOP 424
+Batch Number:
+WPMCFL-FL0724-0003295
+Batch Date:
+07/24/2025 16:36
+Sample Analysis
+Date/Time:
+07/25/2025 09:12
+Tech:
+3358
+SOP:
+SOP 424
+Instrument:
+LC-MS/MS - 2894 / GC-MS/MS - 3005
+Final Weight:
+0.61 g
+Dilution Factor for Sample:
+2.5 (LCMS), 10 (GCMS)
+Pesticides
+Pass
+Analyte
+LOD (ppm)
+LOQ (ppm)
+Limit (ppm)
+ppm
+Status
+Abamectin
+0.008
+0.021
+0.300
+ND
+Passed
+Acephate
+0.010
+0.024
+3.000
+ND
+Passed
+Acequinocyl
+0.010
+0.024
+2.000
+ND
+Passed
+Acetamiprid
+0.002
+0.010
+3.000
+< LOQ
+Passed
+Aldicarb
+0.005
+0.019
+0.100
+ND
+Passed
+Azoxystrobin
+0.002
+0.010
+3.000
+ND
+Passed
+Bifenazate
+0.002
+0.010
+3.000
+ND
+Passed
+Bifenthrin
+0.002
+0.024
+0.500
+ND
+Passed
+Boscalid
+0.010
+0.048
+3.000
+ND
+Passed
+Carbaryl
+0.005
+0.010
+0.500
+ND
+Passed
+Carbofuran
+0.002
+0.010
+0.100
+ND
+Passed
+Chlorantraniliprole
+0.002
+0.010
+3.000
+ND
+Passed
+Chlorpyrifos
+0.010
+0.024
+0.100
+ND
+Passed
+Clofentezine
+0.010
+0.024
+0.500
+ND
+Passed
+Coumaphos
+0.010
+0.050
+0.100
+ND
+Passed
+Cyfluthrin
+0.010
+0.100
+1.000
+ND
+Passed
+Cypermethrin
+0.010
+0.100
+1.000
+ND
+Passed
+Daminozide
+0.010
+0.024
+0.100
+0.0330
+Passed
+Diazinon
+0.002
+0.010
+0.200
+ND
+Passed
+Dichlorvos
+0.010
+0.024
+0.100
+ND
+Passed
+Dimethoate
+0.002
+0.010
+0.100
+ND
+Passed
+Dimethomorph
+0.003
+0.011
+3.000
+ND
+Passed
+Ethoprophos
+0.002
+0.010
+0.100
+ND
+Passed
+Etofenprox
+0.002
+0.010
+0.100
+ND
+Passed
+Etoxazole
+0.002
+0.010
+1.500
+ND
+Passed
+Fenhexamid
+0.010
+0.048
+3.000
+ND
+Passed
+Fenoxycarb
+0.002
+0.010
+0.100
+ND
+Passed
+Fenpyroximate
+0.005
+0.019
+2.000
+ND
+Passed
+Fipronil
+0.002
+0.010
+0.100
+ND
+Passed
+Flonicamid
+0.005
+0.019
+2.000
+ND
+Passed
+Fludioxonil
+0.005
+0.010
+3.000
+ND
+Passed
+Hexythiazox
+0.005
+0.019
+2.000
+ND
+Passed
+Imazalil
+0.010
+0.024
+0.100
+ND
+Passed
+Imidacloprid
+0.024
+0.120
+3.000
+ND
+Passed
+Kresoxim Methyl
+0.005
+0.010
+1.000
+ND
+Passed
+Malathion
+0.019
+0.048
+2.000
+ND
+Passed
+Mevinphos
+0.009
+0.022
+0.100
+ND
+Passed
+Metalaxyl
+0.002
+0.010
+3.000
+< LOQ
+Passed
+Methiocarb
+0.002
+0.010
+0.100
+ND
+Passed
+Methomyl
+0.002
+0.010
+0.100
+ND
+Passed
+Myclobutanil
+0.005
+0.024
+3.000
+ND
+Passed
+Naled
+0.019
+0.024
+0.500
+ND
+Passed
+Oxamyl
+0.002
+0.010
+0.500
+ND
+Passed
+Paclobutrazol
+0.002
+0.010
+0.100
+ND
+Passed
+Permethrin
+0.010
+0.024
+1.000
+ND
+Passed
+Phosmet
+0.005
+0.024
+0.200
+ND
+Passed
+Piperonyl Butoxide
+0.002
+0.010
+3.000
+ND
+Passed
+Prallethrin
+0.010
+0.024
+0.400
+ND
+Passed
+Propiconazole
+0.010
+0.024
+1.000
+ND
+Passed
+Propoxur
+0.002
+0.010
+0.100
+ND
+Passed
+Pyrethrins
+0.032
+0.064
+1.000
+ND
+Passed
+Pyridaben
+0.002
+0.010
+3.000
+ND
+Passed
+Spinetoram
+0.007
+0.017
+3.000
+ND
+Passed
+Spinosyn AD
+0.010
+0.040
+3.000
+ND
+Passed
+Spiromesifen
+0.002
+0.010
+3.000
+ND
+Passed
+Compliance
+Certificate of Analysis
+sunflora
+Order No.: OFLSUN0724-0007853
+8413 Laurel Circle
+Tampa, Florida, 33610
+2057897495
+Sample: SFLSUN0724-ITIN-0002257
+Unit Weight: 30.0000g , Sample Size for Testing: 2.0000 Units
+Batch#: 0425BSWS
+Date Sampled: 07/24/2025 13:51, Sample Received: 07/24/2025 14:22 , Report
+Created: 07/31/2025 14:10
+MMTC Information
+Cultivation Facility: , Processing Facility:
+CMTL-0004
+ACT Laboratories (FL)
+4001 SW 47th Ave Suite 208, Davie,
+Florida
+8448228522
+kharil@actlab.com
+SNF - BS Strawberry-lime WS 600mg Tin
+Ingestible, Tincture
+K'hari Leno
+Sr. Lab Supervisor
+♦ indicates ISO/IEC 17025:2017 accreditation is pending. This sample has been tested by ACT Laboratories using valid, ISO/IEC 17025:2017 accredited testing methodologies and
+a quality system as required by state law. Values reported relate only to the sample tested. Results are deemed acceptable if they fall within the specified acceptance criteria as
+defined by the applicable regulatory limit or client specification, with no measurement uncertainty applied. ACT Laboratories makes no claims as to the efficacy, safety or other
+risks associated with any detected or non-detected levels of any compounds reported herein. This Certificate shall not be reproduced except in full, without the written approval
+of ACT Laboratories. The authenticity of this document is only guaranteed if issued from an @actlab.com email address.
+10 of 11
+Spirotetramat
+0.005
+0.024
+3.000
+ND
+Passed
+Spiroxamine
+0.002
+0.010
+0.100
+ND
+Passed
+Tebuconazole
+0.010
+0.024
+1.000
+ND
+Passed
+Thiacloprid
+0.002
+0.010
+0.100
+ND
+Passed
+Thiamethoxam
+0.002
+0.010
+1.000
+ND
+Passed
+Trifloxystrobin
+0.002
+0.010
+3.000
+ND
+Passed
+Captan
+0.010
+0.100
+3.000
+ND
+Passed
+Methyl Parathion
+0.010
+0.020
+0.100
+ND
+Passed
+Chlordane
+0.010
+0.020
+0.100
+ND
+Passed
+Chlorfenapyr
+0.010
+0.020
+0.100
+ND
+Passed
+Chlormequat Chloride
+0.002
+0.010
+3.000
+ND
+Passed
+Pentachloronitrobenzene
+0.010
+0.050
+0.200
+ND
+Passed
+Analyte
+LOD (ppm)
+LOQ (ppm)
+Limit (ppm)
+ppm
+Status
+Compliance
+Certificate of Analysis
+sunflora
+Order No.: OFLSUN0724-0007853
+8413 Laurel Circle
+Tampa, Florida, 33610
+2057897495
+Sample: SFLSUN0724-ITIN-0002257
+Unit Weight: 30.0000g , Sample Size for Testing: 2.0000 Units
+Batch#: 0425BSWS
+Date Sampled: 07/24/2025 13:51, Sample Received: 07/24/2025 14:22 , Report
+Created: 07/31/2025 14:10
+MMTC Information
+Cultivation Facility: , Processing Facility:
+CMTL-0004
+ACT Laboratories (FL)
+4001 SW 47th Ave Suite 208, Davie,
+Florida
+8448228522
+kharil@actlab.com
+SNF - BS Strawberry-lime WS 600mg Tin
+Ingestible, Tincture
+K'hari Leno
+Sr. Lab Supervisor
+♦ indicates ISO/IEC 17025:2017 accreditation is pending. This sample has been tested by ACT Laboratories using valid, ISO/IEC 17025:2017 accredited testing methodologies and
+a quality system as required by state law. Values reported relate only to the sample tested. Results are deemed acceptable if they fall within the specified acceptance criteria as
+defined by the applicable regulatory limit or client specification, with no measurement uncertainty applied. ACT Laboratories makes no claims as to the efficacy, safety or other
+risks associated with any detected or non-detected levels of any compounds reported herein. This Certificate shall not be reproduced except in full, without the written approval
+of ACT Laboratories. The authenticity of this document is only guaranteed if issued from an @actlab.com email address.
+11 of 11

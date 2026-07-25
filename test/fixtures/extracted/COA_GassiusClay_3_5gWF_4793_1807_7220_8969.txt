@@ -1,0 +1,1530 @@
+721 Cortaro Dr.
+Sun City Center, FL 33573
+www.acslab.com
+DEA No.
+RA0571996
+FL License #
+CMTL-0003
+Gassius Clay 3.5g WF
+Sample Matrix:
+CANNABIS (MMTC's)
+Flower & Plants
+(Inhalation - Heated)
+Certificate of Analysis
+Compliance Test
+Client Information:
+Eden FL, LLC
+200 County Road 448
+Tavares, FL 32778
+Batch #
+4793 1807 7220 8969
+Batch Date:
+2025-08-14
+Seed to Sale #
+3354 2583 1592 0106
+Lot ID:
+4793 1807 7220 8969
+Total Number of Final Products: 834
+Cultivars:
+Gassius Clay
+Test Reg State:
+Florida
+Cultivation Facility:
+Tavares, Fl
+Production Facility:
+Tavares, Fl
+Production Date:
+2025-08-14
+Order #
+EDE250814-040001
+Order Date:
+2025-08-14
+Sample #
+AAGZ997
+Sampling Date:
+2025-08-15
+Lab Batch Date:
+2025-08-15
+Completion Date:
+2025-08-21
+Initial Gross Weight:
+94.700 g
+Number of Units:
+9
+Net Weight per Unit:
+3500.000 mg
+Sampling Method: MSP 7.3.1
+Product Image
+Potency
+Tested
+Terpenes
+Tested
+Heavy Metals
+Passed
+Mycotoxins
+Passed
+Pesticides
+Passed
+Residual
+Solvents
+Not Tested
+Moisture
+Passed
+Water Activity
+Passed
+Pathogenic
+Passed
+Microbiology
+(qPCR)
+Passed
+Filth and Foreign
+Passed
+Total
+Contaminant
+Load
+Passed
+Potency - 11
+Specimen Weight:
+200.030 mg
+Tested
+SOP13.001 (LCUV)
+Analyte
+Dilution
+(1:n)
+LOD
+(%)
+LOQ
+(%)
+Result
+(mg/g)
+(%)
+THCA-A
+150.000
+3.20E-5
+0.015
+165
+16.5
+Delta-9 THC
+15.000
+1.30E-5
+0.015
+19.8
+1.98
+CBGA
+15.000
+8.00E-5
+0.015
+5.81
+0.581
+CBG
+15.000
+2.48E-4
+0.015
+0.718
+0.0720
+CBDA
+15.000
+1.00E-5
+0.015
+0.518
+0.0520
+Delta-8 THC
+15.000
+2.60E-5
+0.015
+0.295
+0.0300
+CBC
+15.000
+1.80E-5
+0.015
+0.232
+0.0230
+CBD
+15.000
+5.40E-5
+0.015
+<LOQ
+<LOQ
+CBDV
+15.000
+6.50E-5
+0.015
+<LOQ
+<LOQ
+CBN
+15.000
+1.40E-5
+0.015
+<LOQ
+<LOQ
+THCV
+15.000
+7.00E-6
+0.015
+<LOQ
+<LOQ
+Total Active CBD
+15.000
+0.454
+0.0454
+Total Active THC
+15.000
+164
+16.4
+Prep. By:
+1282
+Date:
+2025-08-16 17:03:46
+Analyzed By:
+1263
+Date:
+2025-08-16 13:45:57
+Reviewed By:
+1040
+Date:
+2025-08-20 13:59:01
+Lab Batch #:
+AAGZ997-450
+Date:
+2025-08-20 13:59:01
+Potency Summary
+Total Active THC
+16.4%
+575 mg
+Total Active CBD
+0.0450%
+1.59 mg
+Total CBG
+0.582%
+20.4 mg
+Total CBN
+-
+None Detected
+Total Cannabinoids
+19.2%
+672 mg
+Terpenes Summary
+Analyte
+Result (mg/g)
+(%)
+(R)-(+)-Limonene
+6.924
+0.692%
+trans-Caryophyllene
+2.338
+0.234%
+Linalool
+1.679
+0.168%
+alpha-Pinene
+1.265
+0.126%
+trans-Nerolidol
+1.176
+0.118%
+Fenchyl Alcohol
+1.07
+0.107%
+beta-Pinene
+0.961
+0.096%
+alpha-Bisabolol
+0.887
+0.089%
+alpha-Humulene
+0.712
+0.071%
+beta-Myrcene
+0.52
+0.052%
+Ocimene
+0.182
+0.018%
+Total Terpenes: 1.771%
+Detailed Terpenes Analysis is on the following page
+Lab Director/Principal Scientist
+Aixia Sun
+D.H.Sc., M.Sc., B.Sc., MT (AAB)
+Definitions and Abbreviations used in this report: Total Active CBD = CBD + (CBD-A * 0.877), *Total CBDV = CBDV + (CBDVA * 0.867), Total Active THC = THCA-A * 0.877 + Delta 9
+THC, Total THCV = THCV + (THCVA * 0.87) , CBG Total = (CBGA * 0.878) + CBG, CBN Total = (CBNA * 0.876) + CBN, Total CBC = CBC + (CBCA * 0.877), Total THC-O-Acetate = Delta
+8 THC-O-Acetate + Delta 9 THC-O-Acetate, Total THCP = Delta8-THCP + Delta9-THCP, Total Cannabinoids = Total percentage of cannabinoids within the sample. (mg/ml) =
+Milligrams per Milliliter, LOQ = Limit of Quantitation, LOD = Limit of Detection, Dilution = Dilution Factor, (ppb) = Parts per Billion, (%) = Percent, (cfu/g) = Colony Forming Unit per
+Gram, (μg/g) = Microgram per Gram, (ppm) = Parts per Million, (ppm) = (μg/g), (aw) = Water Activity, (mg/Kg) = Milligram per Kilogram. ACS uses simple acceptance criteria.
+Passed – Analyte/microbe is not detected or is at the level below the action limit per FL rule 64ER20-39, 5K-4.036, 5K-4.034. Failed – Analyte/microbe is at the level that equal or
+above the action limit per FL rule 64ER20-39, 5K-4.036, 5K-4.034
+Total Contaminant Load (TCL) - The sum of all Heavy Metals and Agricultural Agents present above the LOQ, but below the Acceptable Limit.
+This report shall not be reproduced, without written approval, from ACS Laboratory. The results of this report relate only to the material or product analyzed. Test results are
+confidential unless explicitly waived otherwise. ACS Laboratory is accredited to the ISO/IEC 17025:2017 Standard.
+QA
+By:
+1057
+on
+2025-08-21
+13:18:20
+V1
+Page 1 of 5
+Form F672
+721 Cortaro Dr.
+Sun City Center, FL 33573
+www.acslab.com
+DEA No.
+RA0571996
+FL License #
+CMTL-0003
+Gassius Clay 3.5g WF
+Sample Matrix:
+CANNABIS (MMTC's)
+Flower & Plants
+(Inhalation - Heated)
+Certificate of Analysis
+Compliance Test
+Client Information:
+Eden FL, LLC
+200 County Road 448
+Tavares, FL 32778
+Batch #
+4793 1807 7220 8969
+Batch Date:
+2025-08-14
+Seed to Sale #
+3354 2583 1592 0106
+Lot ID:
+4793 1807 7220 8969
+Total Number of Final Products: 834
+Cultivars:
+Gassius Clay
+Test Reg State:
+Florida
+Cultivation Facility:
+Tavares, Fl
+Production Facility:
+Tavares, Fl
+Production Date:
+2025-08-14
+Order #
+EDE250814-040001
+Order Date:
+2025-08-14
+Sample #
+AAGZ997
+Sampling Date:
+2025-08-15
+Lab Batch Date:
+2025-08-15
+Completion Date:
+2025-08-21
+Initial Gross Weight:
+94.700 g
+Number of Units:
+9
+Net Weight per Unit:
+3500.000 mg
+Sampling Method: MSP 7.3.1
+Terpenes
+Specimen Weight:
+200.030 mg
+Dilution Factor: 30.000
+Tested
+SOP13.045 (GC-MS /GC (Liquid
+Injection))
+Analyte
+Dilution
+(1:n)
+LOQ
+(%)
+Result
+(mg/g)
+(%)
+(R)-(+)-Limonene
+30.000
+0.002
+6.92
+0.692
+trans-Caryophyllene
+30.000
+0.002
+2.34
+0.234
+Linalool
+30.000
+0.002
+1.68
+0.168
+alpha-Pinene
+30.000
+0.002
+1.27
+0.126
+trans-Nerolidol
+30.000
+0.002
+1.18
+0.118
+Fenchyl Alcohol
+30.000
+0.002
+1.07
+0.107
+beta-Pinene
+30.000
+0.002
+0.961
+0.096
+alpha-Bisabolol
+30.000
+0.002
+0.887
+0.089
+alpha-Humulene
+30.000
+0.002
+0.712
+0.071
+beta-Myrcene
+30.000
+0.002
+0.520
+0.052
+Ocimene
+30.000
+0.00033
+0.182
+0.018
+(+)-Cedrol
+30.000
+0.002
+<LOQ
+3-Carene
+30.000
+0.002
+<LOQ
+alpha-Cedrene
+30.000
+0.002
+<LOQ
+alpha-Phellandrene
+30.000
+0.002
+<LOQ
+alpha-Terpinene
+30.000
+0.002
+<LOQ
+Borneol
+30.000
+0.004
+<LOQ
+Camphene
+30.000
+0.002
+<LOQ
+Camphors
+30.000
+0.006
+<LOQ
+Analyte
+Dilution
+(1:n)
+LOQ
+(%)
+Result
+(mg/g)
+(%)
+Caryophyllene oxide
+30.000
+0.002
+<LOQ
+cis-Nerolidol
+30.000
+0.002
+<LOQ
+Eucalyptol
+30.000
+0.002
+<LOQ
+Farnesene
+30.000
+0.002
+<LOQ
+Fenchone
+30.000
+0.002
+<LOQ
+Gamma-Terpinene
+30.000
+0.002
+<LOQ
+Geraniol
+30.000
+0.002
+<LOQ
+Geranyl acetate
+30.000
+0.002
+<LOQ
+Guaiol
+30.000
+0.002
+<LOQ
+Hexahydrothymol
+30.000
+0.002
+<LOQ
+Isoborneol
+30.000
+0.002
+<LOQ
+Isopulegol
+30.000
+0.002
+<LOQ
+Nerol
+30.000
+0.002
+<LOQ
+Pulegone
+30.000
+0.002
+<LOQ
+Sabinene
+30.000
+0.002
+<LOQ
+Sabinene Hydrate
+30.000
+0.002
+<LOQ
+Terpinolene
+30.000
+0.002
+<LOQ
+Total Terpineol
+30.000
+0.00126
+<LOQ
+Valencene
+30.000
+0.002
+<LOQ
+Prep. By:
+1035
+Date:
+2025-08-16 19:27:18
+Analyzed By:
+1035
+Date:
+2025-08-16 19:27:18
+Reviewed By:
+1035
+Date:
+2025-08-18 21:38:41
+Lab Batch #:
+AAGZ997-175
+Date:
+2025-08-18 21:38:41
+Moisture
+Specimen Weight:
+N/A
+Dilution Factor: 1.000
+Passed
+SOP13.015
+(Moisture Meter)
+Analyte
+Action Level
+(%)
+Result
+(%)
+Moisture
+15
+11.9
+Prep. By:
+1035
+Date:
+2025-08-17 17:47:47
+Analyzed By:
+1035
+Date:
+2025-08-17 17:47:47
+Reviewed By:
+1035
+Date:
+2025-08-17 20:09:09
+Lab Batch #:
+AAGZ997-10
+Date:
+2025-08-17 20:09:09
+Water Activity
+Specimen Weight:
+0.500 g
+Dilution Factor: 1.000
+Passed
+SOP13.016 (Water
+Activity Analyzer)
+Analyte
+Action Level
+(aw)
+Result
+(aw)
+Water Activity
+0.65
+0.540
+Prep. By:
+1035
+Date:
+2025-08-17 17:47:14
+Analyzed By:
+1035
+Date:
+2025-08-17 17:47:14
+Reviewed By:
+1035
+Date:
+2025-08-17 20:05:20
+Lab Batch #:
+AAGZ997-11
+Date:
+2025-08-17 20:05:20
+Lab Director/Principal Scientist
+Aixia Sun
+D.H.Sc., M.Sc., B.Sc., MT (AAB)
+Definitions are found on page 1
+This report shall not be reproduced, without written approval, from ACS Laboratory. The results of this report relate only to the material or product analyzed. Test results are
+confidential unless explicitly waived otherwise. ACS Laboratory is accredited to the ISO/IEC 17025:2017 Standard.
+QA
+By:
+1057
+on
+2025-08-21
+13:18:20
+V1
+Page 2 of 5
+Form F672
+721 Cortaro Dr.
+Sun City Center, FL 33573
+www.acslab.com
+DEA No.
+RA0571996
+FL License #
+CMTL-0003
+Gassius Clay 3.5g WF
+Sample Matrix:
+CANNABIS (MMTC's)
+Flower & Plants
+(Inhalation - Heated)
+Certificate of Analysis
+Compliance Test
+Client Information:
+Eden FL, LLC
+200 County Road 448
+Tavares, FL 32778
+Batch #
+4793 1807 7220 8969
+Batch Date:
+2025-08-14
+Seed to Sale #
+3354 2583 1592 0106
+Lot ID:
+4793 1807 7220 8969
+Total Number of Final Products: 834
+Cultivars:
+Gassius Clay
+Test Reg State:
+Florida
+Cultivation Facility:
+Tavares, Fl
+Production Facility:
+Tavares, Fl
+Production Date:
+2025-08-14
+Order #
+EDE250814-040001
+Order Date:
+2025-08-14
+Sample #
+AAGZ997
+Sampling Date:
+2025-08-15
+Lab Batch Date:
+2025-08-15
+Completion Date:
+2025-08-21
+Initial Gross Weight:
+94.700 g
+Number of Units:
+9
+Net Weight per Unit:
+3500.000 mg
+Sampling Method: MSP 7.3.1
+Total Yeast and Mold
+Specimen Weight:
+978.570 mg
+Dilution Factor: 20.000
+Passed
+SOP13.017 (qPCR)
+Analyte
+Action Level
+(cfu/g)
+LOQ
+(cfu/g)
+Result
+(cfu/g)
+Total Yeast/Mold
+100000
+1000
+1039
+Prep. By:
+1179
+Date:
+2025-08-17 12:56:46
+Analyzed By:
+1179
+Date:
+2025-08-17 12:56:46
+Reviewed By:
+1179
+Date:
+2025-08-18 09:09:31
+Lab Batch #:
+AAGZ997-435
+Date:
+2025-08-18 09:09:31
+Pathogenic SAE (qPCR)
+Specimen Weight:
+1036.400 mg
+Dilution Factor: 1.000
+Passed
+SOP13.029
+(qPCR)
+Analyte
+Action
+Level
+(cfu/g)
+Result
+(cfu/g)
+Aspergillus
+(Flavus,
+Fumigatus,
+Niger, Terreus)
+1
+Absence
+in 1g
+E.Coli
+1
+Absence
+in 1g
+Analyte
+Action
+Level
+(cfu/g)
+Result
+(cfu/g)
+Salmonella
+1
+Absence in
+1g
+Prep. By:
+1179
+Date:
+2025-08-17
+13:23:02
+Analyzed By:
+1179
+Date:
+2025-08-17
+13:23:02
+Reviewed By:
+1179
+Date:
+2025-08-18
+09:47:59
+Lab Batch #:
+AAGZ997-
+25
+Date:
+2025-08-18
+09:47:59
+Filth and Foreign Material
+Specimen Weight:
+N/A
+Dilution Factor: 1.000
+Passed
+SOP13.020 (Electronic
+Balance)
+Analyte
+Action Level
+(%)
+Result
+(%)
+Covered Area
+10
+0.00
+Feces
+0.5
+0.00
+Analyte
+Action Level
+(%)
+Result
+(%)
+Weight %
+1
+0.00
+Prep. By:
+1287
+Date:
+2025-08-15 18:24:07
+Analyzed By:
+1287
+Date:
+2025-08-15 18:24:07
+Reviewed By:
+1287
+Date:
+2025-08-15 18:24:20
+Lab Batch #:
+AAGZ997-177
+Date:
+2025-08-15 18:24:20
+Lab Director/Principal Scientist
+Aixia Sun
+D.H.Sc., M.Sc., B.Sc., MT (AAB)
+Definitions are found on page 1
+This report shall not be reproduced, without written approval, from ACS Laboratory. The results of this report relate only to the material or product analyzed. Test results are
+confidential unless explicitly waived otherwise. ACS Laboratory is accredited to the ISO/IEC 17025:2017 Standard.
+QA
+By:
+1057
+on
+2025-08-21
+13:18:20
+V1
+Page 3 of 5
+Form F672
+721 Cortaro Dr.
+Sun City Center, FL 33573
+www.acslab.com
+DEA No.
+RA0571996
+FL License #
+CMTL-0003
+Gassius Clay 3.5g WF
+Sample Matrix:
+CANNABIS (MMTC's)
+Flower & Plants
+(Inhalation - Heated)
+Certificate of Analysis
+Compliance Test
+Client Information:
+Eden FL, LLC
+200 County Road 448
+Tavares, FL 32778
+Batch #
+4793 1807 7220 8969
+Batch Date:
+2025-08-14
+Seed to Sale #
+3354 2583 1592 0106
+Lot ID:
+4793 1807 7220 8969
+Total Number of Final Products: 834
+Cultivars:
+Gassius Clay
+Test Reg State:
+Florida
+Cultivation Facility:
+Tavares, Fl
+Production Facility:
+Tavares, Fl
+Production Date:
+2025-08-14
+Order #
+EDE250814-040001
+Order Date:
+2025-08-14
+Sample #
+AAGZ997
+Sampling Date:
+2025-08-15
+Lab Batch Date:
+2025-08-15
+Completion Date:
+2025-08-21
+Initial Gross Weight:
+94.700 g
+Number of Units:
+9
+Net Weight per Unit:
+3500.000 mg
+Sampling Method: MSP 7.3.1
+Heavy Metals
+Specimen Weight:
+246.800 mg
+Dilution Factor: 202
+Passed
+SOP13.048 (ICP-MS)
+Analyte
+LOD
+(ppb)
+LOQ
+(ppb)
+Action Level
+(ppb)
+Result
+(ppb)
+Arsenic (As)
+4.830
+100
+200
+<LOQ
+Cadmium (Cd)
+0.640
+100
+200
+<LOQ
+Analyte
+LOD
+(ppb)
+LOQ
+(ppb)
+Action Level
+(ppb)
+Result
+(ppb)
+Lead (Pb)
+0.580
+100
+500
+<LOQ
+Mercury (Hg)
+11.760
+100
+200
+<LOQ
+Prep. By:
+1204
+Date:
+2025-08-18 16:49:19
+Analyzed By:
+1264
+Date:
+2025-08-19 16:49:19
+Reviewed By:
+1256
+Date:
+2025-08-19 18:12:05
+Lab Batch #:
+AAGZ997-4
+Date:
+2025-08-19 18:12:05
+Mycotoxins
+Specimen Weight:
+613.000 mg
+Dilution Factor: 2.450
+Passed
+SOP13.007 (LCMS/GCMS)
+Analyte
+Dilution
+(1:n)
+LOD
+(ppb)
+LOQ
+(ppb)
+Action Level
+(ppb)
+Result
+(ppb)
+Aflatoxin B1
+2.450
+6
+20
+<LOQ
+Aflatoxin B2
+2.450
+6
+20
+<LOQ
+Aflatoxin G1
+2.450
+6
+20
+<LOQ
+Analyte
+Dilution
+(1:n)
+LOD
+(ppb)
+LOQ
+(ppb)
+Action Level
+(ppb)
+Result
+(ppb)
+Aflatoxin G2
+2.450
+6
+20
+<LOQ
+Ochratoxin A
+2.450
+3.8
+20
+<LOQ
+Prep. By:
+1256
+Date:
+2025-08-16 19:31:48
+Analyzed By:
+1256
+Date:
+2025-08-16 19:31:48
+Reviewed By:
+1183
+Date:
+2025-08-21 11:11:27
+Lab Batch #:
+AAGZ997-5
+Date:
+2025-08-21 11:11:27
+Lab Director/Principal Scientist
+Aixia Sun
+D.H.Sc., M.Sc., B.Sc., MT (AAB)
+Definitions are found on page 1
+This report shall not be reproduced, without written approval, from ACS Laboratory. The results of this report relate only to the material or product analyzed. Test results are
+confidential unless explicitly waived otherwise. ACS Laboratory is accredited to the ISO/IEC 17025:2017 Standard.
+QA
+By:
+1057
+on
+2025-08-21
+13:18:20
+V1
+Page 4 of 5
+Form F672
+721 Cortaro Dr.
+Sun City Center, FL 33573
+www.acslab.com
+DEA No.
+RA0571996
+FL License #
+CMTL-0003
+Gassius Clay 3.5g WF
+Sample Matrix:
+CANNABIS (MMTC's)
+Flower & Plants
+(Inhalation - Heated)
+Certificate of Analysis
+Compliance Test
+Client Information:
+Eden FL, LLC
+200 County Road 448
+Tavares, FL 32778
+Batch #
+4793 1807 7220 8969
+Batch Date:
+2025-08-14
+Seed to Sale #
+3354 2583 1592 0106
+Lot ID:
+4793 1807 7220 8969
+Total Number of Final Products: 834
+Cultivars:
+Gassius Clay
+Test Reg State:
+Florida
+Cultivation Facility:
+Tavares, Fl
+Production Facility:
+Tavares, Fl
+Production Date:
+2025-08-14
+Order #
+EDE250814-040001
+Order Date:
+2025-08-14
+Sample #
+AAGZ997
+Sampling Date:
+2025-08-15
+Lab Batch Date:
+2025-08-15
+Completion Date:
+2025-08-21
+Initial Gross Weight:
+94.700 g
+Number of Units:
+9
+Net Weight per Unit:
+3500.000 mg
+Sampling Method: MSP 7.3.1
+Pesticides FL
+Specimen Weight:
+613.000 mg
+Dilution Factor: 2.450
+Passed
+SOP13.007 (LCMS/GCMS)
+Analyte
+Dilution
+(1:n)
+LOD
+(ppb)
+LOQ
+(ppb)
+Action Level
+(ppb)
+Result
+(ppb)
+Abamectin
+2.450
+0.288
+9
+100
+<LOQ
+Acephate
+2.450
+0.023
+9.6
+100
+<LOQ
+Acequinocyl
+2.450
+9.564
+9.6
+100
+<LOQ
+Acetamiprid
+2.450
+0.052
+9.6
+100
+<LOQ
+Aldicarb
+2.450
+0.026
+9.6
+100
+<LOQ
+Azoxystrobin
+2.450
+0.081
+9.6
+100
+<LOQ
+Bifenazate
+2.450
+0.043
+9.6
+100
+<LOQ
+Bifenthrin
+2.450
+1.415
+9.6
+100
+<LOQ
+Boscalid
+2.450
+0.055
+9.6
+100
+<LOQ
+Captan
+2.450
+6.120
+48
+700
+<LOQ
+Carbaryl
+2.450
+0.022
+9.6
+500
+<LOQ
+Carbofuran
+2.450
+0.034
+9.6
+100
+<LOQ
+Chlorantraniliprole
+2.450
+0.033
+9.6
+1000
+<LOQ
+Chlordane
+2.450
+10.000
+9.6
+100
+<LOQ
+Chlorfenapyr
+2.450
+0.080
+9.6
+100
+<LOQ
+Chlormequat Chloride
+2.450
+0.108
+9.6
+1000
+<LOQ
+Chlorpyrifos
+2.450
+0.035
+9.6
+100
+<LOQ
+Clofentezine
+2.450
+0.119
+9.6
+200
+<LOQ
+Coumaphos
+2.450
+3.770
+9.6
+100
+<LOQ
+Cyfluthrin
+2.450
+3.110
+30
+500
+<LOQ
+Cypermethrin
+2.450
+1.449
+9.6
+500
+<LOQ
+Daminozide
+2.450
+0.885
+9.6
+100
+<LOQ
+Diazinon
+2.450
+0.044
+9.6
+100
+<LOQ
+Dichlorvos
+2.450
+2.182
+9.6
+100
+<LOQ
+Dimethoate
+2.450
+0.021
+9.6
+100
+<LOQ
+Dimethomorph
+2.450
+5.830
+9.6
+200
+<LOQ
+Ethoprophos
+2.450
+0.360
+9.6
+100
+<LOQ
+Etofenprox
+2.450
+0.116
+9.6
+100
+<LOQ
+Etoxazole
+2.450
+0.095
+9.6
+100
+<LOQ
+Fenhexamid
+2.450
+0.510
+9.6
+100
+<LOQ
+Fenoxycarb
+2.450
+0.107
+9.6
+100
+<LOQ
+Fenpyroximate
+2.450
+0.138
+9.6
+100
+<LOQ
+Fipronil
+2.450
+0.107
+9.6
+100
+<LOQ
+Flonicamid
+2.450
+0.517
+9.6
+100
+<LOQ
+Analyte
+Dilution
+(1:n)
+LOD
+(ppb)
+LOQ
+(ppb)
+Action Level
+(ppb)
+Result
+(ppb)
+Fludioxonil
+2.450
+1.740
+9.6
+100
+<LOQ
+Hexythiazox
+2.450
+0.049
+9.6
+100
+<LOQ
+Imazalil
+2.450
+0.248
+9.6
+100
+<LOQ
+Imidacloprid
+2.450
+0.094
+9.6
+400
+<LOQ
+Kresoxim Methyl
+2.450
+0.042
+9.6
+100
+<LOQ
+Malathion
+2.450
+0.082
+9.6
+100
+<LOQ
+Metalaxyl
+2.450
+0.081
+9.6
+100
+<LOQ
+Methiocarb
+2.450
+0.032
+9.6
+100
+<LOQ
+Methomyl
+2.450
+0.022
+9.6
+100
+<LOQ
+methyl-Parathion
+2.450
+1.710
+9.6
+100
+<LOQ
+Mevinphos
+2.450
+2.150
+9.6
+100
+<LOQ
+Myclobutanil
+2.450
+1.029
+9.6
+100
+<LOQ
+Naled
+2.450
+0.095
+9.6
+250
+<LOQ
+Oxamyl
+2.450
+0.025
+9.6
+500
+<LOQ
+Paclobutrazol
+2.450
+0.065
+9.6
+100
+<LOQ
+Pentachloronitrobenzene
+2.450
+1.320
+30
+150
+<LOQ
+Permethrin
+2.450
+0.343
+9.6
+100
+<LOQ
+Phosmet
+2.450
+0.082
+9.6
+100
+<LOQ
+Piperonylbutoxide
+2.450
+0.029
+9.6
+3000
+<LOQ
+Prallethrin
+2.450
+0.798
+9.6
+100
+<LOQ
+Propiconazole
+2.450
+0.070
+9.6
+100
+<LOQ
+Propoxur
+2.450
+0.046
+9.6
+100
+<LOQ
+Pyrethrins
+2.450
+23.593
+1.4
+500
+<LOQ
+Pyridaben
+2.450
+0.032
+9.6
+200
+<LOQ
+Spinetoram
+2.450
+0.080
+9.6
+200
+<LOQ
+Spinosad
+2.450
+0.088
+2.39
+100
+<LOQ
+Spiromesifen
+2.450
+0.261
+9.6
+100
+<LOQ
+Spirotetramat
+2.450
+0.089
+9.6
+100
+<LOQ
+Spiroxamine
+2.450
+0.131
+9.6
+100
+<LOQ
+Tebuconazole
+2.450
+0.067
+9.6
+100
+<LOQ
+Thiacloprid
+2.450
+0.064
+9.6
+100
+<LOQ
+Thiamethoxam
+2.450
+0.050
+9.6
+500
+<LOQ
+Trifloxystrobin
+2.450
+0.037
+9.6
+100
+<LOQ
+Prep. By:
+1256
+Date:
+2025-08-16 19:31:48
+Analyzed By:
+1256
+Date:
+2025-08-16 19:31:48
+Reviewed By:
+1183
+Date:
+2025-08-21 11:11:27
+Lab Batch #:
+AAGZ997-191
+Date:
+2025-08-21 11:11:27
+Total Contaminant Load
+Passed
+Panel
+Action Level
+(ppm)
+Result
+(ppm)
+Heavy Metals, Pesticides
+5
+0.00
+Lab Director/Principal Scientist
+Aixia Sun
+D.H.Sc., M.Sc., B.Sc., MT (AAB)
+Definitions are found on page 1
+This report shall not be reproduced, without written approval, from ACS Laboratory. The results of this report relate only to the material or product analyzed. Test results are
+confidential unless explicitly waived otherwise. ACS Laboratory is accredited to the ISO/IEC 17025:2017 Standard.
+QA
+By:
+1057
+on
+2025-08-21
+13:18:20
+V1
+Page 5 of 5
+Form F672

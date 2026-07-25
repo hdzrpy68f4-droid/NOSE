@@ -1,0 +1,1208 @@
+Sample ID: T411103-01 CCB ID:LOT 24007
+Matrix: Derivative Non-inhalable
+Global Widget
+Client Lic#:
+8419 Sunstate St. Tampa, FL 33634
+Camille - RT Formulations
+Compliance for Retail:
+PASS
+Date Reported:
+11/11/2024
+Date Received:
+Date Sampled:
+11/06/2024
+11/06/2024
+Total Sample Received: 30ml
+Total Units Received: 1
+Unit Weight: 30g
+GR Original Tincture Full Spec 750mg 30ml - 1fl oz
+Certificate of Analysis
+T411103
+TL LABORATORIES
+TL Laboratories
+Potency Summary
+Foreign
+Materials
+PASS
+Heavy Metals
+PASS
+Microbials
+PASS
+Moisture
+Content
+NOT TESTED
+Safety Summary
+Mycotoxins
+PASS
+Pesticides
+PASS
+Residual
+Solvents
+PASS
+Terpenes
+TESTED
+Water
+Activity
+NOT TESTED
+Cannabinoids
+Analyte
+Results
+mg/Unit
+mg/Serving
+Date Prepared: 11/07/2024 08:27
+Prep ID: 4599
+Date Analyzed: 11/07/2024 10:55
+Analyst ID: 5047
+Specimen Wt: 0.106 g
+Instrument: HPLC VWD
+Dilution
+Prep/Analysis Method: SOP 1357
+Lab Batch: 2445073
+%
+mg
+mg
+Cannabichromene (CBC)
+1
+0.299
+N/A
+89.7
+Cannabidiol (CBD)
+1
+2.79
+N/A
+838
+Cannabidiolic acid (CBDA)
+1
+ND
+N/A
+ND
+Cannabidivarin (CBDV)
+1
+0.132
+N/A
+39.5
+Cannabigerol (CBG)
+1
+0.293
+N/A
+87.9
+Cannabigerolic acid (CBGA)
+1
+ND
+N/A
+ND
+Cannabinol (CBN)
+1
+0.226
+N/A
+67.9
+d8 - Tetrahydrocannabinoid (d8-THC)
+1
+ND
+N/A
+ND
+d9 - Tetrahydrocannabinoid (d9-THC)
+1
+0.101
+N/A
+30.3
+d9 - Tetrahydrocannabinolic acid (THCA)
+1
+ND
+N/A
+ND
+Tetrahydrocannabivarin (THCV)
+1
+ND
+N/A
+ND
+d10 - Tetrahydrocannabinoid
+(d10-THC)
+1
+ND
+N/A
+ND
+0.101
+Total THC
+Total Cannabinoids
+Total CBD
+2.79
+3.84
+0.000
+837
+0.000
+0.000
+0.000
+1,152
+Total THC= THCa * 0.877 + d9-THC. Total CBD= CBDa * 0.877 + CBD.
+mg/Unit = Unit Weight g * Total THC/CBD mg/g
+LOD = Limit of Detection; ND = Not Detected.
+Unless otherwise stated all quality control samples performed within specifications established by the Laboratory.
+Serving Size: g
+Vitamins
+Supplements
+NOT TESTED
+The data contained therein are based on sound scientific analytical procedures and judgment. TL Laboratories strives to deliver high quality
+results. This report shall not be reproduced without written consent from TL Laboratories The results of this report relate only to the material or
+product received and analyzed. Test Results are confidential unless explicitly waived otherwise. This laboratory is accredited in accordance with
+the recognised International Standard ISO/IEC 17025. This accreditation demonstrates technical competence for a defined scope and the
+operation of a laboratory quality management system (refer to joint ISOILAC-IAF Communiqué dated April 2017)
+Brian C. Spann
+Laboratory Director
+TL Laboratories
+10350 Fisher Ave, Tampa, Florida 33619
+813-726-3103 / www.terplifelabs.com
+1 of 4
+Sample ID: T411103-01 CCB ID:LOT 24007
+Matrix: Derivative Non-inhalable
+Global Widget
+Client Lic#:
+8419 Sunstate St. Tampa, FL 33634
+Camille - RT Formulations
+Compliance for Retail:
+PASS
+Date Reported:
+11/11/2024
+Date Received:
+Date Sampled:
+11/06/2024
+11/06/2024
+Total Sample Received: 30ml
+Total Units Received: 1
+Unit Weight: 30g
+GR Original Tincture Full Spec 750mg 30ml - 1fl oz
+Certificate of Analysis
+T411103
+TL LABORATORIES
+TL Laboratories
+Pesticides
+Pass
+Analyzed
+Analyst
+Prepped
+Prepped By
+Batch
+Specimen Wt. (g)
+Instrument
+Analysis SOP
+Prep Mehtod: SOP 1363
+2445075
+Pesticide LCQQQ
+11/7/2024
+1:26:49PM
+2670-0754
+11/7/2024
+9:55:00AM
+4599
+1.00
+SOP1350
+LCMSMS
+2445076
+Pesticides GCQQQ
+11/7/2024
+3:31:57PM
+0754-2670
+11/7/2024
+9:55:00AM
+4599
+1.00
+*
+SOP1356
+GCMSMS
+Analyte
+LOD
+Action Limit
+Results
+ppb
+ppb
+ppb
+Status
+ppb
+ppb
+ppb
+Analyte
+Results
+Status
+DIL
+DIL
+Action Limi
+LOD
+30
+Pass
+300
+ND
+1
+Abamectin
+300
+Pass
+3000
+ND
+1
+Acephate
+200
+Pass
+2000
+ND
+1
+Acequinocyl
+300
+Pass
+3000
+ND
+1
+Acetamiprid
+10
+Pass
+100
+ND
+1
+Aldicarb
+300
+Pass
+3000
+ND
+1
+Azoxystrobin
+300
+Pass
+3000
+ND
+1
+Bifenazate
+50
+Pass
+500
+ND
+1
+Bifenthrin
+300
+Pass
+3000
+ND
+1
+Boscalid
+50
+Pass
+500
+ND
+1
+Carbaryl
+10
+Pass
+100
+ND
+1
+Carbofuran
+300
+Pass
+3000
+ND
+1
+Chlorantraniliprole
+300
+Pass
+3000
+ND
+1
+Chlormequat Chloride
+10
+Pass
+100
+ND
+1
+Chlorpyrifos
+50
+Pass
+500
+ND
+1
+Clofentezine
+10
+Pass
+100
+ND
+1
+Coumaphos
+100
+Pass
+1000
+ND
+1
+Cyfluthrin
+100
+Pass
+1000
+ND
+1
+Cypermethrin
+10
+Pass
+100
+ND
+1
+Daminozide
+20
+Pass
+200
+ND
+1
+Diazinon
+10
+Pass
+100
+ND
+1
+Dichlorvos
+10
+Pass
+100
+ND
+1
+Dimethoate
+300
+Pass
+3000
+ND
+1
+Dimethomorph
+10
+Pass
+100
+ND
+1
+Ethoprophos
+10
+Pass
+100
+ND
+1
+Etofenprox
+150
+Pass
+1500
+ND
+1
+Etoxazole
+300
+Pass
+3000
+ND
+1
+Fenhexamid
+10
+Pass
+100
+ND
+1
+Fenoxycarb
+200
+Pass
+2000
+ND
+1
+Fenpyroximate
+10
+Pass
+100
+ND
+1
+Fipronil
+200
+Pass
+2000
+ND
+1
+Flonicamid
+300
+Pass
+3000
+ND
+1
+Fludioxonil
+200
+Pass
+2000
+ND
+1
+Hexythiazox
+10
+Pass
+100
+ND
+1
+Imazalil
+300
+Pass
+3000
+ND
+1
+Imidacloprid
+100
+Pass
+1000
+ND
+1
+Kresoxim-methyl
+200
+Pass
+2000
+ND
+1
+Malathion
+300
+Pass
+3000
+ND
+1
+Metalaxyl
+10
+Pass
+100
+ND
+1
+Methiocarb
+10
+Pass
+100
+ND
+1
+Methomyl
+10
+Pass
+100
+ND
+1
+Mevinphos
+300
+Pass
+3000
+ND
+1
+Myclobutanil
+50
+Pass
+500
+ND
+1
+Naled
+50
+Pass
+500
+ND
+1
+Oxamyl
+10
+Pass
+100
+ND
+1
+Paclobutrazol
+100
+Pass
+1000
+ND
+1
+Permethrin
+20
+Pass
+200
+ND
+1
+Phosmet
+300
+Pass
+3000
+ND
+1
+Piperonyl butoxide
+40
+Pass
+400
+ND
+1
+Prallethrin
+100
+Pass
+1000
+ND
+1
+Propiconazole
+10
+Pass
+100
+ND
+1
+Propoxur
+100
+Pass
+1000
+ND
+1
+Pyrethrins
+300
+Pass
+3000
+ND
+1
+Pyridaben
+300
+Pass
+3000
+ND
+1
+Spinetoram, total
+300
+Pass
+3000
+ND
+1
+Spinosad, total
+300
+Pass
+3000
+ND
+1
+Spiromesifen
+300
+Pass
+3000
+ND
+1
+Spirotetramat
+10
+Pass
+100
+ND
+1
+Spiroxamine
+100
+Pass
+1000
+ND
+1
+Tebuconazole
+10
+Pass
+100
+ND
+1
+Thiacloprid
+100
+Pass
+1000
+ND
+1
+Thiamethoxam
+300
+Pass
+3000
+ND
+1
+Trifloxystrobin
+300
+Pass
+3000
+ND
+1
+Captan*
+10
+Pass
+100
+ND
+1
+Chlordane*
+10
+Pass
+100
+ND
+1
+Chlorfenapyr*
+10
+Pass
+100
+ND
+1
+Methyl parathion*
+20
+Pass
+200
+ND
+1
+Pentachloronitrobenzene*
+LOD = Limit of Detection; ND = Not Detected.
+Unless otherwise stated all quality control samples performed within specifications established by the Laboratory.
+* - GCMSMS Pesticides
+The data contained therein are based on sound scientific analytical procedures and judgment. TL Laboratories strives to deliver high quality
+results. This report shall not be reproduced without written consent from TL Laboratories The results of this report relate only to the material or
+product received and analyzed. Test Results are confidential unless explicitly waived otherwise. This laboratory is accredited in accordance with
+the recognised International Standard ISO/IEC 17025. This accreditation demonstrates technical competence for a defined scope and the
+operation of a laboratory quality management system (refer to joint ISOILAC-IAF Communiqué dated April 2017)
+Brian C. Spann
+Laboratory Director
+TL Laboratories
+10350 Fisher Ave, Tampa, Florida 33619
+813-726-3103 / www.terplifelabs.com
+2 of 4
+Sample ID: T411103-01 CCB ID:LOT 24007
+Matrix: Derivative Non-inhalable
+Global Widget
+Client Lic#:
+8419 Sunstate St. Tampa, FL 33634
+Camille - RT Formulations
+Compliance for Retail:
+PASS
+Date Reported:
+11/11/2024
+Date Received:
+Date Sampled:
+11/06/2024
+11/06/2024
+Total Sample Received: 30ml
+Total Units Received: 1
+Unit Weight: 30g
+GR Original Tincture Full Spec 750mg 30ml - 1fl oz
+Certificate of Analysis
+T411103
+TL LABORATORIES
+TL Laboratories
+Mycotoxins
+Pass
+Analyte
+Action Limit
+LOD
+Results
+Status
+Specimen Wt: 1.00 g
+Instrument: LCMSMS
+Date Prepared: 11/07/2024 09:55
+Prepped By: 4599
+Date Analyzed: 11/07/2024 13:26
+Analyzed By: 2670-0754
+Prep Method: SOP 1363 Analysis Method: SOP 1350
+Lab Batch: 2445075
+DIL
+ppb
+ppb
+ppb
+Aflatoxin B1
+2
+Pass
+20.0
+ND
+1
+Aflatoxin B2
+2
+Pass
+20.0
+ND
+1
+Aflatoxin G1
+2
+Pass
+20.0
+ND
+1
+Aflatoxin G2
+2
+Pass
+20.0
+ND
+1
+Ochratoxin A
+2
+Pass
+20.0
+ND
+1
+LOD = Limit of Detection; ND = Not Detected.
+Unless otherwise stated all quality control samples performed within specifications established by the Laboratory.
+Foreign Materials
+Pass
+Analyte
+Results
+Action Limit (% by wt)
+Date Prepared: 11/07/2024 15:04
+Prep ID: 3780
+Date Analyzed: 11/07/2024 23:16
+Analyst ID: 3780
+Instrument: Visual Inspection
+Analysis Method: SOP1359
+Lab Batch: 2445081
+Status
+Foreign Material
+1.00
+ND
+Pass
+Feces
+0.500
+ND
+Pass
+ND = Not Detected.
+Unless otherwise stated all quality control samples performed within specifications established by the
+Laboratory.
+Pass
+Heavy Metals
+Analyte
+Action Limit
+LOD
+Results
+Status
+Specimen Wt: 0.60 g
+Instrument: ICPMS
+Date Prepared: 11/07/2024 15:16
+Prepped By: 1094
+Date Analyzed: 11/09/2024 12:44
+Analyzed By: 1094
+Prep Method: SOP 1362 Analysis Method: SOP1358
+Lab Batch: 2445103
+DIL
+ppb
+ppb
+ppb
+Arsenic
+Pass
+1500
+ND
+1
+150
+Cadmium
+Pass
+500
+ND
+1
+50.0
+Lead
+Pass
+500
+ND
+1
+50.0
+Mercury
+Pass
+3000
+ND
+1
+300
+Total
+0.00
+LOD = Limit of Detection; ND = Not Detected.
+Unless otherwise stated all quality control samples performed within specifications established by the Laboratory.
+Microbials
+Pass
+Analyte
+Action Limit
+LOD
+Status
+Results
+cfu/g
+cfu/g
+Specimen Wt: 1.00 g
+Instrument: qPCR
+Date Prepared: 11/07/2024 09:41
+Prep ID: 1093
+Date Analyzed: 11/08/2024 10:01
+Analyst ID: 1093
+Analysis Method: SOP1353/1364/1352
+Lab Batch: 2445086
+cfu/g
+Pass
+1
+1
+Absent in 1 gram
+Aspergillus Flavus
+Pass
+1
+1
+Absent in 1 gram
+Aspergillus Fumigatus
+Pass
+1
+1
+Absent in 1 gram
+Aspergillus Niger
+Pass
+1
+1
+Absent in 1 gram
+Aspergillus Terreus
+Pass
+1
+1
+Absent in 1 gram
+Salmonella
+Pass
+1
+1
+Absent in 1 gram
+Shiga Toxin producing E. Coli
+Pass
+100000
+ND
+Total Yeast and Mold
+10000
+LOD = Limit of Detection; ND = Not Detected.
+Unless otherwise stated all quality control samples performed within specifications established by the
+Laboratory.
+The data contained therein are based on sound scientific analytical procedures and judgment. TL Laboratories strives to deliver high quality
+results. This report shall not be reproduced without written consent from TL Laboratories The results of this report relate only to the material or
+product received and analyzed. Test Results are confidential unless explicitly waived otherwise. This laboratory is accredited in accordance with
+the recognised International Standard ISO/IEC 17025. This accreditation demonstrates technical competence for a defined scope and the
+operation of a laboratory quality management system (refer to joint ISOILAC-IAF Communiqué dated April 2017)
+Brian C. Spann
+Laboratory Director
+TL Laboratories
+10350 Fisher Ave, Tampa, Florida 33619
+813-726-3103 / www.terplifelabs.com
+3 of 4
+Sample ID: T411103-01 CCB ID:LOT 24007
+Matrix: Derivative Non-inhalable
+Global Widget
+Client Lic#:
+8419 Sunstate St. Tampa, FL 33634
+Camille - RT Formulations
+Compliance for Retail:
+PASS
+Date Reported:
+11/11/2024
+Date Received:
+Date Sampled:
+11/06/2024
+11/06/2024
+Total Sample Received: 30ml
+Total Units Received: 1
+Unit Weight: 30g
+GR Original Tincture Full Spec 750mg 30ml - 1fl oz
+Certificate of Analysis
+T411103
+TL LABORATORIES
+TL Laboratories
+Residual Solvents
+Pass
+Specimen Wt: 0.05 g
+Instrument: GCMSMS Headspace
+Date Prepared: 11/08/2024 14:30
+Prep ID: 2447
+Date Analyzed: 11/08/2024 15:49
+Analyst ID: 2447
+Analysis Method: SOP1361
+Lab Batch: 2445094
+Analyte
+Action Limit
+LOD
+Results
+ppm
+ppm
+ppm
+Status
+DIL
+1,1-Dichloroethene
+Pass
+8.00
+ND
+1
+0.800
+1,2-Dichloroethane
+Pass
+2.00
+ND
+1
+0.200
+Acetone
+Pass
+750
+ND
+1
+75.0
+Acetonitrile
+Pass
+60.0
+ND
+1
+6.00
+Benzene
+Pass
+1.00
+ND
+1
+0.100
+Butane
+Pass
+5000
+ND
+1
+500
+Chloroform
+Pass
+2.00
+ND
+1
+0.200
+Ethyl acetate
+Pass
+400
+ND
+1
+40.0
+Ethyl ether
+Pass
+500
+ND
+1
+50.0
+Ethylene oxide
+Pass
+5.00
+ND
+1
+0.500
+Heptane
+Pass
+5000
+ND
+1
+500
+Hexane
+Pass
+250
+ND
+1
+25.0
+Isopropyl alcohol
+Pass
+500
+ND
+1
+50.0
+Methanol
+Pass
+250
+ND
+1
+25.0
+Methylene chloride
+Pass
+125
+ND
+1
+12.5
+Pentane
+Pass
+750
+ND
+1
+75.0
+Propane
+Pass
+5000
+ND
+1
+500
+Toluene
+Pass
+150
+ND
+1
+15.0
+Xylenes, total
+Pass
+150
+ND
+1
+15.0
+Trichloroethylene
+Pass
+25.0
+ND
+1
+2.50
+LOD = Limit of Detection; ND = Not Detected.
+Unless otherwise stated all quality control samples performed within specifications established by the Laboratory.
+Terpenes Summary
+Analyte
+LOD
+Results
+Prep/Analysis Method: SOP1360
+Lab Batch: 2445074
+Specimen Wt: 0.11 g
+Instrument: GCMS
+Date Prepared: 11/07/2024 09:55
+Prep ID: 4599
+Date Analyzed: 11/08/2024 12:49
+Analyzed ID: 2447
+Dilution
+%
+%
+3-Carene (+)-
+1
+ND
+0.0237
+alpha Bisabolol, L
+1
+ND
+0.0237
+alpha-Cedrene
+1
+ND
+0.0237
+alpha-Fenchyl alcohol, (+)-
+1
+ND
+0.0237
+alpha-Humulene
+1
+ND
+0.0237
+alpha-Phellandrene
+1
+ND
+0.0237
+alpha-Pinene
+1
+ND
+0.0237
+alpha-Terpinene
+1
+ND
+0.0237
+alpha-Terpineol
+1
+ND
+0.0237
+beta-Myrcene
+1
+ND
+0.0237
+beta-Ocimene
+1
+ND
+0.0237
+beta-Pinene
+1
+ND
+0.0237
+Borneol
+1
+ND
+0.0237
+Camphene
+1
+ND
+0.0237
+Camphor
+1
+ND
+0.0237
+Caryophyllene Oxide
+1
+ND
+0.0237
+Cedrol
+1
+ND
+0.0237
+D-Limonene
+1
+ND
+0.0237
+E-Caryophyllene
+1
+ND
+0.0237
+E-Nerolidol
+1
+ND
+0.0237
+Eucalyptol
+1
+ND
+0.0237
+Farnesene
+1
+ND
+0.0237
+Fenchone
+1
+ND
+0.0237
+gamma-Terpinene
+1
+ND
+0.0237
+Geraniol
+1
+ND
+0.0237
+Geranyl Acetate
+1
+ND
+0.0237
+Guaiol
+1
+ND
+0.0237
+Isoborneol
+1
+ND
+0.0237
+Isopulegol
+1
+ND
+0.0237
+Linalool
+1
+ND
+0.0237
+Menthol
+1
+ND
+0.0237
+Nerol
+1
+ND
+0.0237
+p-Cymene
+1
+ND
+0.0237
+Pulegone
+1
+ND
+0.0237
+Sabinene
+1
+ND
+0.0237
+Sabinene hydrate
+1
+ND
+0.0237
+Terpinolene
+1
+ND
+0.0237
+Valencene
+1
+ND
+0.0237
+Z-Nerolidol
+1
+ND
+0.0237
+Total Terpenes
+0.000
+0.00 mg/Unit
+Terpene results are provided for informational purposes only.
+LOD = Limit of Detection; ND = Not Detected.
+Unless otherwise stated all quality control samples performed within specifications established by the
+Laboratory.
+The data contained therein are based on sound scientific analytical procedures and judgment. TL Laboratories strives to deliver high quality
+results. This report shall not be reproduced without written consent from TL Laboratories The results of this report relate only to the material or
+product received and analyzed. Test Results are confidential unless explicitly waived otherwise. This laboratory is accredited in accordance with
+the recognised International Standard ISO/IEC 17025. This accreditation demonstrates technical competence for a defined scope and the
+operation of a laboratory quality management system (refer to joint ISOILAC-IAF Communiqué dated April 2017)
+Brian C. Spann
+Laboratory Director
+TL Laboratories
+10350 Fisher Ave, Tampa, Florida 33619
+813-726-3103 / www.terplifelabs.com
+4 of 4

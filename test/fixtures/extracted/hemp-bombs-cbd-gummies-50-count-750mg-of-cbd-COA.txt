@@ -1,0 +1,1023 @@
+SUMMARY
+Potency
+TESTED
+Mycotoxins
+NOT TESTED
+Terpenes
+NOT TESTED
+Microbials
+NOT TESTED
+Pesticides
+NOT TESTED
+Total Yeast
+and Mold
+NOT TESTED
+Total
+Contaminant
+Load
+NOT TESTED
+Water Activity
+NOT TESTED
+Residual
+Solvents
+NOT TESTED
+Moisture
+NOT TESTED
+NOT TESTED
+Heavy Metals
+Filth and Foreign
+Material
+NOT TESTED
+Total Aerobic
+Bacteria
+NOT TESTED
+Homogeneity
+NOT TESTED
+POTENCY
+TESTED
+Analyte
+Result
+LOD
+Result
+(mg/g)
+%
+(mg/g)
+mg/unit
+5.91
+0.591
+0.00001
+CBD
+17.730
+ND
+ND
+0.000004
+CBC
+N/A
+ND
+ND
+0.000012
+CBDA
+N/A
+ND
+ND
+0.000017
+CBDV
+N/A
+ND
+ND
+0.000015
+CBG
+N/A
+ND
+ND
+0.000008
+CBGA
+N/A
+ND
+ND
+0.000009
+CBN
+N/A
+ND
+ND
+0.000246
+d8-THC
+N/A
+ND
+ND
+0.00002
+d9-THC
+N/A
+ND
+ND
+0.000012
+THCA
+N/A
+ND
+ND
+0.000015
+THCV
+N/A
+Sample Analyzed By:
+040
+TM-001 Potency
+Potency 3
+5/22/2023 8:22
+Batch Reviewed By:
+100
+040
+027
+HPLC
+Date/Time:
+Date/Time:
+5/22/2023 12:58
+Dilution:
+Sample Prepared By:
+Analysis #
+5/23/2023 14:19
+Date/Time:
+0.5311
+Analysis Method:
+Specimen wt (g):
+Instrument Used:
+Total THC
+Total CBD
+POTENCY SUMMARY
+Total Cannabinoids
+0.000%
+0.591%
+0.591%
+THC Label Claim
+CBD Label Claim
+N/A
+N/A
+N/A
+N/A
+Total
+CBD/Unit
+17.730 mg
+Total
+THC/Unit
+N/A
+Total
+Cannabinoids/Unit
+17.730 mg
+TERPENES SUMMARY
+Analyte
+Result
+Result
+%
+(+/-)-Borneol
+(+/-)-Fenchone
+[+/-]-Camphor
+alpha-Bisabolol
+alpha-Cedrene
+alpha-Humulene
+alpha-Phellandrene
+alpha-Pinene
+alpha-Terpinene
+alpha-terpinolene
+Total Terpenes:
+Showing top 10 Terpenes, full analysis on the following page.
+Sampling Date:
+Gummy
+Edible Gummy
+Order Date:
+Certificate of Analysis
+Order #
+2305HBR0013-002
+2305HBR0013
+Method Testing Laboratories
+2720 Broadway Center Blvd.
+Brandon, FL 33510
+Lic #CMTL-2023-00012
+Hemp Bombs CBD Gummies 15 mg
+Sample #
+Receipt Date:
+Completion Date:
+Initial Gross Weight:
+Sampling Method:
+Product Name:
+Description:
+Matrix:
+Client:
+Global Widget
+Address:
+Address:
+8419 Sunstate Street
+Tampa, FL 33634
+Batch #:
+Batch Date:
+Extracted From:
+Seed to Sale #:
+Lot ID:
+Cultivars:
+Test Reg State:
+Cultivation Facility:
+Cultivation Date:
+Production Facility:
+Production Date:
+5/19/2023 16:05
+05/23/2023 15:48
+5/17/2023
+5/19/2023 00:05
+145.3 g
+230216
+5/19/2023
+Hemp
+230216
+Isolate
+Hemp FL
+Plant 6
+5/17/2023
+5/17/2023
+LAB-025
+Total Batch Wgt or Vol:
+Page
+Definitions and Abbreviations used in this report: Total THC = Delta 9 THC + (THCA*0.877), Total CBD = CBD + (CBDA*0.877), Total Cannabinoids = THC + THCA + CBD + CBDA + CBG + CBGA + Delta 8 THC + THCV + CBDV + CBC + CBN, Total THC
+and Total CBD are expressed as mg in total package weight, (Dilution) = Dilution Factor, (%) = Percent, (mg/g) = Milligrams per Gram, (mg/mL) = Milligrams per Milliliter, (mg/kg) = Milligrams per Kilogram, (ug/kg) = Microgram per Kilogram,
+(cfu/g) = Colony Forming Unit per Gram, Action Limit of Absent is equivalent to < 1 cfu/g, (aw) = Water Activity, (LOD) = Limit of Detection, (LOQ) = Limit of Quantitation; (ppm) = parts per million; (ppb) = parts per billion; Units for ppm also
+expressed as (mg/kg); Units for ppb also expressed as (ug/kg).
+This report shall not be reproduced, without written approval, from Method Testing Labs. The results of this report relate only to the material or product analyzed. Test results are confidential unless explicitly waived otherwise. Accredited
+by a third-party accrediting body as a competent testing laboratory pursuant to ISO/IEC 17025 of the International Organization for Standardization.
+1 of 6
+Anthony Repay
+05/23/2023 15:48
+Lab
+Director-Micro
+Sampling Date:
+Gummy
+Edible Gummy
+Order Date:
+Certificate of Analysis
+Order #
+2305HBR0013-002
+2305HBR0013
+Method Testing Laboratories
+2720 Broadway Center Blvd.
+Brandon, FL 33510
+Lic #CMTL-2023-00012
+Hemp Bombs CBD Gummies 15 mg
+Sample #
+Receipt Date:
+Completion Date:
+Initial Gross Weight:
+Sampling Method:
+Product Name:
+Description:
+Matrix:
+Client:
+Global Widget
+Address:
+Address:
+8419 Sunstate Street
+Tampa, FL 33634
+Batch #:
+Batch Date:
+Extracted From:
+Seed to Sale #:
+Lot ID:
+Cultivars:
+Test Reg State:
+Cultivation Facility:
+Cultivation Date:
+Production Facility:
+Production Date:
+5/19/2023 16:05
+05/23/2023 15:48
+5/17/2023
+5/19/2023 00:05
+145.3 g
+230216
+5/19/2023
+Hemp
+230216
+Isolate
+Hemp FL
+Plant 6
+5/17/2023
+5/17/2023
+LAB-025
+Total Batch Wgt or Vol:
+TERPENES
+NOT TESTED
+Analyte
+Analyte
+LOD
+Result
+Result
+%
+%
+Result
+Result
+LOD
+alpha-Pinene
+Camphene
+Isopulegol
+delta-3-Carene
+alpha-Terpinene
+Eucalyptol
+gamma-Terpinene
+alpha-terpinolene
+Linalool
+Geraniol
+alpha-Humulene
+Z-Nerolidol
+Menthol
+E-Nerolidol
+Guaiol
+E-Caryophyllene
+Nerol
+alpha-Bisabolol
+Valencene
+D-Limonene
+alpha-Cedrene
+Sabinene
+Endo-Fenchyl Alcohol
+Terpineol
+Pulegone
+[+/-]-Camphor
+Isoborneol
+(+/-)-Fenchone
+Ocimenes
+Cedrol
+Farnesene
+Geranyl acetate
+alpha-Phellandrene
+beta-Pinene
+beta-Myrcene
+Caryophyllene Oxide
+(+/-)-Borneol
+Sabinene Hydrate
+Total Terpenes:
+%
+Sample Prepared By:
+Instrument Used:
+Sample Analyzed By:
+Date/Time:
+Date/Time:
+Date/Time:
+Analysis #
+Specimen wt:
+Batch Reviewed By:
+Dilution:
+Analysis Method:
+Page
+Definitions and Abbreviations used in this report: Total THC = Delta 9 THC + (THCA*0.877), Total CBD = CBD + (CBDA*0.877), Total Cannabinoids = THC + THCA + CBD + CBDA + CBG + CBGA + Delta 8 THC + THCV + CBDV + CBC + CBN, Total THC
+and Total CBD are expressed as mg in total package weight, (Dilution) = Dilution Factor, (%) = Percent, (mg/g) = Milligrams per Gram, (mg/mL) = Milligrams per Milliliter, (mg/kg) = Milligrams per Kilogram, (ug/kg) = Microgram per Kilogram,
+(cfu/g) = Colony Forming Unit per Gram, Action Limit of Absent is equivalent to < 1 cfu/g, (aw) = Water Activity, (LOD) = Limit of Detection, (LOQ) = Limit of Quantitation; (ppm) = parts per million; (ppb) = parts per billion; Units for ppm also
+expressed as (mg/kg); Units for ppb also expressed as (ug/kg).
+This report shall not be reproduced, without written approval, from Method Testing Labs. The results of this report relate only to the material or product analyzed. Test results are confidential unless explicitly waived otherwise. Accredited
+by a third-party accrediting body as a competent testing laboratory pursuant to ISO/IEC 17025 of the International Organization for Standardization.
+2 of 6
+Anthony Repay
+05/23/2023 15:48
+Lab
+Director-Micro
+Sampling Date:
+Gummy
+Edible Gummy
+Order Date:
+Certificate of Analysis
+Order #
+2305HBR0013-002
+2305HBR0013
+Method Testing Laboratories
+2720 Broadway Center Blvd.
+Brandon, FL 33510
+Lic #CMTL-2023-00012
+Hemp Bombs CBD Gummies 15 mg
+Sample #
+Receipt Date:
+Completion Date:
+Initial Gross Weight:
+Sampling Method:
+Product Name:
+Description:
+Matrix:
+Client:
+Global Widget
+Address:
+Address:
+8419 Sunstate Street
+Tampa, FL 33634
+Batch #:
+Batch Date:
+Extracted From:
+Seed to Sale #:
+Lot ID:
+Cultivars:
+Test Reg State:
+Cultivation Facility:
+Cultivation Date:
+Production Facility:
+Production Date:
+5/19/2023 16:05
+05/23/2023 15:48
+5/17/2023
+5/19/2023 00:05
+145.3 g
+230216
+5/19/2023
+Hemp
+230216
+Isolate
+Hemp FL
+Plant 6
+5/17/2023
+5/17/2023
+LAB-025
+Total Batch Wgt or Vol:
+PESTICIDES
+NOT TESTED
+Action
+Level
+(ug/kg)
+Status
+Analyte
+Result
+(ug/kg)
+LOD
+(ug/kg)
+LOD
+(ug/kg)
+Analyte
+Status
+Result
+(ug/kg)
+Action
+Level
+(ug/kg)
+Abamectin
+Acephate
+N/A
+Acequinocyl
+Acetamiprid
+N/A
+Aldicarb
+Azoxystrobin
+N/A
+Bifenazate
+Bifenthrin
+N/A
+Boscalid
+Captan
+N/A
+Carbaryl
+Carbofuran
+N/A
+Chlorantraniliprole
+Chlordane
+N/A
+Chlorfenapyr
+Chlormequat chloride
+N/A
+Chlorpyrifos
+Clofentezine
+N/A
+Coumaphos
+Cyfluthrin
+N/A
+Cypermethrin
+Daminozide
+N/A
+Diazinon
+Dichlorvos
+N/A
+Dimethoate
+Dimethomorph
+N/A
+Ethoprophos
+Etofenprox
+N/A
+Etoxazole
+Fenhexamid
+N/A
+Fenoxycarb
+Fenpyroximate
+N/A
+Fipronil
+Flonicamid
+N/A
+Fludioxonil
+Hexythiazox
+N/A
+Imazalil
+Imidacloprid
+N/A
+Kresoxim-methyl
+Malathion
+N/A
+Metalaxyl
+Methiocarb
+N/A
+Methomyl
+Methyl parathion
+N/A
+Mevinphos
+Myclobutanil
+N/A
+Naled
+Oxamyl
+N/A
+Paclobutrazol
+Pentachloronitrobenzene
+N/A
+Permethrin
+Phosmet
+N/A
+Piperonylbutoxide
+Prallethrin
+N/A
+Propiconazole
+Propoxur
+N/A
+Pyrethrins
+Pyridaben
+N/A
+Spinetoram
+Spinosad A and D
+N/A
+Spiromesifen
+Spirotetramat
+N/A
+Spiroxamine
+Tebuconazole
+N/A
+Thiacloprid
+Thiamethoxam
+N/A
+Trifloxystrobin
+N/A
+Sample Analyzed By:
+Sample Prepared By:
+Date/Time:
+Batch Reviewed By:
+Date/Time:
+Analysis Method:
+Date/Time:
+Specimen wt (g):
+Dilution:
+Instrument Used:
+Analysis #
+Date/Time:
+Sample Prepared By:
+Date/Time:
+Sample Analyzed By:
+Date/Time:
+Instrument Used:
+Analysis #
+Specimen wt (g):
+Analysis Method:
+Batch Reviewed By:
+Dilution:
+Page
+Definitions and Abbreviations used in this report: Total THC = Delta 9 THC + (THCA*0.877), Total CBD = CBD + (CBDA*0.877), Total Cannabinoids = THC + THCA + CBD + CBDA + CBG + CBGA + Delta 8 THC + THCV + CBDV + CBC + CBN, Total THC
+and Total CBD are expressed as mg in total package weight, (Dilution) = Dilution Factor, (%) = Percent, (mg/g) = Milligrams per Gram, (mg/mL) = Milligrams per Milliliter, (mg/kg) = Milligrams per Kilogram, (ug/kg) = Microgram per Kilogram,
+(cfu/g) = Colony Forming Unit per Gram, Action Limit of Absent is equivalent to < 1 cfu/g, (aw) = Water Activity, (LOD) = Limit of Detection, (LOQ) = Limit of Quantitation; (ppm) = parts per million; (ppb) = parts per billion; Units for ppm also
+expressed as (mg/kg); Units for ppb also expressed as (ug/kg).
+This report shall not be reproduced, without written approval, from Method Testing Labs. The results of this report relate only to the material or product analyzed. Test results are confidential unless explicitly waived otherwise. Accredited
+by a third-party accrediting body as a competent testing laboratory pursuant to ISO/IEC 17025 of the International Organization for Standardization.
+3 of 6
+Anthony Repay
+05/23/2023 15:48
+Lab
+Director-Micro
+RESIDUAL SOLVENTS
+NOT TESTED
+Analyte
+LOD
+(mg/kg)
+Result
+(mg/kg)
+Status
+Action Level
+(mg/kg)
+Acetone
+N/A
+Acetonitrile
+N/A
+Benzene
+N/A
+Butane
+N/A
+Chloroform
+N/A
+1,2-Dichloroethane
+N/A
+1,1-Dichloroethene
+N/A
+Ethanol
+N/A
+Ethyl acetate
+N/A
+Ethyl ether
+N/A
+Ethylene oxide
+N/A
+Heptane
+N/A
+Hexane
+N/A
+Isopropyl alcohol
+N/A
+Methanol
+N/A
+Methylene chloride
+N/A
+Pentane
+N/A
+Propane
+N/A
+Trichloroethylene
+N/A
+Toluene
+N/A
+Total xylenes
+N/A
+Sample Prepared By:
+Batch Reviewed By:
+Specimen wt (g):
+Analysis Method:
+Instrument Used:
+Dilution:
+Analysis #
+Date/Time:
+Date/Time:
+Date/Time:
+Sample Analyzed By:
+HEAVY METALS
+NOT TESTED
+Analyte
+LOD
+(ug/kg)
+Result
+(ug/kg)
+Status
+Action Level
+(ug/kg)
+Lead
+N/A
+Arsenic
+N/A
+Cadmium
+N/A
+Mercury
+N/A
+Sample Prepared By:
+Batch Reviewed By:
+Specimen wt (g):
+Analysis Method:
+Instrument Used:
+Dilution:
+Analysis #
+Date/Time:
+Date/Time:
+Date/Time:
+Sample Analyzed By:
+TOTAL CONTAMINANT LOAD
+Analyte
+Result
+(mg/kg)
+Status
+Action Level
+(mg/kg)
+Heavy Metals/Pesticides
+N/A
+Sampling Date:
+Gummy
+Edible Gummy
+Order Date:
+Certificate of Analysis
+Order #
+2305HBR0013-002
+2305HBR0013
+Method Testing Laboratories
+2720 Broadway Center Blvd.
+Brandon, FL 33510
+Lic #CMTL-2023-00012
+Hemp Bombs CBD Gummies 15 mg
+Sample #
+Receipt Date:
+Completion Date:
+Initial Gross Weight:
+Sampling Method:
+Product Name:
+Description:
+Matrix:
+Client:
+Global Widget
+Address:
+Address:
+8419 Sunstate Street
+Tampa, FL 33634
+Batch #:
+Batch Date:
+Extracted From:
+Seed to Sale #:
+Lot ID:
+Cultivars:
+Test Reg State:
+Cultivation Facility:
+Cultivation Date:
+Production Facility:
+Production Date:
+5/19/2023 16:05
+05/23/2023 15:48
+5/17/2023
+5/19/2023 00:05
+145.3 g
+230216
+5/19/2023
+Hemp
+230216
+Isolate
+Hemp FL
+Plant 6
+5/17/2023
+5/17/2023
+LAB-025
+Total Batch Wgt or Vol:
+Page
+Definitions and Abbreviations used in this report: Total THC = Delta 9 THC + (THCA*0.877), Total CBD = CBD + (CBDA*0.877), Total Cannabinoids = THC + THCA + CBD + CBDA + CBG + CBGA + Delta 8 THC + THCV + CBDV + CBC + CBN, Total THC
+and Total CBD are expressed as mg in total package weight, (Dilution) = Dilution Factor, (%) = Percent, (mg/g) = Milligrams per Gram, (mg/mL) = Milligrams per Milliliter, (mg/kg) = Milligrams per Kilogram, (ug/kg) = Microgram per Kilogram,
+(cfu/g) = Colony Forming Unit per Gram, Action Limit of Absent is equivalent to < 1 cfu/g, (aw) = Water Activity, (LOD) = Limit of Detection, (LOQ) = Limit of Quantitation; (ppm) = parts per million; (ppb) = parts per billion; Units for ppm also
+expressed as (mg/kg); Units for ppb also expressed as (ug/kg).
+This report shall not be reproduced, without written approval, from Method Testing Labs. The results of this report relate only to the material or product analyzed. Test results are confidential unless explicitly waived otherwise. Accredited
+by a third-party accrediting body as a competent testing laboratory pursuant to ISO/IEC 17025 of the International Organization for Standardization.
+4 of 6
+Anthony Repay
+05/23/2023 15:48
+Lab
+Director-Micro
+Sampling Date:
+Gummy
+Edible Gummy
+Order Date:
+Certificate of Analysis
+Order #
+2305HBR0013-002
+2305HBR0013
+Method Testing Laboratories
+2720 Broadway Center Blvd.
+Brandon, FL 33510
+Lic #CMTL-2023-00012
+Hemp Bombs CBD Gummies 15 mg
+Sample #
+Receipt Date:
+Completion Date:
+Initial Gross Weight:
+Sampling Method:
+Product Name:
+Description:
+Matrix:
+Client:
+Global Widget
+Address:
+Address:
+8419 Sunstate Street
+Tampa, FL 33634
+Batch #:
+Batch Date:
+Extracted From:
+Seed to Sale #:
+Lot ID:
+Cultivars:
+Test Reg State:
+Cultivation Facility:
+Cultivation Date:
+Production Facility:
+Production Date:
+5/19/2023 16:05
+05/23/2023 15:48
+5/17/2023
+5/19/2023 00:05
+145.3 g
+230216
+5/19/2023
+Hemp
+230216
+Isolate
+Hemp FL
+Plant 6
+5/17/2023
+5/17/2023
+LAB-025
+Total Batch Wgt or Vol:
+TOTAL YEAST AND MOLD
+NOT TESTED
+Analyte
+Result
+(cfu/g)
+Status
+Action Level
+(cfu/g)
+Total Combined Yeasts & Molds
+N/A
+Sample Prepared By:
+Batch Reviewed By:
+Specimen wt (g):
+Analysis Method:
+Instrument Used:
+Dilution:
+Analysis #
+Date/Time:
+Date/Time:
+Date/Time:
+Sample Analyzed By:
+MYCOTOXINS
+NOT TESTED
+Analyte
+LOD
+(ug/kg)
+Result
+(ug/kg)
+Status
+Action Level
+(ug/kg)
+Aflatoxin B1
+N/A
+Aflatoxin B2
+N/A
+Aflatoxin G1
+N/A
+Aflatoxin G2
+N/A
+Ochratoxin A
+N/A
+Total Aflatoxin
+N/A
+Sample Prepared By:
+Batch Reviewed By:
+Specimen wt (g):
+Analysis Method:
+Instrument Used:
+Dilution:
+Analysis #
+Date/Time:
+Date/Time:
+Date/Time:
+Sample Analyzed By:
+FILTH & FOREIGN MATERIAL
+NOT TESTED
+Analyte
+Result
+Status
+Action Level
+Feces Amount (mg/kg)
+N/A
+Filth (%)
+N/A
+Foreign Material (per 3g)
+N/A
+Batch Reviewed By:
+Specimen wt (g):
+Analysis Method:
+Instrument Used:
+Analysis #
+Date/Time:
+Date/Time:
+Sample Analyzed By:
+MICROBIAL
+NOT TESTED
+Analyte
+Result
+(present in 1 g)
+Status
+Action Level
+(present in 1 g)
+Salmonella
+N/A
+Shiga Toxin E. coli
+N/A
+Total Aspergillus*
+N/A
+Sample Prepared By:
+Batch Reviewed By:
+Specimen wt (g):
+Analysis Method:
+Instrument Used:
+Dilution:
+Analysis #
+Date/Time:
+Date/Time:
+Date/Time:
+Sample Analyzed By:
+* Total Aspergillus represents the sum of the results of Aspergillus flavus, Aspergillus
+fumigatus, Aspergillus niger, and Aspergillus terreus.
+Page
+Definitions and Abbreviations used in this report: Total THC = Delta 9 THC + (THCA*0.877), Total CBD = CBD + (CBDA*0.877), Total Cannabinoids = THC + THCA + CBD + CBDA + CBG + CBGA + Delta 8 THC + THCV + CBDV + CBC + CBN, Total THC
+and Total CBD are expressed as mg in total package weight, (Dilution) = Dilution Factor, (%) = Percent, (mg/g) = Milligrams per Gram, (mg/mL) = Milligrams per Milliliter, (mg/kg) = Milligrams per Kilogram, (ug/kg) = Microgram per Kilogram,
+(cfu/g) = Colony Forming Unit per Gram, Action Limit of Absent is equivalent to < 1 cfu/g, (aw) = Water Activity, (LOD) = Limit of Detection, (LOQ) = Limit of Quantitation; (ppm) = parts per million; (ppb) = parts per billion; Units for ppm also
+expressed as (mg/kg); Units for ppb also expressed as (ug/kg).
+This report shall not be reproduced, without written approval, from Method Testing Labs. The results of this report relate only to the material or product analyzed. Test results are confidential unless explicitly waived otherwise. Accredited
+by a third-party accrediting body as a competent testing laboratory pursuant to ISO/IEC 17025 of the International Organization for Standardization.
+5 of 6
+Anthony Repay
+05/23/2023 15:48
+Lab
+Director-Micro
+WATER ACTIVITY
+NOT TESTED
+Analyte
+Result
+(aw)
+Status
+Action Level
+(aw)
+Water Activity
+N/A
+Batch Reviewed By:
+Specimen wt (g):
+Analysis Method:
+Instrument Used:
+Analysis #
+Date/Time
+:
+Date/Time:
+Sample Analyzed By:
+MOISTURE
+NOT TESTED
+Analyte
+Result
+(%)
+Status
+Action Level
+(%)
+Moisture Content
+N/A
+Batch Reviewed By:
+Specimen wt (g):
+Analysis Method:
+Instrument Used:
+Analysis #
+Date/Time:
+Date/Time:
+Sample Analyzed By:
+TOTAL AEROBIC BACTERIA
+NOT TESTED
+Analyte
+Result
+(cfu/g)
+Status
+Action Level
+(cfu/g)
+Total Aerobic Bacteria
+N/A
+Sample Prepared By:
+Batch Reviewed By:
+Specimen wt (g):
+Analysis Method:
+Instrument Used:
+Dilution:
+Analysis #
+Date/Time:
+Date/Time:
+Date/Time:
+Sample Analyzed By:
+Sampling Date:
+Gummy
+Edible Gummy
+Order Date:
+Certificate of Analysis
+Order #
+2305HBR0013-002
+2305HBR0013
+Method Testing Laboratories
+2720 Broadway Center Blvd.
+Brandon, FL 33510
+Lic #CMTL-2023-00012
+Hemp Bombs CBD Gummies 15 mg
+Sample #
+Receipt Date:
+Completion Date:
+Initial Gross Weight:
+Sampling Method:
+Product Name:
+Description:
+Matrix:
+Client:
+Global Widget
+Address:
+Address:
+8419 Sunstate Street
+Tampa, FL 33634
+Batch #:
+Batch Date:
+Extracted From:
+Seed to Sale #:
+Lot ID:
+Cultivars:
+Test Reg State:
+Cultivation Facility:
+Cultivation Date:
+Production Facility:
+Production Date:
+5/19/2023 16:05
+05/23/2023 15:48
+5/17/2023
+5/19/2023 00:05
+145.3 g
+230216
+5/19/2023
+Hemp
+230216
+Isolate
+Hemp FL
+Plant 6
+5/17/2023
+5/17/2023
+LAB-025
+Total Batch Wgt or Vol:
+Page
+Definitions and Abbreviations used in this report: Total THC = Delta 9 THC + (THCA*0.877), Total CBD = CBD + (CBDA*0.877), Total Cannabinoids = THC + THCA + CBD + CBDA + CBG + CBGA + Delta 8 THC + THCV + CBDV + CBC + CBN, Total THC
+and Total CBD are expressed as mg in total package weight, (Dilution) = Dilution Factor, (%) = Percent, (mg/g) = Milligrams per Gram, (mg/mL) = Milligrams per Milliliter, (mg/kg) = Milligrams per Kilogram, (ug/kg) = Microgram per Kilogram,
+(cfu/g) = Colony Forming Unit per Gram, Action Limit of Absent is equivalent to < 1 cfu/g, (aw) = Water Activity, (LOD) = Limit of Detection, (LOQ) = Limit of Quantitation; (ppm) = parts per million; (ppb) = parts per billion; Units for ppm also
+expressed as (mg/kg); Units for ppb also expressed as (ug/kg).
+This report shall not be reproduced, without written approval, from Method Testing Labs. The results of this report relate only to the material or product analyzed. Test results are confidential unless explicitly waived otherwise. Accredited
+by a third-party accrediting body as a competent testing laboratory pursuant to ISO/IEC 17025 of the International Organization for Standardization.
+6 of 6
+Anthony Repay
+05/23/2023 15:48
+Lab
+Director-Micro

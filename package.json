@@ -1,0 +1,27 @@
+{
+  "name": "nose",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hdzrpy68f4-droid/NOSE.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/hdzrpy68f4-droid/NOSE/issues"
+  },
+  "homepage": "https://github.com/hdzrpy68f4-droid/NOSE#readme",
+  "dependencies": {
+    "unpdf": "^1.8.0"
+  }
+}
