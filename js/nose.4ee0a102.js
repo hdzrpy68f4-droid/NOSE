@@ -73,6 +73,12 @@
       terpineol:{name:'α-Terpineol',family:'floral'},
       nerolidol:{name:'Nerolidol',family:'floral'},
       terpinolene:{name:'Terpinolene',family:'herbal'},
+      /* Farnesene's signature note is green apple peel over woody and herbal
+         undertones — the same territory as terpinolene, whose family copy already
+         reads "fresh-cut herbs and apple skin". A borderline call: alpha-farnesene
+         is the apple-like isomer, beta- is woodier and closer to earthy, and labs
+         rarely report which they measured. Revisit if that changes. */
+      farnesene:{name:'Farnesene',family:'herbal'},
       ocimene:{name:'Ocimene',family:'herbal'}
     };
 
@@ -573,10 +579,17 @@
       let url; try{ url=new URL(String(value).trim()); }catch{ return {ok:false,message:'Enter a complete HTTPS report URL.'}; }
       if(url.protocol!=='https:') return {ok:false,message:'Secure HTTPS links only.'};
       if(url.username||url.password) return {ok:false,message:'Links containing credentials are not accepted.'};
+      /* The hostname allowlist is gone deliberately. COAs reach people through
+         the shop that sold the jar, not the issuing lab — both real reports this
+         was tested against were served from a retailer's bucket. A hostname list
+         rejected exactly the files people actually hold.
+         The guard moved to the server (/.netlify/functions/coa), which blocks
+         private address ranges, caps size and time, verifies PDF magic bytes, and
+         then trusts the CONTENT: a recognised lab template whose terpene mass
+         reconciles against the total the lab printed itself. That is a stronger
+         test than a domain name, which anyone can borrow. */
       const host=url.hostname.toLowerCase();
-      const known=LAB_ALLOWLIST.some(d=>host===d||host.endsWith('.'+d));
-      if(!known) return {ok:false,message:`${host} is not on the accepted lab allowlist. Use manual entry instead.`};
-      return {ok:true,url,message:`Accepted lab link: ${host}.`};
+      return {ok:true,url,message:`${host} looks like a valid secure link.`};
     }
     function validateUrl(){ const r=checkCoaUrl(document.getElementById('coaUrl').value); showMessage('urlMessage',r.message,r.ok?'success':'error'); }
     function validateUpload(file){ if(!file){ document.getElementById('uploadMessage').hidden=true; return; } const allowed=['application/pdf','image/jpeg','image/png','image/webp']; if(!allowed.includes(file.type)){ showMessage('uploadMessage','Use a PDF, JPG, PNG, or WebP file.','error'); return; } if(file.size>10*1024*1024){ showMessage('uploadMessage','The selected file is larger than 10 MB.','error'); return; } showMessage('uploadMessage',`${file.name} selected. The file remains local in this static preview.`,'success'); }
