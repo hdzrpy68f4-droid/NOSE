@@ -152,6 +152,16 @@ const isNumberish = t => VALUE_LINE.test(String(t).trim());
 /* Cannabinoid names, in the spellings observed across the seven labs. Never
    mapped into the vector (spec rule: cannabinoids are excluded) and used as a
    row boundary. */
+/* A "Dominant Terpenes" donut legend is a rounded summary with an "Others"
+   bucket, never the authoritative table - ACT prints one on page 1 and the real
+   panel later. Left alone it wins on first-occurrence dedupe and, because
+   "Others" is not an analyte name, the preceding row runs on and collects the
+   Others figure as its own value. Skip the block. Bounded by the next section
+   heading, or a fixed window if none appears. */
+const CHART_LEGEND_START = /^Dominant Terpenes$/i;
+const CHART_LEGEND_END = /^(Cannabinoids?|Terpenes?|Potency|Microbials?|Mycotoxins|Pesticides|Heavy Metals|Residual Solvents|Water Activity|Moisture|Foreign Matt?er|Tests? Summary|Analysis Summary|Results?|Total Terpenes)$/i;
+const CHART_LEGEND_MAX = 40;
+
 const CANNABINOID = /^(?:(?:DELTA|D|\u0394)[\s-]?(?:8|9|10)[\s-]?)?(?:THC|CBD|CBG|CBN|CBC|CBL|CBT)[AV]?A?$|^(?:D|DELTA|\u0394)[\s-]?(?:8|9|10)[\s-]?THC[AV]?$|^THC[AV]A?$|^CBD[AV]A?$|^TOTAL\s+(?:THC|CBD|CANNABINOIDS?|ACTIVE\s+\w+)$|^\(6AR,9[SR]\)-D10-THC$/i;
 
 /* Column headings and unit rows that Kaycha interleaves into the FIRST data row
@@ -257,6 +267,7 @@ function parseCoa(text){
      chosen instead by which one makes the table reconcile with the total the
      lab printed itself. Same principle as readColumnMajor, applied row-wise. */
   const analyteRows = [];
+  let legendUntil = -1;   // index before which analyte rows are chart legend
 
   for (let i = 0; i < lines.length; i++){
     const line = lines[i];
@@ -281,6 +292,13 @@ function parseCoa(text){
        null. Kaycha prints a BARE label with the value in a later column. */
     const inlineTotal = line.match(/^Total\s+Terpenes\s*[:\u2013-]\s*(.+)$/i);
     if (inlineTotal){ totalTerpenes = resultToNumber(inlineTotal[1]); continue; }
+
+    if (CHART_LEGEND_START.test(line)){
+      legendUntil = Math.min(i + CHART_LEGEND_MAX, lines.length);
+      for (let k = i + 1; k < legendUntil; k++)
+        if (CHART_LEGEND_END.test(lines[k])){ legendUntil = k; break; }
+      continue;
+    }
 
     const upper = canonicalAnalyte(line);
     const key = ANALYTE_MAP[upper];
@@ -370,7 +388,7 @@ function parseCoa(text){
     }
     if (value === null || value === undefined) continue;
 
-    if (!isTotal && !isMoisture && !isWater){
+    if (!isTotal && !isMoisture && !isWater && i >= legendUntil){
       if (seenAnalyte.has(upper)) continue;          // repeat of a row already taken
       seenAnalyte.add(upper);
     }
@@ -378,6 +396,7 @@ function parseCoa(text){
     if (isTotal) totalTerpenes = value;              // may be corrected below
     else if (isMoisture){ if (moisture === null) moisture = value; }
     else if (isWater){ if (waterActivity === null) waterActivity = value; }
+    else if (i < legendUntil){ /* inside a chart legend - not authoritative */ }
     else analyteRows.push({ key, isUnmodelled, verdictValue, candidates: numerics.slice() });
   }
 
