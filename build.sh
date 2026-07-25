@@ -69,6 +69,13 @@ fingerprint() {
   fi
 
   old=${matches[0]}
+  # An empty or near-empty source file means something upstream wrote nothing
+  # (an editor saving a blank buffer, a failed heredoc). Fingerprinting it
+  # silently replaces working code with nothing — this has happened twice.
+  if [ "$(wc -c < "$old")" -lt 32 ]; then
+    echo "FAIL: $old is $(wc -c < "$old") bytes — refusing to fingerprint an empty file"
+    exit 1
+  fi
   hash=$(sha256sum "$old" | cut -c1-8)
   new="${base}${prefix}.${hash}.${ext}"
 
