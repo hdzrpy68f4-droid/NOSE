@@ -268,6 +268,7 @@ function parseCoa(text){
      lab printed itself. Same principle as readColumnMajor, applied row-wise. */
   const analyteRows = [];
   let legendUntil = -1;   // index before which analyte rows are chart legend
+  let altTotal = null;    // a total figure printed BEFORE its label
 
   for (let i = 0; i < lines.length; i++){
     const line = lines[i];
@@ -334,6 +335,17 @@ function parseCoa(text){
        cannot stop at "unexpected" tokens — only when the NEXT analyte begins. */
     let value = null, verdictValue = null;
     const numerics = [];
+    /* Also collect the contiguous value run immediately BEFORE the name. Some
+       labs emit the figure ahead of its label. Only consulted as a last resort
+       (see resolveRows) because "before this name" is also "after the previous
+       name", which makes it a near-tie with a correct forward reading. */
+    const before = [];
+    for (let j = i - 1; j >= 0 && j > i - LOOKAHEAD_LINES; j--){
+      const prv = lines[j];
+      if (isResultToken(prv)){ before.unshift(resultToNumber(prv)); continue; }
+      if (SKIPPABLE_IN_ROW.test(prv)) continue;
+      break;
+    }
     for (let j = i + 1; j < Math.min(i + LOOKAHEAD_LINES, lines.length); j++){
       const nxt = lines[j].toUpperCase();
       if (/^(TESTED|PASSED|PASS|FAIL|FAILED)$/i.test(nxt)){
@@ -393,11 +405,19 @@ function parseCoa(text){
       seenAnalyte.add(upper);
     }
 
-    if (isTotal) totalTerpenes = value;              // may be corrected below
+    if (isTotal){
+      totalTerpenes = value;                        // may be corrected below
+      /* The label can also follow its figure. Kept aside, not applied, until
+         the primary reading is shown not to reconcile. */
+      const prv = i > 0 ? lines[i - 1] : null;
+      const pv = prv && isResultToken(prv) ? resultToNumber(prv) : null;
+      if (altTotal === null && pv != null && pv > 0 && pv <= PERCENT_CEILING) altTotal = pv;
+    }
     else if (isMoisture){ if (moisture === null) moisture = value; }
     else if (isWater){ if (waterActivity === null) waterActivity = value; }
     else if (i < legendUntil){ /* inside a chart legend - not authoritative */ }
-    else analyteRows.push({ key, isUnmodelled, verdictValue, candidates: numerics.slice() });
+    else analyteRows.push({ key, isUnmodelled, verdictValue,
+                            candidates: numerics.slice(), before: before.slice() });
   }
 
   /* Some COAs print a row of "Total CBD / Total THC / Total Cannabinoids /
@@ -418,31 +438,37 @@ function parseCoa(text){
     break;
   }
 
-  /* Resolve which candidate column holds the percentage.
+  /* Resolve which candidate column holds the percentage, then commit values.
    *
-   * Rows that carried a verdict token are already pinned - Kaycha and ACT put
-   * the result adjacent to TESTED/Passed, which removes the ambiguity. For the
-   * rest, try each column position from the left AND from the right (tables are
-   * ragged: a below-LOQ row prints fewer cells than a detected one), and keep
-   * the position whose column accounts for the most of the printed total
-   * without exceeding it. Exceeding is impossible; falling short is normal on a
-   * top-ten panel. If nothing reconciles, fall back to the first plausible
-   * value per row so behaviour degrades rather than disappears. */
-  {
-    const pinned = analyteRows.filter(r => r.verdictValue !== null);
-    const loose  = analyteRows.filter(r => r.verdictValue === null);
+   * Rows carrying a verdict token are already pinned - Kaycha and ACT put the
+   * result adjacent to TESTED/Passed, which removes the ambiguity. For the rest,
+   * try each column position from the left and from the right (tables are
+   * ragged: a below-LOQ row prints fewer cells than a detected one) and keep the
+   * position whose column accounts for most of the printed total without
+   * exceeding it. Exceeding is impossible; falling short is normal on a top-ten
+   * panel.
+   *
+   * `side` is tried in strict order by the caller, never as a co-equal option:
+   * values BEFORE a name are also values AFTER the previous name, so a pairing
+   * shifted by one row reconciles almost as well as the correct one (0.99 vs
+   * 1.00 on ACS). Offering both at once lets a shifted reading win on a
+   * tie-break, which silently corrupts labs that were already correct. */
+  function resolveRows(rows, total, side, minShare){
+    const pinned = rows.filter(r => r.verdictValue !== null);
+    const loose  = rows.filter(r => r.verdictValue === null);
     const pinnedSum = pinned.reduce((a, r) => a + (r.verdictValue || 0), 0);
 
+    const cells = r => ((side === 'before' ? r.before : r.candidates) || [])
+      .filter(n => n != null && n <= PERCENT_CEILING);
     const valueAt = (r, dir, idx) => {
-      const c = r.candidates.filter(n => n != null && n <= PERCENT_CEILING);
-      if (!c.length) return null;
-      return dir === 'L' ? (idx < c.length ? c[idx] : null)
-                         : (idx < c.length ? c[c.length - 1 - idx] : null);
+      const c = cells(r);
+      if (idx >= c.length) return null;
+      return dir === 'L' ? c[idx] : c[c.length - 1 - idx];
     };
 
     let choice = null;
-    if (loose.length && totalTerpenes > 0){
-      const maxLen = Math.max(...loose.map(r => r.candidates.length), 0);
+    if (loose.length && total > 0){
+      const maxLen = Math.max(...loose.map(r => cells(r).length), 0);
       for (const dir of ['L', 'R']){
         for (let idx = 0; idx < maxLen; idx++){
           let sum = pinnedSum, filled = 0;
@@ -451,68 +477,97 @@ function parseCoa(text){
             if (v != null){ sum += v; filled++; }
           }
           if (!filled) continue;
-          if (sum > totalTerpenes * (1 + RECONCILE_TOLERANCE)) continue;
-          const share = sum / totalTerpenes;
-          /* Only trust a column that accounts for most of the total. A weak
-             match means the document is not really row-wise (ACS under poppler
-             is column-major, where the best row-wise column reaches 39%), and
-             accepting it would block the column reader with a plausible but
-             wrong answer instead of letting the stronger reading win. */
-          if (share < MIN_ROW_SHARE) continue;
+          if (sum > total * (1 + RECONCILE_TOLERANCE)) continue;
+          const share = sum / total;
+          if (share < minShare) continue;
           if (!choice || share > choice.share + 1e-9
               || (Math.abs(share - choice.share) < 1e-9 && dir === 'R' && choice.dir === 'L'))
             choice = { dir, idx, share };
         }
       }
     }
+    if (!choice) return null;
 
-    for (const r of analyteRows){
+    const out = {}; let unmod = 0;
+    for (const r of rows){
+      /* Absent at the chosen position means the row has fewer cells - a
+         below-LOQ row prints one result where a detected row prints two.
+         Contribute nothing rather than guess; guessing reaches for a dilution
+         factor. */
+      const v = r.verdictValue !== null ? r.verdictValue : valueAt(r, choice.dir, choice.idx);
+      if (v === null || v === undefined) continue;
+      if (r.isUnmodelled) unmod += v;
+      else out[r.key] = (out[r.key] || 0) + v;      // cis+trans nerolidol accumulate
+    }
+    const mapped = Object.values(out).reduce((a, b) => a + b, 0);
+    return { terps: out, unmodelled: unmod, mapped, total, choice, side };
+  }
+
+  /* Degenerate reading used only if nothing reconciles at all: first plausible
+     value per row. Keeps a fingerprint on the screen for the person to correct
+     rather than returning nothing, and the guards still judge it. */
+  function resolveNaive(rows){
+    const out = {}; let unmod = 0;
+    for (const r of rows){
       let v = r.verdictValue;
       if (v === null){
-        if (choice){
-          /* Absent at the chosen position means this row has fewer cells - a
-             below-LOQ row on ACS prints one result where a detected row prints
-             two. Contribute nothing rather than guess; guessing here reaches
-             for the dilution factor. */
-          v = valueAt(r, choice.dir, choice.idx);
-        } else {
-          const c = r.candidates.filter(n => n != null && n <= PERCENT_CEILING);
-          v = c.length ? c[0] : (r.candidates.length ? r.candidates[0] : null);
-        }
+        const c = (r.candidates || []).filter(n => n != null && n <= PERCENT_CEILING);
+        v = c.length ? c[0] : (r.candidates.length ? r.candidates[0] : null);
       }
       if (v === null || v === undefined) continue;
-      if (r.isUnmodelled) unmodelledTotal += v;
-      else terps[r.key] = (terps[r.key] || 0) + v;   // cis+trans nerolidol accumulate
+      if (r.isUnmodelled) unmod += v;
+      else out[r.key] = (out[r.key] || 0) + v;
+    }
+    return { terps: out, unmodelled: unmod,
+             mapped: Object.values(out).reduce((a, b) => a + b, 0),
+             total: totalTerpenes, choice: null, side: 'naive' };
+  }
+
+  const withinCeiling = r => r && r.mapped > 0 && r.total > 0
+    && r.mapped <= r.total * COVERAGE_CEILING;
+
+  /* Attempt order matters and is deliberate:
+       1. forward pairing against the primary total   - how every lab reads today
+       2. the column-major reader                     - self-validating
+       3. backward pairing, and only then an alternate total
+     Each later step runs only when every earlier one failed, so a lab that
+     already reads correctly can never be reached by a riskier heuristic. */
+  let resolved = resolveRows(analyteRows, totalTerpenes, 'after', MIN_ROW_SHARE);
+  let usedColumn = false;
+
+  if (!withinCeiling(resolved)){
+    const col = readColumnMajor(lines, totalTerpenes);
+    if (col && col.totalTerpenes > 0){
+      resolved = { terps: col.terps, unmodelled: col.unmodelledTotal,
+                   mapped: col.mappedTotal, total: col.totalTerpenes, side: 'column' };
+      usedColumn = true;
     }
   }
+
+  if (!withinCeiling(resolved)){
+    /* Backward pairing must clear a higher bar than forward: it is only correct
+       when the document really prints figures ahead of labels, and in that case
+       it reconciles strongly. A marginal backward match is far more likely to be
+       a one-row shift than a real layout. */
+    for (const [tot, sd] of [[totalTerpenes, 'before'], [altTotal, 'after'], [altTotal, 'before']]){
+      if (!(tot > 0)) continue;
+      const r = resolveRows(analyteRows, tot, sd, MIN_BACKWARD_SHARE);
+      if (withinCeiling(r)){ resolved = r; break; }
+    }
+  }
+
+  if (!resolved) resolved = resolveNaive(analyteRows);
+
+  Object.assign(terps, resolved.terps);
+  unmodelledTotal += resolved.unmodelled;
+  if (resolved.total > 0) totalTerpenes = resolved.total;
+  let layout = usedColumn ? 'column' : 'row';
 
   Object.keys(terps).forEach(k => { terps[k] = round(terps[k]); });
   unmodelledTotal = round(unmodelledTotal);
 
-  let mappedTotal = round(Object.values(terps).reduce((a, b) => a + b, 0));
-  let layout = 'row';
+  const mappedTotal = round(Object.values(terps).reduce((a, b) => a + b, 0));
 
-  /* If the row-wise pass produced more mass than the lab's own total, the
-     document is not row-wise at all — it is column-major and we have been
-     reading across columns. Retry with the column reader, which only returns
-     a result if it reconciles against the printed total. */
-  /* Attempt the column reader whenever the row pass looks wrong: nothing mapped,
-     no total, or more mass than the lab's own total. It is self-validating - it
-     returns null unless the column reconciles - so trying it more often costs
-     nothing and catches documents where the row pass finds no analyte at all. */
-  const rowPassLooksWrong = mappedTotal === 0 || !(totalTerpenes > 0)
-    || mappedTotal > totalTerpenes * COVERAGE_CEILING;
-  if (rowPassLooksWrong){
-    const col = readColumnMajor(lines, totalTerpenes);
-    if (col){
-      totalTerpenes = col.totalTerpenes;
-      Object.keys(terps).forEach(k => delete terps[k]);
-      Object.assign(terps, col.terps);
-      unmodelledTotal = col.unmodelledTotal;
-      mappedTotal = col.mappedTotal;
-      layout = 'column';
-    }
-  }
   const coverage = totalTerpenes > 0 ? mappedTotal / totalTerpenes : null;
   const terpenesTested = terpenesWereTested(lines);
   const lab = detectLab(text);
@@ -585,6 +640,7 @@ module.exports = {
  */
 const RECONCILE_TOLERANCE = 0.03;   // 3% of the printed total
 const MIN_ROW_SHARE = 0.5;          // a row-wise column must explain half the total
+const MIN_BACKWARD_SHARE = 0.8;     // reading figures BEFORE labels must be convincing
 
 /* Some labs emit two adjacent analyte names as ONE line when the first ends
    in a stereochemistry marker: TerpLife yields
