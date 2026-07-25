@@ -39,7 +39,7 @@ const { extractCoaText } = require('./lib/extract-text');
 const { parseCoa } = require('./lib/parse-coa');
 
 const MAX_BYTES   = 12 * 1024 * 1024;   // COAs run to a few hundred KB; 12MB is generous
-const TIMEOUT_MS  = 12000;
+const TIMEOUT_MS  = 7500;   // under Netlify's 10s function limit, so our message wins
 const MAX_REDIRECTS = 3;
 
 /* Labs whose text ordering under unpdf does not match the committed fixtures.
