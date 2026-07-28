@@ -278,6 +278,57 @@
       "ocimene": 0
     }
   },
+  "MC_PeanutButterBreath_flower": {
+    "lab": "Modern Canna",
+    "productClass": "flower",
+    "layout": "row",
+    "totalTerpenes": 2.22,
+    "mappedTotal": 2.1181,
+    "coverage": 95.4,
+    "usable": true,
+    "nonZeroTerps": 12,
+    "terps": {
+      "limonene": 0.724,
+      "caryophyllene": 0.437,
+      "myrcene": 0.144,
+      "humulene": 0.139,
+      "linalool": 0.13,
+      "fenchol": 0.0978,
+      "ocimene": 0.0953,
+      "pinene_b": 0.0949,
+      "terpineol": 0.0808,
+      "bisabolol": 0.0797,
+      "pinene_a": 0.0754,
+      "camphene": 0.0202,
+      "nerolidol": 0
+    }
+  },
+  "MC_TwinSnakez_flower": {
+    "lab": "Modern Canna",
+    "productClass": "flower",
+    "layout": "row",
+    "totalTerpenes": 1.38,
+    "mappedTotal": 1.31718,
+    "coverage": 95.4,
+    "usable": true,
+    "nonZeroTerps": 14,
+    "terps": {
+      "caryophyllene": 0.295,
+      "limonene": 0.222,
+      "myrcene": 0.221,
+      "humulene": 0.0954,
+      "nerolidol": 0.0838,
+      "bisabolol": 0.0729,
+      "linalool": 0.0603,
+      "pinene_a": 0.0524,
+      "fenchol": 0.0517,
+      "pinene_b": 0.0496,
+      "camphene": 0.00978,
+      "terpinolene": 0.0203,
+      "terpineol": 0.0429,
+      "ocimene": 0.0401
+    }
+  },
   "Method_DulceDeUva_flower": {
     "lab": "Method Testing Labs",
     "productClass": "flower",
@@ -359,12 +410,10 @@
     "productClass": "edible",
     "layout": "row",
     "totalTerpenes": null,
-    "mappedTotal": 5,
+    "mappedTotal": 0,
     "coverage": null,
     "usable": false,
-    "nonZeroTerps": 1,
-    "terps": {
-      "terpinolene": 5
-    }
+    "nonZeroTerps": 0,
+    "terps": {}
   }
 }
