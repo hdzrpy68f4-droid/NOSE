@@ -10,7 +10,10 @@
 //   * only built-in sample ids arrive by name; user-created profiles arrive as
 //     the opaque token 'custom'
 //   * no strain names, no terpene values, no user identifiers, no IP address
-//   * there is no account system, so records are anonymous and unlinkable
+//   * accounts exist, but votes carry NO account id and NO session cookie is
+//     read here — records stay anonymous and unlinkable BY DESIGN, not by
+//     absence of an account system. Do not add a user id to this payload:
+//     account-delete.js relies on votes having nothing to erase.
 // Adding a field here means changing the published privacy policy.
 
 import { getStore } from '@netlify/blobs';
