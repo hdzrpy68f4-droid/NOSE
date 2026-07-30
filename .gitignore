@@ -1,3 +1,7 @@
 *.zip
 test/fixtures/coa/
 node_modules/
+node_modules/
+*.bak
+build.sh.backup
+*.tar

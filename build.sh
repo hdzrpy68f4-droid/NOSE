@@ -115,9 +115,9 @@ echo "==> sanity checks"
 grep -q "script-src 'self';" _headers || { echo "FAIL: script-src loosened"; exit 1; }
 grep -q "style-src 'self';"  _headers || { echo "FAIL: style-src loosened";  exit 1; }
 
-[ "$(grep -rho 'style="' --include='*.html' . | wc -l)" -eq 0 ] \
+[ "$(grep -rho 'style="' --include='*.html' --exclude-dir=node_modules --exclude-dir=netlify . | wc -l)" -eq 0 ] \
   || { echo "FAIL: inline style attribute reintroduced"; exit 1; }
-[ "$(grep -rho '<style' --include='*.html' . | wc -l)" -eq 0 ] \
+[ "$(grep -rho '<style' --include='*.html' --exclude-dir=node_modules --exclude-dir=netlify . | wc -l)" -eq 0 ] \
   || { echo "FAIL: inline <style> reintroduced"; exit 1; }
 
 # Executable inline scripts only. type="application/ld+json" is structured data,

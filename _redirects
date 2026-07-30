@@ -11,3 +11,14 @@
 /js/nose.js  /js/nose.782b6187.js  302
 
 # Netlify serves /404.html automatically for unmatched paths.
+
+# Source, not website. The runtime path /.netlify/* is unaffected.
+/netlify/*      /404.html   404
+/node_modules/* /404.html   404
+/docs/*              /404.html   404
+/build.sh            /404.html   404
+/setup.sh            /404.html   404
+/verify-manifest.sh  /404.html   404
+/dump-ordering.js    /404.html   404
+/package.json        /404.html   404
+/package-lock.json   /404.html   404

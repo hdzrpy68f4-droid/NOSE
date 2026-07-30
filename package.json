@@ -22,6 +22,7 @@
   },
   "homepage": "https://github.com/hdzrpy68f4-droid/NOSE#readme",
   "dependencies": {
+    "@netlify/blobs": "^10.7.11",
     "unpdf": "^1.8.0"
   }
 }
