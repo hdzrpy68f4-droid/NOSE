@@ -101,7 +101,10 @@ fingerprint() {
   fi
   echo "==> $new"
 }
-
+for f in js/nose*.js js/hero*.js js/agegate*.js js/account*.js; do
+  [ -f "$f" ] || continue
+  node --check "$f" || { echo "FAIL: $f has a syntax error"; exit 1; }
+done
 fingerprint js  nose    js
 fingerprint css shell   css
 fingerprint css hero    css
