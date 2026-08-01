@@ -17,6 +17,21 @@ import { getStore } from '@netlify/blobs';
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { VOTES_STORE } from '../lib/beacon.js';
 
+// SYNTHETIC RECORDS — exclude these from any analysis, and from any figure
+// that gets published or shown to anyone:
+//
+//   candidate 'test-do-not-count'  (2026-08-01)  endpoint smoke test
+//   candidate 'probe-test'         (2026-08-01)  persistence check
+//
+// Both were written by curl to confirm the write path worked at all. Neither
+// came from a person looking at a match result, so neither says anything about
+// whether the aroma-shape hypothesis holds. They are left in place rather than
+// deleted because there is no delete path and inventing one to remove two rows
+// would be worse than a comment. Filter on candidate id.
+//
+// Real votes to date: 1 (candidate 'cold-creek', score 84, up).
+// That is not a finding. It is one vote.
+
 const BAND_SLUGS = { strong: 'Strong', good: 'Good', partial: 'Partial', weak: 'Weak' };
 const MAX_RECORDS = 1000;
 

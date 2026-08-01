@@ -60,7 +60,8 @@ export default async (request) => {
   try {
     // errors/<YYYY-MM-DD>/<ctx>/<suffix> — date first so the purge is a prefix
     // scan, ctx second so repeats of one bug group together.
-    const store = getStore(ERRORS_STORE);
+    // Strong consistency, matching the vote store — see match-feedback.js.
+    const store = getStore({ name: ERRORS_STORE, consistency: 'strong' });
     await store.setJSON(`errors/${dayKey(ts)}/${record.ctx}/${keySuffix(ts)}`, record);
   } catch (err) {
     console.error('[client-error] persist failed', {

@@ -119,7 +119,11 @@ function validate(d) {
 // and cannot be relied on to stay connected.
 async function persist(record) {
   const { _bandSlug, ...value } = record;
-  const store = getStore(VOTES_STORE);
+  // Strong consistency deliberately: the default is eventual, and a vote
+  // that is invisible for up to a minute after it lands looks exactly like a
+  // vote that was dropped. feedback-read.js already reads strongly; a writer
+  // that does not match it turns every spot-check into a false alarm.
+  const store = getStore({ name: VOTES_STORE, consistency: 'strong' });
   const key = `votes/${_bandSlug}/${record.vote}/${dayKey(record.ts)}/${keySuffix(record.ts)}`;
   await store.setJSON(key, value);
 }
