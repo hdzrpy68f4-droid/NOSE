@@ -13,7 +13,7 @@
   <meta property="og:description" content="Compare cannabis flower by terpene profile, not strain name. Aroma matching without effect claims.">
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
-  <link rel="stylesheet" href="/css/shell.7b06506d.css">
+  <link rel="stylesheet" href="/css/shell.eb632db1.css">
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebApplication", "name": "NOSE aroma matcher", "url": "https://curious-crumble-352160.netlify.app/app", "applicationCategory": "UtilitiesApplication", "operatingSystem": "Any modern browser", "description": "Turn a cannabis Certificate of Analysis into an aroma fingerprint and compare it with flower you already enjoy.", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"}, "browserRequirements": "Requires JavaScript."}</script>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/agegate.451aca9a.css">
@@ -87,6 +87,14 @@
                 <button class="button button-quiet" id="importButton" type="button">Import</button>
                 <button class="button button-quiet" id="clearButton" type="button">Delete</button>
               </div>
+              <ul class="saved-list" id="savedPalateList"></ul>
+              <h3 class="u-fs-16">Your account</h3>
+              <p class="small">Save a copy to your account, or replace this browser's jars with the copy you saved. Nothing moves unless you press a button.</p>
+              <div class="button-row">
+                <button class="button button-quiet" id="palateBackupButton" type="button">Save to account</button>
+                <button class="button button-quiet" id="palateRestoreButton" type="button">Load from account</button>
+              </div>
+              <p class="small" id="palateSyncMessage" role="status" aria-live="polite" hidden></p>
               <input type="file" id="importFile" accept="application/json" hidden>
             </div>
           </aside>
@@ -247,7 +255,7 @@
      The scanner code guards on typeof Html5Qrcode, so if the file is missing
      the QR path degrades to a message and the rest of the app is unaffected. -->
 <script src="/vendor/html5-qrcode.min.js" defer></script>
-  <script src="/js/nose.1bb19ab9.js" defer></script>
+  <script src="/js/nose.acfef3f3.js" defer></script>
   <script src="/js/agegate.86760e1d.js" defer></script>
 </body>
 </html>

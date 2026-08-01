@@ -719,7 +719,111 @@
 
     function loadSaved(){ try { const parsed=JSON.parse(localStorage.getItem('nose-palate-v1')||'[]'); return Array.isArray(parsed)?parsed.filter(item=>item&&item.name&&item.terps):[]; } catch { return []; } }
     function persistSaved(){ try { localStorage.setItem('nose-palate-v1',JSON.stringify(state.saved)); return true; } catch { return false; } }
-    function updateSavedSummary(){ const node=document.getElementById('savedPalateSummary'); node.textContent=state.saved.length?`${state.saved.length} locally saved ${state.saved.length===1?'profile':'profiles'}.`:'Nothing saved yet.'; document.getElementById('exportButton').disabled=!state.saved.length; document.getElementById('clearButton').disabled=!state.saved.length; }
+    function updateSavedSummary(){
+      const node=document.getElementById('savedPalateSummary');
+      if(node) node.textContent=state.saved.length?`${state.saved.length} locally saved ${state.saved.length===1?'profile':'profiles'}.`:'Nothing saved yet.';
+      const exportBtn=document.getElementById('exportButton'); if(exportBtn) exportBtn.disabled=!state.saved.length;
+      const clearBtn=document.getElementById('clearButton'); if(clearBtn) clearBtn.disabled=!state.saved.length;
+      const backupBtn=document.getElementById('palateBackupButton'); if(backupBtn) backupBtn.disabled=!state.saved.length;
+      renderSavedList();
+    }
+
+    /* Built with createElement and textContent throughout. Jar names are free
+       text the user typed; innerHTML here would be a self-XSS waiting to
+       happen, and these names are exactly the field this project has already
+       had one incident over. */
+    function renderSavedList(){
+      const list=document.getElementById('savedPalateList');
+      if(!list) return;
+      list.textContent='';
+      state.saved.forEach(profile=>{
+        const li=document.createElement('li');
+        li.className='saved-item';
+
+        const label=document.createElement('span');
+        label.className='saved-item-name';
+        label.textContent=profile.name;
+        li.appendChild(label);
+
+        const button=document.createElement('button');
+        button.type='button';
+        button.className='saved-item-remove';
+        button.textContent='Remove';
+        button.setAttribute('aria-label','Remove '+profile.name+' from saved jars');
+        button.addEventListener('click',()=>removeSavedProfile(profile.id));
+        li.appendChild(button);
+
+        list.appendChild(li);
+      });
+    }
+
+    function removeSavedProfile(id){
+      const index=state.saved.findIndex(p=>p.id===id);
+      if(index<0) return;
+      const name=state.saved[index].name;
+      if(!confirm('Remove "'+name+'" from your saved jars? This only affects this browser.')) return;
+      state.saved.splice(index,1);
+      /* A removed jar must not linger in the selected palate, or the matcher
+         would keep averaging a profile the user can no longer see. */
+      if(Array.isArray(state.palateIds)) state.palateIds=state.palateIds.filter(pid=>pid!==id);
+      persistSaved();
+      updateSavedSummary();
+      step('samples after removal',()=>{ if(document.getElementById('palateSamples')) renderSampleButtons(); });
+    }
+    /* Backup and restore are deliberately manual. The server holds whatever
+       was last pushed; this device stays authoritative until the user says
+       otherwise. Restore is destructive and says so before it runs. */
+    function palateMessage(text){
+      const node=document.getElementById('palateSyncMessage');
+      if(!node) return;
+      node.textContent=text;
+      node.hidden=!text;
+    }
+
+    function backupPalate(){
+      if(!state.saved.length){ palateMessage('Nothing saved to back up yet.'); return; }
+      const button=document.getElementById('palateBackupButton');
+      if(button) button.disabled=true;
+      palateMessage('Saving\u2026');
+      fetch('/.netlify/functions/palate-sync',{
+        method:'PUT',
+        headers:{'content-type':'application/json'},
+        credentials:'same-origin',
+        body:JSON.stringify({version:1,profiles:state.saved})
+      }).then(res=>res.json().catch(()=>({})).then(data=>({ok:res.ok,status:res.status,data})))
+        .then(res=>{
+          if(button) button.disabled=false;
+          if(res.status===401){ palateMessage('Sign in first \u2014 see the Account page.'); return; }
+          if(!res.ok){ palateMessage((res.data&&res.data.message)||'Could not save. Try again.'); return; }
+          palateMessage(res.data.count+' jar'+(res.data.count===1?'':'s')+' saved to your account.');
+        })
+        .catch(()=>{ if(button) button.disabled=false; palateMessage('Network problem. Try again.'); });
+    }
+
+    function restorePalate(){
+      palateMessage('Loading\u2026');
+      fetch('/.netlify/functions/palate-sync',{credentials:'same-origin'})
+        .then(res=>res.json().catch(()=>({})).then(data=>({ok:res.ok,status:res.status,data})))
+        .then(res=>{
+          if(res.status===401){ palateMessage('Sign in first \u2014 see the Account page.'); return; }
+          if(!res.ok){ palateMessage('Could not load. Try again.'); return; }
+          const profiles=(res.data&&res.data.profiles)||[];
+          if(!profiles.length){ palateMessage('Nothing is saved to your account yet.'); return; }
+          if(!confirm('Replace the '+state.saved.length+' jar'+(state.saved.length===1?'':'s')+' in this browser with '+profiles.length+' from your account? What is here now will be lost.')){
+            palateMessage('');
+            return;
+          }
+          state.saved=profiles.filter(item=>item&&item.name&&item.terps)
+            .map(item=>({...item,id:item.id||`saved-${slugify(item.name)}-${Date.now()}`}));
+          state.palateIds=[];
+          persistSaved();
+          updateSavedSummary();
+          step('samples after restore',()=>{ if(document.getElementById('palateSamples')) renderSampleButtons(); });
+          palateMessage('Loaded '+state.saved.length+' jar'+(state.saved.length===1?'':'s')+' from your account.');
+        })
+        .catch(()=>palateMessage('Network problem. Try again.'));
+    }
+
     function exportSaved(){ const blob=new Blob([JSON.stringify({version:1,profiles:state.saved},null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='nose-palate.json'; a.click(); URL.revokeObjectURL(url); }
     function importSaved(file){ const reader=new FileReader(); reader.onload=()=>{ try { const data=JSON.parse(String(reader.result)); const profiles=Array.isArray(data)?data:data.profiles; if(!Array.isArray(profiles)) throw new Error('Invalid format'); state.saved=profiles.filter(item=>item&&item.name&&item.terps).map(item=>({...item,id:item.id||`saved-${slugify(item.name)}-${Date.now()}`})); const persisted=persistSaved(); updateSavedSummary(); showMessage('manualMessage',`Imported ${state.saved.length} profiles${persisted?' into this browser':' for this session'}.`,'success'); } catch { alert('That file is not a valid NOSE palate export.'); } }; reader.readAsText(file); }
 
@@ -838,6 +942,8 @@
       on('importButton','click',()=>{ const f=$id('importFile'); if(f) f.click(); });
       on('importFile','change',event=>{ if(event.target.files[0]) importSaved(event.target.files[0]); });
       on('clearButton','click',()=>{ if(confirm('Delete all locally saved NOSE profiles?')){ state.saved=[]; persistSaved(); updateSavedSummary(); } });
+      on('palateBackupButton','click',backupPalate);
+      on('palateRestoreButton','click',restorePalate);
       step('route',route);
     }
 
