@@ -1,0 +1,231 @@
+/* Account page only. Loaded after family.css, which supplies the shell:
+   header, footer, .card, .button, .wrap, .note, .mono.
+
+   Colour literals rather than variables on purpose — family.css owns the
+   custom-property names and this file must not assume any of them still
+   exist. Values are the project palette:
+     ink #1A241E · paper #F2F4F1 · brand #2F6144 · muted #6E655C */
+
+.acct-wrap {
+  max-width: 34rem;
+  margin: 0 auto;
+}
+
+.acct-loading {
+  text-align: center;
+  color: #6E655C;
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 0.85rem;
+  padding: 2rem 0;
+}
+
+.acct-state > * + * {
+  margin-top: 1.5rem;
+}
+
+.acct-card {
+  padding: 1.5rem;
+}
+
+.acct-card h2 {
+  margin-top: 0;
+}
+
+/* ---------------------------------------------------------------- tabs */
+
+.acct-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.acct-tab {
+  flex: 1;
+  padding: 0.7rem 0.5rem;
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  font-size: 0.95rem;
+  color: #6E655C;
+  background: transparent;
+  border: 1px solid rgba(26, 36, 30, 0.18);
+  border-radius: 0.4rem;
+  cursor: pointer;
+}
+
+.acct-tab[aria-selected="true"] {
+  color: #F2F4F1;
+  background: #2F6144;
+  border-color: #2F6144;
+}
+
+.acct-tab:focus-visible {
+  outline: 2px solid #2F6144;
+  outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------- fields */
+
+.acct-field {
+  margin-bottom: 1.1rem;
+}
+
+.acct-field label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #6E655C;
+}
+
+.acct-field input {
+  width: 100%;
+  box-sizing: border-box;
+  /* 16px minimum: anything smaller makes iOS Safari zoom on focus. */
+  font-size: 1rem;
+  font-family: inherit;
+  color: #1A241E;
+  background: #F2F4F1;
+  padding: 0.7rem 0.75rem;
+  border: 1px solid rgba(26, 36, 30, 0.22);
+  border-radius: 0.4rem;
+}
+
+.acct-field input:focus {
+  outline: none;
+  border-color: #2F6144;
+  box-shadow: 0 0 0 3px rgba(47, 97, 68, 0.18);
+}
+
+.acct-field input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.acct-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin-bottom: 0.5rem;
+}
+
+.acct-check input {
+  /* Bigger than default: this checkbox is a legal attestation, not a
+     preference toggle, and must not be easy to tick by accident. */
+  width: 1.15rem;
+  height: 1.15rem;
+  margin: 0.15rem 0 0;
+  accent-color: #2F6144;
+  flex: none;
+}
+
+.acct-check label {
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.acct-hint,
+.acct-fine {
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: #6E655C;
+  margin: 0.4rem 0 0;
+}
+
+.acct-fine {
+  margin-top: 1rem;
+}
+
+/* ------------------------------------------------------------- messages */
+
+.acct-message {
+  margin: 1rem 0 0;
+  padding: 0.7rem 0.85rem;
+  border-radius: 0.4rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  border-left: 3px solid #8A8377;
+  background: rgba(138, 131, 119, 0.1);
+  color: #1A241E;
+}
+
+.acct-message[data-tone="ok"] {
+  border-left-color: #2F6144;
+  background: rgba(47, 97, 68, 0.1);
+}
+
+.acct-message[data-tone="error"] {
+  border-left-color: #C25B2E;
+  background: rgba(194, 91, 46, 0.1);
+}
+
+/* -------------------------------------------------------------- details */
+
+.acct-details {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.5rem 1.25rem;
+  margin: 0 0 1.25rem;
+}
+
+.acct-details dt {
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #6E655C;
+  align-self: center;
+}
+
+.acct-details dd {
+  margin: 0;
+  font-size: 0.9rem;
+  word-break: break-word;
+  align-self: center;
+}
+
+/* ---------------------------------------------------------- danger zone */
+
+.acct-danger {
+  border-color: rgba(194, 91, 46, 0.4);
+}
+
+.acct-danger h2 {
+  color: #93401F;
+}
+
+.acct-danger ul {
+  margin: 0.5rem 0 1rem;
+  padding-left: 1.2rem;
+  line-height: 1.6;
+}
+
+.button-danger {
+  color: #F2F4F1;
+  background: #93401F;
+  border-color: #93401F;
+}
+
+.button-danger:hover:not(:disabled) {
+  background: #7A3419;
+  border-color: #7A3419;
+}
+
+.button-danger:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Buttons carry a busy state during a request; without it a slow network
+   reads as a dead button and people click twice. */
+.button[aria-busy="true"] {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+@media (max-width: 30rem) {
+  .acct-tabs { flex-direction: column; }
+  .acct-details { grid-template-columns: 1fr; gap: 0.15rem 0; }
+  .acct-details dd { margin-bottom: 0.6rem; }
+  .buttons { flex-direction: column; align-items: stretch; }
+}
