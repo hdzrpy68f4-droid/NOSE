@@ -80,8 +80,6 @@
          rarely report which they measured. Revisit if that changes. */
       farnesene:{name:'Farnesene',family:'herbal'},
       ocimene:{name:'Ocimene',family:'herbal'}
-      ocimene:{name:'Ocimene',family:'herbal'},
-farnesene:{name:'Farnesene',family:'herbal'}
 
     };
 
@@ -120,7 +118,7 @@ farnesene:{name:'Farnesene',family:'herbal'}
       'beta-myrcene':'myrcene','b-myrcene':'myrcene','β-myrcene':'myrcene',
       'd-limonene':'limonene','r-limonene':'limonene','(r)-limonene':'limonene',
       'beta-ocimene':'ocimene','b-ocimene':'ocimene','β-ocimene':'ocimene',
-      'linalool-oxide':'linalool''trans-b-farnesene':'farnesene','trans-beta-farnesene':'farnesene',
+      'linalool-oxide':'linalool','trans-b-farnesene':'farnesene','trans-beta-farnesene':'farnesene',
 'alpha-farnesene':'farnesene','beta-farnesene':'farnesene','β-farnesene':'farnesene',
 
     };
