@@ -503,7 +503,8 @@
         font-size:0.8125rem;
       }
       [data-page="app"] .tab-button span { display:none; }
-      [data-page="app"] .saved-palate-block { display:none; }
+            [data-page="app"] .saved-palate-block { display:block; }
+      [data-page="app"] .saved-palate-block > .u-hr { display:none; }
       [data-page="app"] .input-panel { padding:18px; border-radius:16px; box-shadow:none; }
       [data-page="app"] .input-panel h2 { margin-bottom:8px; font-size:1.75rem; line-height:1.05; }
       [data-page="app"] .input-panel > .small { margin-bottom:14px; font-size:0.9375rem; line-height:1.5; }
@@ -824,3 +825,45 @@
   outline: 2px solid #2F6144;
   outline-offset: 2px;
 }
+/* On phones the sidebar has to stay short, so this block collapses rather
+   than disappearing. It was previously display:none below 430px, which made
+   export, import, delete and account backup unreachable on the device most
+   people use. Hidden controls are worse than crowded ones. */
+.saved-palate-block > summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font: 650 1rem/1 Inter, system-ui, sans-serif;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+.saved-palate-block > summary::-webkit-details-marker { display: none; }
+.saved-palate-block > summary::after {
+  content: "▾";
+  margin-left: auto;
+  font-size: 0.8em;
+}
+/* On phones the sidebar has to stay short, so this block collapses rather
+   than disappearing. It was previously display:none below 430px, which made
+   export, import, delete and account backup unreachable on the device most
+   people use. Hidden controls are worse than crowded ones. */
+.saved-palate-block > summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font: 650 1rem/1 Inter, system-ui, sans-serif;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+.saved-palate-block > summary::-webkit-details-marker { display: none; }
+.saved-palate-block > summary::after {
+  content: "▾";
+  margin-left: auto;
+  font-size: 0.8em;
+}
+.saved-palate-block[open] > summary::after { content: "▴"; }
+

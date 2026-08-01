@@ -13,7 +13,7 @@
   <meta property="og:description" content="Compare cannabis flower by terpene profile, not strain name. Aroma matching without effect claims.">
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
-  <link rel="stylesheet" href="/css/shell.eb632db1.css">
+  <link rel="stylesheet" href="/css/shell.918a3d5e.css">
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebApplication", "name": "NOSE aroma matcher", "url": "https://curious-crumble-352160.netlify.app/app", "applicationCategory": "UtilitiesApplication", "operatingSystem": "Any modern browser", "description": "Turn a cannabis Certificate of Analysis into an aroma fingerprint and compare it with flower you already enjoy.", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"}, "browserRequirements": "Requires JavaScript."}</script>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/agegate.451aca9a.css">
@@ -78,9 +78,8 @@
               <button class="tab-button" role="tab" aria-selected="false" aria-controls="uploadPanel" id="uploadTab" data-tab="upload">Upload <span aria-hidden="true">→</span></button>
               <button class="tab-button" role="tab" aria-selected="false" aria-controls="manualPanel" id="manualTab" data-tab="manual">Manual <span aria-hidden="true">→</span></button>
             </div>
-            <div class="saved-palate-block">
-              <hr class="u-hr">
-              <h3 class="u-fs-16">Saved palate</h3>
+            <details class="saved-palate-block" open>
+              <summary>Saved palate</summary>
               <p class="small" id="savedPalateSummary">Nothing saved yet.</p>
               <div class="button-row">
                 <button class="button button-quiet" id="exportButton" type="button">Export</button>
@@ -96,7 +95,7 @@
               </div>
               <p class="small" id="palateSyncMessage" role="status" aria-live="polite" hidden></p>
               <input type="file" id="importFile" accept="application/json" hidden>
-            </div>
+            </details>
           </aside>
 
           <div>
