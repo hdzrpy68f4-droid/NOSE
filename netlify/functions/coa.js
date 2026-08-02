@@ -47,7 +47,6 @@ const MAX_REDIRECTS = 3;
  * miss — the parser may read a different column — so these are refused until
  * a handler for that ordering exists and the harness reports MATCH. */
 const UNSAFE_UNDER_UNPDF = [
-  { lab: /modern\s*canna/i, productClass: 'flower' }
 ];
 
 function json(statusCode, body){
