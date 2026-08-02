@@ -6,6 +6,7 @@
     "totalTerpenes": 3.5,
     "mappedTotal": 3.4406,
     "coverage": 98.3,
+    "measuredCoverage": 99.9,
     "usable": true,
     "nonZeroTerps": 9,
     "terps": {
@@ -27,6 +28,7 @@
     "totalTerpenes": 3.73,
     "mappedTotal": 3.6038,
     "coverage": 96.6,
+    "measuredCoverage": 99.9,
     "usable": true,
     "nonZeroTerps": 13,
     "terps": {
@@ -52,6 +54,7 @@
     "totalTerpenes": 6.527,
     "mappedTotal": 6.29433,
     "coverage": 96.4,
+    "measuredCoverage": 100.7,
     "usable": true,
     "nonZeroTerps": 14,
     "terps": {
@@ -78,6 +81,7 @@
     "totalTerpenes": 4.402,
     "mappedTotal": 4.416,
     "coverage": 100.3,
+    "measuredCoverage": 101.5,
     "usable": true,
     "nonZeroTerps": 13,
     "terps": {
@@ -104,6 +108,7 @@
     "totalTerpenes": 3.09,
     "mappedTotal": 2.632,
     "coverage": 85.2,
+    "measuredCoverage": 100,
     "usable": true,
     "nonZeroTerps": 13,
     "terps": {
@@ -129,6 +134,7 @@
     "totalTerpenes": 2.008,
     "mappedTotal": 2.01633,
     "coverage": 100.4,
+    "measuredCoverage": 102.9,
     "usable": true,
     "nonZeroTerps": 14,
     "terps": {
@@ -155,6 +161,7 @@
     "totalTerpenes": 6.48,
     "mappedTotal": 6.2,
     "coverage": 95.7,
+    "measuredCoverage": 100.6,
     "usable": true,
     "nonZeroTerps": 14,
     "terps": {
@@ -181,6 +188,7 @@
     "totalTerpenes": 10.03,
     "mappedTotal": 9.734,
     "coverage": 97,
+    "measuredCoverage": 97.5,
     "usable": true,
     "nonZeroTerps": 11,
     "terps": {
@@ -207,6 +215,7 @@
     "totalTerpenes": 0.532,
     "mappedTotal": 0.532,
     "coverage": 100,
+    "measuredCoverage": 100,
     "usable": true,
     "nonZeroTerps": 7,
     "terps": {
@@ -233,6 +242,7 @@
     "totalTerpenes": 4.53,
     "mappedTotal": 4.095,
     "coverage": 90.4,
+    "measuredCoverage": 100,
     "usable": true,
     "nonZeroTerps": 6,
     "terps": {
@@ -260,6 +270,7 @@
     "totalTerpenes": 1.771,
     "mappedTotal": 1.771,
     "coverage": 100,
+    "measuredCoverage": 100,
     "usable": true,
     "nonZeroTerps": 11,
     "terps": {
@@ -286,6 +297,7 @@
     "totalTerpenes": 9,
     "mappedTotal": 8.6827,
     "coverage": 96.5,
+    "measuredCoverage": 100,
     "usable": true,
     "nonZeroTerps": 13,
     "terps": {
@@ -313,6 +325,7 @@
     "totalTerpenes": 3.19,
     "mappedTotal": 3.0198,
     "coverage": 94.7,
+    "measuredCoverage": 100.1,
     "usable": true,
     "nonZeroTerps": 14,
     "terps": {
@@ -339,6 +352,7 @@
     "totalTerpenes": 6.82,
     "mappedTotal": 6.559,
     "coverage": 96.2,
+    "measuredCoverage": 100.8,
     "usable": true,
     "nonZeroTerps": 13,
     "terps": {
@@ -359,44 +373,6 @@
       "nerolidol": 0
     }
   },
-  "GreenRoadsFullSpectrumCBDOil750mgLot24007": {
-    "lab": "TerpLife Labs",
-    "productClass": "tincture",
-    "layout": "row",
-    "totalTerpenes": 0,
-    "mappedTotal": 16,
-    "coverage": null,
-    "usable": false,
-    "nonZeroTerps": 15,
-    "terps": {
-      "bisabolol": 1,
-      "fenchol": 1,
-      "humulene": 1,
-      "pinene_a": 1,
-      "terpineol": 1,
-      "myrcene": 1,
-      "ocimene": 1,
-      "pinene_b": 1,
-      "camphene": 1,
-      "limonene": 1,
-      "caryophyllene": 1,
-      "nerolidol": 2,
-      "farnesene": 1,
-      "linalool": 1,
-      "terpinolene": 1
-    }
-  },
-  "Harmony-Muscle-Rub-COA-PHRO1": {
-    "lab": "Green Scientific Labs",
-    "productClass": "topical",
-    "layout": "row",
-    "totalTerpenes": null,
-    "mappedTotal": 0,
-    "coverage": null,
-    "usable": false,
-    "nonZeroTerps": 0,
-    "terps": {}
-  },
   "KAY-AIO-001": {
     "lab": "Kaycha Labs",
     "productClass": "concentrate",
@@ -404,6 +380,7 @@
     "totalTerpenes": 8.33,
     "mappedTotal": 8.2259,
     "coverage": 98.8,
+    "measuredCoverage": 100,
     "usable": true,
     "nonZeroTerps": 15,
     "terps": {
@@ -431,6 +408,7 @@
     "totalTerpenes": 41.24,
     "mappedTotal": 36.86,
     "coverage": 89.4,
+    "measuredCoverage": 100.1,
     "usable": true,
     "nonZeroTerps": 12,
     "terps": {
@@ -458,6 +436,7 @@
     "totalTerpenes": 4.09,
     "mappedTotal": 3.4994,
     "coverage": 85.6,
+    "measuredCoverage": 100,
     "usable": true,
     "nonZeroTerps": 15,
     "terps": {
@@ -485,6 +464,7 @@
     "totalTerpenes": 37.8,
     "mappedTotal": 37.549,
     "coverage": 99.3,
+    "measuredCoverage": 100,
     "usable": true,
     "nonZeroTerps": 13,
     "terps": {
@@ -512,6 +492,7 @@
     "totalTerpenes": 1.38,
     "mappedTotal": 1.2669,
     "coverage": 91.8,
+    "measuredCoverage": 100.3,
     "usable": true,
     "nonZeroTerps": 10,
     "terps": {
@@ -539,6 +520,7 @@
     "totalTerpenes": 4.33,
     "mappedTotal": 3.8481,
     "coverage": 88.9,
+    "measuredCoverage": 99.9,
     "usable": true,
     "nonZeroTerps": 14,
     "terps": {
@@ -566,6 +548,7 @@
     "totalTerpenes": 4.78,
     "mappedTotal": 4.5489,
     "coverage": 95.2,
+    "measuredCoverage": 100.4,
     "usable": true,
     "nonZeroTerps": 15,
     "terps": {
@@ -593,6 +576,7 @@
     "totalTerpenes": 2.89,
     "mappedTotal": 2.8905,
     "coverage": 100,
+    "measuredCoverage": 100,
     "usable": true,
     "nonZeroTerps": 13,
     "terps": {
@@ -620,6 +604,7 @@
     "totalTerpenes": 0.944,
     "mappedTotal": 0.9427,
     "coverage": 99.9,
+    "measuredCoverage": 99.9,
     "usable": true,
     "nonZeroTerps": 9,
     "terps": {
@@ -647,6 +632,7 @@
     "totalTerpenes": 1.8556,
     "mappedTotal": 1.8401,
     "coverage": 99.2,
+    "measuredCoverage": 100,
     "usable": true,
     "nonZeroTerps": 13,
     "terps": {
@@ -674,6 +660,7 @@
     "totalTerpenes": 4.56,
     "mappedTotal": 4.3892,
     "coverage": 96.3,
+    "measuredCoverage": 100,
     "usable": true,
     "nonZeroTerps": 14,
     "terps": {
@@ -701,6 +688,7 @@
     "totalTerpenes": 6.64,
     "mappedTotal": 4.6984,
     "coverage": 70.8,
+    "measuredCoverage": 100,
     "usable": true,
     "nonZeroTerps": 12,
     "terps": {
@@ -728,6 +716,7 @@
     "totalTerpenes": 6.04,
     "mappedTotal": 6.0022,
     "coverage": 99.4,
+    "measuredCoverage": 100,
     "usable": true,
     "nonZeroTerps": 13,
     "terps": {
@@ -755,6 +744,7 @@
     "totalTerpenes": 2.25,
     "mappedTotal": 2.2484,
     "coverage": 99.9,
+    "measuredCoverage": 99.9,
     "usable": true,
     "nonZeroTerps": 13,
     "terps": {
@@ -782,6 +772,7 @@
     "totalTerpenes": 0.206,
     "mappedTotal": 0.184,
     "coverage": 89.3,
+    "measuredCoverage": 99.5,
     "usable": true,
     "nonZeroTerps": 5,
     "terps": {
@@ -808,6 +799,7 @@
     "totalTerpenes": 6.75,
     "mappedTotal": 6.7505,
     "coverage": 100,
+    "measuredCoverage": 100,
     "usable": true,
     "nonZeroTerps": 14,
     "terps": {
@@ -835,6 +827,7 @@
     "totalTerpenes": 5.44,
     "mappedTotal": 5.2092,
     "coverage": 95.8,
+    "measuredCoverage": 100,
     "usable": true,
     "nonZeroTerps": 12,
     "terps": {
@@ -859,6 +852,7 @@
     "totalTerpenes": 16.8,
     "mappedTotal": 16.2422,
     "coverage": 96.7,
+    "measuredCoverage": 100.3,
     "usable": true,
     "nonZeroTerps": 13,
     "terps": {
@@ -884,6 +878,7 @@
     "totalTerpenes": 1.25,
     "mappedTotal": 1.2523,
     "coverage": 100.2,
+    "measuredCoverage": 100.2,
     "usable": true,
     "nonZeroTerps": 11,
     "terps": {
@@ -907,6 +902,7 @@
     "totalTerpenes": 4.55,
     "mappedTotal": 4.2644,
     "coverage": 93.7,
+    "measuredCoverage": 100,
     "usable": true,
     "nonZeroTerps": 13,
     "terps": {
@@ -932,6 +928,7 @@
     "totalTerpenes": 2.22,
     "mappedTotal": 2.12662,
     "coverage": 95.8,
+    "measuredCoverage": 100,
     "usable": true,
     "nonZeroTerps": 13,
     "terps": {
@@ -958,6 +955,7 @@
     "totalTerpenes": 1.38,
     "mappedTotal": 1.31718,
     "coverage": 95.4,
+    "measuredCoverage": 100.1,
     "usable": true,
     "nonZeroTerps": 14,
     "terps": {
@@ -984,6 +982,7 @@
     "totalTerpenes": 8.47,
     "mappedTotal": 8.129,
     "coverage": 96,
+    "measuredCoverage": 96,
     "usable": true,
     "nonZeroTerps": 11,
     "terps": {
@@ -1007,6 +1006,7 @@
     "totalTerpenes": 3.13,
     "mappedTotal": 3.072,
     "coverage": 98.1,
+    "measuredCoverage": 98.1,
     "usable": true,
     "nonZeroTerps": 11,
     "terps": {
@@ -1030,6 +1030,7 @@
     "totalTerpenes": 10.4,
     "mappedTotal": 10.146,
     "coverage": 97.6,
+    "measuredCoverage": 97.6,
     "usable": true,
     "nonZeroTerps": 11,
     "terps": {
@@ -1053,6 +1054,7 @@
     "totalTerpenes": 3.99,
     "mappedTotal": 3.8052,
     "coverage": 95.4,
+    "measuredCoverage": 97.6,
     "usable": true,
     "nonZeroTerps": 10,
     "terps": {
@@ -1075,6 +1077,7 @@
     "totalTerpenes": 0.912,
     "mappedTotal": 0.90653,
     "coverage": 99.4,
+    "measuredCoverage": 100,
     "usable": true,
     "nonZeroTerps": 9,
     "terps": {
@@ -1096,6 +1099,7 @@
     "totalTerpenes": 2.52,
     "mappedTotal": 2.352,
     "coverage": 93.3,
+    "measuredCoverage": 93.3,
     "usable": true,
     "nonZeroTerps": 10,
     "terps": {
@@ -1118,6 +1122,7 @@
     "totalTerpenes": 2.15,
     "mappedTotal": 2.03275,
     "coverage": 94.5,
+    "measuredCoverage": 100,
     "usable": true,
     "nonZeroTerps": 14,
     "terps": {
@@ -1145,6 +1150,7 @@
     "totalTerpenes": 1.3,
     "mappedTotal": 1.2959,
     "coverage": 99.7,
+    "measuredCoverage": 99.7,
     "usable": true,
     "nonZeroTerps": 7,
     "terps": {
@@ -1164,16 +1170,5 @@
       "terpinolene": 0,
       "nerolidol": 0
     }
-  },
-  "hemp-bombs-cbd-gummies-50-count-750mg-of-cbd-COA": {
-    "lab": "Method Testing Labs",
-    "productClass": "edible",
-    "layout": "row",
-    "totalTerpenes": null,
-    "mappedTotal": 0,
-    "coverage": null,
-    "usable": false,
-    "nonZeroTerps": 0,
-    "terps": {}
   }
 }

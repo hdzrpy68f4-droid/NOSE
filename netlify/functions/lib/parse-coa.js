@@ -552,7 +552,22 @@ function parseCoa(text){
       layout = 'column';
     }
   }
-  const coverage = totalTerpenes > 0 ? mappedTotal / totalTerpenes : null;
+  /* Two different questions, previously answered by one number.
+   *
+   *   measuredCoverage - did we recover the lab's terpene table at all?
+   *   modelCoverage    - how much of that mass does the NOSE model represent?
+   *
+   * Conflating them hides the difference between a partial PANEL (the lab
+   * printed a top ten; we read it correctly; the model covers most of it) and a
+   * partial PARSE (we read almost nothing). Both used to surface as one low
+   * percentage. ACS-FLW-001 at 85.2% is the first; a flower COA yielding one
+   * terpene is the second, and only the second is a fault.
+   *
+   * `coverage` is retained unchanged - the app reads it by name. */
+  const modelCoverage    = totalTerpenes > 0 ? mappedTotal / totalTerpenes : null;
+  const measuredCoverage = totalTerpenes > 0
+    ? (mappedTotal + unmodelledTotal) / totalTerpenes : null;
+  const coverage = modelCoverage;
   const terpenesTested = terpenesWereTested(lines);
   const lab = detectLab(text);
   const productClass = detectProductClass(text);
@@ -572,6 +587,15 @@ function parseCoa(text){
     rejectReasons.push('lab reported a total of zero terpenes');
   if (nonZero === 0)
     rejectReasons.push('no modelled terpene measured above the limit of quantitation');
+  /* Catches the failure the ceiling cannot: values that are individually
+     possible and a total that is correct, but most of the table missing. Under
+     one number this looked like a partial panel; measured coverage separates
+     "the lab printed a short list" from "we did not read the list". */
+  if (measuredCoverage != null && measuredCoverage < MIN_MEASURED_COVERAGE)
+    rejectReasons.push(`only ${(measuredCoverage * 100).toFixed(1)}% of the lab's own terpene total was recovered — the table was not read completely`);
+  if (INHALABLE.has(productClass) && nonZero > 0 && nonZero < MIN_ANALYTES_INHALABLE)
+    rejectReasons.push(`only ${nonZero} terpene${nonZero === 1 ? '' : 's'} found on an inhalable product — implausible, so the panel was probably misread`);
+
   if (coverage != null && coverage > COVERAGE_CEILING)
     rejectReasons.push(`coverage ${(coverage * 100).toFixed(1)}% exceeds the lab total — parse fault, not a lab finding`);
   /* Coverage alone is only an INTERNAL consistency check: it compares two
@@ -592,7 +616,8 @@ function parseCoa(text){
   return {
     lab, strain, batch, labId, harvestDate, productClass,
     totalTerpenes, moisture, waterActivity, freshnessApplies,
-    terps, mappedTotal, unmodelledTotal, coverage, layout,
+    terps, mappedTotal, unmodelledTotal, coverage,
+    modelCoverage, measuredCoverage, layout,
     unmapped: [...unmapped].sort(),
     terpenesTested,
     usable: rejectReasons.length === 0,
@@ -623,6 +648,16 @@ module.exports = {
  * either agrees with the lab's own arithmetic or it declines to answer.
  */
 const RECONCILE_TOLERANCE = 0.03;   // 3% of the printed total
+/* A recovered table accounts for essentially all of the lab's own total. Across
+   every correctly-parsed fixture measured coverage sits at 99-100%; a genuine
+   partial PANEL still reaches it, because unmodelled mass counts too. Well below
+   it means rows were missed, not that the lab printed a short list. */
+const MIN_MEASURED_COVERAGE = 0.80;
+/* Inhalable cannabis carries more than a couple of terpenes above LOQ. One or
+   two on a flower COA is a parse that collapsed, not a real profile. */
+const MIN_ANALYTES_INHALABLE = 3;
+const INHALABLE = new Set(['flower', 'concentrate', 'vape']);
+
 const MIN_ROW_SHARE = 0.5;          // a row-wise column must explain half the total
 
 /* Some labs emit two adjacent analyte names as ONE line when the first ends
