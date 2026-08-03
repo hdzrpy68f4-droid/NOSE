@@ -495,17 +495,26 @@
         cov.textContent='This report prints no total terpene figure, so how complete the fingerprint is cannot be known.';
         cov.setAttribute('data-partial','true');
       }else{
-        const pct=Math.round(Math.min(data.coverage,1)*100);
+                const model=Math.round(Math.min(data.coverage,1)*100);
+        const measured=data.measuredCoverage!=null
+          ? Math.round(Math.min(data.measuredCoverage,1)*100) : null;
         const extra=(data.unmapped&&data.unmapped.length)
           ? ` Measured but outside the six families: ${data.unmapped.join(', ')}.`
           : '';
-        if(pct>=95){
-          cov.textContent=`This covers ${pct}% of the terpene mass the lab measured.`+extra;
+        /* Two different facts, previously reported as one number. How much of
+           the lab's table was read is a question about this tool; how much of
+           it the six families represent is a question about the model. */
+        const read=(measured!=null&&measured<98)
+          ? `Read ${measured}% of the terpene mass this lab printed. `
+          : '';
+        if(model>=95){
+          cov.textContent=`${read}${model}% of it maps to the six aroma families.`+extra;
           cov.removeAttribute('data-partial');
         }else{
-          cov.textContent=`This covers ${pct}% of the terpene mass the lab measured, so the shape rests on a partial panel and is not directly comparable with a full one.`+extra;
+          cov.textContent=`${read}${model}% of it maps to the six aroma families, so the shape rests on a partial panel and is not directly comparable with a full one.`+extra;
           cov.setAttribute('data-partial','true');
         }
+
       }
 
       $id('coaConfirmName').value=data.strain||'';
