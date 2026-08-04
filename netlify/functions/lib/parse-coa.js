@@ -167,7 +167,13 @@ const CHART_LEGEND_START = /^Dominant Terpenes$/i;
    entirely wrong. The full screen is authoritative and reads name-first, so the
    summary is skipped whenever a detailed panel is present. */
 const TOPTEN_START = /^TERPENES SUMMARY \(Top Ten\)$/i;
-const FULL_PANEL = /^(Terpene Screen by GC\/MS|TERPENES)$/i;
+/* Only a real detailed panel counts as the alternative to a top-ten summary.
+   A bare "Terpenes" was matched here too, but that string is also the ANALYSIS
+   SUMMARY status tile - so on a single-page COA the parser believed a fuller
+   table existed later, skipped the only terpene table in the document, and
+   reported that no terpene was measured. Modern Canna issues single-page
+   reports for hand-rolls, where the summary IS the panel. */
+const FULL_PANEL = /^(Terpene Screen by GC\/MS|TERPENE SCREEN.*|TERPENES)$/;
 const TOPTEN_MAX = 60;
 const CHART_LEGEND_END = /^(Cannabinoids?|Terpenes?|Potency|Microbials?|Mycotoxins|Pesticides|Heavy Metals|Residual Solvents|Water Activity|Moisture|Foreign Matt?er|Tests? Summary|Analysis Summary|Results?|Total Terpenes)$/i;
 const CHART_LEGEND_MAX = 40;
@@ -206,7 +212,7 @@ const CLASSES = [
   [/edible gummy|\bgummy\b|Ingestible, Beverage/i, 'edible'],
   [/\btincture\b/i, 'tincture'],
   [/topical|muscle rub|roll[- ]?on|Derivative Non-inhalable/i, 'topical'],
-  [/Usable Whole Flower|Whole Flower|Flower Inhalable|Matrix:\s*Flower\b|Flower\s*-?\s*Cured|Flower & Plants|Plant, Flower/i, 'flower']
+  [/hand[- ]?roll|pre[- ]?roll|\bjoint\b|Usable Whole Flower|Whole Flower|Flower Inhalable|Matrix:\s*Flower\b|Flower\s*-?\s*Cured|Flower & Plants|Plant, Flower/i, 'flower']
 ];
 
 function detectLab(text){
@@ -286,6 +292,10 @@ function parseCoa(text){
   const analyteRows = [];
   let legendUntil = -1;   // index before which analyte rows are chart legend
   let totalPinned = false;// headline total taken from a skipped summary block
+  /* Parallel record of each analyte row's value read forwards and backwards, so
+     the correct side can be chosen after the whole table is known. */
+  const beforeByRow = [], afterByRow = [], rowKeys = [];
+  const isAnalyteRowForPairing = (t, m, w) => !t && !m && !w;
 
   for (let i = 0; i < lines.length; i++){
     const line = lines[i];
@@ -311,6 +321,10 @@ function parseCoa(text){
     const inlineTotal = line.match(/^Total\s+Terpenes\s*[:\u2013-]\s*(.+)$/i);
     if (inlineTotal){ totalTerpenes = resultToNumber(inlineTotal[1]); continue; }
 
+    /* Skip a "top ten" summary ONLY when a full panel exists later to read
+       instead. Single-page COAs - Modern Canna issues them for hand-rolls -
+       carry the summary and nothing else, so skipping it discards the entire
+       terpene table and the report reads as though no terpene was measured. */
     if (TOPTEN_START.test(line) && lines.some((l, k) => k > i && FULL_PANEL.test(l))){
       legendUntil = Math.min(i + TOPTEN_MAX, lines.length);
       /* Bounded only by the full panel itself. The summary's own "Total
@@ -425,6 +439,21 @@ function parseCoa(text){
       const usable = numerics.filter(n => n != null && n <= PERCENT_CEILING);
       value = (isAnalyteRow && usable.length) ? usable[0] : numerics[0];
     }
+
+    /* Some layouts print the figure BEFORE its label. Modern Canna does this in
+       the top-ten summary, and on a single-page report - a hand-roll - there is
+       no full panel to fall back on, so the shifted reading is all there is.
+       Collect the preceding value too; which side is real is decided after the
+       scan, by whichever reconciles against the printed total. */
+    if (isAnalyteRowForPairing(isTotal, isMoisture, isWater)){
+      const prv = i > 0 ? lines[i - 1] : null;
+      const pv = prv && isResultToken(prv) ? resultToNumber(prv) : null;
+      if (pv != null && pv >= 0 && pv <= PERCENT_CEILING) beforeByRow.push(pv);
+      else beforeByRow.push(null);
+      afterByRow.push(value);
+      rowKeys.push({ key, isUnmodelled, upper, index: i });
+    }
+
     if (value === null || value === undefined) continue;
 
     if (!isTotal && !isMoisture && !isWater && i >= legendUntil){
@@ -432,7 +461,17 @@ function parseCoa(text){
       seenAnalyte.add(upper);
     }
 
-    if (isTotal){ if (!totalPinned) totalTerpenes = value; }   // pinned wins
+    if (isTotal){
+      /* The figure can precede its label ("2.15%" then "Total Terpenes"), in
+         which case a forward read takes the first analyte's value as the total
+         and every reconciliation downstream is measured against the wrong
+         denominator. Prefer an immediately preceding percentage. */
+      if (!totalPinned){
+        const prv = i > 0 ? lines[i - 1] : null;
+        const pv = prv && /%\s*$/.test(prv) ? resultToNumber(prv) : null;
+        totalTerpenes = (pv != null && pv > 0 && pv <= PERCENT_CEILING) ? pv : value;
+      }
+    }
     else if (isMoisture){ if (moisture === null) moisture = value; }
     else if (isWater){ if (waterActivity === null) waterActivity = value; }
     else if (i < legendUntil){ /* inside a chart legend - not authoritative */ }
@@ -522,6 +561,36 @@ function parseCoa(text){
       if (v === null || v === undefined) continue;
       if (r.isUnmodelled) unmodelledTotal += v;
       else terps[r.key] = (terps[r.key] || 0) + v;   // cis+trans nerolidol accumulate
+    }
+  }
+
+  /* Decide which side of the label held the values.
+   *
+   * The forward reading is already committed above. If the BACKWARD reading
+   * reconciles against the lab's printed total substantially better, the
+   * document prints figures ahead of labels and the forward pass shifted every
+   * value onto the compound above it - real numbers, wrong analytes, the most
+   * dangerous failure this parser can produce.
+   *
+   * A margin is required rather than a simple comparison: "before this name" is
+   * also "after the previous name", so on a normal document the two readings
+   * are near-identical and a tie-break would let a shifted reading win. */
+  if (totalTerpenes > 0 && rowKeys.length >= 4){
+    const sum = arr => arr.reduce((a, v) => a + (v || 0), 0);
+    const fwdShare = sum(afterByRow) / totalTerpenes;
+    const bwdShare = sum(beforeByRow) / totalTerpenes;
+    const fits = x => x <= 1 + RECONCILE_TOLERANCE;
+    if (fits(bwdShare) && bwdShare > fwdShare + BACKWARD_MARGIN && bwdShare >= MIN_BACKWARD_SHARE){
+      Object.keys(terps).forEach(k => delete terps[k]);
+      unmodelledTotal = 0;
+      const seen = new Set();
+      rowKeys.forEach((r, n) => {
+        const v = beforeByRow[n];
+        if (v == null || seen.has(r.upper)) return;
+        seen.add(r.upper);
+        if (r.isUnmodelled) unmodelledTotal += v;
+        else if (r.key) terps[r.key] = (terps[r.key] || 0) + v;
+      });
     }
   }
 
@@ -652,6 +721,8 @@ const RECONCILE_TOLERANCE = 0.03;   // 3% of the printed total
    every correctly-parsed fixture measured coverage sits at 99-100%; a genuine
    partial PANEL still reaches it, because unmodelled mass counts too. Well below
    it means rows were missed, not that the lab printed a short list. */
+const BACKWARD_MARGIN = 0.15;       // backward must beat forward clearly
+const MIN_BACKWARD_SHARE = 0.80;    // ...and reconcile convincingly on its own
 const MIN_MEASURED_COVERAGE = 0.80;
 /* Inhalable cannabis carries more than a couple of terpenes above LOQ. One or
    two on a flower COA is a parse that collapsed, not a real profile. */

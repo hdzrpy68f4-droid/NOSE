@@ -895,6 +895,77 @@
       "pinene_a": 0.0218
     }
   },
+  "MCL-FLW-003": {
+    "lab": "Modern Canna",
+    "productClass": "flower",
+    "layout": "row",
+    "totalTerpenes": 2.24,
+    "mappedTotal": 2.1348,
+    "coverage": 95.3,
+    "measuredCoverage": 95.3,
+    "usable": true,
+    "nonZeroTerps": 10,
+    "terps": {
+      "myrcene": 0.893,
+      "caryophyllene": 0.304,
+      "pinene_a": 0.253,
+      "ocimene": 0.197,
+      "linalool": 0.168,
+      "limonene": 0.0946,
+      "humulene": 0.0763,
+      "pinene_b": 0.0568,
+      "bisabolol": 0.0519,
+      "nerolidol": 0.0402
+    }
+  },
+  "MCL-FLW-004": {
+    "lab": "Modern Canna",
+    "productClass": "flower",
+    "layout": "row",
+    "totalTerpenes": 2.25,
+    "mappedTotal": 2.1299,
+    "coverage": 94.7,
+    "measuredCoverage": 100.1,
+    "usable": true,
+    "nonZeroTerps": 13,
+    "terps": {
+      "pinene_a": 0.058,
+      "camphene": 0.0167,
+      "pinene_b": 0.0783,
+      "limonene": 0.649,
+      "terpinolene": 0.0228,
+      "linalool": 0.264,
+      "caryophyllene": 0.42,
+      "humulene": 0.131,
+      "nerolidol": 0.0947,
+      "bisabolol": 0.075,
+      "terpineol": 0.062,
+      "myrcene": 0.19,
+      "fenchol": 0.0684,
+      "ocimene": 0
+    }
+  },
+  "MCL-FLW-005": {
+    "lab": "Modern Canna",
+    "productClass": "flower",
+    "layout": "row",
+    "totalTerpenes": 2.15,
+    "mappedTotal": 1.8795,
+    "coverage": 87.4,
+    "measuredCoverage": 92.4,
+    "usable": true,
+    "nonZeroTerps": 8,
+    "terps": {
+      "limonene": 0.527,
+      "linalool": 0.465,
+      "caryophyllene": 0.396,
+      "humulene": 0.121,
+      "bisabolol": 0.101,
+      "fenchol": 0.0973,
+      "nerolidol": 0.0917,
+      "terpineol": 0.0805
+    }
+  },
   "MCL-LRS-001": {
     "lab": "Modern Canna",
     "productClass": "unknown",
