@@ -291,10 +291,16 @@ function parseCoa(text){
      lab printed itself. Same principle as readColumnMajor, applied row-wise. */
   const analyteRows = [];
   let legendUntil = -1;   // index before which analyte rows are chart legend
-  let totalPinned = false;// headline total taken from a skipped summary block
+  let totalPinned = false;
+  let totalCandidates = [];
+  /* Set when a multi-column row layout has been resolved by reconciliation.
+     The backward reader must not then re-pair the table: this document is
+     name-first, and "before this name" is the previous row's result column. */
+  let columnResolved = false;// headline total taken from a skipped summary block
   /* Parallel record of each analyte row's value read forwards and backwards, so
      the correct side can be chosen after the whole table is known. */
   const beforeByRow = [], afterByRow = [], rowKeys = [];
+
   const isAnalyteRowForPairing = (t, m, w) => !t && !m && !w;
 
   for (let i = 0; i < lines.length; i++){
@@ -451,7 +457,12 @@ function parseCoa(text){
       if (pv != null && pv >= 0 && pv <= PERCENT_CEILING) beforeByRow.push(pv);
       else beforeByRow.push(null);
       afterByRow.push(value);
-      rowKeys.push({ key, isUnmodelled, upper, index: i });
+      /* Candidates ride ON the row record. A parallel array drifted out of
+         step, because total/moisture rows reach the value logic but never
+         become a row - so index n meant different rows in the two arrays and
+         every value landed one analyte off. */
+      rowKeys.push({ key, isUnmodelled, upper, index: i,
+                     candidates: numerics.filter(n => n != null && n <= PERCENT_CEILING) });
     }
 
     if (value === null || value === undefined) continue;
@@ -470,6 +481,12 @@ function parseCoa(text){
         const prv = i > 0 ? lines[i - 1] : null;
         const pv = prv && /%\s*$/.test(prv) ? resultToNumber(prv) : null;
         totalTerpenes = (pv != null && pv > 0 && pv <= PERCENT_CEILING) ? pv : value;
+        /* Kept UNFILTERED. A mg/g total legitimately exceeds 100 (221.34 on a
+           live resin), and dropping it here left too few candidates for the
+           column selector to run at all - so the whole table fell back to the
+           detection-limit column. The plausibility limit belongs on the value
+           finally chosen, not on the candidates being compared. */
+        totalCandidates = numerics.filter(n => n != null);
       }
     }
     else if (isMoisture){ if (moisture === null) moisture = value; }
@@ -564,6 +581,57 @@ function parseCoa(text){
     }
   }
 
+  /* Choose the RESULT COLUMN when a row carries several.
+   *
+   * Kaycha issues some reports with three numeric columns per row:
+   *
+   *     TOTAL TERPENES | 0.007 | 69.72 | 1.992
+   *                       LOD    mg/g      %
+   *
+   * Taking the first plausible number gives every analyte its detection limit -
+   * fifteen identical 0.007s and a total of 0.007, which the ceiling catches but
+   * only after the fingerprint is already meaningless. Position cannot decide
+   * this: other labs put the percentage first. So try each column index and keep
+   * the one whose analyte values sum to the total in that SAME column, which is
+   * the document's own internal check. */
+  if (rowKeys.length >= 4 && totalCandidates.length > 1){
+    const rows = rowKeys.map(r => ({ r, c: r.candidates || [] }));
+    const width = Math.max(...rows.map(x => x.c.length), totalCandidates.length);
+    let best = null;
+    for (let idx = 0; idx < width; idx++){
+      const declared = totalCandidates[idx];
+      if (!(declared > 0)) continue;
+      let sum = 0, filled = 0;
+      rows.forEach(x => { const v = x.c[idx]; if (v != null){ sum += v; filled++; } });
+      if (filled < rows.length * 0.5) continue;
+      if (sum > declared * (1 + RECONCILE_TOLERANCE)) continue;
+      const share = sum / declared;
+      if (share < MIN_ROW_SHARE) continue;
+      /* Several columns can reconcile: a mg/g column is internally consistent
+         with its own mg/g total just as the % column is with the % total. They
+         are distinguished by magnitude - terpene percentages of mass sit in
+         single digits, while the same figures in mg/g are ten times larger.
+         Prefer the smallest reconciling total that is still a plausible
+         percentage, which is the % column by construction. */
+      if (declared > PLAUSIBLE_TOTAL_PERCENT) continue;
+      if (!best || declared < best.declared) best = { idx, share, declared };
+    }
+    if (best && best.idx > 0){
+      columnResolved = true;
+      Object.keys(terps).forEach(k => delete terps[k]);
+      unmodelledTotal = 0;
+      totalTerpenes = best.declared;
+      const seen = new Set();
+      rows.forEach(x => {
+        const v = x.c[best.idx];
+        if (v == null || seen.has(x.r.upper)) return;
+        seen.add(x.r.upper);
+        if (x.r.isUnmodelled) unmodelledTotal += v;
+        else if (x.r.key) terps[x.r.key] = (terps[x.r.key] || 0) + v;
+      });
+    }
+  }
+
   /* Decide which side of the label held the values.
    *
    * The forward reading is already committed above. If the BACKWARD reading
@@ -575,7 +643,7 @@ function parseCoa(text){
    * A margin is required rather than a simple comparison: "before this name" is
    * also "after the previous name", so on a normal document the two readings
    * are near-identical and a tie-break would let a shifted reading win. */
-  if (totalTerpenes > 0 && rowKeys.length >= 4){
+  if (!columnResolved && totalTerpenes > 0 && rowKeys.length >= 4){
     const sum = arr => arr.reduce((a, v) => a + (v || 0), 0);
     const fwdShare = sum(afterByRow) / totalTerpenes;
     const bwdShare = sum(beforeByRow) / totalTerpenes;
@@ -723,6 +791,9 @@ const RECONCILE_TOLERANCE = 0.03;   // 3% of the printed total
    it means rows were missed, not that the lab printed a short list. */
 const BACKWARD_MARGIN = 0.15;       // backward must beat forward clearly
 const MIN_BACKWARD_SHARE = 0.80;    // ...and reconcile convincingly on its own
+/* No cannabis product is a third terpene by mass; ~35% is far beyond the
+   richest concentrate. A "total" above this is another unit entirely. */
+const PLAUSIBLE_TOTAL_PERCENT = 35;
 const MIN_MEASURED_COVERAGE = 0.80;
 /* Inhalable cannabis carries more than a couple of terpenes above LOQ. One or
    two on a flower COA is a parse that collapsed, not a real profile. */
