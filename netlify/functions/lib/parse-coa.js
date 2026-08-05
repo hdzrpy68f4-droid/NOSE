@@ -24,6 +24,9 @@ const LOOKAHEAD_LINES = 14;   // how far past an analyte name a result may sit
 const COVERAGE_CEILING = 1.05; // mapped mass cannot exceed the lab's own total
 const PERCENT_CEILING = 100;   // every terpene figure is a percentage of mass
 const PRECISION = 6;          // lab data is ~3 sig figs; kill float noise
+/* How many result cells may follow a verdict token. Kaycha prints two (mg and
+   %); the bound stops the scan walking into the next row when a table ends. */
+const MAX_RESULT_COLUMNS = 4;
 
 /* Lab analyte name -> NOSE terpene key. EXACT matching only: a substring match
    would fold "Caryophyllene oxide" into caryophyllene and silently inflate the
@@ -401,7 +404,28 @@ function parseCoa(text){
            a result token the value comes AFTER (Kaycha); if it is the next
            analyte name the value came BEFORE (ACT). No lab detection needed. */
         const after = lines[j + 1];
-        if (after && isResultToken(after)) value = resultToNumber(after);
+        if (after && isResultToken(after)){
+          value = resultToNumber(after);
+          /* A verdict pins the SIDE, not the COLUMN. Kaycha prints two result
+             cells after the verdict and their order is not fixed:
+
+               TOTAL TERPENES | 0.007 | TESTED | 41.24 | 4.124   <- mg/unit, %
+               TOTAL TERPENES | 0.007 | TESTED |  8.33 |  83.3   <- %, mg/g
+
+             Taking the first read KAY-CAR-001 as a 41.24% cart when the report
+             says 4.124% - every analyte 10x out, internally consistent, and no
+             guard could see it. So collect each post-verdict cell as a
+             candidate and let the column reconciler below decide, on the same
+             principle used everywhere else: the column that reconciles against
+             the lab's own total AND is a possible percentage. */
+          for (let k = j + 1; k < Math.min(j + 1 + MAX_RESULT_COLUMNS, lines.length); k++){
+            const cell = lines[k];
+            if (!isResultToken(cell)) break;
+            if (ANALYTE_MAP[canonicalAnalyte(cell)] || UNMODELLED.test(canonicalAnalyte(cell))) break;
+            if (CANNABINOID.test(cell.toUpperCase())) break;
+            numerics.push(resultToNumber(cell));
+          }
+        }
         else if (j - 1 > i)               value = resultToNumber(lines[j - 1], true);
         verdictValue = value;   // a verdict column pins the value; no guessing needed
         break;
@@ -714,6 +738,9 @@ function parseCoa(text){
      extraction is still returned for display, flagged, so the person sees what
      was read AND why it was not accepted. */
   const rejectReasons = [];
+  /* Things worth a person's eye that are not grounds for refusal. Surfaced on
+     the confirmation card, never used to alter or withhold a value. */
+  const warnings = [];
   const nonZero = Object.values(terps).filter(v => v > 0).length;
 
   if (terpenesTested === false)
@@ -732,6 +759,16 @@ function parseCoa(text){
     rejectReasons.push(`only ${(measuredCoverage * 100).toFixed(1)}% of the lab's own terpene total was recovered — the table was not read completely`);
   if (INHALABLE.has(productClass) && nonZero > 0 && nonZero < MIN_ANALYTES_INHALABLE)
     rejectReasons.push(`only ${nonZero} terpene${nonZero === 1 ? '' : 's'} found on an inhalable product — implausible, so the panel was probably misread`);
+
+  const typicalMax = TYPICAL_MAX_TOTAL[productClass];
+  if (typicalMax && totalTerpenes > typicalMax)
+    warnings.push(`${totalTerpenes}% total terpenes is unusually high for ${productClass} — worth checking against the report, since a units mix-up looks like this`);
+  /* A single compound holding almost the whole profile is possible - a
+     terpinolene-dominant pod reached 77% - but it is also what a misaligned
+     table produces, so it is worth a look. */
+  const top = Math.max(0, ...Object.values(terps));
+  if (mappedTotal > 0 && top / mappedTotal > 0.85 && nonZero > 2)
+    warnings.push('one terpene accounts for most of the profile — unusual, though some cultivars genuinely are');
 
   if (coverage != null && coverage > COVERAGE_CEILING)
     rejectReasons.push(`coverage ${(coverage * 100).toFixed(1)}% exceeds the lab total — parse fault, not a lab finding`);
@@ -758,7 +795,7 @@ function parseCoa(text){
     unmapped: [...unmapped].sort(),
     terpenesTested,
     usable: rejectReasons.length === 0,
-    rejectReasons
+    rejectReasons, warnings
   };
 }
 
@@ -794,6 +831,13 @@ const MIN_BACKWARD_SHARE = 0.80;    // ...and reconcile convincingly on its own
 /* No cannabis product is a third terpene by mass; ~35% is far beyond the
    richest concentrate. A "total" above this is another unit entirely. */
 const PLAUSIBLE_TOTAL_PERCENT = 35;
+/* Typical ceilings by product form, from the fixture corpus and the published
+   literature. Exceeding one is not impossible, so it is a WARNING rather than a
+   rejection - the numbers may be right and the product unusual. But it is also
+   exactly what a units mix-up looks like: KAY-CAR-003 parsed to 37.8% total
+   terpenes on a cart, reconciled internally, passed every guard, and was wrong
+   by 5x because the mg/g column had been read as percentages. */
+const TYPICAL_MAX_TOTAL = { flower: 6, vape: 20, concentrate: 25, edible: 5, tincture: 5, topical: 5 };
 const MIN_MEASURED_COVERAGE = 0.80;
 /* Inhalable cannabis carries more than a couple of terpenes above LOQ. One or
    two on a flower COA is a parse that collapsed, not a real profile. */
