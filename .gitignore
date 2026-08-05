@@ -9,4 +9,3 @@ build.sh.backup
 # Local Netlify folder
 .netlify
 test/fixtures/extracted/
-test/fixtures/pdf/

@@ -39,7 +39,12 @@ fs.mkdirSync(outDir, { recursive: true });
     const name = f.replace(/\.pdf$/i, '');
     try {
       const { text, pages } = await extractCoaText(fs.readFileSync(path.join(pdfDir, f)));
-      fs.writeFileSync(path.join(outDir, name + '.txt'), text);
+      /* pdftotext emits an empty text cell as a NUL byte. They are harmless to
+         the parser - it reads the same values with or without them - but grep
+         treats any file containing one as binary and skips it silently, so a
+         triage scan over the corpus looks complete while omitting those files.
+         Seven ACS fixtures were invisible to grep this way. Strip on write. */
+      fs.writeFileSync(path.join(outDir, name + '.txt'), text.replace(/\0/g, ''));
       const lines = text.split('\n').filter(l => l.trim()).length;
       console.log(`${String(pages).padStart(2)}pp  ${String(lines).padStart(5)} lines  ${name}`);
       ok++;
