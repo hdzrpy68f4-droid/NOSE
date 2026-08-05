@@ -64,6 +64,13 @@ const ANALYTE_MAP = {
   'ALPHA-TERPINEOL': 'terpineol',
   'TRANS-NEROLIDOL': 'nerolidol',           // cis + trans are summed (rule 6)
   'CIS-NEROLIDOL': 'nerolidol',
+  /* Some labs print one summed Nerolidol row instead of the isomers. Left
+     unmodelled it was measured and then dropped from the vector - the compound
+     vanished from the fingerprint while coverage still looked healthy, the same
+     way farnesene did. A document printing BOTH the summed row and its isomers
+     would double-count; that overshoots the lab's own total and is refused by
+     the coverage ceiling rather than asserted. */
+  'NEROLIDOL': 'nerolidol',
   'E-NEROLIDOL': 'nerolidol',
   'Z-NEROLIDOL': 'nerolidol',
   // --- herbal
@@ -89,7 +96,7 @@ const ANALYTE_MAP = {
 /* Terpenes a lab may report that NOSE does not model. Tracked only so we can
    tell the user how much of the measured mass the fingerprint represents.
    Caryophyllene OXIDE is deliberately here and NOT mapped to caryophyllene. */
-const UNMODELLED = /^(GUAIOL|\(\+\/-\)-BORNEOL|BORNEOL|ISOBORNEOL|CARYOPHYLLENE OXIDE|CAMPHOR|CAMPHORS|\[\+\/-\]-CAMPHOR|CEDROL|\(\+\)-CEDROL|EUCALYPTOL|1,8-CINEOLE \(EUCALYPTOL\)|GERANIOL|GERANYL ACETATE|HEXAHYDROTHYMOL|ISOPULEGOL|MENTHOL|DL-MENTHOL|NEROL|P-CYMENE|PULEGONE|\(\+\)-PULEGONE|SABINENE|SABINENE HYDRATE|VALENCENE|ALPHA-CEDRENE|ALPHA-PHELLANDRENE|ALPHA-TERPINENE|GAMMA-TERPINENE|GAMMA-TERPINEOL|3-CARENE|3-CARENE \(\+\)-?|3-CARENE \(\+\)-|DELTA-3-CARENE|D-3-CARENE|FENCHONE|\(\+\/-\)-FENCHONE|NEROLIDOL)$/i;
+const UNMODELLED = /^(GUAIOL|\(\+\/-\)-BORNEOL|BORNEOL|ISOBORNEOL|CARYOPHYLLENE OXIDE|CAMPHOR|CAMPHORS|\[\+\/-\]-CAMPHOR|CEDROL|\(\+\)-CEDROL|EUCALYPTOL|1,8-CINEOLE \(EUCALYPTOL\)|GERANIOL|GERANYL ACETATE|HEXAHYDROTHYMOL|ISOPULEGOL|MENTHOL|DL-MENTHOL|NEROL|P-CYMENE|PULEGONE|\(\+\)-PULEGONE|SABINENE|SABINENE HYDRATE|VALENCENE|ALPHA-CEDRENE|ALPHA-PHELLANDRENE|ALPHA-TERPINENE|GAMMA-TERPINENE|GAMMA-TERPINEOL|3-CARENE|3-CARENE \(\+\)-?|3-CARENE \(\+\)-|DELTA-3-CARENE|D-3-CARENE|FENCHONE|\(\+\/-\)-FENCHONE)$/i;
 
 /* Row labels that are structure, not analytes — used to stop the look-ahead
    and to keep them out of the unrecognised-name diagnostic. */
@@ -418,6 +425,7 @@ function parseCoa(text){
              candidate and let the column reconciler below decide, on the same
              principle used everywhere else: the column that reconciles against
              the lab's own total AND is a possible percentage. */
+          numerics.length = 0;
           for (let k = j + 1; k < Math.min(j + 1 + MAX_RESULT_COLUMNS, lines.length); k++){
             const cell = lines[k];
             if (!isResultToken(cell)) break;

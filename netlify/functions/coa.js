@@ -296,9 +296,12 @@ exports.handler = async function(event){
     unmodelledTotal: result.unmodelledTotal,
     coverage: result.coverage,
     unmapped: result.unmapped,
-        coverage: result.coverage,
     modelCoverage: result.modelCoverage,
     measuredCoverage: result.measuredCoverage,
+    /* Not grounds for refusal, so the values stand — but the person is
+       entitled to see them. A plausibility warning is what caught a cart
+       read 10x high, and it was only visible in the parser. */
+    warnings: result.warnings || [],
     terpenesTested: result.terpenesTested,
     moisture: result.freshnessApplies ? result.moisture : null,
     waterActivity: result.freshnessApplies ? result.waterActivity : null,

@@ -517,6 +517,27 @@
 
       }
 
+      /* Warnings are not refusals; the values stand. Printed in the same
+         register as the coverage note so the person can check the jar against
+         the report before trusting the fingerprint. Published verbatim — the
+         parser writes them as plain English for exactly this. */
+      let warn=$id('coaConfirmWarnings');
+      if(!warn){
+        warn=document.createElement('p');
+        warn.id='coaConfirmWarnings';
+        warn.className=cov.className;
+        cov.insertAdjacentElement('afterend',warn);
+      }
+      if(data.warnings&&data.warnings.length){
+        warn.textContent=data.warnings.join(' ');
+        warn.setAttribute('data-warning','true');
+        warn.hidden=false;
+      }else{
+        warn.textContent='';
+        warn.removeAttribute('data-warning');
+        warn.hidden=true;
+      }
+
       $id('coaConfirmName').value=data.strain||'';
 
       const holder=$id('coaConfirmRows');
