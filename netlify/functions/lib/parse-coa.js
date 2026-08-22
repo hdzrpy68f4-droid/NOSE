@@ -838,7 +838,13 @@ function parseCoa(text){
 
   const typicalMax = TYPICAL_MAX_TOTAL[productClass];
   if (typicalMax && totalTerpenes > typicalMax)
-    warnings.push(`${totalTerpenes}% total terpenes is unusually high for ${productClass} — worth checking against the report, since a units mix-up looks like this`);
+    /* Warnings are published verbatim on the confirmation card, so the sentence
+       has to read as English to someone holding a jar. "unusually high for
+       unknown" is the internal class name leaking into a person's face; when we
+       could not classify the product, say what is actually being claimed. */
+    warnings.push(productClass === 'unknown'
+      ? `${totalTerpenes}% total terpenes is higher than any cannabis product normally shows — worth checking against the report, since a units mix-up looks like this`
+      : `${totalTerpenes}% total terpenes is unusually high for ${productClass} — worth checking against the report, since a units mix-up looks like this`);
   /* A single compound holding almost the whole profile is possible - a
      terpinolene-dominant pod reached 77% - but it is also what a misaligned
      table produces, so it is worth a look. */
