@@ -909,7 +909,7 @@ const PLAUSIBLE_TOTAL_PERCENT = 35;
    exactly what a units mix-up looks like: KAY-CAR-003 parsed to 37.8% total
    terpenes on a cart, reconciled internally, passed every guard, and was wrong
    by 5x because the mg/g column had been read as percentages. */
-const TYPICAL_MAX_TOTAL = { flower: 6, vape: 20, concentrate: 25, edible: 5, tincture: 5, topical: 5 };
+const TYPICAL_MAX_TOTAL = { flower: 6, vape: 1, concentrate: 25, edible: 5, tincture: 5, topical: 5 };
 const MIN_MEASURED_COVERAGE = 0.80;
 /* Inhalable cannabis carries more than a couple of terpenes above LOQ. One or
    two on a flower COA is a parse that collapsed, not a real profile. */
