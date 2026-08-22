@@ -826,7 +826,14 @@ function parseCoa(text){
      "the lab printed a short list" from "we did not read the list". */
   if (measuredCoverage != null && measuredCoverage < MIN_MEASURED_COVERAGE)
     rejectReasons.push(`only ${(measuredCoverage * 100).toFixed(1)}% of the lab's own terpene total was recovered — the table was not read completely`);
-  if (INHALABLE.has(productClass) && nonZero > 0 && nonZero < MIN_ANALYTES_INHALABLE)
+  /* Applies to UNKNOWN too. Two terpenes on a full panel is implausible
+     whatever the product is, and the documents that defeat classification are
+     exactly the ones running without other guards: ACS prints only "Derivative
+     Products (Inhalation - Heated)", which covers carts and concentrates alike,
+     and Method separates every label from its value. Neither can be classified
+     honestly, so the guards must not depend on classifying them. */
+  if ((INHALABLE.has(productClass) || productClass === 'unknown')
+      && nonZero > 0 && nonZero < MIN_ANALYTES_INHALABLE)
     rejectReasons.push(`only ${nonZero} terpene${nonZero === 1 ? '' : 's'} found on an inhalable product — implausible, so the panel was probably misread`);
 
   const typicalMax = TYPICAL_MAX_TOTAL[productClass];
@@ -917,7 +924,14 @@ const PLAUSIBLE_TOTAL_PERCENT = 35;
    exactly what a units mix-up looks like: KAY-CAR-003 parsed to 37.8% total
    terpenes on a cart, reconciled internally, passed every guard, and was wrong
    by 5x because the mg/g column had been read as percentages. */
-const TYPICAL_MAX_TOTAL = { flower: 6, vape: 20, concentrate: 25, edible: 5, tincture: 5, topical: 5 };
+/* `unknown` carries the HIGHEST ceiling, not the lowest, and that is the point:
+   it is not a guess at the form but a bound that no legitimate product of ANY
+   form exceeds. Set at flower's 6 it would fire on every unclassified
+   concentrate and teach the reader to ignore warnings; set here it still catches
+   the units mix-up that motivated the check, which overshoots by 10x or more.
+   Previously `unknown` had no entry at all, so a 30% total was rejected as
+   flower and accepted silently as unknown. */
+const TYPICAL_MAX_TOTAL = { flower: 6, vape: 20, concentrate: 25, edible: 5, tincture: 5, topical: 5, unknown: 25 };
 const MIN_MEASURED_COVERAGE = 0.80;
 /* Inhalable cannabis carries more than a couple of terpenes above LOQ. One or
    two on a flower COA is a parse that collapsed, not a real profile. */
