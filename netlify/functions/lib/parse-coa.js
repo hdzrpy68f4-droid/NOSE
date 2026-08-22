@@ -306,6 +306,9 @@ function parseCoa(text){
   /* Set when a multi-column row layout has been resolved by reconciliation.
      The backward reader must not then re-pair the table: this document is
      name-first, and "before this name" is the previous row's result column. */
+  /* Set by the unit-ratio cross-check further down, which runs before the
+     warnings array exists. Merged in with the other warnings at the end. */
+  let columnCrossCheck = null;
   let columnResolved = false;// headline total taken from a skipped summary block
   /* Parallel record of each analyte row's value read forwards and backwards, so
      the correct side can be chosen after the whole table is known. */
@@ -662,6 +665,55 @@ function parseCoa(text){
         else if (x.r.key) terps[x.r.key] = (terps[x.r.key] || 0) + v;
       });
     }
+    /* Cross-check the chosen column against the ones it beat.
+     *
+     * When a lab prints the same measurements twice in different units - Kaycha
+     * gives mg alongside % - every row's rejected value divided by its chosen
+     * value should be the SAME number: the unit conversion factor. That is a
+     * fact about the document, independent of anything the parser decided, so a
+     * tight ratio is real confirmation that the rows line up.
+     *
+     * A scattered ratio means cells are landing on the wrong rows. Both column
+     * bugs found so far were exactly that, and both produced a total that summed
+     * correctly against its own column - so reconciliation could not see them.
+     * This can.
+     *
+     * Warns rather than refuses. Not every second column is a unit twin: a lab
+     * could print something genuinely unrelated, so a scattered ratio is a
+     * reason for a person to look, not grounds to withhold the reading. */
+    if (best){
+      let tightest = null;
+      for (let idx = 0; idx < width; idx++){
+        if (idx === best.idx) continue;
+        const ratios = [], seenValues = new Set();
+        rows.forEach(x => {
+          const chosen = x.c[best.idx], other = x.c[idx];
+          if (chosen > 0 && other > 0){ ratios.push(other / chosen); seenValues.add(other); }
+        });
+        if (ratios.length < MIN_CROSSCHECK_ROWS) continue;
+        /* Only a column of MEASUREMENTS can be a unit twin. ACT prints LOQ beside
+           the percentage - 82 ug/mL for most analytes, 247 for farnesene - and a
+           mostly-constant limit divided by a varying result scatters no matter how
+           well the table was read, so it reported a misalignment that was not
+           there. A limit column repeats itself; a measurement column does not.
+           Distinctness separates them without weakening the real check, because a
+           shifted measurement column still holds distinct values.
+
+           Requiring the ratio median to look like a round unit factor was tried
+           first and it silently DISABLED the check: a badly shifted column's
+           median is not round either, so it was skipped along with the LOQ. */
+        if (seenValues.size / ratios.length < MIN_COLUMN_DISTINCTNESS) continue;
+        ratios.sort((a, b) => a - b);
+        const median = ratios[Math.floor(ratios.length / 2)];
+        if (!(median > 0)) continue;
+        /* Relative spread measured against the MEDIAN, not the mean: one badly
+           shifted row must not be able to drag the centre onto itself and hide. */
+        const spread = Math.max(...ratios.map(r => Math.abs(r - median) / median));
+        if (!tightest || spread < tightest.spread) tightest = { spread, median, n: ratios.length };
+      }
+      if (tightest && tightest.spread > MAX_UNIT_RATIO_SPREAD)
+        columnCrossCheck = `the two figures this lab prints for each terpene do not keep a constant ratio (differing by up to ${Math.round(tightest.spread * 100)}% across ${tightest.n} rows) - the columns may not be lined up, so check these values against the report`;
+    }
   }
 
   /* Decide which side of the label held the values.
@@ -749,6 +801,7 @@ function parseCoa(text){
   /* Things worth a person's eye that are not grounds for refusal. Surfaced on
      the confirmation card, never used to alter or withhold a value. */
   const warnings = [];
+  if (columnCrossCheck) warnings.push(columnCrossCheck);
   const nonZero = Object.values(terps).filter(v => v > 0).length;
 
   if (terpenesTested === false)
@@ -830,6 +883,17 @@ module.exports = {
  * either agrees with the lab's own arithmetic or it declines to answer.
  */
 const RECONCILE_TOLERANCE = 0.03;   // 3% of the printed total
+/* Unit-ratio cross-check. A lab printing the same figure in two units gives a
+   constant ratio between the columns; rounding on small values moves it a little
+   (0.0235 -> 0.823 is 35.02 where 0.023 -> 0.805 is 35.00), so the tolerance has
+   to absorb that without absorbing a shifted row, which moves it by whole
+   multiples. MIN_CROSSCHECK_ROWS keeps a two-analyte panel from producing a
+   confident-looking verdict off one ratio. */
+const MAX_UNIT_RATIO_SPREAD = 0.15;
+/* Below this share of distinct values a column is a limit, not a measurement -
+   ACT repeats one LOQ down the table - and there is nothing to cross-check. */
+const MIN_COLUMN_DISTINCTNESS = 0.6;
+const MIN_CROSSCHECK_ROWS = 4;
 /* A recovered table accounts for essentially all of the lab's own total. Across
    every correctly-parsed fixture measured coverage sits at 99-100%; a genuine
    partial PANEL still reaches it, because unmodelled mass counts too. Well below
