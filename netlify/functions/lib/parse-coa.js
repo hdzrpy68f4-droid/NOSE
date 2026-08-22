@@ -217,8 +217,16 @@ const LABS = [
    asserted. It never touches the aroma vector — normalising to share-of-total
    already makes the shape scale-invariant. Ordered: most specific first. */
 const CLASSES = [
-  [/all[- ]?in[- ]?one vape|\bvape\b|\bcart(ridge)?\b|Sample Matrix:\s*Pod|^Pod$/im, 'vape'],
-  [/live resin|live sauce|\brosin\b|shatter|badder|distillate|Derivative Product Intended for Inhalation/i, 'concentrate'],
+  /* Form beats material, and the form word is often only an acronym: a jar
+     printing "AIO" three times and "Type: Distillate" once is a cart full of
+     distillate, not a concentrate, and was read as one until AIO was listed. */
+  [/all[- ]?in[- ]?one vape|\bAIO\b|\bvape\b|\bcart(ridge)?\b|disposable|Sample Matrix:\s*Pod|^Pod$/im, 'vape'],
+  /* One bucket for every concentrate form. Labs name the texture rather than
+     the category - budder, badder, wax, shatter, resin, rosin, water hash - and
+     they all behave the same for our purposes. "Full Extract Cannabis Oil"
+     matched nothing at all, so a FECO jar fell through to 'unknown', which
+     carries NO plausibility ceiling and NO minimum-analyte check. */
+  [/live resin|live sauce|\brosin\b|shatter|badder|budder|\bwax\b|water hash|bubble hash|\bhash\b|\bcrumble\b|\bsugar\b|\bdiamonds?\b|full extract cannabis oil|\bFECO\b|distillate|Derivative Product Intended for Inhalation/i, 'concentrate'],
   [/edible gummy|\bgummy\b|Ingestible, Beverage/i, 'edible'],
   [/\btincture\b/i, 'tincture'],
   [/topical|muscle rub|roll[- ]?on|Derivative Non-inhalable/i, 'topical'],
