@@ -77,6 +77,15 @@ const COVERAGE_TOLERANCE = 0.2;
 
     if (got.totalTerpenes !== want.totalTerpenes)
       problems.push(`total ${want.totalTerpenes} -> ${got.totalTerpenes}`);
+
+    /* HOW the fingerprint was produced, not only what it came out as. Identical
+       numbers by a different route is still news: it means a change reached a
+       reader nobody was looking at. Older baseline entries predate the field, so
+       a missing `readBy` is not a failure - only a changed one. */
+    if (want.readBy && got.readBy !== want.readBy)
+      problems.push(`readBy ${want.readBy} -> ${got.readBy}`);
+    if (want.productClass && got.productClass !== want.productClass)
+      problems.push(`productClass ${want.productClass} -> ${got.productClass}`);
     if (Object.values(got.terps).filter(v => v > 0).length !== want.nonZeroTerps)
       problems.push(`terpene count ${want.nonZeroTerps} -> ${Object.values(got.terps).filter(v => v > 0).length}`);
 

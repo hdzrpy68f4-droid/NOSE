@@ -19,7 +19,8 @@
    "limonene": 0.0604,
    "bisabolol": 0.0498,
    "pinene_b": 0.0128
-  }
+  },
+  "readBy": "forward"
  },
  "17569_0005294444": {
   "lab": "Modern Canna",
@@ -45,7 +46,8 @@
    "terpineol": 0.0582,
    "fenchol": 0.0534,
    "camphene": 0.0195
-  }
+  },
+  "readBy": "forward"
  },
  "ACS-CAR-001": {
   "lab": "ACS Laboratory",
@@ -72,7 +74,8 @@
    "terpinolene": 0.016,
    "farnesene": 0.002,
    "ocimene": 0.00033
-  }
+  },
+  "readBy": "forward"
  },
  "ACS-CAR-002": {
   "lab": "ACS Laboratory",
@@ -99,7 +102,8 @@
    "camphene": 0.002,
    "pinene_b": 0.002,
    "pinene_a": 0.002
-  }
+  },
+  "readBy": "forward"
  },
  "ACS-FLW-001": {
   "lab": "ACS Laboratory",
@@ -125,7 +129,8 @@
    "ocimene": 0.027,
    "camphene": 0.019,
    "terpinolene": 0.013
-  }
+  },
+  "readBy": "forward"
  },
  "ACS-FLW-002": {
   "lab": "ACS Laboratory",
@@ -152,7 +157,8 @@
    "farnesene": 0.002,
    "ocimene": 0.00033,
    "terpinolene": 0.002
-  }
+  },
+  "readBy": "forward"
  },
  "ACS-LRS-001": {
   "lab": "ACS Laboratory",
@@ -179,7 +185,8 @@
    "ocimene": 0.011,
    "nerolidol": 0.004,
    "farnesene": 0.002
-  }
+  },
+  "readBy": "forward"
  },
  "ACS-LRS-002": {
   "lab": "ACS Laboratory",
@@ -206,7 +213,8 @@
    "ocimene": 0,
    "terpinolene": 0,
    "fenchol": 0
-  }
+  },
+  "readBy": "forward"
  },
  "ACS-PRR-001": {
   "lab": "ACS Laboratory",
@@ -233,7 +241,8 @@
    "farnesene": 0,
    "fenchol": 0,
    "terpinolene": 0
-  }
+  },
+  "readBy": "forward"
  },
  "ACT_AppleBurst_vape": {
   "lab": "ACT Laboratories",
@@ -261,7 +270,8 @@
    "pinene_b": 0,
    "ocimene": 0,
    "farnesene": 0
-  }
+  },
+  "readBy": "forward"
  },
  "COA_GassiusClay_3_5gWF_4793_1807_7220_8969": {
   "lab": "ACS Laboratory",
@@ -288,7 +298,8 @@
    "camphene": 0,
    "farnesene": 0,
    "terpinolene": 0
-  }
+  },
+  "readBy": "forward"
  },
  "Grease_Monkey_cart": {
   "lab": "Kaycha Labs",
@@ -316,7 +327,8 @@
    "terpinolene": 0.0261,
    "farnesene": 0,
    "nerolidol": 0
-  }
+  },
+  "readBy": "forward"
  },
  "Grease_monkey_flower": {
   "lab": "Modern Canna",
@@ -343,7 +355,8 @@
    "myrcene": 0.502,
    "fenchol": 0.0493,
    "ocimene": 0.0871
-  }
+  },
+  "readBy": "forward"
  },
  "Grease_monkey_live_resin": {
   "lab": "Kaycha Labs",
@@ -371,7 +384,8 @@
    "terpinolene": 0.0167,
    "farnesene": 0,
    "nerolidol": 0
-  }
+  },
+  "readBy": "forward"
  },
  "KAY-AIO-001": {
   "lab": "Kaycha Labs",
@@ -399,7 +413,8 @@
    "terpineol": 0.113,
    "terpinolene": 0.0532,
    "camphene": 0.0517
-  }
+  },
+  "readBy": "forward"
  },
  "KAY-CAR-001": {
   "lab": "Kaycha Labs",
@@ -427,7 +442,8 @@
    "camphene": 0,
    "farnesene": 0,
    "ocimene": 0
-  }
+  },
+  "readBy": "multicolumn"
  },
  "KAY-CAR-002": {
   "lab": "Kaycha Labs",
@@ -455,7 +471,8 @@
    "terpinolene": 0.0735,
    "camphene": 0.0641,
    "ocimene": 0.058
-  }
+  },
+  "readBy": "forward"
  },
  "KAY-CAR-003": {
   "lab": "Kaycha Labs",
@@ -483,7 +500,8 @@
    "terpinolene": 0.021,
    "linalool": 0,
    "ocimene": 0
-  }
+  },
+  "readBy": "multicolumn"
  },
  "KAY-FLW-001": {
   "lab": "Kaycha Labs",
@@ -511,7 +529,8 @@
    "ocimene": 0,
    "pinene_a": 0,
    "terpinolene": 0
-  }
+  },
+  "readBy": "forward"
  },
  "KAY-FLW-002": {
   "lab": "Kaycha Labs",
@@ -539,7 +558,8 @@
    "farnesene": 0,
    "ocimene": 0,
    "terpinolene": 0
-  }
+  },
+  "readBy": "multicolumn"
  },
  "KAY-FLW-003": {
   "lab": "Kaycha Labs",
@@ -567,7 +587,8 @@
    "farnesene": 0,
    "ocimene": 0,
    "terpinolene": 0
-  }
+  },
+  "readBy": "multicolumn"
  },
  "KAY-LRS-001": {
   "lab": "Kaycha Labs",
@@ -595,7 +616,8 @@
    "farnesene": 0.069,
    "camphene": 0.0412,
    "nerolidol": 0
-  }
+  },
+  "readBy": "forward"
  },
  "KAY-LRS-002": {
   "lab": "Kaycha Labs",
@@ -623,7 +645,8 @@
    "camphene": 0.0571,
    "terpinolene": 0.0524,
    "ocimene": 0.0417
-  }
+  },
+  "readBy": "forward"
  },
  "KAY-LRS-003": {
   "lab": "Kaycha Labs",
@@ -651,7 +674,8 @@
    "farnesene": 0.0207,
    "camphene": 0,
    "ocimene": 0
-  }
+  },
+  "readBy": "forward"
  },
  "KAY-LRS-004": {
   "lab": "Kaycha Labs",
@@ -679,7 +703,8 @@
    "camphene": 0.055,
    "terpinolene": 0.05,
    "ocimene": 0
-  }
+  },
+  "readBy": "multicolumn"
  },
  "KAY-LRS-005": {
   "lab": "Kaycha Labs",
@@ -707,7 +732,8 @@
    "terpinolene": 0.027,
    "camphene": 0,
    "farnesene": 0
-  }
+  },
+  "readBy": "multicolumn"
  },
  "KAY-PRR-001": {
   "lab": "Kaycha Labs",
@@ -735,7 +761,8 @@
    "pinene_a": 0,
    "terpinolene": 0,
    "nerolidol": 0
-  }
+  },
+  "readBy": "forward"
  },
  "KF2025-046-PB-AU-COA": {
   "lab": "ACT Laboratories",
@@ -762,7 +789,8 @@
    "bisabolol": 0.0118,
    "terpinolene": 0,
    "ocimene": 0
-  }
+  },
+  "readBy": "multicolumn"
  },
  "Kush_Creek": {
   "lab": "Kaycha Labs",
@@ -790,7 +818,8 @@
    "nerolidol": 0.0195,
    "terpinolene": 0,
    "farnesene": 0
-  }
+  },
+  "readBy": "forward"
  },
  "LAB-0425BSWS-20250731": {
   "lab": "ACT Laboratories",
@@ -817,7 +846,8 @@
    "linalool": 0,
    "nerolidol": 0,
    "ocimene": 0
-  }
+  },
+  "readBy": "forward"
  },
  "MCL-CAR-001": {
   "lab": "Modern Canna",
@@ -842,7 +872,8 @@
    "humulene": 0.0783,
    "terpinolene": 0.0622,
    "camphene": 0.0357
-  }
+  },
+  "readBy": "forward"
  },
  "MCL-CAR-002": {
   "lab": "Modern Canna",
@@ -868,7 +899,8 @@
    "terpineol": 0.107,
    "fenchol": 0.0573,
    "camphene": 0.0129
-  }
+  },
+  "readBy": "forward"
  },
  "MCL-FLW-001": {
   "lab": "Modern Canna",
@@ -892,7 +924,8 @@
    "ocimene": 0.0395,
    "pinene_b": 0.0247,
    "pinene_a": 0.0218
-  }
+  },
+  "readBy": "forward"
  },
  "MCL-FLW-003": {
   "lab": "Modern Canna",
@@ -915,7 +948,8 @@
    "pinene_b": 0.0568,
    "bisabolol": 0.0519,
    "nerolidol": 0.0402
-  }
+  },
+  "readBy": "backward"
  },
  "MCL-FLW-004": {
   "lab": "Modern Canna",
@@ -942,7 +976,8 @@
    "myrcene": 0.19,
    "fenchol": 0.0684,
    "ocimene": 0
-  }
+  },
+  "readBy": "forward"
  },
  "MCL-FLW-005": {
   "lab": "Modern Canna",
@@ -963,7 +998,8 @@
    "fenchol": 0.0973,
    "nerolidol": 0.0917,
    "terpineol": 0.0805
-  }
+  },
+  "readBy": "backward"
  },
  "MCL-LRS-001": {
   "lab": "Modern Canna",
@@ -989,7 +1025,8 @@
    "pinene_b": 0.0969,
    "terpinolene": 0.0357,
    "camphene": 0.0338
-  }
+  },
+  "readBy": "forward"
  },
  "MC_PeanutButterBreath_flower": {
   "lab": "Modern Canna",
@@ -1016,7 +1053,8 @@
    "myrcene": 0.144,
    "fenchol": 0.0978,
    "ocimene": 0.0953
-  }
+  },
+  "readBy": "forward"
  },
  "MC_TwinSnakez_flower": {
   "lab": "Modern Canna",
@@ -1043,7 +1081,8 @@
    "myrcene": 0.221,
    "fenchol": 0.0517,
    "ocimene": 0.0401
-  }
+  },
+  "readBy": "forward"
  },
  "MTL-CAR-001": {
   "lab": "Method Testing Labs",
@@ -1067,7 +1106,8 @@
    "fenchol": 0.214,
    "pinene_a": 0.158,
    "terpinolene": 0.156
-  }
+  },
+  "readBy": "forward"
  },
  "MTL-FLW-001": {
   "lab": "Method Testing Labs",
@@ -1091,7 +1131,8 @@
    "bisabolol": 0.11,
    "pinene_a": 0.0922,
    "pinene_b": 0.0768
-  }
+  },
+  "readBy": "forward"
  },
  "MTL-LRS-001": {
   "lab": "Method Testing Labs",
@@ -1115,7 +1156,8 @@
    "pinene_b": 0.181,
    "pinene_a": 0.176,
    "nerolidol": 0.159
-  }
+  },
+  "readBy": "forward"
  },
  "MTL-LRS-002": {
   "lab": "Method Testing Labs",
@@ -1138,7 +1180,8 @@
    "fenchol": 0.153,
    "myrcene": 0.0648,
    "pinene_b": 0.0494
-  }
+  },
+  "readBy": "forward"
  },
  "MTL-PRR-001": {
   "lab": "Method Testing Labs",
@@ -1160,7 +1203,8 @@
    "ocimene": 0.0308,
    "pinene_b": 0.0112,
    "pinene_a": 0.00643
-  }
+  },
+  "readBy": "forward"
  },
  "Method_DulceDeUva_flower": {
   "lab": "Method Testing Labs",
@@ -1183,7 +1227,8 @@
    "nerolidol": 0.088,
    "pinene_a": 0.084,
    "pinene_b": 0.073
-  }
+  },
+  "readBy": "forward"
  },
  "TerpLife_GrpeBblGm_flower": {
   "lab": "TerpLife Labs",
@@ -1211,7 +1256,8 @@
    "camphene": 0.0155,
    "terpinolene": 0.00815,
    "nerolidol": 0
-  }
+  },
+  "readBy": "forward"
  },
  "external-download": {
   "lab": "Kaycha Labs",
@@ -1239,7 +1285,8 @@
    "ocimene": 0,
    "terpinolene": 0,
    "nerolidol": 0
-  }
+  },
+  "readBy": "forward"
  },
  "KAY-AIO-002": {
   "lab": "Kaycha Labs",
@@ -1267,7 +1314,8 @@
    "camphene": 0,
    "ocimene": 0,
    "terpinolene": 0
-  }
+  },
+  "readBy": "forward"
  },
  "KAY-AIO-003": {
   "lab": "Kaycha Labs",
@@ -1295,7 +1343,8 @@
    "camphene": 0.0396,
    "farnesene": 0.0243,
    "ocimene": 0
-  }
+  },
+  "readBy": "forward"
  },
  "KAY-LRS-006": {
   "lab": "Kaycha Labs",
@@ -1323,7 +1372,8 @@
    "farnesene": 0.0428,
    "ocimene": 0,
    "terpinolene": 0
-  }
+  },
+  "readBy": "forward"
  },
  "KAY-AIO-004": {
   "lab": "Kaycha Labs",
@@ -1351,7 +1401,8 @@
    "farnesene": 0.042,
    "terpinolene": 0.0208,
    "ocimene": 0
-  }
+  },
+  "readBy": "forward"
  },
  "KAY-CAR-004": {
   "lab": "Kaycha Labs",
@@ -1379,6 +1430,7 @@
    "camphene": 0.04,
    "ocimene": 0,
    "terpinolene": 0
-  }
+  },
+  "readBy": "multicolumn"
  }
 }
