@@ -317,6 +317,13 @@ function parseCoa(text){
   /* Set by the unit-ratio cross-check further down, which runs before the
      warnings array exists. Merged in with the other warnings at the end. */
   let columnCrossCheck = null;
+  /* Which reader produced the values that survive. `layout` only separates
+     column-major from everything else, so the three row-wise readers are
+     indistinguishable in the output - and "which stage read this?" was
+     unanswerable without instrumenting the file by hand, which is how the
+     BORNEOL column bug had to be found. Purely descriptive: nothing branches
+     on it. */
+  let readBy = 'forward';
   let columnResolved = false;// headline total taken from a skipped summary block
   /* Parallel record of each analyte row's value read forwards and backwards, so
      the correct side can be chosen after the whole table is known. */
@@ -660,6 +667,7 @@ function parseCoa(text){
       if (!best || declared < best.declared) best = { idx, share, declared };
     }
     if (best && best.idx > 0){
+      readBy = 'multicolumn';
       columnResolved = true;
       Object.keys(terps).forEach(k => delete terps[k]);
       unmodelledTotal = 0;
@@ -741,6 +749,7 @@ function parseCoa(text){
     const bwdShare = sum(beforeByRow) / totalTerpenes;
     const fits = x => x <= 1 + RECONCILE_TOLERANCE;
     if (fits(bwdShare) && bwdShare > fwdShare + BACKWARD_MARGIN && bwdShare >= MIN_BACKWARD_SHARE){
+      readBy = 'backward';
       Object.keys(terps).forEach(k => delete terps[k]);
       unmodelledTotal = 0;
       const seen = new Set();
@@ -778,6 +787,7 @@ function parseCoa(text){
       Object.assign(terps, col.terps);
       unmodelledTotal = col.unmodelledTotal;
       mappedTotal = col.mappedTotal;
+      readBy = 'columnmajor';
       layout = 'column';
     }
   }
@@ -873,7 +883,7 @@ function parseCoa(text){
     lab, strain, batch, labId, harvestDate, productClass,
     totalTerpenes, moisture, waterActivity, freshnessApplies,
     terps, mappedTotal, unmodelledTotal, coverage,
-    modelCoverage, measuredCoverage, layout,
+    modelCoverage, measuredCoverage, layout, readBy,
     unmapped: [...unmapped].sort(),
     terpenesTested,
     usable: rejectReasons.length === 0,
