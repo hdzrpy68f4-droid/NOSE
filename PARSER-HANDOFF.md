@@ -61,24 +61,38 @@ All 56 source PDFs are tracked in git, so the corpus is reproducible from a clon
 minute. This was proven the hard way when a Codespace container failed and the
 whole workspace had to be rebuilt from the remote.
 
+**Which reader serves which documents**, from `readBy`:
+
+```
+forward      46      the plain name-then-value pass
+multicolumn   8      Kaycha's three-column rows
+backward      2      value-before-name layouts
+columnmajor   0      currently unexercised
+```
+
 ---
 
 ## 3. Where to start
 
 No known accepted-but-wrong fixture is outstanding, and no lint failures remain.
 
-Highest-value work available, in order:
-
-1. **Four readers mutate one shared `terps` object** in sequence — forward pairing,
-   the multi-column reconciler, the backward reader, the column-major fallback —
-   each clearing and rebuilding it, with ordering enforced by a single boolean.
-   This is why a change to stage two once broke a lab at stage four. Having each
-   reader return a candidate and choosing once at the end would make the pipeline
-   inspectable and make "which reader produced this?" answerable in the output.
-2. **`MCL-FLW-002`**, the last unread layout. Rejects correctly, so this is
-   coverage rather than a bug.
+1. **Is the column-major reader dead, or waiting?** It serves zero fixtures. It was
+   written for a Modern Canna layout, and `MCL-FLW-002` — the one document still
+   unread — may be exactly what it was for. Answer that before anyone deletes it:
+   if it is the intended reader for that layout, the work is to make it fire; if
+   the multi-column reconciler superseded it, it is ~80 lines of untested code
+   sitting in the path of every parse.
+2. **`MCL-FLW-002`** itself. Rejects correctly, so this is coverage, not a bug.
 3. **More fixtures.** See §10 — depth within a lab beats breadth across
    dispensaries.
+
+**The four-readers refactor is NOT the priority it once was.** The idea was to have
+each reader return a candidate and choose once at the end, instead of four stages
+mutating one shared `terps` object. The motivation was that a change to stage two
+once broke a lab at stage four invisibly. But `readBy` (§7) made that visible for
+five lines, and the 46/8/2/0 split above means restructuring the pipeline would put
+every lab at risk to tidy stages serving two documents and zero. Revisit only if a
+fifth reader is ever needed.
 
 ---
 
@@ -136,15 +150,19 @@ Expect `52 accepted / 4 rejected`, `52 match / 0 differ`, and `corpus clean`.
 **Anything that trades a working lab for a broken one is not a fix.** This has
 happened four times. If a change costs a lab, revert rather than negotiate with it.
 
-Note that **parity does not compare `productClass`**, so a classification change
-passes silently. Dump classes across the corpus separately when touching `CLASSES`.
+Parity asserts `readBy` and `productClass` as well as the numbers, so a change that
+reaches the same values by a different reader, or classifies a document
+differently, now shows up as a DIFFER rather than passing silently. That is
+deliberate: on this parser a changed path is news. A legitimate improvement that
+changes the route will need re-baselining, and that is the point — it forces
+someone to look.
 
 ### Test harnesses in `test/`
 
 | Command | Purpose |
 |---|---|
 | `coa-gate-test.js <dir> <parser>` | accept/reject verdict per fixture |
-| `extraction-parity.js test/fixtures/pdf` | unpdf output vs the baseline |
+| `extraction-parity.js test/fixtures/pdf` | unpdf output vs the baseline, including readBy and productClass |
 | `extract-dump.js` | regenerate `test/fixtures/extracted/` from the PDFs |
 | `fixture-lint.js` | corpus hygiene: control bytes, shell-hostile names, baseline arithmetic |
 | `mutation-test.js <dir> <parser>` | corrupt fixtures; require identical-or-reject |
@@ -226,7 +244,7 @@ Renaming or dropping any of these breaks the app silently:
 lab  strain  batch  labId  harvestDate  productClass
 terps  totalTerpenes  mappedTotal  unmodelledTotal
 coverage  modelCoverage  measuredCoverage
-unmapped  terpenesTested  layout
+unmapped  terpenesTested  layout  readBy
 moisture  waterActivity  freshnessApplies
 usable  rejectReasons  warnings
 ```
@@ -242,6 +260,12 @@ usable  rejectReasons  warnings
   verbatim, so the sentence has to read as English to someone holding a jar —
   the internal class name must not leak into it ("unusually high for unknown" was
   a real regression).
+- `readBy` names which reader produced the surviving values: `forward`,
+  `multicolumn`, `backward` or `columnmajor`. Purely descriptive — nothing
+  branches on it — but it is recorded in the baseline and compared by parity, so
+  a change of route is reported even when the numbers agree. `layout` only
+  separates column-major from everything else, which left the three row-wise
+  readers indistinguishable.
 
 ---
 
@@ -270,6 +294,9 @@ No fixture currently uses the bare spelling.
 ## 9. Known open items
 
 - **`MCL-FLW-002`** — a Modern Canna flower layout still unread. Rejects correctly.
+  See §3: it may be what the column-major reader was written for.
+- **The column-major reader serves zero fixtures.** Either dead code or waiting for
+  the layout above.
 - **18 mutation failures** out of 308 (~6%). Each is a corrupted document that
   still produced an accepted-but-different fingerprint. Documented, not urgent.
 - **Two fixtures classify as `unknown`** — `Method_DulceDeUva_flower` and
@@ -277,7 +304,6 @@ No fixture currently uses the bare spelling.
   parser can reach (§6). They are now guarded rather than exempt, so nothing is
   unsafe, but a future Method or ACS template might expose an adjacency worth
   matching on.
-- **Four readers share one mutable `terps` object.** See §3 item 1.
 - **All 56 source PDFs are tracked in the PUBLIC NOSE repo.** A deliberate decision
   is still pending: accept it, rewrite history, or collect future COAs into a
   private repo. The Codespace token is scoped to this repo only, so creating a
