@@ -346,7 +346,16 @@ function parseCoa(text){
        pesticide panel. */
     if (/^(TERPENES?|Terpene Screen by GC\/MS|Terpenes Summary|TERPENES SUMMARY.*)$/i.test(line))
       inTerpeneSection = true;
-    else if (/^(Pesticides?|Heavy Metals|Microbials?|Mycotoxins|Residual Solvents|Potency|Cannabinoids?|Filth\/Foreign Material|Foreign Matter|Microbial)$/i.test(line))
+    /* The CLOSER is deliberately prefix-matched while the opener above stays
+       exact. ACS suffixes its section headers - "Heavy Metals Florida",
+       "Pesticides FL", "Residual Solvents - FL", "Filth and Foreign Material" -
+       so anchored patterns never fired and the terpene section, reopened by a
+       "Terpenes" header on page 2, stayed open across the whole contaminant
+       panel. Seventy pesticides and four heavy metals ended up in `unmapped`,
+       which exists to surface unknown TERPENE spellings and was useless buried
+       under them. Closing early only costs a diagnostic hint; opening loosely
+       would pull foreign tables into terpene READING, so that stays strict. */
+    else if (/^(Pesticides?|Heavy Metals|Microbials?|Mycotoxins|Residual Solvents|Potency|Cannabinoids?|Filth[\/ ](and )?Foreign|Foreign Matter|Microbial)\b/i.test(line))
       inTerpeneSection = false;
 
     /* Modern Canna prints the total inline: "Total Terpenes: 3.73%", so an
