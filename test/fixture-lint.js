@@ -23,7 +23,6 @@ const BASELINE  = 'test/fixtures/coa-baseline.json';
 const EXPECTED_NO_BASELINE = new Set([
   'GreenRoadsFullSpectrumCBDOil750mgLot24007',
   'Harmony-Muscle-Rub-COA-PHRO1',
-  'MCL-FLW-002',
   'hemp-bombs-cbd-gummies-50-count-750mg-of-cbd-COA'
 ]);
 

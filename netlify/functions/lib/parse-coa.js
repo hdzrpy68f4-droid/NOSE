@@ -477,6 +477,20 @@ function parseCoa(text){
          excluded from the vector by spec, which makes this the natural boundary
          - and far more robust than enumerating each lab's column headings. */
       if (CANNABINOID.test(nxt)) break;
+      /* A NEW TABLE ends the row. The last analyte of a table has no following
+         name to stop it, so it runs the full look-ahead into whatever comes
+         next: gamma-Terpineol, last in MCL-FLW-002's panel and followed by
+         "Result / Analyte / Reg. Limit", collected a fifth cell and took the
+         Diln column's 1 as its value. That single wrong value poisoned
+         pinnedSum, which made every candidate column overshoot the printed
+         total, which discarded all ELEVEN correctly-read summary rows - and the
+         document refused for "only 1 terpene found".
+
+         Gated on having already collected a value, which is what distinguishes
+         a new table's header from the column headers labs interleave INTO the
+         first data row. Those arrive before any number and must not stop the
+         scan; the comment above this loop is about exactly that case. */
+      if (numerics.length && SECTION_LABELS.test(nxt)) break;
       if (isResultToken(nxt)) numerics.push(resultToNumber(lines[j]));
     }
     /* No verdict column: the value sits after the name (Modern Canna). Method

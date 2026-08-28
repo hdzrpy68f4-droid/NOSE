@@ -1432,5 +1432,33 @@
    "terpinolene": 0
   },
   "readBy": "multicolumn"
+ },
+ "MCL-FLW-002": {
+  "lab": "Modern Canna",
+  "productClass": "flower",
+  "layout": "row",
+  "readBy": "forward",
+  "totalTerpenes": 1.769,
+  "mappedTotal": 1.802,
+  "coverage": 101.9,
+  "measuredCoverage": 103.8,
+  "usable": true,
+  "nonZeroTerps": 11,
+  "terps": {
+   "myrcene": 0.631,
+   "pinene_a": 0.399,
+   "limonene": 0.259,
+   "pinene_b": 0.109,
+   "bisabolol": 0.075,
+   "linalool": 0.071,
+   "caryophyllene": 0.062,
+   "fenchol": 0.054,
+   "terpineol": 0.042,
+   "humulene": 0.032,
+   "camphene": 0,
+   "terpinolene": 0,
+   "nerolidol": 0,
+   "ocimene": 0.068
+  }
  }
 }
