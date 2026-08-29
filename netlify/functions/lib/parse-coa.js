@@ -199,6 +199,11 @@ const SKIPPABLE_IN_ROW = /^(LIMIT|UNIT|UNITS|LOD|LOQ|MDL|PQL|DILUTION|DILN|STATU
 const isResultToken = t =>
   isNumberish(t) || /^(ND|N\/D|NOT DETECTED|BQL|BLQ|<\s*LOQ)$/i.test(String(t).trim());
 
+/* An explicit non-detect marker is a RESULT cell, and rule 5 makes it 0. Only
+   the non-numeric spellings count: "<0.200" is also below the LOQ, but it is a
+   form a LIMIT column can take, and a row must never be zeroed by its own limit. */
+const NON_DETECT = /^(ND|N\/D|NOT DETECTED|BQL|BLQ|ABSENT|<\s*LOQ)$/i;
+
 /* ------------------------------------------------------- document metadata */
 
 const LABS = [
@@ -430,6 +435,7 @@ function parseCoa(text){
        cannot stop at "unexpected" tokens — only when the NEXT analyte begins. */
     let value = null, verdictValue = null;
     const numerics = [];
+    let sawNonDetect = false;
     for (let j = i + 1; j < Math.min(i + LOOKAHEAD_LINES, lines.length); j++){
       const nxt = lines[j].toUpperCase();
       if (/^(TESTED|PASSED|PASS|FAIL|FAILED)$/i.test(nxt)){
@@ -491,6 +497,10 @@ function parseCoa(text){
          first data row. Those arrive before any number and must not stop the
          scan; the comment above this loop is about exactly that case. */
       if (numerics.length && SECTION_LABELS.test(nxt)) break;
+      /* ACS prints ragged rows: a detected row has two cells, a below-LOQ row
+         has three, so one column index is the percentage on one and the LOQ on
+         the other. Reading the LOQ gave 23 phantom terpenes at 0.002. */
+      if (NON_DETECT.test(nxt)) sawNonDetect = true;
       if (isResultToken(nxt)) numerics.push(resultToNumber(lines[j]));
     }
     /* No verdict column: the value sits after the name (Modern Canna). Method
@@ -565,7 +575,7 @@ function parseCoa(text){
     else if (isMoisture){ if (moisture === null) moisture = value; }
     else if (isWater){ if (waterActivity === null) waterActivity = value; }
     else if (i < legendUntil){ /* inside a chart legend - not authoritative */ }
-    else analyteRows.push({ key, isUnmodelled, verdictValue, candidates: numerics.slice() });
+    else analyteRows.push({ key, isUnmodelled, verdictValue, candidates: numerics.slice(), nonDetect: sawNonDetect });
   }
 
   /* Some COAs print a row of "Total CBD / Total THC / Total Cannabinoids /
@@ -636,6 +646,7 @@ function parseCoa(text){
 
     for (const r of analyteRows){
       let v = r.verdictValue;
+      if (v === null && r.nonDetect) v = 0;
       if (v === null){
         if (choice){
           /* Absent at the chosen position means this row has fewer cells - a
