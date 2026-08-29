@@ -859,6 +859,8 @@ function parseCoa(text){
      "the lab printed a short list" from "we did not read the list". */
   if (measuredCoverage != null && measuredCoverage < MIN_MEASURED_COVERAGE)
     rejectReasons.push(`only ${(measuredCoverage * 100).toFixed(1)}% of the lab's own terpene total was recovered — the table was not read completely`);
+  if (measuredCoverage != null && measuredCoverage > MAX_MEASURED_COVERAGE)
+    warnings.push(`the terpene rows on this report add up to ${(measuredCoverage * 100).toFixed(1)}% of the total the lab printed — the individual figures are as listed, but the report's own arithmetic does not close`);
   /* Applies to UNKNOWN too. Two terpenes on a full panel is implausible
      whatever the product is, and the documents that defeat classification are
      exactly the ones running without other guards: ACS prints only "Derivative
@@ -971,6 +973,16 @@ const PLAUSIBLE_TOTAL_PERCENT = 35;
    Previously `unknown` had no entry at all, so a 30% total was rejected as
    flower and accepted silently as unknown. */
 const TYPICAL_MAX_TOTAL = { flower: 6, vape: 20, concentrate: 25, edible: 5, tincture: 5, topical: 5, unknown: 25 };
+/* The floor had no matching ceiling. A document whose rows sum to MORE than
+   the total it printed itself asserts two incompatible things, and did so
+   silently: MCL-FLW-002 lists "Ocimene, Total 0.068" in its full panel, omits
+   it from its headline 1.769%, and accepted at 103.8% with an empty warnings
+   array. Summing thirty rows rounded to three decimals reaches ~1%; every
+   fixture below this bound sits there and the three above it do not. A WARNING,
+   not a refusal - every value was read correctly and the fingerprint is sound.
+   It is the report's own arithmetic that does not close, and the person holding
+   the jar is who should hear that. */
+const MAX_MEASURED_COVERAGE = 1.01;
 const MIN_MEASURED_COVERAGE = 0.80;
 /* Inhalable cannabis carries more than a couple of terpenes above LOQ. One or
    two on a flower COA is a parse that collapsed, not a real profile. */
