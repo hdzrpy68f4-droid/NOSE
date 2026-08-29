@@ -913,6 +913,20 @@ function parseCoa(text){
   /* Freshness signals (moisture 9-13%, water activity < 0.65) describe the
      cure of plant material. On an extract they are not unknown, they are
      inapplicable — a different statement, and the honest one. */
+  /* Freshness signals are read from labelled rows with no reconciliation
+     behind them, so a Dilution or limit cell landing at the label's index is
+     asserted unchecked - aw 1.0 on six fixtures, aw 55 on one, moisture 1 on
+     another. Water activity is a ratio bounded at 0-1 and a reading of exactly
+     1 is the dilution factor, not a measurement. Cured flower does not sit
+     below 3% or above 20% moisture. Out of range means NOT READ, which is what
+     null honestly says: over-reading a freshness signal is worse than leaving
+     it unknown, and unlike the terpene table there is no total to reconcile
+     against, so a bound is the only check available. */
+  if (waterActivity != null && !(waterActivity > 0 && waterActivity < 1))
+    waterActivity = null;
+  if (moisture != null && !(moisture >= 3 && moisture <= 20))
+    moisture = null;
+
   const freshnessApplies = productClass === 'flower';
 
   return {
