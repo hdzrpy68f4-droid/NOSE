@@ -86,6 +86,22 @@ const COVERAGE_TOLERANCE = 0.2;
       problems.push(`readBy ${want.readBy} -> ${got.readBy}`);
     if (want.productClass && got.productClass !== want.productClass)
       problems.push(`productClass ${want.productClass} -> ${got.productClass}`);
+    /* Published fields, per the output contract. A wrong freshness reading or a
+       dropped warning reaches the person holding the jar, and neither is covered
+       by the gate: eight bad aw/moisture values and three warnings changed in
+       one session without parity noticing. Same argument as readBy - on this
+       parser a changed published value is news. Compared as strings so null and
+       absent stay distinguishable; freshnessApplies === false means the UI omits
+       the figure entirely, which is not the same statement as unknown. */
+    for (const f of ['moisture', 'waterActivity']){
+      if (!(f in want)) continue;
+      if (String(got[f]) !== String(want[f]))
+        problems.push(`${f} ${want[f]} -> ${got[f]}`);
+    }
+    if (want.warnings){
+      const a = (got.warnings || []).join(' | '), b = want.warnings.join(' | ');
+      if (a !== b) problems.push(`warnings [${b}] -> [${a}]`);
+    }
     if (Object.values(got.terps).filter(v => v > 0).length !== want.nonZeroTerps)
       problems.push(`terpene count ${want.nonZeroTerps} -> ${Object.values(got.terps).filter(v => v > 0).length}`);
 
