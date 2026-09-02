@@ -83,7 +83,7 @@
   },
   "readBy": "forward",
   "moisture": null,
-  "waterActivity": null,
+  "waterActivity": 0.42,
   "warnings": []
  },
  "ACS-CAR-002": {
@@ -114,7 +114,7 @@
   },
   "readBy": "forward",
   "moisture": null,
-  "waterActivity": null,
+  "waterActivity": 0.372,
   "warnings": []
  },
  "ACS-FLW-001": {
@@ -174,8 +174,8 @@
    "terpinolene": 0
   },
   "readBy": "forward",
-  "moisture": null,
-  "waterActivity": null,
+  "moisture": 12.8,
+  "waterActivity": 0.53,
   "warnings": []
  },
  "ACS-LRS-001": {
@@ -206,7 +206,7 @@
   },
   "readBy": "forward",
   "moisture": null,
-  "waterActivity": null,
+  "waterActivity": 0.36,
   "warnings": []
  },
  "ACS-LRS-002": {
@@ -237,7 +237,7 @@
   },
   "readBy": "forward",
   "moisture": null,
-  "waterActivity": null,
+  "waterActivity": 0.517,
   "warnings": []
  },
  "ACS-PRR-001": {
@@ -267,8 +267,8 @@
    "terpinolene": 0
   },
   "readBy": "forward",
-  "moisture": null,
-  "waterActivity": 0.5,
+  "moisture": 10,
+  "waterActivity": 0.55,
   "warnings": []
  },
  "ACT_AppleBurst_vape": {
@@ -330,8 +330,8 @@
    "terpinolene": 0
   },
   "readBy": "forward",
-  "moisture": null,
-  "waterActivity": null,
+  "moisture": 11.9,
+  "waterActivity": 0.54,
   "warnings": []
  },
  "Grease_Monkey_cart": {
@@ -872,8 +872,8 @@
    "ocimene": 0
   },
   "readBy": "multicolumn",
-  "moisture": null,
-  "waterActivity": null,
+  "moisture": 8.5,
+  "waterActivity": 0.52,
   "warnings": []
  },
  "Kush_Creek": {

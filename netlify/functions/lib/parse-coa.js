@@ -948,6 +948,37 @@ function parseCoa(text){
     const inRange = v => isAw ? (v > 0 && v < 1) : (v >= 1 && v <= 20);
     return (CONSTS.indexOf(raw) < 0 && inRange(raw)) ? raw : null;
   };
+  /* ACS and ACT print the label TWICE - once as a section heading, once as the
+     real row - and the heading comes first, so taking the first occurrence read
+     "Specimen Weight: 0.500 g" as a water activity of 0.5. The authoritative row
+     is the one preceded by a bare UNIT MARKER: ACS heads its table
+     "Analyte / Action Level / (aw) / Result / (aw)", ACT "Analyte / Limit (aw)".
+     Keying on the word Result would catch ACS and miss ACT; the unit marker
+     catches both, and no heading occurrence carries one - those sit under a date
+     or a batch number. The document declaring its own table, as everywhere else
+     here. Runs FIRST and falls back to the existing reader, which is what serves
+     Kaycha and Modern Canna. */
+  {
+    const UNIT = /^(\(|Limit\s*\()?\s*(aw|%)\s*\)?$/i;
+    const pick = (re, isAw) => {
+      for (let i = 0; i < lines.length; i++){
+        if (!re.test(lines[i])) continue;
+        if (!lines.slice(Math.max(0, i - 5), i).some(t => UNIT.test(t))) continue;
+        const c = lines.slice(i + 1, i + 8)
+          .map(t => Number(String(t).match(/^\d+(?:\.\d+)?$/) || NaN))
+          .filter(v => !isNaN(v))
+          .map(v => freshValue(v, isAw))
+          .filter(v => v != null);
+        if (c.length === 1) return c[0];
+      }
+      return null;
+    };
+    const aw = pick(/^WATER ACTIVITY$/i, true);
+    const ms = pick(/^(MOISTURE|MOISTURE CONTENT|PERCENT MOISTURE)$/i, false);
+    if (aw != null) waterActivity = aw;
+    if (ms != null) moisture = ms;
+  }
+
   waterActivity = freshValue(waterActivity, true);
   moisture      = freshValue(moisture, false);
 
