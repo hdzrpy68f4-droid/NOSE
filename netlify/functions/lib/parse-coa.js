@@ -62,6 +62,12 @@ const ANALYTE_MAP = {
   'ALPHA BISABOLOL, L': 'bisabolol',         // TerpLife (space, not hyphen)
   'TERPINEOL': 'terpineol',
   'ALPHA-TERPINEOL': 'terpineol',
+  /* ACS prints a summed terpineol row on all seven of its fixtures, the way
+     Modern Canna prints "Ocimene, Total". Six read <LOQ and zero out; ACS-LRS-002
+     detects 0.193%, which was the whole of its 2.5% coverage shortfall. A
+     document printing BOTH this and alpha-terpineol would double-count and be
+     refused by the coverage ceiling rather than asserted. */
+  'TOTAL TERPINEOL': 'terpineol',
   'TRANS-NEROLIDOL': 'nerolidol',           // cis + trans are summed (rule 6)
   'CIS-NEROLIDOL': 'nerolidol',
   /* Some labs print one summed Nerolidol row instead of the isomers. Left
@@ -105,6 +111,13 @@ const SECTION_LABELS = /^(TOTAL TERPENES|MOISTURE CONTENT|WATER ACTIVITY|ACTIVIT
 /* Things that sit inside a terpene table but are not analytes. Without this
    the diagnostic below fills with cannabinoids, addresses and accreditation
    strings and the one real signal — a lab's unfamiliar spellings — gets lost. */
+/* "Total" is here to keep cannabinoid totals out of the diagnostic, but it also
+   suppressed the one signal designed to find new spellings: "Total Terpineol" was
+   filtered as structure on seven ACS files and never surfaced, so a detected row
+   went unread across a whole lab. Exempt a Total that names a compound the map
+   does not know but which is not a cannabinoid - that is precisely the case
+   `unmapped` exists to report. */
+const TOTAL_OF_CANNABINOID = /^Total\s+(THC|CBD|CBG|CBN|CBC|CBL|CBT|Cannabinoids?|Active)/i;
 const NOT_AN_ANALYTE = /\b(CBD|CBDA|CBDV|CBG|CBGA|CBN|CBC|THC|THCA|THCV|THCVA|Total|Unit|Labs?|Laboratories|Laboratory|Accreditation|Director|LLC|Inc|PJLA|CMTL|SOP|Batch|Florida|Others|Reg\.|Limit|Widget|cfu|ppm|ppb|Absence|Coli|Salmonella|Aspergillus|Aflatoxin|Yeast|Mold)\b/i;
 
 /* ACT writes Greek letters as bare initials: a-Pinene, b-Myrcene, g-Terpinene.
@@ -421,7 +434,10 @@ function parseCoa(text){
       /* Unrecognised name inside a terpene table, followed by a result: almost
          certainly an analyte spelling we do not know yet. Surfacing these is
          how new lab vocabularies get found without opening the PDF by hand. */
-      if (inTerpeneSection && !SECTION_LABELS.test(upper) && !NOT_AN_ANALYTE.test(line) &&
+      const totalOfUnknown = /^Total\s+\S/i.test(line) && !TOTAL_OF_CANNABINOID.test(line)
+        && !/^TOTAL TERPENES$/i.test(line);
+      if (inTerpeneSection && !SECTION_LABELS.test(upper)
+          && (totalOfUnknown || !NOT_AN_ANALYTE.test(line)) &&
           /^[A-Za-z0-9(][A-Za-z0-9()+\-\/. ]{2,29}$/.test(line) &&
           /[A-Za-z]{3}/.test(line) &&              // must be a name, not a figure
           (line.match(/ /g) || []).length <= 1 &&
