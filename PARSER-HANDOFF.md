@@ -303,10 +303,10 @@ No fixture currently uses the bare spelling.
 
 ## 9. Known open items
 
-- **Freshness cells still unfound.** Six ACS fixtures and `Grease_Monkey_cart`
-read water activity from the Dilution column (1.0), `KF2025-046` read 55, and
-`KAY-FLW-002` read moisture 1. All are now bounded to `null`, which is honest,
-but the real cells have not been located.
+- **TerpLife moisture is unread.** Its row prints 14.2 with no unit marker
+above it, so the binding rule declines. One document; not worth a fifth pattern.
+- **`KAY-FLW-002` water activity reads 0.583** where sibling Kaycha files read
+0.56-0.59. Plausible, unverified against the PDF.
 - **`ACS-LRS-002` recovers only 97.5%** of its printed total. A shortfall, not
 an overshoot, and unrelated to the `<LOQ` fix. Unexplained.
 - **Two round numbers worth one look.** `TerpLife_GrpeBblGm` reads moisture
@@ -443,3 +443,16 @@ cured flower sits between 3% and 20% moisture. Out of range now means NOT READ
 `waterActivity` and `warnings` are all in §7 and all reach the person holding
 the jar. Parity compared none of them, so eight bad freshness values and three
 new warnings changed without a single DIFFER. Now compared
+
+- **Freshness signals were read by position, and no position works.** Four labs
+disagree on column order and Kaycha disagrees with itself, printing PASS on
+either side of the value - the same hazard as the terpene rows. Kaycha aw read
+the LOD (0.01) on six files, TerpLife moisture read the action level (15),
+Modern Canna read the Dilution cell. Action levels and detection limits are a
+small set of constants repeated across the corpus; a real reading is not one of
+them. Excluding those and bounding by physics leaves exactly one candidate on
+all 34 labelled rows across four labs
+- **ACS and ACT print the freshness label TWICE** - a section heading, then the
+real row - and the heading comes first, so `Specimen Weight: 0.500 g` was read
+as a water activity of 0.5. The authoritative row is the one preceded by a bare
+unit marker. Keying on the word `Result` catches ACS and misses ACT
