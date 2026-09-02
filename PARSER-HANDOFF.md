@@ -437,8 +437,10 @@ makes it the latter
 - **Freshness signals were unbounded.** Moisture and water activity are read
 from labelled rows with no reconciliation behind them, so a Dilution cell at the
 label's index was asserted unchecked: `aw 1.0` on six fixtures, `aw 55` on one,
-moisture 1 and 2.43 on two more. Water activity is a ratio bounded at 0-1, and
-cured flower sits between 3% and 20% moisture. Out of range now means NOT READ
+and moisture 1 on another. Water activity is a ratio bounded at 0-1, and
+moisture at 1-20%. Out of range means NOT READ. (MCL-FLW-002's 2.43 looked like
+a fault and is not: the four sibling Modern Canna files print their moisture in
+the same slot, so it is the document's own figure. An early 3% floor nulled it.)
 - **Three published fields had no regression cover.** `moisture`,
 `waterActivity` and `warnings` are all in §7 and all reach the person holding
 the jar. Parity compared none of them, so eight bad freshness values and three
