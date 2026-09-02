@@ -36,8 +36,8 @@ is exactly what the parser sees.
 ## 2. Current state
 
 ```
-52 accepted / 4 rejected      (56 COA fixtures)
-52 match / 0 differ           (extraction parity, unpdf vs pdftotext)
+53 accepted / 3 rejected      (56 COA fixtures)
+53 match / 0 differ           (extraction parity, unpdf vs pdftotext)
 corpus clean                  (fixture lint)
 ```
 
@@ -45,12 +45,11 @@ Seven labs, four inhalable product classes. Kaycha, Modern Canna, ACS, ACT,
 TerpLife, Method all working. Green Scientific has no working sample and is not
 currently OMMU-certified.
 
-The four rejections are all **correct**:
+The three rejections are all **correct**:
 
 - `GreenRoads…` — genuinely all-ND
 - `Harmony-Muscle-Rub…` — topical, prints no total
 - `hemp-bombs…` — no terpene panel was run
-- `MCL-FLW-002` — a Modern Canna layout still unread; refuses rather than guessing
 
 Live scanning works end to end: camera → QR → viewer-page resolution → fetch →
 unpdf → parse → confirmation card, including the warnings row, which has been
@@ -64,25 +63,33 @@ whole workspace had to be rebuilt from the remote.
 **Which reader serves which documents**, from `readBy`:
 
 ```
-forward      46      the plain name-then-value pass
+forward      43      the plain name-then-value pass
 multicolumn   8      Kaycha's three-column rows
 backward      2      value-before-name layouts
-columnmajor   0      currently unexercised
+columnmajor   0      dead - declines on all 56, unreached on 53
+
+Counts are of ACCEPTED fixtures (43+8+2 = 53). Rejected documents also carry a
+`readBy`, so counting all 56 gives 46 forward - which is what an earlier version
+of this table did, without saying so.
 ```
 
 ---
 
 ## 3. Where to start
 
-No known accepted-but-wrong fixture is outstanding, and no lint failures remain.
+Three accepted-but-wrong faults were found and fixed this session - see §11.
+No lint failures remain.
 
-1. **Is the column-major reader dead, or waiting?** It serves zero fixtures. It was
-   written for a Modern Canna layout, and `MCL-FLW-002` — the one document still
-   unread — may be exactly what it was for. Answer that before anyone deletes it:
-   if it is the intended reader for that layout, the work is to make it fire; if
-   the multi-column reconciler superseded it, it is ~80 lines of untested code
-   sitting in the path of every parse.
-2. **`MCL-FLW-002`** itself. Rejects correctly, so this is coverage, not a bug.
+1. **The column-major reader is dead.** `test/columnmajor-audit.js` shows it
+declines on all 56 fixtures and is never reached on 53 - it runs only when
+`rowPassLooksWrong`. Its own comment names ACS, ACT Florida and TerpLife, NOT
+Modern Canna, and all three now read `forward` and accept, so the row-wise
+reconciler superseded it. Keeping it costs nothing on the 53 passing fixtures.
+Do not spend time trying to make it fire.
+2. **`MCL-FLW-002` accepts** and reads `forward`. It warns: its full panel lists
+`Ocimene, Total 0.068`, which its own headline 1.769% omits, so the rows sum to
+103.8% of the printed total. Verified as the document's arithmetic, not a parse
+fault - the eleven summary values sum to exactly 1.769.
 3. **More fixtures.** See §10 — depth within a lab beats breadth across
    dispensaries.
 
@@ -90,7 +97,7 @@ No known accepted-but-wrong fixture is outstanding, and no lint failures remain.
 each reader return a candidate and choose once at the end, instead of four stages
 mutating one shared `terps` object. The motivation was that a change to stage two
 once broke a lab at stage four invisibly. But `readBy` (§7) made that visible for
-five lines, and the 46/8/2/0 split above means restructuring the pipeline would put
+five lines, and the 43/8/2/0 split above means restructuring the pipeline would put
 every lab at risk to tidy stages serving two documents and zero. Revisit only if a
 fifth reader is ever needed.
 
@@ -138,7 +145,7 @@ node test/extraction-parity.js test/fixtures/pdf 2>&1 | grep -v "^Warning:" | ta
 node test/fixture-lint.js | tail -2
 ```
 
-Expect `52 accepted / 4 rejected`, `52 match / 0 differ`, and `corpus clean`.
+Expect `53 accepted / 3 rejected`, `53 match / 0 differ`, and `corpus clean`.
 
 **After every change, all four must hold:**
 
@@ -150,7 +157,8 @@ Expect `52 accepted / 4 rejected`, `52 match / 0 differ`, and `corpus clean`.
 **Anything that trades a working lab for a broken one is not a fix.** This has
 happened four times. If a change costs a lab, revert rather than negotiate with it.
 
-Parity asserts `readBy` and `productClass` as well as the numbers, so a change that
+Parity asserts `readBy`, `productClass`, `moisture`, `waterActivity` and
+`warnings` as well as the numbers, so a change that
 reaches the same values by a different reader, or classifies a document
 differently, now shows up as a DIFFER rather than passing silently. That is
 deliberate: on this parser a changed path is news. A legitimate improvement that
@@ -166,7 +174,7 @@ someone to look.
 | `extract-dump.js` | regenerate `test/fixtures/extracted/` from the PDFs |
 | `fixture-lint.js` | corpus hygiene: control bytes, shell-hostile names, baseline arithmetic |
 | `mutation-test.js <dir> <parser>` | corrupt fixtures; require identical-or-reject |
-| `column-probe.js <name>` | print name/value run structure of one fixture |
+| `columnmajor-audit.js`                   | read-only: which reader serves each fixture, and whether readColumnMajor fires |
 
 ---
 
@@ -224,11 +232,13 @@ a 30% total was rejected as flower and accepted silently as unknown.
 - `measuredCoverage = (mapped + unmodelled) / total` — did we read the table?
 - `modelCoverage = mapped / total` — how much does the aroma model represent?
 
-Correct COAs sit at 99–100% measured regardless of model coverage. A gap between
+Correct COAs sit a little ABOVE 100% measured - rounding across thirty-odd
+rows reaches ~1%, and `MAX_MEASURED_COVERAGE 1.01` bounds it. That holds
+regardless of model coverage. A gap between
 them means rows were missed, not that the lab printed a short list.
 
 **Empirical constants.** `MIN_ROW_SHARE 0.5`, `BACKWARD_MARGIN 0.15`,
-`COLUMN_TRUST_SHARE 0.95`, `MIN_MEASURED_COVERAGE 0.80`,
+`COLUMN_TRUST_SHARE 0.95`, `MIN_MEASURED_COVERAGE 0.80`, `MAX_MEASURED_COVERAGE 1.01`,
 `PLAUSIBLE_TOTAL_PERCENT 35`, `MAX_RESULT_COLUMNS 4`, `MAX_UNIT_RATIO_SPREAD 0.15`,
 `MIN_COLUMN_DISTINCTNESS 0.6`, `MIN_CROSSCHECK_ROWS 4`. Each was derived from a
 real failure. Changing one needs a fixture that justifies it. `LOOKAHEAD_LINES 14`
@@ -293,10 +303,15 @@ No fixture currently uses the bare spelling.
 
 ## 9. Known open items
 
-- **`MCL-FLW-002`** — a Modern Canna flower layout still unread. Rejects correctly.
-  See §3: it may be what the column-major reader was written for.
-- **The column-major reader serves zero fixtures.** Either dead code or waiting for
-  the layout above.
+- **Freshness cells still unfound.** Six ACS fixtures and `Grease_Monkey_cart`
+read water activity from the Dilution column (1.0), `KF2025-046` read 55, and
+`KAY-FLW-002` read moisture 1. All are now bounded to `null`, which is honest,
+but the real cells have not been located.
+- **`ACS-LRS-002` recovers only 97.5%** of its printed total. A shortfall, not
+an overshoot, and unrelated to the `<LOQ` fix. Unexplained.
+- **Two round numbers worth one look.** `TerpLife_GrpeBblGm` reads moisture
+exactly 15, and `KAY-FLW-002` reads water activity exactly 0.65 - the safe
+threshold itself. Both are inside the bounds and may be correct.
 - **18 mutation failures** out of 308 (~6%). Each is a corrupted document that
   still produced an accepted-but-different fingerprint. Documented, not urgent.
 - **Two fixtures classify as `unknown`** — `Method_DulceDeUva_flower` and
@@ -405,3 +420,26 @@ the DOCUMENT says the product is, not what the dispensary called it: one file na
 - A status tile matching `FULL_PANEL` case-insensitively, so a single-page COA
   skipped its only terpene table
 - Value-before-name layouts, where every figure lands on the compound above it
+- **ACS prints ragged rows and the reconciler read the LOQ column.** A detected
+row has two cells, a `<LOQ` row has three, so one column index is the percentage
+on one and the limit on the other. Share is scored bigger-is-better with no
+penalty for overshoot, so the LOQ column scored 1.0229 against the correct
+column's exact 1.0. Twenty-three phantom terpenes at 0.002 on ACS-FLW-002,
+including terpinolene, farnesene and ocimene on rows printing non-detect. Fixed
+by zeroing a row from its own printed non-detect marker. Numeric `<0.200` is
+deliberately NOT included: a limit column can take that form, and a row must
+never be zeroed by its own limit. **Reconciliation cannot see this class of
+fault** - the LOQ column sums UNDER the total, so it passes every check in §6
+- **The baseline was defending that bug.** `ACS-FLW-002` recorded
+`ocimene: 0.00033`, an LOQ value snapshotted from parser output. A snapshotted
+entry is a regression test, not a correctness test; only the by-hand step in §10
+makes it the latter
+- **Freshness signals were unbounded.** Moisture and water activity are read
+from labelled rows with no reconciliation behind them, so a Dilution cell at the
+label's index was asserted unchecked: `aw 1.0` on six fixtures, `aw 55` on one,
+moisture 1 and 2.43 on two more. Water activity is a ratio bounded at 0-1, and
+cured flower sits between 3% and 20% moisture. Out of range now means NOT READ
+- **Three published fields had no regression cover.** `moisture`,
+`waterActivity` and `warnings` are all in §7 and all reach the person holding
+the jar. Parity compared none of them, so eight bad freshness values and three
+new warnings changed without a single DIFFER. Now compared
