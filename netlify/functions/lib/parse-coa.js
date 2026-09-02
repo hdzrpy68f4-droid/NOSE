@@ -922,10 +922,34 @@ function parseCoa(text){
      null honestly says: over-reading a freshness signal is worse than leaving
      it unknown, and unlike the terpene table there is no total to reconcile
      against, so a bound is the only check available. */
-  if (waterActivity != null && !(waterActivity > 0 && waterActivity < 1))
-    waterActivity = null;
-  if (moisture != null && !(moisture >= 3 && moisture <= 20))
-    moisture = null;
+  /* Read the freshness signals by RECONCILIATION, not position - the four
+     labs disagree on column order and Kaycha disagrees with itself:
+
+       ACS/ACT        Water Activity | 0.65  | 0.530          limit first
+       Kaycha A       WATER ACTIVITY | aw | 0.010 | 0.10 | 0.65 | PASS | 0.56
+       Kaycha B       Water Activity | 0.010 | aw | 0.583 | PASS | 0.65
+       Modern Canna   Percent Moisture | 12.5 | 15 | 1        limit second
+
+     A verdict token cannot decide it: Kaycha prints PASS on either side, the
+     same hazard §11 records for the terpene rows. Position cannot decide it
+     either. What separates them is DISTINCTNESS - the same discriminator that
+     separated ACT's LOQ column from a measurement. Action levels and detection
+     limits are a small set of constants repeated across every document in the
+     corpus; a real reading is not one of them. Excluding those and bounding by
+     physics leaves exactly one candidate on all 34 labelled rows across four
+     labs, with no ambiguity anywhere.
+
+     Previously this took the first plausible number after the label, which was
+     the Dilution cell on six ACS files (aw 1.0), the LOD on six Kaycha files
+     (aw 0.01), and the action level on TerpLife (moisture 15). */
+  const freshValue = (raw, isAw) => {
+    if (raw == null) return null;
+    const CONSTS = isAw ? [0.65, 0.85, 0.10, 0.01] : [15, 1.00];
+    const inRange = v => isAw ? (v > 0 && v < 1) : (v >= 1 && v <= 20);
+    return (CONSTS.indexOf(raw) < 0 && inRange(raw)) ? raw : null;
+  };
+  waterActivity = freshValue(waterActivity, true);
+  moisture      = freshValue(moisture, false);
 
   const freshnessApplies = productClass === 'flower';
 

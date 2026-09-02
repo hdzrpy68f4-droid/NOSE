@@ -618,7 +618,7 @@
   },
   "readBy": "multicolumn",
   "moisture": null,
-  "waterActivity": 0.65,
+  "waterActivity": null,
   "warnings": []
  },
  "KAY-FLW-003": {
@@ -1393,7 +1393,7 @@
    "nerolidol": 0
   },
   "readBy": "forward",
-  "moisture": 15,
+  "moisture": null,
   "waterActivity": 0.49,
   "warnings": []
  },
@@ -1616,7 +1616,7 @@
    "nerolidol": 0,
    "ocimene": 0.068
   },
-  "moisture": null,
+  "moisture": 2.43,
   "waterActivity": null,
   "warnings": [
    "the terpene rows on this report add up to 103.8% of the total the lab printed — the individual figures are as listed, but the report's own arithmetic does not close"
