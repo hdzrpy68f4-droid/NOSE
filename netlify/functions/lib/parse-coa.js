@@ -434,8 +434,14 @@ function parseCoa(text){
       /* Unrecognised name inside a terpene table, followed by a result: almost
          certainly an analyte spelling we do not know yet. Surfacing these is
          how new lab vocabularies get found without opening the PDF by hand. */
+      /* Exempt a Total only when what follows it is not itself something we
+         already know is not an analyte. "Total Terpineol" qualifies; "Total
+         Yeast/Mold" does not, and letting it through put a microbial in the
+         diagnostic on six files. The signal is only useful while it stays
+         readable - see the pesticide flood in the session log. */
       const totalOfUnknown = /^Total\s+\S/i.test(line) && !TOTAL_OF_CANNABINOID.test(line)
-        && !/^TOTAL TERPENES$/i.test(line);
+        && !/^TOTAL TERPENES$/i.test(line)
+        && !NOT_AN_ANALYTE.test(line.replace(/^Total\s+/i, ''));
       if (inTerpeneSection && !SECTION_LABELS.test(upper)
           && (totalOfUnknown || !NOT_AN_ANALYTE.test(line)) &&
           /^[A-Za-z0-9(][A-Za-z0-9()+\-\/. ]{2,29}$/.test(line) &&
