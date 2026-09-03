@@ -307,8 +307,9 @@ No fixture currently uses the bare spelling.
 above it, so the binding rule declines. One document; not worth a fifth pattern.
 - **`KAY-FLW-002` water activity reads 0.583** where sibling Kaycha files read
 0.56-0.59. Plausible, unverified against the PDF.
-- **`ACS-LRS-002` recovers only 97.5%** of its printed total. A shortfall, not
-an overshoot, and unrelated to the `<LOQ` fix. Unexplained.
+- **Every accepted fixture now reconciles** against its own printed total.
+`MCL-FLW-002` is the sole exception at 103.8%, and that is the lab's arithmetic,
+not the parser's - it warns rather than refusing.
 - **Two round numbers worth one look.** `TerpLife_GrpeBblGm` reads moisture
 exactly 15, and `KAY-FLW-002` reads water activity exactly 0.65 - the safe
 threshold itself. Both are inside the bounds and may be correct.
@@ -458,3 +459,12 @@ all 34 labelled rows across four labs
 real row - and the heading comes first, so `Specimen Weight: 0.500 g` was read
 as a water activity of 0.5. The authoritative row is the one preceded by a bare
 unit marker. Keying on the word `Result` catches ACS and misses ACT
+- **A detected row went unread across a whole lab because the diagnostic was
+blind to it.** ACS prints `Total Terpineol` on all seven of its fixtures; six
+read `<LOQ`, and `ACS-LRS-002` detects 0.193%, which was the entirety of its
+2.5% shortfall. It also had nerolidol carrying terpineol's value. The row never
+surfaced in `unmapped` because `NOT_AN_ANALYTE` matches the word `Total`, added
+to keep cannabinoid totals out - so the one signal designed to find new
+spellings suppressed it. A `Total` naming a compound the map does not know, and
+which is not a cannabinoid, is now exempt; a `Total` naming something already
+known not to be an analyte is not, or `Total Yeast/Mold` floods the diagnostic
