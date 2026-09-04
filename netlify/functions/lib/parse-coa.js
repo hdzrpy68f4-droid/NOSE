@@ -497,7 +497,13 @@ function parseCoa(text){
          with a digit - "3-Carene" - so isResultToken() accepts them and the
          name would be collected as the number 3. Harmless while the first
          candidate was taken, wrong the moment position matters. */
-      if (ANALYTE_MAP[canonicalAnalyte(lines[j])] || UNMODELLED.test(nxt) ||
+      /* UNMODELLED must see the CANONICAL name, not the raw line. ANALYTE_MAP
+         was already canonicalised here and UNMODELLED was not, so a lab writing
+         Greek letters as bare initials - which ACT does - stopped the row on a
+         mapped analyte but ran straight past an unmodelled one. g-Terpineol is
+         the last row of MCL-FLW-002's panel; missing it as a boundary changed
+         that document's fingerprint. */
+      if (ANALYTE_MAP[canonicalAnalyte(lines[j])] || UNMODELLED.test(canonicalAnalyte(lines[j])) ||
           /^(TOTAL TERPENES|MOISTURE CONTENT|WATER ACTIVITY)$/i.test(nxt)) break;
       /* Cannabinoids end the row. Modern Canna interleaves the two tables in
          its page-one summary, so the scan otherwise walks past "CBGa" and
