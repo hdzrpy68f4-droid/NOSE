@@ -313,8 +313,10 @@ not the parser's - it warns rather than refusing.
 - **Two round numbers worth one look.** `TerpLife_GrpeBblGm` reads moisture
 exactly 15, and `KAY-FLW-002` reads water activity exactly 0.65 - the safe
 threshold itself. Both are inside the bounds and may be correct.
-- **18 mutation failures** out of 308 (~6%). Each is a corrupted document that
-  still produced an accepted-but-different fingerprint. Documented, not urgent.
+- **14 mutation failures** out of 371 (~4%), down from 19 - see the `gamma-`
+  fault in the log below, which accounted for five. The rest are all
+  `destructive/shuffleValues`: a deliberately scrambled table producing a
+  changed fingerprint. Whether that should be caught is an open question.
 - **Two fixtures classify as `unknown`** — `Method_DulceDeUva_flower` and
   `ACS-LRS-001`. This is honest: neither document states its form in text the
   parser can reach (§6). They are now guarded rather than exempt, so nothing is
@@ -468,3 +470,11 @@ to keep cannabinoid totals out - so the one signal designed to find new
 spellings suppressed it. A `Total` naming a compound the map does not know, and
 which is not a cannabinoid, is now exempt; a `Total` naming something already
 known not to be an analyte is not, or `Total Yeast/Mold` floods the diagnostic
+- **The look-ahead canonicalised one side of its stop condition and not the
+other.** `ANALYTE_MAP` got the canonical name, `UNMODELLED` got the raw line, so
+a lab writing Greek letters as bare initials - which ACT does - stopped a row on
+a mapped analyte but ran past an unmodelled one. `g-Terpineol` is the last row of
+MCL-FLW-002's panel, and missing it as a boundary dropped ocimene from that
+document's fingerprint. No fixture could expose it: every COA in the corpus
+spells `gamma-` in full, and the mutation harness made one that does not. The
+same expression appears correctly a few lines above, in the post-verdict scan
