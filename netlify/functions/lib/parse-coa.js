@@ -922,6 +922,20 @@ function parseCoa(text){
   /* A single compound holding almost the whole profile is possible - a
      terpinolene-dominant pod reached 77% - but it is also what a misaligned
      table produces, so it is worth a look. */
+  /* A large gap between measured and model coverage means the table was read
+     but the values landed on the wrong analytes. Section 6 says this in words;
+     nothing checked it. Reversing every numeric line of a real COA conserves
+     the multiset, so every sum still reconciles - no arithmetic check can see
+     it - but two thirds of the mass lands on compounds NOSE does not model,
+     and modelCoverage falls to 0.32 where the lowest real fixture is 0.71.
+     Set at 0.50, well below that floor: model coverage is a property of the
+     taxonomy rather than the document, so a genuinely guaiol-rich report could
+     run lower than anything in this corpus. A warning, not a refusal - the
+     values may be exactly as printed and only the pairing suspect. */
+  if (INHALABLE.has(productClass) && modelCoverage != null && measuredCoverage != null
+      && measuredCoverage > 0.9 && modelCoverage < MIN_MODEL_COVERAGE)
+    warnings.push(`most of this report's terpene mass sits in compounds NOSE does not model — the totals add up, but the values may be lined up against the wrong compounds, so check the top few against the report`);
+
   const top = Math.max(0, ...Object.values(terps));
   if (mappedTotal > 0 && top / mappedTotal > 0.85 && nonZero > 2)
     warnings.push('one terpene accounts for most of the profile — unusual, though some cultivars genuinely are');
@@ -1091,6 +1105,7 @@ const TYPICAL_MAX_TOTAL = { flower: 6, vape: 20, concentrate: 25, edible: 5, tin
    It is the report's own arithmetic that does not close, and the person holding
    the jar is who should hear that. */
 const MAX_MEASURED_COVERAGE = 1.01;
+const MIN_MODEL_COVERAGE = 0.50;
 const MIN_MEASURED_COVERAGE = 0.80;
 /* Inhalable cannabis carries more than a couple of terpenes above LOQ. One or
    two on a flower COA is a parse that collapsed, not a real profile. */
