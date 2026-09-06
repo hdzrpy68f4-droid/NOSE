@@ -93,7 +93,11 @@ const COVERAGE_TOLERANCE = 0.2;
        parser a changed published value is news. Compared as strings so null and
        absent stay distinguishable; freshnessApplies === false means the UI omits
        the figure entirely, which is not the same statement as unknown. */
-    for (const f of ['moisture', 'waterActivity']){
+    /* strain, batch and labId are printed on the confirmation card and were
+       compared by nothing. A real scan showed all three as "not stated" while
+       every gate stayed green, and two documents had been reading a LABEL as
+       the value for months without anything noticing. */
+    for (const f of ['moisture', 'waterActivity', 'strain', 'batch', 'labId']){
       if (!(f in want)) continue;
       if (String(got[f]) !== String(want[f]))
         problems.push(`${f} ${want[f]} -> ${got[f]}`);
