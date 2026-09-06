@@ -302,6 +302,18 @@ function cleanStrain(value){
     .replace(/\s{2,}/g, ' ').trim() || null;
 }
 
+/* A metadata value may sit on the line after its label, but on documents that
+   separate every label from its value the NEXT LINE IS ANOTHER LABEL - and was
+   being taken as the value, so batch read "Batch Date:" and strain read
+   "Processing Facility:". A trailing colon or a bare "#" means a label, never a
+   value. */
+const LOOKS_LIKE_LABEL = /[:#]\s*$/;
+const valueOrNext = (inline, next) => {
+  const v = String(inline || '').trim();
+  if (v) return v;
+  return (next && !LOOKS_LIKE_LABEL.test(next)) ? next : null;
+};
+
 /* ------------------------------------------------------------------- parser */
 
 function parseCoa(text){
@@ -352,12 +364,18 @@ function parseCoa(text){
   for (let i = 0; i < lines.length; i++){
     const line = lines[i];
 
-    if (!strain && /^(Strain|Cultivar):\s*/i.test(line))
-      strain = cleanStrain(line.replace(/^(Strain|Cultivar):\s*/i, '').trim() || lines[i+1]);
+    /* Method writes "Cultivars:" plural, and labels the batch "Batch Client #"
+       and the lab id "Sample MTL #:" - a word between the label and the number,
+       and no colon on the batch. All three sit inline with their values, so
+       widening the labels is enough; this is not the separated-label case. */
+    if (!strain && /^(Strains?|Cultivars?):\s*/i.test(line))
+      strain = cleanStrain(valueOrNext(line.replace(/^(Strains?|Cultivars?):\s*/i, ''), lines[i+1]));
     if (!harvestDate && /^Harvest Date:/i.test(line))
-      harvestDate = (line.split(':')[1] || '').trim() || lines[i+1];
-    if (!batch && /^Batch #:/i.test(line))  batch  = (line.split(':')[1] || '').trim() || lines[i+1];
-    if (!labId && /^Lab ID:/i.test(line))   labId  = (line.split(':')[1] || '').trim() || lines[i+1];
+      harvestDate = valueOrNext(line.split(':')[1], lines[i+1]);
+    const batchLabel = line.match(/^Batch(?:\s+Client)?\s*#:?\s*(.*)$/i);
+    if (!batch && batchLabel) batch = valueOrNext(batchLabel[1], lines[i+1]);
+    const idLabel = line.match(/^(?:Lab ID|Sample\s+\w+\s*#):?\s*(.*)$/i);
+    if (!labId && idLabel) labId = valueOrNext(idLabel[1], lines[i+1]);
 
     /* Track whether we are inside a terpene table, so unrecognised analyte
        names can be reported without dragging in every stray line of the
