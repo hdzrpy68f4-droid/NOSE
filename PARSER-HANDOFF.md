@@ -36,8 +36,8 @@ is exactly what the parser sees.
 ## 2. Current state
 
 ```
-54 accepted / 3 rejected      (57 COA fixtures)
-54 match / 0 differ           (extraction parity, unpdf vs pdftotext)
+55 accepted / 3 rejected      (58 COA fixtures)
+55 match / 0 differ           (extraction parity, unpdf vs pdftotext)
 corpus clean                  (fixture lint)
 ```
 
@@ -145,7 +145,7 @@ node test/extraction-parity.js test/fixtures/pdf 2>&1 | grep -v "^Warning:" | ta
 node test/fixture-lint.js | tail -2
 ```
 
-Expect `54 accepted / 3 rejected`, `54 match / 0 differ`, and `corpus clean`.
+Expect `55 accepted / 3 rejected`, `55 match / 0 differ`, and `corpus clean`.
 Also run `node test/resolver-test.js` - expect `resolver clean`.
 
 **After every change, all four must hold:**
