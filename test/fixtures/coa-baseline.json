@@ -1841,5 +1841,35 @@
   "moisture": null,
   "waterActivity": null,
   "warnings": []
+ },
+ "MTL-FLW-004": {
+  "lab": "Method Testing Labs",
+  "productClass": "flower",
+  "layout": "row",
+  "totalTerpenes": 2.92,
+  "mappedTotal": 2.7414,
+  "coverage": 93.88,
+  "measuredCoverage": 96.87,
+  "usable": true,
+  "nonZeroTerps": 10,
+  "terps": {
+   "caryophyllene": 0.876,
+   "limonene": 0.575,
+   "myrcene": 0.364,
+   "humulene": 0.24,
+   "linalool": 0.213,
+   "ocimene": 0.203,
+   "pinene_b": 0.0721,
+   "bisabolol": 0.0705,
+   "terpineol": 0.0649,
+   "fenchol": 0.0629
+  },
+  "readBy": "forward",
+  "strain": "Rose Especial",
+  "batch": "4681008750121335",
+  "labId": "2607CBR0187-007",
+  "moisture": null,
+  "waterActivity": null,
+  "warnings": []
  }
 }
