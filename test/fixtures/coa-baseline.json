@@ -1622,5 +1622,32 @@
   "warnings": [
    "the terpene rows on this report add up to 103.8% of the total the lab printed — the individual figures are as listed, but the report's own arithmetic does not close"
   ]
+ },
+ "MTL-FLW-002": {
+  "lab": "Method Testing Labs",
+  "productClass": "flower",
+  "layout": "row",
+  "totalTerpenes": 3.7,
+  "mappedTotal": 3.5154,
+  "coverage": 95.01,
+  "measuredCoverage": 98.85,
+  "usable": true,
+  "nonZeroTerps": 10,
+  "terps": {
+   "caryophyllene": 0.845,
+   "limonene": 0.836,
+   "myrcene": 0.565,
+   "linalool": 0.463,
+   "ocimene": 0.281,
+   "humulene": 0.154,
+   "pinene_b": 0.104,
+   "fenchol": 0.0935,
+   "terpineol": 0.0928,
+   "pinene_a": 0.0811
+  },
+  "readBy": "forward",
+  "moisture": null,
+  "waterActivity": null,
+  "warnings": []
  }
 }
