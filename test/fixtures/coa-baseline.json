@@ -1811,5 +1811,35 @@
   "strain": "Purple Push Pop",
   "batch": "5637041429622699",
   "labId": "2608CBR0160-002"
+ },
+ "MTL-FLW-003": {
+  "lab": "Method Testing Labs",
+  "productClass": "flower",
+  "layout": "row",
+  "totalTerpenes": 3.44,
+  "mappedTotal": 3.2011,
+  "coverage": 93.06,
+  "measuredCoverage": 96.86,
+  "usable": true,
+  "nonZeroTerps": 10,
+  "terps": {
+   "caryophyllene": 0.815,
+   "limonene": 0.66,
+   "myrcene": 0.62,
+   "linalool": 0.277,
+   "ocimene": 0.259,
+   "humulene": 0.234,
+   "bisabolol": 0.113,
+   "pinene_b": 0.0835,
+   "terpineol": 0.0743,
+   "pinene_a": 0.0653
+  },
+  "readBy": "forward",
+  "strain": "The Devil's Fruitstand",
+  "batch": "0919950816147821",
+  "labId": "2608CBR0104-005",
+  "moisture": null,
+  "waterActivity": null,
+  "warnings": []
  }
 }
