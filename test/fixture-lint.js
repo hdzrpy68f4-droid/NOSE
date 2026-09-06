@@ -71,6 +71,36 @@ if (fs.existsSync(PDFDIR)){
   }
 }
 
+/* The handoff's headline counts drifted five times in one session, and a stale
+   one cost real time at the start of the next: it claimed 52/4 when the tree
+   held 53/3, so the first hypotheses were built on a number that was wrong.
+   The counts are facts about this directory, so check them here rather than
+   remembering to hand-edit. This couples the lint to the document's wording -
+   if section 2 is reformatted, fix the regexes below rather than deleting
+   the check. */
+const HANDOFF = path.join(__dirname, '..', 'PARSER-HANDOFF.md');
+if (fs.existsSync(HANDOFF)){
+  const doc = fs.readFileSync(HANDOFF, 'utf8');
+  const claim = (re, what) => {
+    const m = doc.match(re);
+    if (!m) note('handoff', what, 'no count found in PARSER-HANDOFF.md - was section 2 reformatted?');
+    return m;
+  };
+  const acc = claim(/(\d+) accepted \/ (\d+) rejected\s+\((\d+) COA fixtures\)/, 'gate line');
+  const par = claim(/(\d+) match \/ 0 differ\s+\(extraction parity/, 'parity line');
+  const nBase = Object.keys(baseline).length;
+  if (acc){
+    if (+acc[3] !== files.length)
+      note('handoff', 'fixture count', `says ${acc[3]} fixtures, directory holds ${files.length}`);
+    if (+acc[1] !== nBase)
+      note('handoff', 'accepted count', `says ${acc[1]} accepted, baseline holds ${nBase}`);
+    if (+acc[2] !== EXPECTED_NO_BASELINE.size)
+      note('handoff', 'rejected count', `says ${acc[2]} rejected, ${EXPECTED_NO_BASELINE.size} expected refusals`);
+  }
+  if (par && +par[1] !== nBase)
+    note('handoff', 'parity count', `says ${par[1]} match, baseline holds ${nBase}`);
+}
+
 const counts = {};
 problems.forEach(p => { counts[p.kind] = (counts[p.kind] || 0) + 1; });
 problems.sort((a, b) => a.kind.localeCompare(b.kind) || a.name.localeCompare(b.name))
