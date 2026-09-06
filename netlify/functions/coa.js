@@ -41,6 +41,7 @@ const { parseCoa } = require('./lib/parse-coa');
 const MAX_BYTES   = 12 * 1024 * 1024;   // COAs run to a few hundred KB; 12MB is generous
 const TIMEOUT_MS  = 7500;   // under Netlify's 10s function limit, so our message wins
 const MAX_REDIRECTS = 3;
+const MAX_PAGE_HOPS = 2;   // a portal may put a listings page before the report page
 
 /* Labs whose text ordering under unpdf does not match the committed fixtures.
  * test/extraction-parity.js reports these as DIFFER. A DIFFER is not a near
@@ -162,8 +163,17 @@ function looksLikeHtml(buf){
  * present PDF magic bytes, so a wrong guess fails safely rather than quietly.
  */
 function resolvePdfFromPage(buf, pageUrl){
-  const html = buf.toString('utf8').slice(0, 400000);
-  const unescape = t => t.replace(/&amp;/g, '&').replace(/&#38;/g, '&');
+  /* 400,000 was not enough. The coaportal listings page is 547KB - a WordPress
+     theme with the payload near the end - and the one link worth having sat
+     past the cut, so the scan found nothing on a page that plainly had it.
+     The slice only bounds regex work on a buffer already held in memory and
+     already capped by MAX_BYTES, so a larger window costs little. */
+  const html = buf.toString('utf8').slice(0, 4000000);
+  /* WordPress emits the zero-padded &#038; for an ampersand, which the two
+     literal patterns here missed - the resolved URL kept it, and since # opens
+     a fragment the link fetched the page again instead of the file. Match the
+     numeric form with optional leading zeros. */
+  const unescape = t => t.replace(/&(?:amp|#0*38);/gi, '&');
   const candidates = [];
 
   // 1. yourcoa.com viewer: the sample id in the query is the download path
@@ -171,6 +181,20 @@ function resolvePdfFromPage(buf, pageUrl){
     const sample = pageUrl.searchParams.get('sample');
     if (sample && /^[A-Za-z0-9._-]{4,64}$/.test(sample))
       candidates.push(`/coa/coa-download/${encodeURIComponent(sample)}?wl_id=0&mrk=0&is_view=1`);
+  }
+
+  /* coaportal.com is Method Testing Labs' portal - one path segment per brand,
+     e.g. /sunburn/. It puts TWO pages between the QR code and the file: a
+     listings page linking to a report page, which carries the file behind
+     ?...&pdf=<n>. Neither URL ends in .pdf and neither says download, so the
+     generic patterns below match nothing on either hop. The number after pdf=
+     is read from the markup, never constructed, so a change to it is harmless. */
+  if (/(^|\.)coaportal\.com$/i.test(pageUrl.hostname)){
+    for (const re of [/href\s*=\s*"([^"]*[?&]pdf=\d+[^"]*)"/gi,
+                      /href\s*=\s*"([^"]*\/report\/\?search=[^"]*)"/gi]){
+      let c;
+      while ((c = re.exec(html)) !== null) candidates.push(unescape(c[1]));
+    }
   }
 
   // 2. an explicit download or .pdf link in the markup
@@ -204,16 +228,28 @@ async function fetchPdf(startUrl){
     return { buffer: first.buffer, finalUrl: first.finalUrl.toString() };
 
   if (looksLikeHtml(first.buffer)){
-    const resolved = resolvePdfFromPage(first.buffer, first.finalUrl);
-    if (!resolved)
-      return { error: 'That link opens a page rather than a report, and no report could be found on it. Open the page yourself and paste the PDF link.' };
-
-    // One resolution hop only — no chasing pages that link to pages.
-    const second = await fetchOnce(resolved);
-    if (second.error) return second;
-    if (!isPdf(second.buffer))
-      return { error: 'That page pointed at something that is not a PDF.' };
-    return { buffer: second.buffer, finalUrl: second.finalUrl.toString(), viaPage: first.finalUrl.toString() };
+    /* Some portals put TWO pages between the QR code and the file: coaportal
+       lands on a listings page linking to a report page linking to the PDF.
+       Bounded at two hops, each re-validated by the same guards and still
+       required to present PDF magic bytes, with a visited set so a
+       self-referencing page cannot loop. */
+    let page = first;
+    const visited = new Set([first.finalUrl.toString()]);
+    for (let hop = 0; hop < MAX_PAGE_HOPS; hop++){
+      const resolved = resolvePdfFromPage(page.buffer, page.finalUrl);
+      if (!resolved) break;
+      const key = resolved.toString();
+      if (visited.has(key)) break;
+      visited.add(key);
+      const next = await fetchOnce(resolved);
+      if (next.error) return next;
+      if (isPdf(next.buffer))
+        return { buffer: next.buffer, finalUrl: next.finalUrl.toString(), viaPage: page.finalUrl.toString() };
+      if (!looksLikeHtml(next.buffer))
+        return { error: 'That page pointed at something that is not a PDF.' };
+      page = next;
+    }
+    return { error: 'That link opens a page rather than a report, and no report could be found on it. Open the page yourself and paste the PDF link.' };
   }
 
   return { error: 'That link is not a PDF. Lab reports must be the report itself, not a page about one.' };
@@ -311,3 +347,4 @@ exports.handler = async function(event){
     viaPage: fetched.viaPage || null
   });
 };
+exports._resolvePdfFromPage = resolvePdfFromPage;
