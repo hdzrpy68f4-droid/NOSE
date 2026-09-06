@@ -182,6 +182,9 @@ someone to look.
 | `fixture-lint.js` | corpus hygiene: control bytes, shell-hostile names, baseline arithmetic |
 | `mutation-test.js <dir> <parser>` | corrupt fixtures; require identical-or-reject |
 | `resolver-test.js` | viewer-page resolution, offline, against saved portal pages |
+
+The counts in section 2 are checked by `fixture-lint.js` against the corpus, so
+a stale one fails the lint rather than misleading the next session.
 | `columnmajor-audit.js`                   | read-only: which reader serves each fixture, and whether readColumnMajor fires |
 
 ---
