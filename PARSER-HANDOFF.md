@@ -315,8 +315,13 @@ exactly 15, and `KAY-FLW-002` reads water activity exactly 0.65 - the safe
 threshold itself. Both are inside the bounds and may be correct.
 - **14 mutation failures** out of 371 (~4%), down from 19 - see the `gamma-`
   fault in the log below, which accounted for five. The rest are all
-  `destructive/shuffleValues`: a deliberately scrambled table producing a
-  changed fingerprint. Whether that should be caught is an open question.
+  `destructive/shuffleValues`, and they are a KNOWN LIMIT rather than a
+  backlog item. That mutation reverses every standalone numeric line in the
+  document, so the multiset of values is conserved and every sum still
+  reconciles by construction - no document-internal check can see it. Four of
+  the fourteen push mass onto unmodelled compounds and are caught by
+  `MIN_MODEL_COVERAGE`, but a warning leaves the fingerprint unchanged, so the
+  harness still counts them. Do not spend a session trying to reach zero.
 - **Two fixtures classify as `unknown`** — `Method_DulceDeUva_flower` and
   `ACS-LRS-001`. This is honest: neither document states its form in text the
   parser can reach (§6). They are now guarded rather than exempt, so nothing is
@@ -478,3 +483,9 @@ MCL-FLW-002's panel, and missing it as a boundary dropped ocimene from that
 document's fingerprint. No fixture could expose it: every COA in the corpus
 spells `gamma-` in full, and the mutation harness made one that does not. The
 same expression appears correctly a few lines above, in the post-verdict scan
+- **Model coverage was described but never checked.** Section 6 says a gap
+between measured and model coverage means rows were missed; nothing tested it.
+Where a shuffled table pushes mass onto compounds NOSE does not model,
+`modelCoverage` falls to 0.32 against a lowest real fixture of 0.71. Floor at
+0.50, as a warning - the values may be exactly as printed and only the pairing
+suspect. Zero false positives across 53 fixtures
