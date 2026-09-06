@@ -39,6 +39,12 @@ const { extractCoaText } = require('./lib/extract-text');
 const { parseCoa } = require('./lib/parse-coa');
 
 const MAX_BYTES   = 12 * 1024 * 1024;   // COAs run to a few hundred KB; 12MB is generous
+/* One BUDGET for the whole chain, not per request. Each fetch used to start a
+   fresh 7500ms timer, so three hops could reach 22.5s against Netlify's 10s
+   ceiling - past which the platform kills the function and the person sees its
+   error page instead of ours, which is the failure this timeout exists to
+   prevent. TIMEOUT_MS still caps any single request; whichever is smaller wins. */
+const TOTAL_BUDGET_MS = 8000;
 const TIMEOUT_MS  = 7500;   // under Netlify's 10s function limit, so our message wins
 const MAX_REDIRECTS = 3;
 const MAX_PAGE_HOPS = 2;   // a portal may put a listings page before the report page
@@ -93,12 +99,14 @@ function validateUrl(raw){
 }
 
 /* Follow redirects by hand so each hop can be re-validated. */
-async function fetchOnce(startUrl){
+async function fetchOnce(startUrl, deadline){
   let current = startUrl;
 
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++){
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+    const left = (deadline || Infinity) - Date.now();
+    if (left <= 0) return { error: 'The lab server took too long to respond.' };
+    const timer = setTimeout(() => controller.abort(), Math.min(TIMEOUT_MS, left));
     let res;
     try {
       res = await fetch(current.toString(), {
@@ -222,7 +230,8 @@ function resolvePdfFromPage(buf, pageUrl){
 }
 
 async function fetchPdf(startUrl){
-  const first = await fetchOnce(startUrl);
+  const deadline = Date.now() + TOTAL_BUDGET_MS;
+  const first = await fetchOnce(startUrl, deadline);
   if (first.error) return first;
   if (isPdf(first.buffer))
     return { buffer: first.buffer, finalUrl: first.finalUrl.toString() };
@@ -241,7 +250,7 @@ async function fetchPdf(startUrl){
       const key = resolved.toString();
       if (visited.has(key)) break;
       visited.add(key);
-      const next = await fetchOnce(resolved);
+      const next = await fetchOnce(resolved, deadline);
       if (next.error) return next;
       if (isPdf(next.buffer))
         return { buffer: next.buffer, finalUrl: next.finalUrl.toString(), viaPage: page.finalUrl.toString() };
