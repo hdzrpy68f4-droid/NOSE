@@ -36,8 +36,8 @@ is exactly what the parser sees.
 ## 2. Current state
 
 ```
-53 accepted / 3 rejected      (56 COA fixtures)
-53 match / 0 differ           (extraction parity, unpdf vs pdftotext)
+54 accepted / 3 rejected      (57 COA fixtures)
+54 match / 0 differ           (extraction parity, unpdf vs pdftotext)
 corpus clean                  (fixture lint)
 ```
 
@@ -145,7 +145,8 @@ node test/extraction-parity.js test/fixtures/pdf 2>&1 | grep -v "^Warning:" | ta
 node test/fixture-lint.js | tail -2
 ```
 
-Expect `53 accepted / 3 rejected`, `53 match / 0 differ`, and `corpus clean`.
+Expect `54 accepted / 3 rejected`, `54 match / 0 differ`, and `corpus clean`.
+Also run `node test/resolver-test.js` - expect `resolver clean`.
 
 **After every change, all four must hold:**
 
@@ -174,6 +175,7 @@ someone to look.
 | `extract-dump.js` | regenerate `test/fixtures/extracted/` from the PDFs |
 | `fixture-lint.js` | corpus hygiene: control bytes, shell-hostile names, baseline arithmetic |
 | `mutation-test.js <dir> <parser>` | corrupt fixtures; require identical-or-reject |
+| `resolver-test.js` | viewer-page resolution, offline, against saved portal pages |
 | `columnmajor-audit.js`                   | read-only: which reader serves each fixture, and whether readColumnMajor fires |
 
 ---
@@ -489,3 +491,40 @@ Where a shuffled table pushes mass onto compounds NOSE does not model,
 `modelCoverage` falls to 0.32 against a lowest real fixture of 0.71. Floor at
 0.50, as a warning - the values may be exactly as printed and only the pairing
 suspect. Zero false positives across 53 fixtures
+
+---
+
+## 12. The fetcher — `netlify/functions/coa.js`
+
+Everything above is the parser. This is what gets a PDF to it, and it had no
+test coverage at all until `test/resolver-test.js`.
+
+**There is deliberately NO domain allowlist.** COAs reach people through
+whoever sold the jar. The SSRF guard is layered instead: https only, no
+private or link-local destinations re-checked after every redirect, bounded
+time and bytes, PDF magic bytes rather than a Content-Type header, and finally
+the parser's own reconciliation. That last one is the real boundary — a
+fabricated report on a trusted domain fails it.
+
+**Some portals put TWO pages between the QR code and the file.** Sunburn's
+codes resolve to `coaportal.com` — Method Testing Labs' portal, one path
+segment per brand — where a listings page links to a report page which carries
+the PDF behind `?…&pdf=<n>`. Resolution is bounded at two hops, each
+re-validated, each still required to present PDF magic bytes, with a visited
+set so a self-referencing page cannot loop.
+
+**Three things that broke on that portal, all of which would break others:**
+
+- Candidate links are matched by pattern. Neither coaportal URL ends in `.pdf`
+  or says `download`, so both hops missed. The `pdf=` number is read from the
+  markup, never constructed.
+- The markup scan sliced at 400,000 characters. Both pages are larger — 547KB
+  and 563KB — so the links sat past the cut and the scan found nothing on pages
+  that plainly had them. Now 4,000,000.
+- WordPress emits the zero-padded `&#038;`. The unescape helper missed it, and
+  since `#` opens a fragment the resolved link refetched the page.
+
+**The fetch budget is for the whole chain**, not per request: `TOTAL_BUDGET_MS`
+is computed once and passed down, because three hops at 7.5s each would exceed
+Netlify's 10s ceiling and the person would see the platform's error page rather
+than ours. Not covered by any test — exercising it needs a slow server.
