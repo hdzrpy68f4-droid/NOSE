@@ -146,7 +146,13 @@ node test/fixture-lint.js | tail -2
 ```
 
 Expect `55 accepted / 3 rejected`, `55 match / 0 differ`, and `corpus clean`.
-Also run `node test/resolver-test.js` - expect `resolver clean`.
+Also run `node test/resolver-test.js` - expect `resolver clean`, and
+`bash build.sh` - expect `OK - ready to deploy`.
+
+**The harnesses do not cover `build.sh`.** All five ran green through a session
+in which the deploy was failing on a CSP sanity check, so every fix sat
+unpublished while the tests said otherwise. Run the build before believing that
+anything has shipped.
 
 **After every change, all four must hold:**
 
