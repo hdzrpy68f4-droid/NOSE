@@ -315,9 +315,9 @@ No fixture currently uses the bare spelling.
 ## 9. Known open items
 
 - **TerpLife moisture is unread.** Its row prints 14.2 with no unit marker
-above it, so the binding rule declines. One document; not worth a fifth pattern.
-- **`KAY-FLW-002` water activity reads 0.583** where sibling Kaycha files read
-0.56-0.59. Plausible, unverified against the PDF.
+above it, so the binding rule declines. Verified against the PDF: the value is
+real, the layout simply does not declare itself. One document; not worth a
+fifth pattern.
 - **Every accepted fixture now reconciles** against its own printed total.
 `MCL-FLW-002` is the sole exception at 103.8%, and that is the lab's arithmetic,
 not the parser's - it warns rather than refusing.
@@ -537,3 +537,11 @@ set so a self-referencing page cannot loop.
 is computed once and passed down, because three hops at 7.5s each would exceed
 Netlify's 10s ceiling and the person would see the platform's error page rather
 than ours. Not covered by any test — exercising it needs a slow server.
+- **Two dialects declare the same thing and only one was recognised.** ACS and
+ACT print the unit in the header - `(aw)`, `Limit (%)` - while Kaycha names the
+column `Units` and puts the `%` or `aw` in the data row. The binding rule was
+derived from four labs and held for four; on the fifth it never fired, and the
+fallback took a bare summary tile with no numbers under it. `KAY-FLW-002` read
+null for both where the document prints moisture 14.97 and water activity
+0.583. Widening the marker fixed it, and the six Kaycha files that already read
+correctly returned identical values through the new path - the two agree
