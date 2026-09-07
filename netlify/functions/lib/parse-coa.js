@@ -1019,7 +1019,13 @@ function parseCoa(text){
      here. Runs FIRST and falls back to the existing reader, which is what serves
      Kaycha and Modern Canna. */
   {
-    const UNIT = /^(\(|Limit\s*\()?\s*(aw|%)\s*\)?$/i;
+    /* Two dialects for the same declaration. ACS and ACT print the unit itself
+       in the header - "(aw)", "Limit (%)" - while Kaycha names the column
+       "Units" and puts the % or aw down in the data row. Only the first was
+       recognised, so on Kaycha the binding never fired and the fallback took a
+       bare summary tile with no numbers under it: moisture 14.97 and water
+       activity 0.583 both read null on a document that prints them plainly. */
+    const UNIT = /^(\(|Limit\s*\()?\s*(aw|%|units?)\s*\)?$/i;
     const pick = (re, isAw) => {
       for (let i = 0; i < lines.length; i++){
         if (!re.test(lines[i])) continue;

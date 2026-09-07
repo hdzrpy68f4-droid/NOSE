@@ -675,8 +675,8 @@
    "terpinolene": 0
   },
   "readBy": "multicolumn",
-  "moisture": null,
-  "waterActivity": null,
+  "moisture": 14.97,
+  "waterActivity": 0.583,
   "warnings": [],
   "strain": null,
   "batch": "5435 0954 8105 3264",
