@@ -321,9 +321,6 @@ fifth pattern.
 - **Every accepted fixture now reconciles** against its own printed total.
 `MCL-FLW-002` is the sole exception at 103.8%, and that is the lab's arithmetic,
 not the parser's - it warns rather than refusing.
-- **Two round numbers worth one look.** `TerpLife_GrpeBblGm` reads moisture
-exactly 15, and `KAY-FLW-002` reads water activity exactly 0.65 - the safe
-threshold itself. Both are inside the bounds and may be correct.
 - **14 mutation failures** out of 371 (~4%), down from 19 - see the `gamma-`
   fault in the log below, which accounted for five. The rest are all
   `destructive/shuffleValues`, and they are a KNOWN LIMIT rather than a
