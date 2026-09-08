@@ -823,12 +823,18 @@ function parseCoa(text){
    * A margin is required rather than a simple comparison: "before this name" is
    * also "after the previous name", so on a normal document the two readings
    * are near-identical and a tie-break would let a shifted reading win. */
+
   if (!columnResolved && totalTerpenes > 0 && rowKeys.length >= 4){
     const sum = arr => arr.reduce((a, v) => a + (v || 0), 0);
     const fwdShare = sum(afterByRow) / totalTerpenes;
     const bwdShare = sum(beforeByRow) / totalTerpenes;
     const fits = x => x <= 1 + RECONCILE_TOLERANCE;
-    if (fits(bwdShare) && bwdShare > fwdShare + BACKWARD_MARGIN && bwdShare >= MIN_BACKWARD_SHARE){
+        /* Edge evidence, independent of the margin: a value-first table prints a
+       number before its FIRST analyte and nothing after its LAST. The margin
+       alone only catches this when the table is sorted descending; on an
+       alphabetical one fwdShare and bwdShare sit too close together. */
+    const valueFirstEdges = beforeByRow[0] != null && beforeByRow[0] <= 100 && afterByRow[afterByRow.length - 1] == null;
+    if (fits(bwdShare) && bwdShare >= MIN_BACKWARD_SHARE && (bwdShare > fwdShare + BACKWARD_MARGIN || valueFirstEdges)){
       readBy = 'backward';
       Object.keys(terps).forEach(k => delete terps[k]);
       unmodelledTotal = 0;
