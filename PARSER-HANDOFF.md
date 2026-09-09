@@ -39,6 +39,7 @@ is exactly what the parser sees.
 56 accepted / 3 rejected      (59 COA fixtures)
 56 match / 0 differ           (extraction parity, unpdf vs pdftotext)
 corpus clean                  (fixture lint)
+35 mutation failures          (mutation harness, 448 cases - see §9)
 ```
 
 Seven labs, four inhalable product classes. Kaycha, Modern Canna, ACS, ACT,
@@ -321,7 +322,7 @@ fifth pattern.
 - **Every accepted fixture now reconciles** against its own printed total.
 `MCL-FLW-002` is the sole exception at 103.8%, and that is the lab's arithmetic,
 not the parser's - it warns rather than refusing.
-- **14 mutation failures** out of 371 (~4%), down from 19 - see the `gamma-`
+- **35 mutation failures** out of 448 (~8%), in two unrelated groups - see the `gamma-`
   fault in the log below, which accounted for five. The rest are all
   `destructive/shuffleValues`, and they are a KNOWN LIMIT rather than a
   backlog item. That mutation reverses every standalone numeric line in the
@@ -330,6 +331,16 @@ not the parser's - it warns rather than refusing.
   the fourteen push mass onto unmodelled compounds and are caught by
   `MIN_MODEL_COVERAGE`, but a warning leaves the fingerprint unchanged, so the
   harness still counts them. Do not spend a session trying to reach zero.
+- **21 of the 35 are `destructive/blankNonDetects`**, added later and a
+  DIFFERENT mechanism from the fourteen above. It strips every ND / BQL /
+  `<LOQ` / `<0.nnn` line from the terpene section, modelling a lab that leaves
+  the cell empty. Unlike `shuffleValues` this one is fixable in principle —
+  see the mutation's own comment for the mechanism and the proposed
+  discriminator. Deliberately NOT fixed: no lab in the corpus omits the
+  marker, so no fixture justifies touching the verdict handler (§6). The 17
+  that reject under it, including all seven ACS files, are behaving correctly
+  — a blank cell carries no information and failing closed is the honest
+  answer.
 - **Two fixtures classify as `unknown`** — `Method_DulceDeUva_flower` and
   `ACS-LRS-001`. This is honest: neither document states its form in text the
   parser can reach (§6). They are now guarded rather than exempt, so nothing is
@@ -388,6 +399,15 @@ the DOCUMENT says the product is, not what the dispensary called it: one file na
   internally consistent. Post-verdict cells must all become candidates and go
   through the reconciler. Taking the second cell is NOT the fix — two other Kaycha
   vapes print the opposite order.
+- **Kaycha prints results on BOTH sides of the verdict, and which side varies
+  by jar.** `KAY-FLW-001` puts them after `TESTED`; `KAY-CAR-003` puts them
+  before, and reaches the value-before-verdict fallback 39 times on the
+  UNMUTATED file. It survives only because the multicolumn reader discards the
+  row-wise pass afterwards. §11 read as though that fallback were ACT's alone;
+  it is not, and it is load-bearing on three accepted fixtures (39x on
+  KAY-CAR-003, 41x on ACT_AppleBurst, 42x on KF2025). Anything that disables or
+  narrows it costs those three.
+
 - **Kaycha's LOD/LOQ pair is usually one mashed line but occasionally two.**
   Most rows print `0.00700 0.0200`; `BORNEOL`, which has a different LOD, prints
   `0.0130` and `0.0400` on separate lines. That row alone arrives a cell wider
