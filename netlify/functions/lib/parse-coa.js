@@ -139,6 +139,18 @@ function normalize(text){
   return String(text)
     .replace(/\uFB01/g, 'fi').replace(/\uFB02/g, 'fl')   // ligatures
     .replace(/\u00A0/g, ' ')
+    /* Greek prefixes to ASCII before canonicalAnalyte ever sees the line. The
+       trailing hyphen is consumed, so a beta-Myrcene written with the Greek
+       letter becomes BETA-Myrcene rather than BETA--Myrcene, which would match
+       no ANALYTE_MAP key. Only these three expand: \u03BC is micro and lives
+       inside "(\u03BCg/g) = Micrograms per gram", present in eight fixtures,
+       and \u0394 is already handled by CANNABINOID - a blanket \u03B1-\u03C9
+       sweep would destroy both. [ \t] rather than \s because this runs BEFORE
+       the split, and \s matches a newline: a Greek letter ending a line would
+       glue that line to the next one. */
+    .replace(/\u03B1[ \t]*-?[ \t]*/g, 'ALPHA-')
+    .replace(/\u03B2[ \t]*-?[ \t]*/g, 'BETA-')
+    .replace(/\u03B3[ \t]*-?[ \t]*/g, 'GAMMA-')
     .split('\n').map(l => l.trim()).filter(Boolean);
 }
 
