@@ -19,6 +19,7 @@
  *   greek        - labs write alpha/a/α interchangeably
  *   pageNumbers  - "1 of 6" was once read as a terpene value
  *   glueNames    - TerpLife prints "alpha-Fenchyl alcohol, (+)alpha Bisabolol"
+ *   blankNonDetects - some labs leave an ND cell empty rather than marking it
  *   dropTotal    - some templates omit a printed total entirely
  *   dupSummary   - page-one summaries repeat the page-two panel
  *   unitSwap     - ACS prints mg/g beside %, ten times larger
@@ -64,6 +65,33 @@ const DESTRUCTIVE = {
      mg/g column genuinely sits beside a % column.
   */
   glueNames: t => t.replace(/\n(alpha|beta|a|b)-/g, '$1-'),
+  /* A lab that leaves its non-detect cells BLANK instead of printing a marker.
+     21 fixtures fail this and the fault is NOT the reconciler: on Kaycha a
+     stripped ND leaves nothing after TESTED, so the verdict handler falls to
+     its ACT branch - resultToNumber(lines[j-1], true) - and takeLast on the
+     mashed pre-verdict limit pair "0.00700 0.0200" returns 0.0200. A limit
+     asserted as a result, which §11 says must never happen. camphene,
+     farnesene and ocimene all go 0 -> 0.02 that way. Six Kaycha files also
+     lose their post-verdict cells, which drops the multicolumn reader below
+     its filled floor, so forward takes the mg/unit column and KAY-CAR-001
+     reads 41.24 where the report says 4.124 - the anchor regression, from
+     the same root.
+     NOT FIXED, deliberately. No lab in the corpus omits the marker, so no
+     fixture justifies the change (§6), and the fallback is load-bearing on
+     three accepted files - it fires 39x on KAY-CAR-003, 41x on ACT and 42x
+     on KF2025, where lines[j-1] IS the result. A guard would have to
+     separate them by distinctness of the fallback value across rows,
+     excluding zeros as the forward chooser already does: mutated Kaycha
+     gives 1 distinct value in 38 rows, the three real files give ~1.0. That
+     is a two-pass change to the block that owns the 4.124 anchor, for a
+     layout no lab has printed. Revisit if one does. */
+  blankNonDetects: t => t.split('\n')
+    .filter(l => {
+      const s = l.trim();
+      return !/^(ND|N\/D|NOT DETECTED|BQL|BLQ|ABSENT|<\s*LOQ)$/i.test(s)
+          && !/^[<\u2264]\s*\d/.test(s);
+    })
+    .join('\n'),
   shuffleValues: t => {
     /* Reverse the order of standalone numeric lines: every value is still real
        and from this report, but attached to the wrong analyte. This is the
