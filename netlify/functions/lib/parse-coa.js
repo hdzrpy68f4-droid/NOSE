@@ -1019,7 +1019,23 @@ function parseCoa(text){
      numbers that can both be wrong. Terpene figures are percentages of mass,
      so anything above 100 means we are reading the wrong column entirely —
      a physical check that does not depend on the total being right. */
-  const overPercent = Object.entries(terps).filter(([, v]) => v > PERCENT_CEILING);
+  /* A fingerprint holding one repeated figure is a limit column that reached
+     the end. The forward chooser refuses one outright now, but when NO column
+     reconciles the fallback beneath it takes the first plausible candidate per
+     row - on a limit-first layout that is the limit column again, summing to
+     exactly the printed total and satisfying every check that compares two
+     numbers to each other. Coverage reads 100%, so nothing downstream looks.
+     Judge the values themselves: distinctness is a property of the fingerprint,
+     independent of which reader produced it, so this covers the column-major
+     and backward readers too.
+     An absolute count, not a ratio. Every limit column in the corpus holds one
+     or two values (Kaycha 0.007, ACS 0.002, ACT 82 and 247), while a weak
+     flower printed to two decimals can legitimately collide on several - a
+     ratio threshold cannot tell those apart and this can. */
+  const distinctValues = new Set(Object.values(terps).filter(v => v > 0)).size;
+  if (nonZero >= MIN_DISTINCTNESS_SAMPLE && distinctValues <= MAX_UNIFORM_VALUES)
+    rejectReasons.push(`${nonZero} terpenes across only ${distinctValues} distinct value${distinctValues === 1 ? '' : 's'} — that is a limit column, not a measurement`);
+    const overPercent = Object.entries(terps).filter(([, v]) => v > PERCENT_CEILING);
   if (totalTerpenes != null && totalTerpenes > PERCENT_CEILING)
     rejectReasons.push(`total of ${totalTerpenes}% is not a possible percentage — wrong column read`);
   if (overPercent.length)
@@ -1158,6 +1174,14 @@ const MIN_CROSSCHECK_ROWS = 4;
    Set higher because a uniform column cannot reach MIN_ROW_SHARE without many
    rows - nothing is lost by staying out of small panels entirely. */
 const MIN_DISTINCTNESS_SAMPLE = 8;
+/* How few distinct figures a whole fingerprint may hold before it is refused
+   as a limit column rather than a reading. Absolute rather than a share of
+   the panel: limit columns repeat one or two values regardless of how many
+   analytes the lab ran, and a share threshold tuned for the ratio cross-check
+   would also refuse a low-total flower whose printed values collide on
+   rounding. Verified no-op: the corpus probe finds no fixture below a 0.6
+   share at four values, and this is tighter on both counts. */
+const MAX_UNIFORM_VALUES = 3;
 /* A recovered table accounts for essentially all of the lab's own total. Across
    every correctly-parsed fixture measured coverage sits at 99-100%; a genuine
    partial PANEL still reaches it, because unmodelled mass counts too. Well below
