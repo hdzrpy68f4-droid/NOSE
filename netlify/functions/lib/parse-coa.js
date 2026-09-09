@@ -217,6 +217,14 @@ const isResultToken = t =>
    form a LIMIT column can take, and a row must never be zeroed by its own limit. */
 const NON_DETECT = /^(ND|N\/D|NOT DETECTED|BQL|BLQ|ABSENT|<\s*LOQ)$/i;
 
+/* A line shaped like a compound name rather than a table cell: three or more
+   letters, at most one space. Only ever used as a row boundary - never to
+   decide what something IS, only that it is not part of the row above. */
+const isNameShaped = t => {
+  const s = String(t).trim();
+  return (s.match(/[A-Za-z]/g) || []).length >= 3 && (s.match(/ /g) || []).length <= 1;
+};
+
 /* ------------------------------------------------------- document metadata */
 
 const LABS = [
@@ -543,6 +551,21 @@ function parseCoa(text){
          first data row. Those arrive before any number and must not stop the
          scan; the comment above this loop is about exactly that case. */
       if (numerics.length && SECTION_LABELS.test(nxt)) break;
+      /* Any other name-shaped line ends the row: an unmapped analyte
+         (Terpinen-4-ol, Citronellol) or plain document furniture. Bare
+         "Moisture" is the live case - SECTION_LABELS carries MOISTURE CONTENT
+         and PERCENT MOISTURE but not the bare word, on purpose, so the last
+         analyte before a moisture tile walked through it and collected its
+         figure as a candidate. On a right-indexed table that hands the analyte
+         the wrong number, and an ND anywhere in the window sets sawNonDetect
+         for a row that was actually detected.
+
+         Gated on numerics.length for the same reason as the SECTION_LABELS
+         break above: headings interleaved into the first data row arrive
+         BEFORE any number and must not stop the scan. Result tokens are exempt
+         because "Not Detected" and "BQL" are name-shaped but ARE results. */
+      if (numerics.length && !isResultToken(lines[j]) && isNameShaped(lines[j])
+          && !SECTION_LABELS.test(nxt) && !SKIPPABLE_IN_ROW.test(nxt)) break;
       /* ACS prints ragged rows: a detected row has two cells, a below-LOQ row
          has three, so one column index is the percentage on one and the LOQ on
          the other. Reading the LOQ gave 23 phantom terpenes at 0.002. */
