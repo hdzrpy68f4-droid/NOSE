@@ -704,12 +704,26 @@ function parseCoa(text){
       const maxLen = Math.max(...loose.map(r => r.candidates.length), 0);
       for (const dir of ['L', 'R']){
         for (let idx = 0; idx < maxLen; idx++){
-          let sum = pinnedSum, filled = 0;
+          let sum = pinnedSum, filled = 0, measured = 0;
+          const columnValues = new Set();
           for (const r of loose){
             const v = valueAt(r, dir, idx);
-            if (v != null){ sum += v; filled++; }
+            if (v != null){
+              sum += v; filled++;
+              if (v > 0){ measured++; columnValues.add(v); }
+            }
           }
           if (!filled) continue;
+          /* A limit column is uniform where a measurement column is not - the same
+             discriminator the cross-check applies to ACT, applied here, where most
+             of the corpus is actually read. An LOQ run of 35 rows at 0.02 sums to
+             0.7, which reconciles against a 0.5-0.9% flower whenever the real
+             column overshoots or the panel is partial. The arithmetic is identical
+             either way, so reconciliation alone can never separate them. Zeros are
+             excluded: a real column is full of them (a below-LOQ row reads 0 by
+             rule 5) and they say nothing about whether the column was measured. */
+          if (measured >= MIN_DISTINCTNESS_SAMPLE
+              && columnValues.size / measured < MIN_COLUMN_DISTINCTNESS) continue;
           if (sum > totalTerpenes * (1 + RECONCILE_TOLERANCE)) continue;
           const share = sum / totalTerpenes;
           /* Only trust a column that accounts for most of the total. A weak
@@ -1137,6 +1151,13 @@ const MAX_UNIT_RATIO_SPREAD = 0.15;
    ACT repeats one LOQ down the table - and there is nothing to cross-check. */
 const MIN_COLUMN_DISTINCTNESS = 0.6;
 const MIN_CROSSCHECK_ROWS = 4;
+/* The forward chooser applies the same distinctness test, but to a candidate
+   column directly rather than to a ratio, so it needs its own floor on sample
+   size. MIN_CROSSCHECK_ROWS guards a two-analyte panel there; the risk here is
+   a short trace-heavy panel whose printed values legitimately repeat at 0.01.
+   Set higher because a uniform column cannot reach MIN_ROW_SHARE without many
+   rows - nothing is lost by staying out of small panels entirely. */
+const MIN_DISTINCTNESS_SAMPLE = 8;
 /* A recovered table accounts for essentially all of the lab's own total. Across
    every correctly-parsed fixture measured coverage sits at 99-100%; a genuine
    partial PANEL still reaches it, because unmodelled mass counts too. Well below
