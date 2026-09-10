@@ -322,8 +322,9 @@ fifth pattern.
 - **Every accepted fixture now reconciles** against its own printed total.
 `MCL-FLW-002` is the sole exception at 103.8%, and that is the lab's arithmetic,
 not the parser's - it warns rather than refusing.
-- **35 mutation failures** out of 448 (~8%), in two unrelated groups - see the `gamma-`
-  fault in the log below, which accounted for five. The rest are all
+- **35 mutation failures** out of 448 (~8%), in two unrelated groups. The
+  FIRST fourteen were down from 19 - see the `gamma-`
+  fault in the log below, which accounted for five. Those fourteen are all
   `destructive/shuffleValues`, and they are a KNOWN LIMIT rather than a
   backlog item. That mutation reverses every standalone numeric line in the
   document, so the multiset of values is conserved and every sum still
