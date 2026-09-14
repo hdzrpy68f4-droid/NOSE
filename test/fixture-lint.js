@@ -99,6 +99,40 @@ if (fs.existsSync(HANDOFF)){
   }
   if (par && +par[1] !== nBase)
     note('handoff', 'parity count', `says ${par[1]} match, baseline holds ${nBase}`);
+
+  /* The mutation figure is the same class of fact as the counts above and had
+     no check at all, so it can drift exactly the way section 2's counts did. It
+     is stated in THREE places - the section 2 block, the section 9 headline,
+     and the blankNonDetects split inside section 9 - and the failure that
+     actually happens is one of them being updated while the others are left
+     stale. That is what this catches.
+
+     INTERNAL consistency only. Running the mutation harness here would take
+     longer than the whole rest of the lint, and a figure that drifts in all
+     three places together is still only catchable by a real run. Same coupling
+     to the document's wording as the checks above: if section 9 is reformatted,
+     fix these regexes rather than deleting the check. */
+  const find = (re, what) => {
+    const m = doc.match(re);
+    if (!m) note('handoff', what,
+      'no figure found in PARSER-HANDOFF.md - was it reformatted? Fix the regex rather than deleting the check.');
+    return m;
+  };
+  const m2 = find(/(\d+) mutation failures\s+\(mutation harness, (\d+) cases/, 'mutation line (section 2)');
+  const m9 = find(/\*\*(\d+) mutation failures\*\* out of (\d+)/, 'mutation line (section 9)');
+  const msplit = find(/\*\*(\d+) of the (\d+) are `destructive\/blankNonDetects`\*\*/, 'mutation split (section 9)');
+  if (m2 && m9){
+    if (m2[1] !== m9[1])
+      note('handoff', 'mutation failures', `section 2 says ${m2[1]}, section 9 says ${m9[1]}`);
+    if (m2[2] !== m9[2])
+      note('handoff', 'mutation cases', `section 2 says ${m2[2]} cases, section 9 says ${m9[2]}`);
+  }
+  if (m9 && msplit){
+    if (msplit[2] !== m9[1])
+      note('handoff', 'mutation split', `the split is stated against ${msplit[2]}, but the section 9 headline says ${m9[1]}`);
+    if (+msplit[1] >= +m9[1])
+      note('handoff', 'mutation split', `${msplit[1]} blankNonDetects cannot be part of ${m9[1]} failures`);
+  }
 }
 
 const counts = {};
