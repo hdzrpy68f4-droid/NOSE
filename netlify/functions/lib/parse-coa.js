@@ -229,6 +229,17 @@ const isResultToken = t =>
    form a LIMIT column can take, and a row must never be zeroed by its own limit. */
 const NON_DETECT = /^(ND|N\/D|NOT DETECTED|BQL|BLQ|ABSENT|<\s*LOQ)$/i;
 
+/* A total printed in mass-per-mass units is not a percentage. "Total Terpenes:
+   21.5 mg/g" is 2.15%, and reading it as 21.5 asserts the whole fingerprint an
+   order of magnitude high - the lab's own mg/g column then reconciles perfectly
+   against that total, so every internal check passes and only TYPICAL_MAX_TOTAL
+   can object, which it will not do on any product whose real total is modest.
+   mg/unit cannot be converted at all without knowing the unit's mass. Leave the
+   total unread rather than assert it: a missing total refuses, a wrong one is
+   believed. NOTE: a line printing BOTH units ("21.5 mg/g (2.15%)") still reads
+   the first number. No fixture does this; widen the test if one appears. */
+const INLINE_MASS_UNIT = /(?:^|[^A-Za-z])(?:mg\s*\/\s*g|mg\s*\/\s*unit|(?:u|\u00B5)g\s*\/\s*g)(?![A-Za-z])/i;
+
 /* A line shaped like a compound name rather than a table cell: three or more
    letters, at most one space. Only ever used as a row boundary - never to
    decide what something IS, only that it is not part of the row above. */
@@ -381,6 +392,26 @@ function parseCoa(text){
 
   const isAnalyteRowForPairing = (t, m, w) => !t && !m && !w;
 
+  /* Is the percentage above a bare "Total Terpenes" label already spoken for?
+     On a run like
+
+       Nerolidol | 0.217% | Total Terpenes | 4.53%
+
+     lines[i-1] is Nerolidol's own result. Taking it unconditionally set the
+     total to 0.217, and the coverage guard then refused the document with
+     reasons that had nothing to do with it - which section 6 says to read as a
+     parser fault, not a lab quirk. Walk back past the row's own result cells to
+     the nearest NAME: if the map knows it, the percentage belongs to that
+     analyte and not to this label. Canonicalised, like every other name test
+     here. UNMODELLED rows are deliberately NOT included - see the commit. */
+  const ownerAboveIsAnalyte = (idx) => {
+    for (let k = idx - 1; k >= 0 && k >= idx - LOOKAHEAD_LINES; k--){
+      if (isResultToken(lines[k])) continue;
+      return Boolean(ANALYTE_MAP[canonicalAnalyte(lines[k])]);
+    }
+    return false;
+  };
+
   for (let i = 0; i < lines.length; i++){
     const line = lines[i];
 
@@ -418,7 +449,13 @@ function parseCoa(text){
        exact-match label test never fires and coverage silently comes back
        null. Kaycha prints a BARE label with the value in a later column. */
     const inlineTotal = line.match(/^Total\s+Terpenes\s*[:\u2013-]\s*(.+)$/i);
-    if (inlineTotal){ totalTerpenes = resultToNumber(inlineTotal[1]); continue; }
+    if (inlineTotal){
+      /* ...and only when the figure is a percentage - see INLINE_MASS_UNIT. */
+      const inlineText = inlineTotal[1];
+      if (!(INLINE_MASS_UNIT.test(inlineText) && inlineText.indexOf('%') < 0))
+        totalTerpenes = resultToNumber(inlineText);
+      continue;
+    }
 
     /* Skip a "top ten" summary ONLY when a full panel exists later to read
        instead. Single-page COAs - Modern Canna issues them for hand-rolls -
@@ -643,7 +680,8 @@ function parseCoa(text){
          denominator. Prefer an immediately preceding percentage. */
       if (!totalPinned){
         const prv = i > 0 ? lines[i - 1] : null;
-        const pv = prv && /%\s*$/.test(prv) ? resultToNumber(prv) : null;
+        const pv = prv && /%\s*$/.test(prv) && !ownerAboveIsAnalyte(i)
+          ? resultToNumber(prv) : null;
         totalTerpenes = (pv != null && pv > 0 && pv <= PERCENT_CEILING) ? pv : value;
         /* Kept UNFILTERED. A mg/g total legitimately exceeds 100 (221.34 on a
            live resin), and dropping it here left too few candidates for the
