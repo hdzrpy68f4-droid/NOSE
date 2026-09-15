@@ -359,6 +359,32 @@ not the parser's - it warns rather than refusing.
 - **7.5-second fetch budget**, deliberately under Netlify's 10s function limit.
   Parsing runs ~10 ms, so it is not the constraint.
 
+- **A `Total Cannabinoids` row above a total label is unguarded.** Three
+fixtures - `ACT_AppleBurst_vape`, `KF2025-046-PB-AU-COA` and
+`LAB-0425BSWS-20250731` - print their terpene total as a `%` line ABOVE a bare
+`Total Terpenes` label, with `Total Cannabinoids` as the nearest name above
+that. On all three the parser reads them correctly. But a document ordered
+`Total Cannabinoids / 85.2% / Total Terpenes / 4.53%` would set the terpene
+total to 85.2 - under `PERCENT_CEILING`, so the bound does not catch it - and
+then refuse on measured coverage with a reason that does not describe the
+document. Fails closed, like the fault it is a variant of. **Do NOT guard it
+with `TOTAL_OF_CANNABINOID`**: that fires on all three working files and breaks
+them. Needs a fixture that actually shows the fault.
+
+- **An inline total printing BOTH units still reads the wrong one.**
+`INLINE_MASS_UNIT` skips a mg/g total only when no `%` appears on the line, so
+`Total Terpenes: 21.5 mg/g (2.15%)` reads 21.5. No fixture does this - the one
+both-units form in the corpus is `2.87% (28.7 mg)`, percentage first and no
+mg/g token - so widening it now would be fitting to a document that does not
+exist.
+
+- **`ownerAboveIsAnalyte` has NEGATIVE cover only.** Ten fixtures reach that
+branch and not one has a compound name above the label; the owners are all
+structural text, either `Total Cannabinoids` or `TERPENES SUMMARY (Top Ten)`.
+Those ten prove the guard does not break these layouts. They do NOT prove it
+tells an analyte from a non-analyte, and a green gate must not be read as
+though they do.
+
 ---
 
 ## 10. Collection strategy
@@ -518,6 +544,25 @@ Where a shuffled table pushes mass onto compounds NOSE does not model,
 `modelCoverage` falls to 0.32 against a lowest real fixture of 0.71. Floor at
 0.50, as a warning - the values may be exactly as printed and only the pairing
 suspect. Zero false positives across 53 fixtures
+
+- **A total printed in mg/g was read as a percentage.**
+`Total Terpenes: 21.5 mg/g` is 2.15%, and taking 21.5 asserts the whole
+fingerprint 10x high - the lab's own mg/g column then reconciles perfectly
+against that total, so every internal check passes. Only `TYPICAL_MAX_TOTAL`
+could object, and it does not fire on a product whose real total is modest. The
+same shape as the Kaycha 41.24 entry at the top of this log, reached by a
+different route: there the wrong COLUMN was taken, here the right column in the
+wrong UNIT. Now left unread - a missing total refuses, a wrong one is believed
+
+- **The `%` line above a bare total label was taken unconditionally.** On
+`Nerolidol | 0.217% | Total Terpenes | 4.53%` that sets the total to 0.217, and
+the document refuses with reasons that have nothing to do with it - which §6
+says to read as a parser fault, not a lab quirk. Now taken only when the nearest
+NAME above, walking back past the row's own result cells, is not an analyte. It
+shipped testing `ANALYTE_MAP` alone and was corrected in the next commit to pair
+it with `UNMODELLED`, like every other name test in the file - the same
+asymmetry as the look-ahead entry above, found by review rather than by a
+fixture, because no fixture can currently reach it
 
 ---
 
