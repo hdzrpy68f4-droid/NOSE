@@ -403,11 +403,17 @@ function parseCoa(text){
      parser fault, not a lab quirk. Walk back past the row's own result cells to
      the nearest NAME: if the map knows it, the percentage belongs to that
      analyte and not to this label. Canonicalised, like every other name test
-     here. UNMODELLED rows are deliberately NOT included - see the commit. */
+     here, and paired with UNMODELLED like every other name test in this file.
+     The same fault is possible above a Guaiol row, and an asymmetric name test
+     is precisely the look-ahead bug in section 11 - ANALYTE_MAP canonicalised,
+     UNMODELLED not, one row's boundary missed, one document's fingerprint
+     changed, and no fixture able to expose it. Verified a no-op: no fixture has
+     a compound name of either kind above a total label. */
   const ownerAboveIsAnalyte = (idx) => {
     for (let k = idx - 1; k >= 0 && k >= idx - LOOKAHEAD_LINES; k--){
       if (isResultToken(lines[k])) continue;
-      return Boolean(ANALYTE_MAP[canonicalAnalyte(lines[k])]);
+      const u = canonicalAnalyte(lines[k]);
+      return Boolean(ANALYTE_MAP[u]) || UNMODELLED.test(u);
     }
     return false;
   };
