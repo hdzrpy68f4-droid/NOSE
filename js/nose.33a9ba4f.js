@@ -632,11 +632,14 @@
       } catch {}
     }
 
+    /* Resolves true once the camera is live (or already was), false if it
+       could not start — the Scan QR tab uses this to decide whether to scroll. */
     async function startQrScanner(cameraId=''){
-      if(!scannerAvailable() || qrScannerRunning) return;
+      if(!scannerAvailable()) return false;
+      if(qrScannerRunning) return true;
       if(!navigator.mediaDevices?.getUserMedia){
         showMessage('scannerMessage','This browser does not provide camera access. Choose a QR image or paste the link manually.','error');
-        return;
+        return false;
       }
       qrScanLocked=false;
       showMessage('scannerMessage','Starting the rear camera…','neutral');
@@ -658,6 +661,7 @@
         setScannerButtons(true);
         showMessage('scannerMessage','Camera active. Hold the QR code steady inside the square.','success');
         setTimeout(improveCameraFocus,500);
+        return true;
       } catch(error){
         // Some iPhones reject an exact device id before labels are available. Retry by facing mode.
         try {
@@ -668,12 +672,39 @@
           await loadCameraChoices();
           showMessage('scannerMessage','Camera active. Hold the QR code steady inside the square.','success');
           setTimeout(improveCameraFocus,500);
-          return;
+          return true;
         } catch {}
         setScannerButtons(false);
         const denied=error?.name==='NotAllowedError' || /permission|denied/i.test(String(error));
         showMessage('scannerMessage',denied?'Camera permission was denied. Allow camera access in Safari settings, then try again.':'The rear camera could not be started. Choose a QR image or paste the link manually.','error');
+        return false;
       }
+    }
+
+    /* On phones the scanner sits below the tab list and saved palate, so a
+       camera started from the Scan QR tab would go live off screen. Land with
+       the panel heading just under the sticky header; if that would cut off
+       the bottom of the preview (short screens), line up the preview itself.
+       Leaves the page alone when the preview is already fully in view. */
+    function revealScanner(){
+      const panel=$id('scanPanel'), reader=$id('qrReader'), header=document.querySelector('.site-header');
+      if(!panel||!reader||panel.hidden) return;
+      const headerBottom=header?Math.max(0,header.getBoundingClientRect().bottom):0;
+      const view=reader.getBoundingClientRect();
+      if(view.top>=headerBottom&&view.bottom<=window.innerHeight) return;
+      const top=headerBottom+12;
+      const panelTop=panel.getBoundingClientRect().top;
+      const anchor=(view.bottom-panelTop+top<=window.innerHeight)?panelTop:view.top;
+      window.scrollTo({top:window.scrollY+anchor-top,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+    }
+
+    /* On wide screens the preview takes its height from the video, which is
+       unknown until the stream's metadata arrives — measure after that (capped
+       at a second so a slow camera never leaves the page waiting). */
+    function previewSized(){
+      const video=document.querySelector('#qrReader video');
+      if(!video||video.readyState>=1) return Promise.resolve();
+      return new Promise(resolve=>{ video.addEventListener('loadedmetadata',resolve,{once:true}); setTimeout(resolve,1000); });
     }
 
     async function stopQrScanner(){
@@ -954,7 +985,7 @@
         if(event.key==='Tab') trapOpenFocus(event);
       });
       window.addEventListener('hashchange',route);
-      each('[role="tab"]',tab=>tab.addEventListener('click',()=>{ setTab(tab.dataset.tab); if(tab.dataset.tab==='scan') startQrScanner(); }));
+      each('[role="tab"]',tab=>tab.addEventListener('click',()=>{ setTab(tab.dataset.tab); if(tab.dataset.tab==='scan') startQrScanner().then(live=>{ if(live) previewSized().then(revealScanner); }); }));
       on('startScannerButton','click',startQrScanner);
       on('stopScannerButton','click',stopQrScanner);
       on('cameraSelect','change',event=>switchCamera(event.target.value));
