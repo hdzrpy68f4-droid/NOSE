@@ -27,21 +27,26 @@ section() { printf '\n%s\n' "$1"; }
 echo "NOSE manifest check — $(pwd)"
 
 section "Root files"
-for f in index.html app.html 404.html _redirects _headers build.sh family.css \
+for f in index.html app.html 404.html _redirects _headers build.sh \
          netlify.toml .nvmrc robots.txt sitemap.xml; do check "$f"; done
 check favicon.svg "build.sh HARD FAILS without this"
 
 section "Fingerprinted bundles — build.sh globs js/ and css/, not root"
 js=$(ls js/nose.*.js 2>/dev/null | head -1)
 css=$(ls css/shell.*.css 2>/dev/null | head -1)
+fam=$(ls family.css family.*.css 2>/dev/null | head -1)   # build.sh accepts either name
 [ -n "$js" ]  && { echo "  ok    $js"; have=$((have+1)); } \
               || { echo "  MISS  js/nose.<hash>.js      fingerprint() exits 1"; missing=$((missing+1)); }
 [ -n "$css" ] && { echo "  ok    $css"; have=$((have+1)); } \
               || { echo "  MISS  css/shell.<hash>.css   fingerprint() exits 1"; missing=$((missing+1)); }
+[ -n "$fam" ] && { echo "  ok    $fam"; have=$((have+1)); } \
+              || { echo "  MISS  family.<hash>.css      fingerprint() exits 1"; missing=$((missing+1)); }
 
-section "Static pages (12)"
+section "Static pages (16)"
 for p in aromas aromas/citrus aromas/earthy aromas/spice aromas/pine \
-         aromas/floral aromas/herbal learn about methodology privacy terms; do
+         aromas/floral aromas/herbal learn about methodology privacy terms \
+         learn/how-to-read-a-coa learn/why-strain-names-drift \
+         learn/do-terpenes-predict-effects learn/intensity-versus-character; do
   check "$p/index.html"
 done
 

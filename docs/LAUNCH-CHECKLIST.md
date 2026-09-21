@@ -32,9 +32,8 @@ The privacy page documents exactly this, including the error beacon.
    Until then the validation loop thanks people and discards their vote.
 4. **Contact address** on `/privacy/` (deletion requests) and `/terms/`.
 5. **Legal review** of `/terms/` and `/privacy/` in your operating jurisdiction.
-6. **Real content**: the About origin story is still a placeholder, and `/learn/`
-   is ~250 words of card blurbs, not articles. It will not earn search traffic
-   as-is.
+6. **Real content**: the About origin story is still a placeholder. (`/learn/`
+   now has four sourced guides, about 3,900 words — see `docs/LEARN-GUIDES.md`.)
 7. **Photography at ~1240px** — sources are 620px and I did not upscale. The
    `<picture>` markup already accepts a `srcset`.
 
