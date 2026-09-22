@@ -115,9 +115,12 @@ async function main() {
   console.log('\nnose_writer password set, and a TLS-verified login through the transaction pooler succeeded.');
   console.log('\nNOSE_DB_URL - shown once, copy it now:\n');
   console.log(`  ${url}\n`);
-  console.log('Save it in both places, then clear this terminal (Ctrl+K, or Cmd+K on a Mac):');
+  console.log('Save it in both places:');
   console.log('  1. GitHub -> NOSE repo -> Settings -> Secrets and variables -> Codespaces -> NOSE_DB_URL');
   console.log('  2. Netlify -> project -> Project configuration -> Environment variables -> NOSE_DB_URL');
+  console.log('     (tick "Contains secret values", and give it a Production value)');
+  console.log('\nThen close this terminal with the trash-can icon at the top right of the');
+  console.log('terminal panel, so the address does not stay on screen.');
 }
 
 module.exports = { scramVerifier, parseAdminUrl, writerUrl };
