@@ -1,0 +1,5 @@
+# Minimal Supabase CLI config. NOSE uses the CLI for one thing:
+#   npx supabase db push --db-url "$NOSE_DB_ADMIN_URL"
+# which applies supabase/migrations/ to the hosted project. Nothing here is a
+# secret; connection strings live only in Codespaces secrets and Netlify.
+project_id = "nose"
