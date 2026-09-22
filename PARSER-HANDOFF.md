@@ -611,7 +611,7 @@ correctly returned identical values through the new path - the two agree
 
 ---
 
-## 13. The storage layer — built, NOT wired
+## 13. The storage layer — built and verified, NOT wired
 
 Added in the session that produced `db/migrations/0001_nose_coa_store.sql`.
 Nothing calls any of it. No handler imports `store.js`; the parser and the
@@ -682,23 +682,49 @@ runs on a fresh clone. It verifies through its own connection rather than
 through `store.js`, so a miscounting `store.js` cannot mark its own homework.
 Cleanup deletes the document; `parses` and `terpene_values` cascade.
 
-### Three things that have NEVER been verified
+### Verified against real Supabase, 2026-09-22
 
-Recorded plainly because all three currently look exactly like success:
+The three items below were recorded as unverified when this section was
+written; all three cleared in one sitting. Kept rather than deleted, because
+what was checked is more useful than a bare "it works".
 
-1. **The migration has never run on Supabase.** It applied clean against
-   Postgres 16, which is not the same statement.
-2. **`store.js` has never executed through the `pg` driver.** Its SQL was
-   validated through `psql` — upsert identity, the `unnest` bulk insert, exact
-   `numeric` round-trip, and cascade delete all confirmed at the database
-   level — but the driver path is untested.
-3. **`store-test.js` has only ever SKIPPED.** A skip prints and exits 0. It has
-   never asserted anything.
+1. **The migration ran on Supabase.** `0001` applied through the SQL Editor:
+   three tables, 30 columns, two indexes, RLS on all three (`pg_tables.rowsecurity`
+   true for each). It had previously only applied against local Postgres 16,
+   which was not the same statement.
+2. **`store.js` executed through the `pg` driver**, against the transaction
+   pooler on 6543 — no prepared statements, as §13 requires. Its SQL had only
+   been validated through `psql` before.
+3. **`store-test.js` asserted instead of skipping.** Five checks passed: one
+   document from two identical saves, the same id returned twice, 15 terpene
+   rows from KAY-CAR-001's 15 keys (three of them zero), `total_terpenes`
+   round-tripping exactly, and a `palate` field refused. Cleanup confirmed
+   afterwards — `documents`, `parses` and `terpene_values` all back to 0 rows.
 
-All three clear in one sitting: create the Supabase project, run the migration
-in the SQL Editor, set `NOSE_TEST_DB_URL` as a Codespaces secret, and watch the
-test go from SKIPPED to `store clean`. Until it has, treat the storage layer as
-unproven, whatever the gate output says.
+**What is still NOT true:** nothing is wired. No handler imports `store.js`,
+and `NOSE_DB_URL` does not exist — only the test database does. Creating the
+production project and calling `saveDocument`/`saveParse` from the fetcher is
+the next piece of real work, and it is untouched.
+
+### Pointing the test at a database
+
+`bash setup-test-db.sh` writes `.env` from a template and validates the
+connection string before use: pooler username form (`postgres.<ref>`, not bare
+`postgres`), pooler host, port 6543, database name, and that neither
+placeholder survived. It refuses to write anything if `.env` is not gitignored.
+
+Two traps it exists to catch, both of which cost time here:
+
+- **The Connect modal's default tab is the direct connection**, whose username
+is bare `postgres` and whose port is 5432. Netlify Functions are IPv4; the
+direct host is IPv6 without the add-on. The pooler string is a different tab.
+- **A password with `%` or `#` in it fails authentication with no useful
+error.** `#` truncates the URL at that point and `%ab` decodes to another byte
+entirely; both produce "password authentication failed" and nothing else. Reset
+the Supabase password to letters and digits only rather than debugging it.
+
+Supabase free projects **pause after a week of inactivity**. A connection error
+weeks from now is usually that, not the code — resume from the dashboard first.
 
 ### `parser-version.js` is generated
 
