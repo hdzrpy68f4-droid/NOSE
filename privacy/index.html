@@ -46,7 +46,7 @@
       <p>Until recently this page said NOSE had no accounts and collected no email addresses. That was true, and it is no longer true: NOSE now offers optional accounts. We said we would tell you plainly rather than quietly widening the wording, so here is the change in one paragraph.</p>
       <p><strong>If you never create an account, nothing about your use of NOSE has changed.</strong> The matcher is free, unlimited, and still runs entirely in your browser. Your palate is still stored only on your device, and we still never receive it.</p>
       <p><strong>If you create an account</strong>, we store your email address and, if you turn on sync, a copy of the palate you choose to sync. Sessions use a cookie. Those three things were not true before. Everything below spells out what that means.</p>
-      <p><strong>A second change, in the same spirit.</strong> This page used to say that lab reports went nowhere. That is about to change: NOSE is adding a store of what our server reads from reports fetched through lab links. <strong>It is built but not switched on</strong>, and nothing has been kept yet. This page promises to change before new collection starts, not after, so the section on lab reports below states now exactly what it will keep and why &mdash; including that we intend to earn money from it. When it switches on, this paragraph will say so, with the date.</p>
+      <p><strong>A second change, in the same spirit.</strong> This page used to say that lab reports went nowhere. That changed on <strong>September 22, 2026</strong>: NOSE now keeps a store of what our server reads from reports fetched through lab links. This page described that store in full before it was switched on, as it promised to, and the section on lab reports below states exactly what it keeps and why &mdash; including that we intend to earn money from it.</p>
     </article>
 
     <article class="card article-card">
@@ -60,7 +60,7 @@
       <p>Named specifically rather than summarised:</p>
       <ul>
         <li>Your email address.</li>
-        <li>A hashed version of your password. We never see or store the password itself, and we cannot recover it &mdash; only reset it.</li>
+        <li>A hashed version of your password, held by the company that handles our logins (named below). Your password passes through our server on its way to them and is never stored or logged by us. We cannot recover it &mdash; only reset it.</li>
         <li>The date the account was created.</li>
         <li>Your subscription status.</li>
         <li>The date and time you confirmed you are 21 or over. This is your own attestation, recorded as you gave it. It is not verification, and we do not describe it as verification anywhere.</li>
@@ -77,7 +77,7 @@
 
     <article class="card article-card">
       <h2>Who else receives your data</h2>
-      <p>Logins are handled by a third-party authentication company based in the United States. They receive your email address and your hashed password, because that is what verifying a login requires. They do not receive your palate, your jars, or your match results. We will name the company on request &mdash; write to us at the address below.</p>
+      <p>Logins are handled by <a href="https://supabase.com">Supabase</a>, the same company that hosts the lab-report store described below. When you sign up or log in, our server passes them your email address and your password over an encrypted connection, because checking a password is their job. They keep your email address and a hashed form of the password, never the password itself. They do not receive your palate, your jars, or your match results.</p>
       <p>The site is served by Netlify, which keeps standard server logs including IP addresses for security and abuse prevention. That applies to any website you visit and is outside our control; see Netlify's own privacy documentation for their retention practices.</p>
       <p>Nobody else. No advertisers, no analytics vendors, no data brokers.</p>
     </article>
@@ -113,8 +113,9 @@
 
     <article class="card article-card">
       <h2>Lab reports, and what we keep from them</h2>
-      <p><strong>Not switched on yet.</strong> Everything in this section describes a store that is built and tested but not connected to the scanner. It is published first because this page promises to change before collection does.</p>
-      <p>When a report is fetched, we will keep a copy of what we read: the text pulled out of the PDF, the address it first came from, its size, a fingerprint of the file, and everything our parser found in it &mdash; laboratory, strain, batch, batch identifier, product class, the terpene values, and, where we refused to trust a reading, the reasons we refused. We record the <strong>day</strong> a report was first fetched and the day it was read, never the time of day, so a stored report cannot be lined up against the server logs our host keeps.</p>
+      <p><strong>Switched on September 22, 2026.</strong> Nothing was kept before that day.</p>
+      <p>When a report is fetched, we keep a copy of what we read: the text pulled out of the PDF, the address it first came from (with everything after a &ldquo;?&rdquo; removed, because one-off links can carry codes there that point back at whoever received them), its size, a fingerprint of the file, and everything our parser found in it &mdash; laboratory, strain, batch, batch identifier, product class, the terpene values, and, where we refused to trust a reading, the reasons we refused. We record the <strong>day</strong> a report was first fetched and the day it was read, never the time of day, so a stored report cannot be lined up against the server logs our host keeps.</p>
+      <p>If the file turns out not to be a lab report at all &mdash; no laboratory we recognise and no terpene results &mdash; we keep nothing from it.</p>
       <p><strong>None of it is about you.</strong> There is no account, no email address, no IP address, no device information, no session and no palate anywhere in it. A report scanned by a signed-in person is stored identically to one scanned by somebody who has never made an account, and afterwards the two cannot be told apart. This is not only a promise: no column in the store can hold anything that identifies a person, and the database itself refuses any record that tries to carry one, at any depth, before anything is written.</p>
       <p>Records are only ever added. Once written, nothing in the store is edited or deleted by the application: if our parser later reads a report differently, the new reading is added beside the old one. We do not count how many times a report is fetched &mdash; this page briefly said we would, and a count is exactly the kind of thing an add-only store does not keep.</p>
       <p>The store is a Postgres database hosted by <a href="https://supabase.com">Supabase</a>. Only our own server code can reach it &mdash; not your browser, and not Supabase&rsquo;s public data interface, which is refused access to it.</p>
@@ -170,7 +171,7 @@
     <ul>
       <li>This describes the current build. If we later collect something we do not collect today, this page changes before that ships, not after, and the &ldquo;what changed&rdquo; note at the top gets rewritten rather than removed.</li>
       <li>NOSE is for adults 21+ and is an educational aroma tool. It is not medical advice.</li>
-      <li>Questions, a deletion request, or to ask who our authentication provider is: replace this line with a real contact address before launch.</li>
+      <li>Questions or a deletion request: replace this line with a real contact address before launch.</li>
     </ul>
   </div></div></section>
 </main>

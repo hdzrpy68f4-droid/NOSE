@@ -57,6 +57,8 @@ gate 'store'          'store clean'              '^store clean$' \
   node test/store-test.js
 gate 'probe logic'    'probe-test clean'         '^probe-test clean$' \
   node test/probe-test.js
+gate 'archive wiring' 'archive-wiring clean'     '^archive-wiring clean$' \
+  node test/archive-wiring-test.js
 gate 'build'          'OK — ready to deploy'     '^OK — ready to deploy$' \
   bash build.sh
 

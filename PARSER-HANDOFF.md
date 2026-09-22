@@ -151,9 +151,10 @@ Also run `node test/resolver-test.js` - expect `resolver clean`, and
 `bash build.sh` - expect `OK - ready to deploy`.
 
 **Or all at once:** `bash scripts/gates.sh` runs these, the Kaycha anchors,
-`store-test` and `probe-test`, prints the line each gate produced, and ends with
-`ALL GATES GREEN`. It passes a gate only on its exact expected line, so when a
-session legitimately changes a count, update the script in the same commit.
+`store-test`, `probe-test` and `archive-wiring-test`, prints the line each gate
+produced, and ends with `ALL GATES GREEN`. It passes a gate only on its exact
+expected line, so when a session legitimately changes a count, update the
+script in the same commit.
 
 **The harnesses do not cover `build.sh`.** All five ran green through a session
 in which the deploy was failing on a CSP sanity check, so every fix sat
@@ -605,6 +606,10 @@ set so a self-referencing page cannot loop.
 is computed once and passed down, because three hops at 7.5s each would exceed
 Netlify's 10s ceiling and the person would see the platform's error page rather
 than ours. Not covered by any test — exercising it needs a slow server.
+
+**After every parse, `coa.js` hands the result to the archive (§13)**: one call
+site, bounded, and unable to change the reply. `test/archive-wiring-test.js`
+drives the real handler to prove the last part.
 - **Two dialects declare the same thing and only one was recognised.** ACS and
 ACT print the unit in the header - `(aw)`, `Limit (%)` - while Kaycha names the
 column `Units` and puts the `%` or `aw` in the data row. The binding rule was
@@ -616,14 +621,13 @@ correctly returned identical values through the new path - the two agree
 
 ---
 
-## 13. The archive — built and proven, NOT wired
+## 13. The archive — live since 2026-09-22
 
-Every lab report the scanner fetches is meant to be kept: the PDF's
-fingerprint, the text extracted from it, and every distinct parse of that text.
-**It is built and tested and connected to nothing.** `coa.js` does not call it,
-and switching it on is its own reviewed step (end of this section). The privacy
-page already describes it, marked "not switched on yet", because that page
-promises to change before collection does.
+Every lab report the scanner fetches is kept: the PDF's fingerprint, the text
+extracted from it, and every distinct parse of that text. `coa.js` calls it once
+per parse. It was switched on in the same commit that dated the privacy page,
+which had described it in full, marked "not switched on yet", before any of it
+was connected — that page promises to change before collection does.
 
 An earlier attempt (a `public`-schema store, a `.env`-based test, and a storage
 call already wired into `coa.js`) was removed in full when the database moved to
@@ -634,13 +638,17 @@ Supabase. It never held data. It lives in git history if anyone needs it.
 ```
 supabase/migrations/20260922180000_nose_archive.sql   the whole schema
 supabase/config.toml                                  minimal, for the CLI
-netlify/functions/lib/store.js                        saveScan(payload, { client })
+netlify/functions/lib/store.js                        saveScan(payload, { client, timeoutMs }), touch()
 netlify/functions/lib/supabase-ca.js                  generated; Supabase's public root CA
+netlify/functions/coa.js                              archiveScan(): the one call site
+netlify/functions/keep-awake.js                       scheduled read every 4 hours
 test/store-test.js                                    PGlite, in memory, 49 checks
+test/archive-wiring-test.js                           coa.js -> store.js, offline, 26 checks
 test/probe-test.js                                    the probe's pass/fail rules, offline
 scripts/embed-supabase-ca.js                          writes supabase-ca.js from the download
 scripts/set-writer-password.js                        rotates nose_writer, prints NOSE_DB_URL once
 scripts/probe-db.js                                   checks the real project
+scripts/archive-status.js                             counts and latest parses, read-only
 scripts/check-published.js                            run by build.sh
 ```
 
@@ -764,15 +772,84 @@ that do not. Every "Source, not website" rule had been missing it, so
 `/test/`, `/scripts/`, `/supabase/`, `/wip/` and this file added. Delete a `!`
 and the guard scans that path again.
 
-### Switching it on — the next session
+### How `coa.js` feeds it
 
-1. Call `saveScan` from `coa.js` after a parse, with the earlier design's
-guards: an unset `NOSE_DB_URL` is a no-op, the write is bounded inside the
-10s ceiling, and every failure is swallowed after the reply is decided. That
-design and its test are in git history (commit `f7b538d`).
-2. Replace "Not switched on yet" on the privacy page, and put the date in its
-"what changed" note, in the same commit.
-3. Deploy, scan one real jar, and confirm exactly one new row as admin.
+`archiveScan()` is called once, right after `parseCoa`, before any refusal, so
+usable reads, unusable ones and refused layouts are all kept — the refusals are
+how parser faults get found (§10). What it guarantees, each one pinned by
+`test/archive-wiring-test.js`:
+
+- **The reply never depends on it.** The handler's response is byte-identical
+whether the write succeeds, fails, hangs, or is not configured. Every failure
+is swallowed. The write gets at most 1.5s of what is left under a 9s deadline
+and is skipped below 0.3s; `store.js` bounds the connection itself, and a
+second timer in `coa.js` is the backstop.
+- **Unset `NOSE_DB_URL` is a complete no-op** — `store.js` and `pg` are never
+loaded. Only Netlify's Production context has the variable, so deploy
+previews and local runs write nothing.
+- **Nothing about the person.** `event` is not in scope in `archiveScan`, and
+the test fails if it is ever named there. The stored address is origin + path:
+the query string and fragment are dropped, because signed links and order pages
+carry tokens there. The cost: a portal that identifies the file only in the
+query (coaportal's `?pdf=<n>`) cannot be re-fetched from the archive.
+- **Lab reports only**: a laboratory the parser recognises, or at least one
+terpene it read. Anything else — a menu, an invoice, a letter linked by
+mistake — is not kept. Every fixture in the corpus counts as a lab report, and
+the test checks that too, so the filter cannot quietly drop a real lab.
+- **Text over 256KB is not kept.** Real reports are 2–30KB; without a cap one
+12MB PDF of text could fill the free database.
+- **Nothing is logged on success, and a failure logs no detail of the
+document.** Netlify timestamps every log line; a line naming the report would
+line a stored scan up with the request logs, which the day-only dates exist to
+prevent.
+- **Provenance**: `context` is `production`; `parser_version` is the commit
+`build.sh` stamps; `extractor_version` must name the unpdf in
+`package-lock.json` — the test fails when a dependency bump leaves it stale.
+
+`store.js`'s bounded connection is tested against pg's real semantics, read
+from the 8.23.0 source: `end()` destroys the socket when a query is active, so a
+hung query cannot hold the function; a client that loses its socket after we
+stopped waiting emits `'error'`, which crashes the process unless something
+listens — `withClient` always listens.
+
+### Keeping the free project awake
+
+Supabase pauses a free project after a week without enough database activity —
+"a few user requests to the database each day" is what its docs call typically
+enough. While paused, every archive write fails, and `coa.js` swallows those
+failures by design, so the archive would stop filling without anybody seeing
+it. `keep-awake.js` makes one indexed read as `nose_writer` at minute 17 of
+every fourth hour, UTC — six a day. Scheduled functions run only on published
+deploys and cannot be called by URL. A failure logs `[keep-awake] FAILED` and
+returns 500: Netlify → Logs → Functions → `keep-awake` is where a paused or
+unreachable database shows up first. "Run now" on that page tests it.
+
+### Verified on the real project, 2026-09-22
+
+- `probe clean`: TLS verified through Supabase Intermediate 2021 CA to the
+embedded root; append-only as `nose_writer`; a rolled-back save leaves
+nothing; only `postgres` and `nose_writer` hold grants; the API roles reach
+nothing; the Data API answers `406 PGRST106` for schema `nose`.
+- **Enforce SSL is on.** Supavisor refuses plaintext before authentication:
+`(ESSLREQUIRED) SSL connection is required for user: nose_writer`.
+- The Supabase CLI 2.117.0 still connects with Enforce SSL on
+(`migration list` in sync). Some older CLIs failed with "SSL connection is
+required"; if that returns, append `?sslmode=require` to the CLI's `--db-url`
+on the command line only — never to the saved secrets, which `store.js`
+refuses when they carry `sslmode`.
+- The whole path — real handler, real `parseCoa`, real `store.js` — was also
+run against a local Postgres 16 as `nose_writer`: one scan of `KAY-CAR-001`
+wrote one row per table with `total_terpenes` 4.124 and 15 terpene rows, the
+stored address had lost its query, the dates were UTC days, and a second scan
+of the same file wrote nothing.
+
+### After a deploy — check it
+
+1. `node scripts/archive-status.js` in the Codespace (reads as `nose_writer`).
+2. Scan one real jar on the live site.
+3. Run it again: one more row in each table the first time a report is seen;
+nothing new for the same report again.
+4. Netlify → Logs → Functions → `keep-awake` → Run now → `[keep-awake] ok`.
 
 ### Still open
 
@@ -780,4 +857,10 @@ design and its test are in git history (commit `f7b538d`).
 any `.html` with inline script. The guard checks only what the build sees; a
 preview kept elsewhere needs `node scripts/check-published.js <file>` run on it.
 - Supabase free projects pause after a week idle, which looks like a connection
-fault. Resume from the dashboard before debugging.
+fault. `keep-awake.js` exists to prevent it; if its log says FAILED, resume the
+project from the dashboard before debugging anything else.
+- The parser does not emit ISO `harvestOn` / `reportOn` or `client` yet, so
+those columns stay NULL. Adding them is a parser session's job, as additive
+output fields, which the working rules allow only when a prompt says so.
+- The privacy page still carries "replace this line with a real contact address
+before launch".
