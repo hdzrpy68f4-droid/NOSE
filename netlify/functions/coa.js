@@ -49,6 +49,24 @@ const TIMEOUT_MS  = 7500;   // under Netlify's 10s function limit, so our messag
 const MAX_REDIRECTS = 3;
 const MAX_PAGE_HOPS = 2;   // a portal may put a listings page before the report page
 
+/* Storage. The whole function must finish inside Netlify's 10s ceiling, and
+   TOTAL_BUDGET_MS already spends up to 8s on the fetch chain, so the write
+   gets a small bounded slice of whatever is left and is SKIPPED outright when
+   there is not enough left to spend. A stored row is worth less than a reply
+   that arrives. */
+const STORE_DEADLINE_MS = 9000;   // hard stop for the whole handler
+const STORE_BUDGET_MS   = 1200;   // most a write may take
+const STORE_MIN_MS      = 250;    // below this, do not even start
+
+/* Provenance tags. PARSER_VERSION is written by build.sh; the env var wins if
+   one is ever set in the Netlify UI. Update EXTRACTOR_VERSION by hand when the
+   unpdf dependency in package.json moves - it is a label, not a check. */
+const EXTRACTOR_VERSION = 'unpdf@1.8';
+let PARSER_VERSION = process.env.PARSER_VERSION || 'unknown';
+if (PARSER_VERSION === 'unknown') {
+  try { PARSER_VERSION = require('./lib/parser-version'); } catch { /* pre-build */ }
+}
+
 /* Labs whose text ordering under unpdf does not match the committed fixtures.
  * test/extraction-parity.js reports these as DIFFER. A DIFFER is not a near
  * miss — the parser may read a different column — so these are refused until
@@ -264,11 +282,67 @@ async function fetchPdf(startUrl){
   return { error: 'That link is not a PDF. Lab reports must be the report itself, not a page about one.' };
 }
 
+/* Record a parse, without ever changing what the person is told.
+ *
+ * WHAT IS PASSED: the PDF bytes, the URL they came from, the extracted text
+ * and the parser's own output. NOTHING ABOUT THE PERSON - no IP, no headers,
+ * no user agent, no session. `event` is deliberately not in scope here.
+ *
+ * Three ways this stays out of the way:
+ *   - unset NOSE_DB_URL means no-op, so the scanner behaves exactly as it did
+ *     before this existed until a database is deliberately configured
+ *   - the write is raced against a deadline and abandoned if slow
+ *   - every failure is swallowed and logged; the caller has already decided
+ *     what to return
+ *
+ * Parses are recorded whether or not they were usable. A refusal is the pile
+ * that matters (PARSER-HANDOFF s10), and rejectReasons are what make it
+ * diagnosable later.
+ */
+async function recordParse(buffer, sourceUrl, text, result, deadline){
+  if (!process.env.NOSE_DB_URL) return { stored: false, reason: 'not configured' };
+
+  const left = deadline - Date.now();
+  if (left < STORE_MIN_MS) return { stored: false, reason: 'no time left in budget' };
+
+  try {
+    const crypto = require('crypto');
+    const store  = require('./lib/store');
+    const sha256 = crypto.createHash('sha256').update(buffer).digest('hex');
+
+    const write = (async () => {
+      const documentId = await store.saveDocument({
+        sha256,
+        sourceUrl,
+        bytes: buffer.length,
+        text,
+        extractorVersion: EXTRACTOR_VERSION
+      });
+      await store.saveParse(documentId, PARSER_VERSION, result);
+    })();
+
+    /* Losing the race does not cancel the query - it only stops us waiting on
+       it. The write may still land; we simply stop caring. */
+    await Promise.race([
+      write,
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('store timed out')),
+                   Math.min(STORE_BUDGET_MS, left)))
+    ]);
+    return { stored: true };
+  } catch (err) {
+    console.error('coa: store failed, response unaffected:', err && err.message);
+    return { stored: false, reason: err && err.message };
+  }
+}
+
 exports.handler = async function(event){
   if (event.httpMethod === 'OPTIONS')
     return { statusCode: 204, headers: { 'Allow': 'POST' }, body: '' };
   if (event.httpMethod !== 'POST')
     return json(405, { error: 'Send a POST request with a url.' });
+
+  const handlerDeadline = Date.now() + STORE_DEADLINE_MS;
 
   let payload;
   try { payload = JSON.parse(event.body || '{}'); }
@@ -299,6 +373,13 @@ exports.handler = async function(event){
   } catch {
     return json(422, { error: 'That report could not be parsed.' });
   }
+
+  /* One call site, covering every outcome below: a usable read, an unusable
+     one, and a layout this tool refuses. All three are parses that happened,
+     and all three are worth having. Awaited so it cannot be cut off by the
+     response - Netlify freezes the container once the handler returns - but
+     bounded so it cannot delay one either. */
+  await recordParse(fetched.buffer, fetched.finalUrl, text, result, handlerDeadline);
 
   /* Known-unsafe extraction ordering: refuse rather than risk reading the
      wrong column. This is a limitation of this tool, not a fault in the
@@ -357,3 +438,4 @@ exports.handler = async function(event){
   });
 };
 exports._resolvePdfFromPage = resolvePdfFromPage;
+exports._recordParse = recordParse;
