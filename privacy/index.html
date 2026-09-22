@@ -46,6 +46,7 @@
       <p>Until recently this page said NOSE had no accounts and collected no email addresses. That was true, and it is no longer true: NOSE now offers optional accounts. We said we would tell you plainly rather than quietly widening the wording, so here is the change in one paragraph.</p>
       <p><strong>If you never create an account, nothing about your use of NOSE has changed.</strong> The matcher is free, unlimited, and still runs entirely in your browser. Your palate is still stored only on your device, and we still never receive it.</p>
       <p><strong>If you create an account</strong>, we store your email address and, if you turn on sync, a copy of the palate you choose to sync. Sessions use a cookie. Those three things were not true before. Everything below spells out what that means.</p>
+      <p><strong>A second change, in the same spirit.</strong> This page used to say that lab reports went nowhere. That is no longer true either: when you scan a code or paste a lab link, we now keep what our server read from that report. Nothing in it is about you. The section on lab reports below states exactly what is kept and why &mdash; including that we intend to earn money from it.</p>
     </article>
 
     <article class="card article-card">
@@ -105,7 +106,18 @@
     <article class="card article-card">
       <h2>Camera, files, and lab links</h2>
       <p>QR scanning runs entirely in your browser. The camera stream is never transmitted or recorded, and the camera stops when you leave the tab. Permission is only requested when you choose to scan.</p>
-      <p>Report files you upload are checked for type and size locally. In this version they are not sent anywhere. Pasted lab links are validated against a list of known laboratory domains before anything is done with them.</p>
+      <p>Report files you upload are checked for type and size locally, and are still not sent anywhere.</p>
+      <p>A scanned or pasted lab link is different. We check that it is an ordinary https address and that it does not point inside a private network, and then <strong>our server fetches that report itself</strong>.</p>
+      <p>We do not check the address against a list of approved laboratory domains. This page previously said we did, and that was wrong &mdash; the check was removed some time ago and the sentence describing it was left behind. It was removed deliberately: real reports reach people through whoever sold the jar rather than from the laboratory&rsquo;s own website, so a list of lab hostnames turned away genuine reports while doing nothing about a convincing fake hosted on an approved one. What stands in its place is that the file must be a real PDF, and the figures inside it must add up to the total the laboratory printed itself. A fabricated report fails that test whatever address it arrived from.</p>
+    </article>
+
+    <article class="card article-card">
+      <h2>Lab reports, and what we keep from them</h2>
+      <p>When a report is fetched, we keep a copy of what we read: the text pulled out of the PDF, the address it came from, its size, a fingerprint of the file, and everything our parser found in it &mdash; laboratory, strain, batch, batch identifier, harvest date, product class, the terpene values, and, where we refused to trust a reading, the reasons we refused.</p>
+      <p><strong>None of it is about you.</strong> There is no account, no email address, no IP address, no device information, no session and no palate anywhere in it. A report scanned by a signed-in person is stored identically to one scanned by somebody who has never made an account, and afterwards the two cannot be told apart. This is not only a promise: the storage has no field capable of holding anything that identifies a person, and the code that writes to it refuses the record outright if one ever appears.</p>
+      <p>We also keep a count of how many times each report has been fetched. It is one number per report. It is not a list of visits, it carries no times, and it says nothing about who did the fetching.</p>
+      <p><strong>Why we keep it, both reasons.</strong> The first is that our parser is occasionally wrong in ways that only become visible across many reports read side by side, and keeping them is how those faults get found and fixed. The second is commercial: we intend to study this collection &mdash; how terpene profiles differ between batches, between growers, and between laboratories reading the same material &mdash; and we may sell that analysis to growers. Nothing is for sale today and no such product exists yet. We are saying it now rather than once it has happened.</p>
+      <p>Our reasoning is that a lab report is a published document about a jar, not a document about the person holding it. If you would rather not take part, the matcher works without scanning anything at all &mdash; terpene values can be typed in by hand, and a jar entered that way never touches our server.</p>
     </article>
 
     <article class="card article-card">
@@ -128,6 +140,7 @@
         <li><strong>Sessions:</strong> fourteen days, or until you log out.</li>
         <li><strong>Error reports:</strong> 90 days, then automatically purged.</li>
         <li><strong>Match feedback:</strong> kept indefinitely. It is anonymous, and the whole point of collecting it is to see whether the method holds up over time.</li>
+        <li><strong>Lab reports and what we read from them:</strong> kept indefinitely, with no deletion schedule and no plan to introduce one. They describe cannabis products, not people.</li>
       </ul>
     </article>
 
@@ -141,7 +154,7 @@
       <h2>What we still do not do</h2>
       <p>This list is shorter than it used to be. It used to begin with &ldquo;no cookies&rdquo; and end with &ldquo;no accounts.&rdquo; Both of those lines are gone, and pretending otherwise would be worse than losing them.</p>
       <ul>
-        <li>No advertising, and no selling of your personal information.</li>
+        <li>No advertising, and no selling of your personal information. We do intend to sell analysis of lab reports, which is set out in full above; your palate, your account and your use of this site form no part of that and are not for sale at any price.</li>
         <li>No analytics suites, session recording, or fingerprinting.</li>
         <li>No account required to use the matcher &mdash; it is free and unlimited either way.</li>
         <li>No third-party scripts running in your browser. Logins are handled entirely by our own server, so no outside code loads on this site. The Content Security Policy blocks it at the browser level, not merely by policy.</li>
