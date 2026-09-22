@@ -10,7 +10,9 @@
  * the Data API checks. Writes nothing that survives: the one save it makes is
  * inside a transaction that is rolled back.
  *
- * Exit 0 and "probe clean" only when every check that could run passed.
+ * Exit 0 and "probe clean" only when every check that could run passed. A check
+ * that cannot tell - a timeout, an answer from the wrong layer - fails; it is
+ * never counted as a pass. test/probe-test.js checks that logic offline.
  */
 
 const crypto = require('crypto');
@@ -46,6 +48,116 @@ async function expectDenied(c, label, sql) {
   } catch (e) {
     ok(label, e.code === '42501', `${e.code} ${e.message}`);
   }
+}
+
+/* --- the Data API must not serve schema nose ------------------------------ */
+
+/* The public reaches the Data API with the publishable key, so that is the key
+ * these checks run with. A secret key (sb_secret_..., or a legacy JWT with role
+ * service_role) would test the wrong role, so it is refused before anything is
+ * sent. */
+function isSecretKey(key) {
+  if (/^sb_secret_/.test(key)) return true;
+  const parts = key.split('.');
+  if (parts.length !== 3) return false;
+  try {
+    return JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8')).role === 'service_role';
+  } catch {
+    return false;
+  }
+}
+
+/* A refusal proves something only if it is the Data API's own "this schema is
+ * not exposed" answer: PostgREST's PGRST106, given before it looks at the role,
+ * the path or the body. A refusal from anywhere else proves nothing - a wrong,
+ * revoked or mistyped key gets 401 "Invalid API key" from the gateway, and a
+ * publishable key sent as "Authorization: Bearer" fails JWT verification, so
+ * either would pass a check that only asked "was it refused?". Hence:
+ *
+ *   PGRST106        pass - schema nose does not exist as far as the API knows
+ *   2xx             FAIL - schema nose answered
+ *   42501           FAIL - nose is exposed and only the grants stopped it; it
+ *                          must not be exposed at all
+ *   401/403, other  FAIL - refused before reaching the schema question
+ *
+ * The key travels in the apikey header only, as Supabase documents for
+ * publishable keys. Returns [{ label, pass, detail }] and [{ info }] records;
+ * main() prints them. */
+const SCHEMA_NOT_EXPOSED = 'PGRST106';
+
+async function dataApiChecks({ ref, key, fetchImpl = globalThis.fetch, timeoutMs = 10000 }) {
+  const out = [];
+  const check = (label, pass, detail = '') => out.push({ label, pass, detail });
+  const note = text => out.push({ info: text });
+
+  key = String(key || '').trim();
+  if (!key) return out;
+  if (isSecretKey(key)) {
+    check('the Data API checks run with the publishable key', false,
+      'this is a SECRET key - nothing was sent. Use the publishable key (sb_publishable_...) from Project Settings -> API Keys');
+    return out;
+  }
+
+  const base = `https://${ref}.supabase.co/rest/v1`;
+  const call = async (pathname, init) => {
+    let res;
+    try {
+      res = await fetchImpl(base + pathname, { ...init, signal: AbortSignal.timeout(timeoutMs) });
+    } catch (e) {
+      return { failed: `request failed: ${(e && e.message) || e}` };
+    }
+    const text = await res.text().catch(() => '');
+    let code = null;
+    try {
+      const j = JSON.parse(text);
+      if (j && typeof j.code === 'string' && j.code) code = j.code;
+    } catch { /* not JSON, so not an answer from PostgREST */ }
+    const said = text.split(key).join('[key]').replace(/\s+/g, ' ').slice(0, 160);
+    return { status: res.status, ok: res.ok, code, said };
+  };
+
+  const requests = [
+    ['GET documents with Accept-Profile: nose is refused as "schema not exposed"', '/documents',
+      { headers: { apikey: key, 'Accept-Profile': 'nose' } }],
+    ['POST rpc/save_scan with Content-Profile: nose is refused as "schema not exposed"', '/rpc/save_scan',
+      { method: 'POST',
+        headers: { apikey: key, 'Content-Profile': 'nose', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payload: {} }) }]
+  ];
+
+  for (const [label, pathname, init] of requests) {
+    const r = await call(pathname, init);
+    if (r.failed) {
+      check(label, false, `${r.failed} - inconclusive; run the probe again`);
+    } else if (r.ok) {
+      check(label, false, `HTTP ${r.status} - schema nose ANSWERED through the Data API. Remove nose from Exposed schemas (Project Settings -> Data API) now`);
+    } else if (r.code === SCHEMA_NOT_EXPOSED) {
+      check(label, true);
+      note(`Data API: HTTP ${r.status} ${r.code} for ${pathname}`);
+    } else if (r.code === '42501') {
+      check(label, false, `HTTP ${r.status} 42501 - schema nose is exposed to the Data API; the grants refused this, but nose must not be exposed at all. Remove it from Exposed schemas (Project Settings -> Data API)`);
+    } else if (r.status === 401 || r.status === 403) {
+      check(label, false, `HTTP ${r.status} ${r.code || ''} ${r.said} - refused before the schema was even considered, so this proves nothing. Copy the publishable key again`.replace(/ +/g, ' '));
+    } else {
+      check(label, false, `HTTP ${r.status} ${r.code || 'no code'} ${r.said} - expected ${SCHEMA_NOT_EXPOSED}; inconclusive`);
+    }
+  }
+  return out;
+}
+
+/* --- is Enforce SSL on? ---------------------------------------------------- */
+
+/* What the pooler said to a plaintext connection that carried a WRONG
+ * password. Supavisor checks SSL enforcement before authentication, and its
+ * refusal reads "SSL connection is required for user: ...". Reaching "password
+ * authentication failed" means plaintext got as far as the password check.
+ * Anything else - a timeout, a reset, a temporary block - cannot tell, and is
+ * not a pass. */
+function classifyPlaintext(message) {
+  const m = String(message || '');
+  if (/SSL connection is required/i.test(m)) return 'enforced';
+  if (/password authentication failed/i.test(m)) return 'off';
+  return 'unknown';
 }
 
 async function main() {
@@ -171,44 +283,40 @@ async function main() {
   }
 
   /* --- the Data API must not serve schema nose ----------------------------- */
-  const key = process.env.NOSE_PUBLISHABLE_KEY;
+  const key = (process.env.NOSE_PUBLISHABLE_KEY || '').trim();
   if (!key) {
     skip('Data API checks - set NOSE_PUBLISHABLE_KEY (Project Settings -> API Keys, the publishable key)');
   } else if (!t.ref) {
     skip('Data API checks - no project ref in NOSE_DB_URL');
   } else {
-    const base = `https://${t.ref}.supabase.co/rest/v1`;
-    const hdr = { apikey: key, Authorization: `Bearer ${key}` };
-    const read = await fetch(`${base}/documents`, { headers: { ...hdr, 'Accept-Profile': 'nose' } });
-    const readBody = await read.text();
-    ok('GET documents with Accept-Profile: nose is refused', !read.ok, `HTTP ${read.status} ${readBody.slice(0, 120)}`);
-    const rpc = await fetch(`${base}/rpc/save_scan`, {
-      method: 'POST',
-      headers: { ...hdr, 'Content-Profile': 'nose', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ payload: {} })
-    });
-    const rpcBody = await rpc.text();
-    ok('POST rpc/save_scan with Content-Profile: nose is refused', !rpc.ok, `HTTP ${rpc.status} ${rpcBody.slice(0, 120)}`);
-    info(`Data API said: ${read.status} ${readBody.slice(0, 100).replace(/\s+/g, ' ')}`);
+    for (const r of await dataApiChecks({ ref: t.ref, key })) {
+      if ('info' in r) info(r.info);
+      else ok(r.label, r.pass, r.detail);
+    }
   }
 
   /* --- is Enforce SSL on? -------------------------------------------------- */
   /* A plaintext attempt with a deliberately WRONG password, so no working
-   * credential ever travels unencrypted. Reaching "password authentication
-   * failed" means the pooler accepted a connection without TLS. */
+   * credential ever travels unencrypted. While Enforce SSL is off this is one
+   * failed login from this address; Supavisor blocks an address for two
+   * minutes only after ten in a row, so do not run the probe in a loop. */
   {
+    const label = 'Enforce SSL is on (the pooler refuses a plaintext connection)';
     const { Client } = require('pg');
     const u = new URL(writerUrl);
     u.password = 'wrong-' + crypto.randomBytes(8).toString('hex');
     const c = new Client({ connectionString: u.toString(), ssl: false, connectionTimeoutMillis: 5000 });
     try {
       await c.connect();
-      ok('Enforce SSL is on (a plaintext connection is refused)', false, 'a plaintext connection with a wrong password succeeded?!');
+      ok(label, false, 'a plaintext connection with a wrong password was accepted');
     } catch (e) {
-      const reachedAuth = /password authentication failed|authentication failed/i.test(e.message);
-      ok('Enforce SSL is on (a plaintext connection is refused)', !reachedAuth,
-        'plaintext reached password authentication - turn on Enforce SSL (Database -> SSL Configuration)');
-      info(`plaintext attempt said: ${e.message}`);
+      const said = (e && e.message) || String(e);
+      const verdict = classifyPlaintext(said);
+      ok(label, verdict === 'enforced',
+        verdict === 'off'
+          ? 'plaintext got as far as the password check - turn on Enforce SSL (Project Settings -> Database -> SSL Configuration)'
+          : 'inconclusive - wait a minute and run the probe again; report the message below if it repeats');
+      info(`plaintext attempt said: ${said}`);
     } finally {
       await c.end().catch(() => {});
     }
@@ -218,4 +326,7 @@ async function main() {
   process.exit(failures ? 1 : 0);
 }
 
-main().catch(e => { console.error('probe threw:', e && e.message); process.exit(1); });
+module.exports = { writerTarget, isSecretKey, dataApiChecks, classifyPlaintext, SCHEMA_NOT_EXPOSED };
+if (require.main === module) {
+  main().catch(e => { console.error('probe threw:', e && e.message); process.exit(1); });
+}

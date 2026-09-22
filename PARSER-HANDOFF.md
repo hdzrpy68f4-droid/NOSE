@@ -632,6 +632,7 @@ supabase/config.toml                                  minimal, for the CLI
 netlify/functions/lib/store.js                        saveScan(payload, { client })
 netlify/functions/lib/supabase-ca.js                  generated; Supabase's public root CA
 test/store-test.js                                    PGlite, in memory, 49 checks
+test/probe-test.js                                    the probe's pass/fail rules, offline
 scripts/embed-supabase-ca.js                          writes supabase-ca.js from the download
 scripts/set-writer-password.js                        rotates nose_writer, prints NOSE_DB_URL once
 scripts/probe-db.js                                   checks the real project
@@ -731,6 +732,16 @@ audit (only `postgres` and `nose_writer` hold anything; the API roles reach
 nothing; PUBLIC executes nothing), the Data API refusing schema `nose`, and
 whether Enforce SSL is on — tested with a deliberately wrong password, so no
 working credential ever travels unencrypted.
+
+**A refusal is evidence only when you know who refused.** The first Data API
+check passed on any non-2xx answer. A mistyped key gets 401 "Invalid API key"
+from the gateway, and a publishable key sent as `Authorization: Bearer` fails
+JWT verification, so it could pass without the question ever being asked. It
+now passes only on PostgREST's own "schema not exposed" (`PGRST106`), and sends
+the key in `apikey` alone. Enforce SSL likewise passes only on Supavisor's "SSL
+connection is required"; a timeout is inconclusive, never a pass.
+`test/probe-test.js` pins these rules offline with a mocked fetch, and fails
+against each of eight deliberately broken copies of the probe.
 
 ### The build guard, and what it found
 
