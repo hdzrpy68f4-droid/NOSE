@@ -25,5 +25,8 @@
     "@netlify/blobs": "^10.7.11",
     "pg": "^8.23.0",
     "unpdf": "^1.8.0"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8"
   }
 }
