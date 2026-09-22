@@ -150,6 +150,11 @@ Expect `56 accepted / 3 rejected`, `56 match / 0 differ`, and `corpus clean`.
 Also run `node test/resolver-test.js` - expect `resolver clean`, and
 `bash build.sh` - expect `OK - ready to deploy`.
 
+**Or all at once:** `bash scripts/gates.sh` runs these, the Kaycha anchors,
+`store-test` and `probe-test`, prints the line each gate produced, and ends with
+`ALL GATES GREEN`. It passes a gate only on its exact expected line, so when a
+session legitimately changes a count, update the script in the same commit.
+
 **The harnesses do not cover `build.sh`.** All five ran green through a session
 in which the deploy was failing on a CSP sanity check, so every fix sat
 unpublished while the tests said otherwise. Run the build before believing that
