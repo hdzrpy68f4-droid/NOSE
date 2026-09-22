@@ -6,11 +6,15 @@
  * derived columns, both hashes - lives in the database (supabase/migrations).
  * This module only gets the payload there intact, over a verified connection.
  *
- * With no client: a fresh pg Client per call - connect, one query, end. A
- * function instance serves one request at a time and Supabase's pooler is the
- * real pool, so holding sockets open buys nothing. Scripts may pass one client
- * for a whole run; test/store-test.js passes PGlite through the same seam,
- * which is why nothing here uses more than client.query(text, params).
+ * With no client: a fresh pg Client per call - connect, one query, end - and
+ * the whole exchange bounded by timeoutMs (withClient, below). A function
+ * instance serves one request at a time and Supabase's pooler is the real
+ * pool, so holding sockets open buys nothing. Scripts may pass one client for
+ * a whole run; test/store-test.js passes PGlite through the same seam, which
+ * is why nothing here uses more than client.query(text, params).
+ *
+ * touch() is the keep-awake read: one cheap query as nose_writer, so the free
+ * Supabase project sees activity and is not paused.
  *
  * Never a query `name`: named queries are prepared statements, which the
  * transaction pooler cannot run.
@@ -132,28 +136,71 @@ function unwrap(res) {
   return typeof r === 'string' ? JSON.parse(r) : r;
 }
 
+/* Connect, run fn(client), let go - the whole exchange inside timeoutMs.
+ *
+ * The budget covers TLS, login and the query together. pg's own connect and
+ * query timeouts are set to the same figure as a second line, but the race
+ * here is what holds. Losing it ends the client without waiting: pg destroys
+ * the socket when a query is still active, and save_scan is one statement, so
+ * an abandoned write either committed whole or rolled back whole. There is no
+ * half-written scan.
+ *
+ * Two things keep a late failure from taking the function down with it. An
+ * 'error' listener, because a pg client that loses its socket while nobody is
+ * waiting emits 'error', and an unheard one crashes the process - possibly in
+ * the middle of somebody else's request. And Promise.race itself, which stays
+ * subscribed to the work it abandoned, so a connect that fails after we
+ * stopped waiting is still a handled rejection.
+ *
+ * _Client exists for test/archive-wiring-test.js; nothing else passes it. */
+async function withClient(fn, { timeoutMs = 4000, _Client } = {}) {
+  const Client = _Client || require('pg').Client;
+  const c = new Client(clientConfig(process.env.NOSE_DB_URL, { timeoutMs, queryTimeoutMs: timeoutMs }));
+  c.on('error', () => {});
+
+  let timer;
+  const work = (async () => {
+    await c.connect();
+    return fn(c);
+  })();
+  const giveUp = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`gave up after ${timeoutMs}ms`)), timeoutMs);
+  });
+  try {
+    return await Promise.race([work, giveUp]);
+  } finally {
+    clearTimeout(timer);
+    /* Not awaited: closing must never hold up the reply. */
+    Promise.resolve().then(() => c.end()).catch(() => {});
+  }
+}
+
 const SAVE_SQL = 'select nose.save_scan($1::jsonb) as result';
 
-async function saveScan(payload, { client } = {}) {
+async function saveScan(payload, { client, timeoutMs = 4000, _Client } = {}) {
   /* Serialised here, as a string, so pg and PGlite receive byte-identical input
    * and neither driver's object handling can differ. */
   const body = JSON.stringify(buildPayload(payload));
 
   if (client) return unwrap(await client.query(SAVE_SQL, [body]));
+  return withClient(async c => unwrap(await c.query(SAVE_SQL, [body])), { timeoutMs, _Client });
+}
 
-  const { Client } = require('pg');
-  const c = new Client(clientConfig(process.env.NOSE_DB_URL));
-  try {
-    await c.connect();
-    return unwrap(await c.query(SAVE_SQL, [body]));
-  } finally {
-    await c.end().catch(() => {});
-  }
+/* A read of a real table, not "select 1": Supabase counts user activity on the
+ * database, and a query that touches no table is the one most likely not to
+ * count. An index probe, so its cost does not grow with the archive. */
+const TOUCH_SQL = 'select id from nose.documents order by id desc limit 1';
+
+async function touch({ timeoutMs = 8000, _Client } = {}) {
+  await withClient(c => c.query(TOUCH_SQL), { timeoutMs, _Client });
+  return true;
 }
 
 module.exports = {
   saveScan,
+  touch,
   clientConfig,
+  TOUCH_SQL,
   PERSONAL_KEYS,
   _clean: clean,
   _findPersonalKey: findPersonalKey,
