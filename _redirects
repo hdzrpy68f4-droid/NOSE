@@ -13,12 +13,24 @@
 # Netlify serves /404.html automatically for unmatched paths.
 
 # Source, not website. The runtime path /.netlify/* is unaffected.
-/netlify/*      /404.html   404
-/node_modules/* /404.html   404
-/docs/*              /404.html   404
-/build.sh            /404.html   404
-/setup.sh            /404.html   404
-/verify-manifest.sh  /404.html   404
-/dump-ordering.js    /404.html   404
-/package.json        /404.html   404
-/package-lock.json   /404.html   404
+#
+# Every rule below needs its "!". Without it Netlify serves any file that
+# exists and applies the rule only to paths that do not - so, unforced, these
+# rules did nothing for the very files they were written to hide.
+# scripts/check-published.js counts only forced rules as blocking, so deleting
+# a "!" puts that path straight back under its scan.
+/netlify/*           /404.html   404!
+/node_modules/*      /404.html   404!
+/docs/*              /404.html   404!
+/test/*              /404.html   404!
+/scripts/*           /404.html   404!
+/supabase/*          /404.html   404!
+/wip/*               /404.html   404!
+/build.sh            /404.html   404!
+/setup.sh            /404.html   404!
+/verify-manifest.sh  /404.html   404!
+/dump-ordering.js    /404.html   404!
+/package.json        /404.html   404!
+/package-lock.json   /404.html   404!
+/PARSER-HANDOFF.md   /404.html   404!
+/.env                /404.html   404!

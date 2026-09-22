@@ -146,6 +146,11 @@ for f in "${HTML[@]}"; do
   fi
 done
 
+# Nothing published may name the database, and nothing in git may hold a
+# credential. The repo is public; connection strings live only in Netlify
+# environment variables and Codespaces secrets.
+node scripts/check-published.js || exit 1
+
 echo "==> asset checks"
 
 # The engine builds <picture> as AVIF -> WebP -> JPEG, at 1x and 2x. A missing
