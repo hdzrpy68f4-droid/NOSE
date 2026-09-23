@@ -163,7 +163,9 @@ async function main() {
 
   let baseline, baselineUnusable;
 
-  await test('dev (no build-info.json): a normal reply, nothing stored, no storage code loaded, nothing logged', async () => {
+  /* 'dev' is pinned here; test/archive-scripts-test.js proves that a missing
+     or broken build-info.json reads as 'dev' in the first place. */
+  await test('dev context: a normal reply, nothing stored, no storage code loaded, nothing logged', async () => {
     const { value, lines } = await quietly(() => coa.handler(EVENT));
     baseline = value;
     assert.strictEqual(value.statusCode, 200);
@@ -345,6 +347,31 @@ async function main() {
       assert.match(lines[0], /timed out/);
     });
   }
+
+  await test(`both writes hang: the same reply within the ${ARCHIVE_BUDGET_MS}ms budget - they run together, not in turn`, async () => {
+    reset();
+    pdfBehaviour = () => new Promise(() => {});
+    saveBehaviour = () => new Promise(() => {});
+    const t0 = Date.now();
+    const { value, lines } = await quietly(() => coa.handler(EVENT), 2 * ARCHIVE_BUDGET_MS + 1500);
+    const took = Date.now() - t0;
+    assert.deepStrictEqual(value, baseline);
+    assert.ok(took < ARCHIVE_BUDGET_MS + 400, `the reply took ${took}ms - were the writes run one after the other?`);
+    assert.strictEqual(lines.length, 1);
+  });
+
+  await test('late in the request, the writes get only what is left before the deadline', async () => {
+    reset();
+    pdfBehaviour = () => new Promise(() => {});
+    saveBehaviour = () => new Promise(() => {});
+    const t0 = Date.now();
+    const { value } = await quietly(() => coa._archiveScan(PDF, SOURCE, TEXT, USABLE, t0 + 800), 3000);
+    const took = Date.now() - t0;
+    assert.ok(took < 800 + 300, `took ${took}ms with 800ms left`);
+    assert.strictEqual(calls.length, 1);
+    assert.ok(calls[0].opts.timeoutMs <= 800, `timeoutMs ${calls[0].opts.timeoutMs} with 800ms left`);
+    assert.strictEqual(value.kept, false);
+  });
 
   await test('a PDF already stored is not rewritten, and that is not a failure', async () => {
     reset();

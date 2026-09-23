@@ -57,7 +57,14 @@ function metadataFor({ sourceUrl, fetchedAt } = {}) {
   };
 }
 
-/* Store one PDF unless its key is already there. { written } says which. */
+/* Store one PDF unless its key is already there. { written } says which, and
+ * a write that did not happen throws.
+ *
+ * `modified` alone proves nothing. For a conditional write, @netlify/blobs
+ * 10.x answers { modified: false } on a 412 (the key exists) and
+ * { modified: true } on ANY other status - a 401, a 403 or a 503 included -
+ * without throwing. A write that really landed comes back with the ETag the
+ * store gives every object it keeps, so that is what counts. */
 async function put(store, sha256, bytes, meta) {
   if (!SHA256_HEX.test(String(sha256))) throw new Error('pdf-store: the key must be a SHA-256 hex digest');
   if (!bytes || !bytes.byteLength) throw new Error('pdf-store: no bytes to store');
@@ -66,7 +73,9 @@ async function put(store, sha256, bytes, meta) {
      own range. */
   const data = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
   const res = await store.set(sha256, data, { metadata: metadataFor(meta), onlyIfNew: true });
-  return { written: !!(res && res.modified) };
+  if (res && res.modified === false) return { written: false };
+  if (res && res.modified === true && typeof res.etag === 'string' && res.etag) return { written: true };
+  throw new Error('pdf-store: Netlify Blobs did not confirm the write (no ETag) - counted as failed');
 }
 
 /* Every key in the store; list() follows the pages itself. */

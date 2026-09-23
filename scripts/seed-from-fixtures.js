@@ -28,6 +28,7 @@ const LIB = path.join(ROOT, 'netlify/functions/lib');
 const PDF_DIR = path.join(ROOT, 'test/fixtures/pdf');
 const STAMPED_FILES = ['netlify/functions/lib/parse-coa.js', 'netlify/functions/lib/extract-text.js'];
 const TIMEOUT_MS = 20000;   // a script, not a function: no 10s ceiling to respect
+const MIN_TEXT = 200;       // coa.js refuses a PDF with less text than this before parsing
 
 const version = require(path.join(LIB, 'version.js'));
 
@@ -81,6 +82,9 @@ async function main() {
     const name = f.replace(/\.pdf$/i, '').padEnd(52);
     const buffer = fs.readFileSync(path.join(PDF_DIR, f));
 
+    /* The same gates coa.js puts before the archive: text it cannot read, too
+       little text, or a parser that throws means the scanner would have
+       replied with an error and stored nothing - so nothing is stored here. */
     let text;
     try { ({ text } = await extractCoaText(buffer)); }
     catch (e) {
@@ -88,7 +92,18 @@ async function main() {
       console.log(`FAIL  ${name} could not extract: ${archive.reason(e)}`);
       continue;
     }
-    const output = parseCoa(text);
+    if (typeof text !== 'string' || text.length < MIN_TEXT) {
+      tally.skipped++;
+      console.log(`skip  ${name} under ${MIN_TEXT} characters of text - the scanner stores nothing for it either`);
+      continue;
+    }
+    let output;
+    try { output = parseCoa(text); }
+    catch (e) {
+      failures++;
+      console.log(`FAIL  ${name} the parser threw: ${archive.reason(e)}`);
+      continue;
+    }
     if (output.parserVersion !== stamps.parserVersion) {
       refuse(`the parser stamped "${output.parserVersion}", not ${stamps.parserVersion} - lib/version.js did not load`);
     }

@@ -149,11 +149,16 @@ async function main() {
   const FAKE_BLOBS = path.join(TMP, 'fake-netlify-blobs.js');
   const blobCalls = [];
   const stored = new Map();
+  let failWith = null;   // an HTTP status the stand-in answers every write with
+  /* Answers as @netlify/blobs 10.x does: a conditional write gets
+     { modified: false } on a 412 and { modified: true } on ANY other status,
+     failures included - with an ETag only when the object was really stored. */
   const fakeStoreObject = name => ({
     name,
     async set(key, data, opts) {
       blobCalls.push({ fn: 'set', key, data, opts });
       if (opts && opts.onlyIfNew && stored.has(key)) return { modified: false };
+      if (failWith) return { modified: true, etag: '' };
       stored.set(key, Buffer.from(data));
       return { modified: true, etag: '"e"' };
     },
@@ -221,6 +226,18 @@ async function main() {
     assert.strictEqual(stored.get(key).length, bytes.length);
     await assert.rejects(pdfStore.put(store, 'not-a-sha', bytes, {}), /SHA-256/);
     await assert.rejects(pdfStore.put(store, key, Buffer.alloc(0), {}), /no bytes/);
+  });
+
+  await test('pdf-store: a write Blobs did not confirm is a failure, not a success', async () => {
+    const store = pdfStore.open();
+    const bytes = Buffer.from('%PDF-1.4 a report the store refused');
+    for (const status of [401, 403, 503]) {
+      failWith = status;
+      await assert.rejects(pdfStore.put(store, sha(bytes), bytes, {}), /did not confirm the write/, String(status));
+    }
+    failWith = null;
+    assert.ok(!stored.has(sha(bytes)));
+    assert.deepStrictEqual(await pdfStore.put(store, sha(bytes), bytes, {}), { written: true });
   });
 
   await test('pdf-store: metadata keeps an https address that fits and a bare day, nothing else', async () => {
