@@ -714,15 +714,12 @@ per parse. It was switched on in the same commit that dated the privacy page,
 which had described it in full, marked "not switched on yet", before any of it
 was connected — that page promises to change before collection does.
 
-**The PDF itself is kept too, once branch `archive-pdf-blobs` reaches main.**
-Built 2026-09-22 (US Eastern) and held off main on purpose: it ships with the
-next prompt's work - now `novelty`, built on `rerun-tools`, which is built on
-it; merging `novelty` brings all three. Until it merges, production keeps no PDFs and the rest of
-this section describes code that is not deployed. The two lines in `app.html`
-changed in the same commits, so they go live with it; the privacy page
-describes it first, as not switched on yet, from `privacy-notice` (Still
-open), and the dated text goes live with the code. The
-parts it adds: a copy of each PDF in Netlify Blobs, the production-only switch
+**The PDF itself is kept too, since 2026-09-23.** Built 2026-09-22 (US
+Eastern) on branch `archive-pdf-blobs` and held off main on purpose, it
+reached main with `rerun-tools` and `novelty` on 2026-09-23 (`fe0ccbe`) -
+after the privacy page had described it, deployed on its own, as not
+switched on yet (`e45bded`). See "Live, 2026-09-23" below. The two lines in
+`app.html` changed in the same commits as the code. The parts it adds: a copy of each PDF in Netlify Blobs, the production-only switch
 in `build-info.json`, the "Certificate of Analysis" rule, a 2000ms budget for
 both writes together, the seed and health scripts, and the parser's
 `reportDate`, `client` and `parserVersion` fields (§7).
@@ -1157,15 +1154,47 @@ and `review-queue-test` on the real unpdf and PGlite.
 - `reparse.js --dry-run`, then `reparse.js`: run #2, parser `0f18267`, 60
 documents through document #62 - `0 unchanged / 60 values changed / 0
 accepted→rejected / 0 rejected→accepted / 0 failed`. Every one changed only
-by `novelty (new)`; the one production scan (Method Testing Labs, "Too Much
-Runtz", read by `main`'s parser) also by `client (new)` and `reportDate
-(new)`. Every `usable`, `readBy` and `totalTerpenes` the same before and after.
+by `novelty (new)`; the one production scan (a Method Testing Labs flower report, read by
+`main`'s parser) also by `client (new)` and `reportDate (new)`. Every `usable`, `readBy` and `totalTerpenes` the same before and after.
 - It is #2 because `probe-db.js` inserts a run and rolls it back, and
 identity values are not transactional: count rows, never ids.
 - `reparse.js` again: run #3, `60 unchanged`.
 - `review-queue.js`: `0 documents to look at` of 60; `7 test fixtures
 (seeded) are not listed` - the three refusals and the four ACS files of §7 -
 and no reading predates novelty.
+
+### Live, 2026-09-23 (US Eastern): the PDF half, the re-run tools, novelty
+
+Strains, fingerprints and times of day of real scans stay out of this file:
+it is public, and a time of day is what the archive's day-only dates exist to
+keep away from the request logs.
+
+- **The page first.** `privacy-notice` (`e45bded`) was fast-forwarded onto
+`main` alone and deployed. The live `/privacy/` page then read "A third,
+smaller change, not switched on yet" and "Two additions, not switched on
+yet" while the site still ran the old code - checked on the live site.
+- **Then the code.** `main` fast-forwarded to `novelty` (`fe0ccbe`, 31 files),
+`bash scripts/gates.sh` ALL GATES GREEN in the Codespace, deployed. The live
+page then read "That changed on September 23, 2026", and "not switched on
+yet" appeared nowhere on it.
+- **The first scan on the new deploy** - a Kaycha flower report, usable, 15
+terpene values - is document #185, parse #125, context `production`, parser
+`fe0ccbe`, extractor `2e793bebe82a` (the real unpdf's stamp), and its PDF
+was kept: 60 files in Blobs, 48.6 MB - the 59 seeded test reports and this.
+- **`archive-health.js`: ok.** 62 documents, 62 extractions, 122 parses;
+11.9 MB of the free plan's 500 MB, the archive's own tables 0.8 MB of it. Two
+documents have no PDF, both expected: #3, the first real scan (2026-09-22,
+before PDFs were kept), and #184, a Kaycha report scanned while the old
+deploy was still serving. Scanning either jar again stores its PDF.
+- **`reparse.js --dry-run`, then `reparse.js`:** run #4, parser `fe0ccbe`, 62
+documents through #185 - `61 unchanged / 1 values changed / 0
+accepted→rejected / 0 rejected→accepted / 0 failed`. The one was #184, read
+by the old parser: `client (new), novelty (new), reportDate (new)`, with
+`usable`, `readBy` and `totalTerpenes` unchanged.
+- **`review-queue.js`:** `0 documents to look at` of 62; the 7 seeded
+fixtures counted, not listed.
+- #184 and #185 follow #62 because every reparse run takes an identity number
+per document (above: "Ids jump"). Count rows, never ids.
 
 ### After a deploy — check it
 
@@ -1191,16 +1220,6 @@ project from the dashboard before debugging anything else.
 - The parser does not emit ISO `harvestOn` / `reportOn`, so those columns stay
 NULL (`client` now fills). Adding them is a parser session's job, as additive
 output fields, which the working rules allow only when a prompt says so.
-- **Three branches wait, each built on the last: `archive-pdf-blobs`, then
-`rerun-tools`, then `novelty`; merging `novelty` brings all three.** All three
-are pushed. `privacy-notice` goes to `main` before them - see the privacy
-bullet below. The seed has run (59 test PDFs stored 2026-09-23) and the
-`reparse_runs` migration is pushed. When they merge: do the checks above.
-- **Run `reparse.js` once more after `novelty` deploys.** Every stored
-reading carries novelty since run #2 (above). Until the deploy, a jar
-scanned again on the live site is saved as `main`'s parser reads it, without
-novelty, and that becomes its latest reading; `review-queue.js` counts any
-such document as read before novelty existed.
 - **The paste-a-link path never shows its confirmation card.** `#coaConfirm`
 lives inside `#scanPanel`, which is hidden while the COA link tab is open: the
 link is read, the message says "Check the values below, then add the jar",
@@ -1220,20 +1239,6 @@ real archive as recorded above.
 - `pdf-store.read()` asks Blobs for `getWithMetadata`, which only a stand-in
 has answered so far; the first `reparse.js --reextract --dry-run`, backfill or
 export in the Codespace is its first real proof.
-- **The privacy page ships first - decided 2026-09-23.** Its "Honest status"
-box says new collection is described "before that ships, not after", so the
-page is kept to the letter, as it was for the store itself (a78ab91, then
-the switch-on 7582599 the same day). **Merge order:**
-  1. `privacy-notice` (e45bded) into `main`, alone: the PDF copies and the
-     certificate-of-analysis rule described as "not switched on yet", and
-     the report date, tested-for business and novelty note named as
-     already read - the 2026-09-23 reparse added them, from report text the
-     store already kept. Nothing the site does changes. Wait for the
-     deploy and see the page live.
-  2. Then fast-forward `main` to `novelty`, which merged `privacy-notice` in
-     (so no conflict) and dates the third change **September 23, 2026**, in
-     both the "What changed" note and the lab-reports section. That date is
-     the day `novelty` deploys: deployed on another day, change both first.
 - The seed and the re-run tools run from the Codespace: this cloud workspace
 cannot reach npm, Supabase or Netlify. Offline, `@netlify/blobs` is a stand-in
 built from its published types (v10: `set` returns `{ modified }`, and
