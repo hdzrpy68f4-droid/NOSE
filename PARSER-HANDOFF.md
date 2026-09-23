@@ -152,8 +152,8 @@ Also run `node test/resolver-test.js` - expect `resolver clean`, and
 
 **Or all at once:** `bash scripts/gates.sh` runs these, the Kaycha anchors,
 `novelty-test`, `coa-dates-test`, `store-test`, `probe-test`, `archive-wiring-test`,
-`archive-scripts-test`, `rerun-test`, `review-queue-test` and
-`analysis-test`, prints the line each gate produced,
+`archive-scripts-test`, `rerun-test`, `review-queue-test`,
+`analysis-test` and `check-trust-test`, prints the line each gate produced,
 and ends with `ALL GATES GREEN`. It passes
 a gate only on its exact expected line, so when a session legitimately changes
 a count, update the script in the same commit.
@@ -195,6 +195,7 @@ someone to look.
 | `match-test.js` | the matching maths has one home, `js/match-math.*.js`: the app takes it from there, nothing else holds a copy, and it returns every score in `test/fixtures/match-golden.json` to the last bit |
 | `coa-dates-test.js` | `lib/coa-dates.js` and the parser's `harvestOn` / `reportOn` (§7): the three forms, the near misses, and every other field identical without it |
 | `analysis-test.js` | the analysis layer (§13) on PGlite: the two views, their grants |
+| `check-trust-test.js` | `scripts/check-trust.mjs` (§13, "The trust guard") on throwaway sites: every form of the old promise fails, true sentences pass; offline |
 
 The counts in section 2 are checked by `fixture-lint.js` against the corpus, so
 a stale one fails the lint rather than misleading the next session.
@@ -935,6 +936,65 @@ that do not. Every "Source, not website" rule had been missing it, so
 `/test/`, `/scripts/`, `/supabase/`, `/wip/` and this file added. Delete a `!`
 and the guard scans that path again.
 
+### The trust guard
+
+Until 2026-09-22 the About page counted among its trust claims that NOSE kept
+nothing and sold nothing. `da5a6cf` replaced it before the archive was
+switched on; it was the only place in this repo that said so. Since
+2026-09-23 `build.sh` runs `scripts/check-trust.mjs` straight after
+`check-published.js`, so it cannot come back:
+
+- **The promise itself** - stored, store or kept, then or / nor / and / a
+  comma and "nothing", then sold or sell, in either order - fails in every
+  file git tracks and every published file.
+- **"Nothing stored"** - and "nothing is stored", "nothing's stored", "we
+  store nothing" - fails only where a visitor can read it: published files,
+  and the non-comment lines under `netlify/`, whose replies the page shows.
+  The Codespace scripts, the migrations, the tests and this file say it about
+  one code path (a refused write, a dev build), which is true and shown to
+  nobody.
+- Case, line breaks, `&nbsp;` and the other space entities, ` `-style
+  escapes and inline tags do not hide it, and attribute text (a meta
+  description) is read as well as body text.
+- "Published" is `check-published.js`'s rule, copied; `check-trust-test.js`
+  fails if the two ever count differently.
+- **The static preview** (not in this repo): `node scripts/check-trust.mjs
+  <file>`. A file named on the command line gets both rules; a path that does
+  not exist fails rather than passing unread.
+- The guard and its test never spell the promise out, so neither is exempt.
+  This file is tracked too: describe the promise, never quote it.
+
+If it fails on a sentence that is scoped and true - "if the file is not a lab
+report, nothing is stored", say - reword the sentence ("we keep nothing from
+it"). Do not narrow the pattern.
+
+`test/check-trust-test.js` builds a throwaway site with its own git repo for
+each case: 17 checks, among them the true sentences the site says today, the
+real tree, and the About page as it was before `da5a6cf`, which fails at line
+102. Thirteen deliberately broken copies of the guard - either rule switched
+off, tags or entities not normalised, comments not stripped, an unforced 404
+counted as blocking, tracked or untracked published files skipped, a missing
+file ignored, the reverse order or "nothing X, nothing Y" dropped, a PDF read
+as text - each fail it.
+
+**The wording it protects, as of 2026-09-23.** The home page's "Private by
+default" row: the palate stays in the browser unless you export it or save it
+to your account; lab reports read from a scan or a link are kept so batches
+can be compared over time; nothing about you is kept with them - no account,
+no record of who scanned what, no location - with a link to
+`/privacy/#lab-reports`. It says "who scanned what" and "kept with them",
+not "nothing about you is stored": with optional accounts, an email address
+and any palate saved to an account ARE stored, while the archive holds
+nothing about anyone. The privacy page names Supabase's East US (North
+Virginia) region for the database, says your IP address never reaches the
+store because the server saves reports, not the browser, that nothing from
+Netlify's request logs is copied into it, where a palate saved to an account
+lives (Netlify's file storage), and that a session record holds the email
+address - the sentence had left it out, and says so. "Turn on sync" became
+"press Save to account" on the privacy and terms pages: sync is two buttons,
+and only deleting the account removes the saved copy. `/legal/privacy` and
+`/legal/terms` redirect (301) to the one page each.
+
 ### How `coa.js` feeds it
 
 `archiveScan()` is called once, right after `parseCoa`, before any refusal, so
@@ -999,8 +1059,9 @@ hand.
 - **Said where it happens.** Both ways into the archive in `app.html` — the QR
 scanner and the paste-a-link panel — say in one line that the server keeps a
 copy of the report and what it says, and nothing about the person, linking to
-`/privacy/#lab-reports`. Change what is kept, and those two lines change with
-the privacy page.
+`/privacy/#lab-reports`. Since 2026-09-23 the home page's "Private by default"
+row says it as well. Change what is kept, and those three change with the
+privacy page.
 
 ### The PDF half — Netlify Blobs
 
@@ -1430,8 +1491,10 @@ candidate jar shows a score. Both read their maths from
 ### Still open
 
 - **The static preview is not in this repo**, and cannot be: `build.sh` fails
-any `.html` with inline script. The guard checks only what the build sees; a
-preview kept elsewhere needs `node scripts/check-published.js <file>` run on it.
+any `.html` with inline script. The guards check only what the build sees; a
+preview kept elsewhere needs `node scripts/check-published.js <file>` and
+`node scripts/check-trust.mjs <file>` run on it - it may still carry the old
+promise that NOSE keeps nothing.
 - Supabase free projects pause after a week idle, which looks like a connection
 fault. `keep-awake.js` exists to prevent it; if its log says FAILED, resume the
 project from the dashboard before debugging anything else.
@@ -1483,3 +1546,21 @@ the bundle, so `build.sh` re-fingerprints it - commit the renamed file.
 - The terms page's "Before launch" box still lists the operating entity's legal
 name and address, a governing-law clause, an effective date, and a lawyer's
 review.
+- **Login emails may show Supabase your IP address, and the privacy page does
+not say so.** Sign-up and password reset call Supabase's auth API from the
+server (`netlify/lib/auth.js`, no forwarded address), but the emails Supabase
+then sends normally link to Supabase's own domain, so whoever clicks one
+reaches Supabase from their own browser, and Supabase's auth logs record the
+address. Whether the links point there is set in the Supabase dashboard
+(Authentication → email templates and URL configuration), not in this repo.
+If the accounts share the archive's project, those logs sit in the same
+database - which is why the privacy page says the IP address never reaches
+the *store*, not the database. Either route the links through NOSE or say it
+on the privacy page. The account functions' `SUPABASE_URL` and
+`SUPABASE_SERVICE_KEY` are not described anywhere in this file either.
+- **An `npm audit` warning** was seen in the Codespace (reported 2026-09-23)
+and has not been looked at: the cloud workspace cannot reach npm. Next step:
+`npm audit` in the Codespace, and bring its output.
+- `account/index.html` still ends its palate card with "Use the export button
+in the matcher to move a palate between devices in the meantime." - written
+before Save to account existed.
