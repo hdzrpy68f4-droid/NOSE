@@ -1072,9 +1072,10 @@ print unless `--limit` says more.
 that: each prints `also changed: novelty (new)` (a scan read by `main`'s
 parser adds `client (new)` and `reportDate (new)`), counted as `values
 changed`, with `usable`, `readBy`, `totalTerpenes` and every terpene the same
-before and after. Rehearsed on a local copy of the seeded archive: 60 of 60
-changed that way, nothing else moved, and a second run changed nothing.
-Anything else in the dry run - a terpene that moved, an accepted→rejected - is
+before and after. Rehearsed on a local copy of the seeded archive, then run
+on the real one (below, "Novelty on the real project"): 60 of 60 changed that
+way both times, nothing else moved, and a second run changed nothing.
+Anything else in a dry run - a terpene that moved, an accepted→rejected - is
 a parser fault: stop and bring the lines.
 - **Ids jump after a run.** `INSERT … ON CONFLICT DO NOTHING` takes an identity
 number even when it conflicts, so a reparse uses up one document id and one
@@ -1145,6 +1146,25 @@ has about ten times what it needs.
 Routing, so that address works only while a routing rule (or catch-all) for it
 exists there.
 
+### Novelty on the real project, 2026-09-23
+
+Branch `novelty` at `0f18267`, from the Codespace, before any merge:
+
+- `bash scripts/gates.sh`: ALL GATES GREEN - the first run of `novelty-test`
+and `review-queue-test` on the real unpdf and PGlite.
+- `reparse.js --dry-run`, then `reparse.js`: run #2, parser `0f18267`, 60
+documents through document #62 - `0 unchanged / 60 values changed / 0
+accepted→rejected / 0 rejected→accepted / 0 failed`. Every one changed only
+by `novelty (new)`; the one production scan (Method Testing Labs, "Too Much
+Runtz", read by `main`'s parser) also by `client (new)` and `reportDate
+(new)`. Every `usable`, `readBy` and `totalTerpenes` the same before and after.
+- It is #2 because `probe-db.js` inserts a run and rolls it back, and
+identity values are not transactional: count rows, never ids.
+- `reparse.js` again: run #3, `60 unchanged`.
+- `review-queue.js`: `0 documents to look at` of 60; `7 test fixtures
+(seeded) are not listed` - the three refusals and the four ACS files of §7 -
+and no reading predates novelty.
+
 ### After a deploy — check it
 
 1. `node scripts/archive-health.js` in the Codespace (reads as `nose_writer`;
@@ -1170,15 +1190,14 @@ project from the dashboard before debugging anything else.
 NULL (`client` now fills). Adding them is a parser session's job, as additive
 output fields, which the working rules allow only when a prompt says so.
 - **Three branches wait, each built on the last: `archive-pdf-blobs`, then
-`rerun-tools`, then `novelty`; merging `novelty` brings all three.** The seed
-has run (59 test PDFs stored 2026-09-23) and the `reparse_runs` migration is
-pushed. When they merge: do the checks above.
-- **The first real `reparse.js` after `novelty` is the Codespace's to run** -
-this workspace cannot reach Supabase. Dry run first; expect the §13 re-run
-section's picture exactly (every document `also changed: novelty (new)`,
-nothing else). Until `novelty` is deployed, a jar scanned again on the live
-site is saved as the old parser reads it, without novelty, and that becomes
-its latest reading - so run `reparse.js` once more after the deploy.
+`rerun-tools`, then `novelty`; merging `novelty` brings all three.** All three
+are pushed. The seed has run (59 test PDFs stored 2026-09-23) and the
+`reparse_runs` migration is pushed. When they merge: do the checks above.
+- **Run `reparse.js` once more after `novelty` deploys.** Every stored
+reading carries novelty since run #2 (above). Until the deploy, a jar
+scanned again on the live site is saved as `main`'s parser reads it, without
+novelty, and that becomes its latest reading; `review-queue.js` counts any
+such document as read before novelty existed.
 - **The paste-a-link path never shows its confirmation card.** `#coaConfirm`
 lives inside `#scanPanel`, which is hidden while the COA link tab is open: the
 link is read, the message says "Check the values below, then add the jar",
@@ -1193,8 +1212,8 @@ second one) where both paths can see it.
 pdfjs-dist 5.7.284 standing in for unpdf (56/3, 56/0, clean, 4.124/0.944 on the
 untouched branch first), PGlite's API over a throwaway Postgres 16 cluster, and
 `build.sh` with the committed html5-qrcode served in place of the jsdelivr
-download. The first `bash scripts/gates.sh` in the Codespace is the first run
-on the real packages.
+download. Then in the Codespace on the real packages: ALL GATES GREEN, and the
+real archive as recorded above.
 - `pdf-store.read()` asks Blobs for `getWithMetadata`, which only a stand-in
 has answered so far; the first `reparse.js --reextract --dry-run`, backfill or
 export in the Codespace is its first real proof.
