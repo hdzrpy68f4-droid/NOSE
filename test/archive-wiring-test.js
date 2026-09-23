@@ -401,6 +401,18 @@ async function main() {
     assert.strictEqual(calls[0].payload.output, UNUSABLE);
   });
 
+  await test('a usable reply carries usable and novelty - all the card needs for its novelty line', async () => {
+    reset();
+    const plain = JSON.parse(baseline.body);
+    assert.strictEqual(plain.usable, true);
+    assert.deepStrictEqual(plain.novelty, [], 'a result with no novelty field must reply []');
+    parseResult = { ...USABLE, novelty: ['heading not known: "Conc."'] };
+    const { value } = await quietly(() => coa.handler(EVENT));
+    parseResult = USABLE;
+    assert.deepStrictEqual(JSON.parse(value.body).novelty, ['heading not known: "Conc."']);
+    assert.ok(!('novelty' in JSON.parse(baselineUnusable.body)), 'a refusal is not a card, so it carries no novelty');
+  });
+
   await test('a PDF that is not a lab report is kept nowhere', async () => {
     reset();
     parseResult = NOT_A_REPORT;

@@ -438,6 +438,11 @@ exports.handler = async function(event){
        entitled to see them. A plausibility warning is what caught a cart
        read 10x high, and it was only visible in the parser. */
     warnings: result.warnings || [],
+    /* Whether the parser met anything in this report it has not seen before
+       (PARSER-HANDOFF s7). The card shows one fixed sentence when the list is
+       not empty and the read is usable; the notes themselves are never shown. */
+    usable: result.usable,
+    novelty: Array.isArray(result.novelty) ? result.novelty : [],
     terpenesTested: result.terpenesTested,
     moisture: result.freshnessApplies ? result.moisture : null,
     waterActivity: result.freshnessApplies ? result.waterActivity : null,

@@ -538,6 +538,27 @@
         warn.hidden=true;
       }
 
+      /* A report the parser has not met before - an unknown lab, heading,
+         unit or verdict word (PARSER-HANDOFF s7, novelty). Like a warning, the
+         values stand; the person is asked to check the ones that shape the
+         fingerprint most, which are the first rows below. One fixed sentence,
+         published verbatim: the parser's notes are for the archive, never
+         shown here. Neutral, like the coverage note. */
+      let novel=$id('coaConfirmNovelty');
+      if(!novel){
+        novel=document.createElement('p');
+        novel.id='coaConfirmNovelty';
+        novel.className=cov.className;
+        warn.insertAdjacentElement('afterend',novel);
+      }
+      if(data.usable===true&&Array.isArray(data.novelty)&&data.novelty.length){
+        novel.textContent='NOSE hasn\'t seen this lab\'s layout before — check the top three against the report.';
+        novel.hidden=false;
+      }else{
+        novel.textContent='';
+        novel.hidden=true;
+      }
+
       $id('coaConfirmName').value=data.strain||'';
 
       const holder=$id('coaConfirmRows');
