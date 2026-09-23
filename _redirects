@@ -7,6 +7,14 @@
 /index.html            /            301
 /aromas.html           /aromas/     301
 
+# Older copies of NOSE linked the legal pages under /legal/. There is one page
+# each, at /privacy/ and /terms/; these send those links there rather than
+# keeping a second copy that could say something different.
+/legal/privacy         /privacy/    301
+/legal/privacy/        /privacy/    301
+/legal/terms           /terms/      301
+/legal/terms/          /terms/      301
+
 # Fingerprinted bundle: keep the unhashed path working if anything references it.
 /js/nose.js  /js/nose.713ed41d.js  302
 
