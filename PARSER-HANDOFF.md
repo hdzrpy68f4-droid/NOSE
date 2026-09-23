@@ -1118,12 +1118,15 @@ a parser fault: stop and bring the lines.
 document the same way**: each prints `also changed: harvestOn (new),
 reportOn (new)` and nothing else - `usable`, `readBy`, `totalTerpenes` and
 every terpene the same before and after. Rehearsed on a local copy of the
-seeded archive (the 59 fixtures read by `b596508`, reparsed by `0cc68e8`):
-the dry run and the real run both said `0 unchanged / 59 values changed / 0
-accepted→rejected / 0 rejected→accepted / 0 failed` with those two names on
-all 59 and nothing else; a second run said `59 unchanged`. `harvest_on` then
-held 3 dates and `report_on` 2. On the real archive, expect every document,
-fixture or scan, to show that one line - anything else is a parser fault.
+seeded archive (the 59 fixtures read by `b596508`), with `MM/DD/YY` read
+(`8620cd7`): the dry run and the real run both said `0 unchanged / 59 values
+changed / 0 accepted→rejected / 0 rejected→accepted / 0 failed` with those two
+names on all 59 and nothing else; a second run said `59 unchanged`.
+`harvest_on` then held 19 dates and `report_on` 2. On the real archive,
+expect every document, fixture or scan, to show that one line - anything
+else is a parser fault. **If the archive was already reparsed by `635ac02`**
+(before `MM/DD/YY` was read), only the Kaycha reports change, each by `also
+changed: harvestOn` alone: 16 of 59 on the rehearsal, 43 unchanged.
 - **Ids jump after a run.** `INSERT … ON CONFLICT DO NOTHING` takes an identity
 number even when it conflicts, so a reparse uses up one document id and one
 extraction id per document. Nothing is lost; count rows, never ids.
@@ -1178,7 +1181,7 @@ read by the analysis scripts. Nothing in it writes; nothing in it is UI.
   refused and verdict-less readings, the strain key, the date fallback, a
   real ACS report (dated 2026-04-03 by its own harvest line), the columns,
   security_invoker in practice, and the grants. Rehearsed on a local copy of
-  the seeded archive: 59 documents, 56 in `batch_series`, 4 of them dated,
+  the seeded archive: 59 documents, 56 in `batch_series`, 20 of them dated,
   and `probe-db.js` against it passed every view and grant check.
 
 **One copy of the maths: `js/match-math.<hash>.js`.** The app's `normalize`,
@@ -1231,9 +1234,10 @@ substring, and list the names there are when nothing matches.
 - It says, first and last, that drift is between lab reports, not between
   experiences. `test/analysis-test.js` drives it on PGlite and fails on any
   effect wording in its output or in the layer's files.
-- On the rehearsal archive every batch is undated but four: Kaycha's
-  two-digit years (§7). "Grease Monkey" is three undated batches from two
-  labs and three product forms.
+- On the rehearsal archive 20 of the 56 usable batches are dated. "Grease
+  Monkey" is a Kaycha cart and a Kaycha concentrate from one harvest day,
+  2026-03-23 - `1a ~ 1b`, 0.997, shown as 100, Close match - and a Modern
+  Canna flower report with no date, listed apart.
 
 **`scripts/lab-stats.js`** - per lab, from `latest_parses`: documents (and
 how many are seeded test fixtures), accepted count and rate, the median
