@@ -26,11 +26,13 @@ const path = require('path');
 const ROOT = path.resolve(__dirname, '..');
 const LIB = path.join(ROOT, 'netlify/functions/lib');
 const PDF_DIR = path.join(ROOT, 'test/fixtures/pdf');
-const STAMPED_FILES = ['netlify/functions/lib/parse-coa.js', 'netlify/functions/lib/extract-text.js'];
 const TIMEOUT_MS = 20000;   // a script, not a function: no 10s ceiling to respect
-const MIN_TEXT = 200;       // coa.js refuses a PDF with less text than this before parsing
 
 const version = require(path.join(LIB, 'version.js'));
+/* The stamp-or-refuse helper lives in scripts/lib/rerun.js now, shared with
+   reparse.js and backfill-from-blobs.js; the seed's rules are unchanged. */
+const rerun = require('./lib/rerun');
+const { STAMPED_FILES, MIN_TEXT } = rerun;
 
 function refuse(msg) {
   console.error(`REFUSED: ${msg}`);
@@ -38,24 +40,10 @@ function refuse(msg) {
   process.exit(1);
 }
 
-/* Decide the stamps, or refuse. Exported for test/archive-scripts-test.js. */
-function stampsOrRefusal({ root = ROOT, env = process.env } = {}) {
-  const missing = ['NOSE_DB_URL', 'NETLIFY_SITE_ID', 'NETLIFY_AUTH_TOKEN'].filter(k => !env[k]);
-  if (missing.length) {
-    return { refusal: `${missing.join(', ')} ${missing.length === 1
-      ? 'is not set - it is a Codespaces secret; add it'
-      : 'are not set - they are Codespaces secrets; add them'}, then restart the Codespace` };
-  }
-  let dirty;
-  try { dirty = version.uncommitted(STAMPED_FILES, root); }
-  catch { return { refusal: 'git could not say whether the parser or extractor has uncommitted changes' }; }
-  if (dirty.length) {
-    return { refusal: `uncommitted changes in ${dirty.join(', ')} - commit them first, so the stamp names the code that ran` };
-  }
-  const v = version.fromCheckout(root);
-  if (v.parserVersion === 'dev') return { refusal: 'git could not name the commit' };
-  if (v.extractorVersion === 'dev') return { refusal: 'unpdf is not installed - run: npm install' };
-  return { stamps: v };
+/* Decide the stamps, or refuse: all three secrets, a committed parser and
+   extractor, and unpdf installed. Exported for test/archive-scripts-test.js. */
+function stampsOrRefusal({ root, env } = {}) {
+  return rerun.stampsOrRefusal({ root, env });
 }
 
 async function main() {

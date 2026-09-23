@@ -62,6 +62,8 @@ gate 'archive wiring' 'archive-wiring clean'     '^archive-wiring clean$' \
   node test/archive-wiring-test.js
 gate 'archive scripts' 'archive-scripts clean'   '^archive-scripts clean$' \
   node test/archive-scripts-test.js
+gate 'rerun tools'    'rerun clean'              '^rerun clean$' \
+  node test/rerun-test.js
 gate 'build'          'OK — ready to deploy'     '^OK — ready to deploy$' \
   bash build.sh
 

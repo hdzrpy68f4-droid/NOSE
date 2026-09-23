@@ -16,6 +16,10 @@
  *     reads report text or addresses
  *   - scripts/seed-from-fixtures.js: refuses without its secrets, and refuses
  *     while the parser or extractor has uncommitted changes
+ *   - scripts/lib/rerun.js, the same helper for reparse, backfill and export:
+ *     a dry run proceeds on uncommitted code and names it; each script is
+ *     asked only for the secrets it reads; pdf-store's read() refuses a copy
+ *     that does not match its key
  *   - scripts/check-published.js: a Netlify token fails the build
  */
 
@@ -342,6 +346,59 @@ async function main() {
     assert.match(ok.stamps.extractorVersion, /^[0-9a-f]{12}$/);
     fs.rmSync(path.join(s, 'node_modules/unpdf'), { recursive: true });
     assert.match(seed.stampsOrRefusal({ root: s, env: SECRETS }).refusal, /unpdf is not installed/);
+  });
+
+  /* --- scripts/lib/rerun.js: the same helper, for reparse, backfill, export --- */
+
+  const rerun = require(path.join(ROOT, 'scripts/lib/rerun.js'));
+
+  await test('rerun helper: the seed uses it, unchanged', async () => {
+    assert.deepStrictEqual(rerun.STAMPED_FILES, seed.STAMPED_FILES);
+    const src = fs.readFileSync(path.join(ROOT, 'scripts/seed-from-fixtures.js'), 'utf8');
+    assert.match(src, /rerun\.stampsOrRefusal\(/);
+  });
+
+  await test('rerun helper: a real run refuses uncommitted code; a dry run proceeds and names it', async () => {
+    const s = makeCheckout('rerun-checkout');
+    const f = 'netlify/functions/lib/parse-coa.js';
+    fs.appendFileSync(path.join(s, f), '// uncommitted\n');
+    const env = { NOSE_DB_URL: 'x' };
+    assert.match(rerun.stampsOrRefusal({ root: s, env, needs: ['NOSE_DB_URL'] }).refusal || '', /uncommitted changes in .*parse-coa\.js/);
+    const dry = rerun.stampsOrRefusal({ root: s, env, needs: ['NOSE_DB_URL'], write: false });
+    assert.ok(dry.stamps, dry.refusal);
+    assert.deepStrictEqual(dry.stamps.dirty, [f]);
+    gitIn(s, 'checkout', '-q', '--', f);
+    assert.deepStrictEqual(rerun.stampsOrRefusal({ root: s, env, needs: ['NOSE_DB_URL'] }).stamps.dirty, []);
+  });
+
+  await test('rerun helper: asks only for the secrets a script reads, and unpdf only when it extracts', async () => {
+    const s = makeCheckout('rerun-noextractor', { unpdf: null });
+    const one = rerun.stampsOrRefusal({ root: s, env: {}, needs: ['NOSE_DB_URL'] });
+    assert.match(one.refusal, /^NOSE_DB_URL is not set - it is a Codespaces secret/);
+    const plain = rerun.stampsOrRefusal({ root: s, env: { NOSE_DB_URL: 'x' }, needs: ['NOSE_DB_URL'], extractor: false });
+    assert.ok(plain.stamps, plain.refusal);
+    assert.strictEqual(plain.stamps.extractorVersion, 'dev');
+    assert.match(rerun.stampsOrRefusal({ root: s, env: { NOSE_DB_URL: 'x' }, needs: ['NOSE_DB_URL'] }).refusal, /unpdf is not installed/);
+  });
+
+  await test('pdf-store: read() returns the bytes and clean metadata, refuses a copy that does not match its key', async () => {
+    const bytes = Buffer.from('%PDF-1.4 read me back');
+    const key = sha(bytes);
+    const objects = new Map([[key, { data: bytes, metadata: { sourceUrl: 'https://lab.example/r.pdf', fetchedAt: '2026-09-21', extra: 'x' } }],
+                             ['e'.repeat(64), { data: Buffer.from('other bytes'), metadata: {} }]]);
+    const store = {
+      async getWithMetadata(k, opts) {
+        assert.strictEqual(opts && opts.type, 'arrayBuffer');
+        const o = objects.get(k);
+        return o ? { data: o.data.buffer.slice(o.data.byteOffset, o.data.byteOffset + o.data.length), etag: '"e"', metadata: o.metadata } : null;
+      }
+    };
+    const got = await pdfStore.read(store, key);
+    assert.ok(got.bytes.equals(bytes));
+    assert.deepStrictEqual(got.metadata, { sourceUrl: 'https://lab.example/r.pdf', fetchedAt: '2026-09-21' });
+    assert.strictEqual(await pdfStore.read(store, 'f'.repeat(64)), null);
+    await assert.rejects(pdfStore.read(store, 'e'.repeat(64)), /does not match its key/);
+    await assert.rejects(pdfStore.read(store, 'not-a-key'), /SHA-256/);
   });
 
   /* --- scripts/check-published.js ------------------------------------------- */

@@ -14,3 +14,9 @@ test/fixtures/extracted/
 # Written by build.sh at deploy time (lib/version.js). Never commit one.
 netlify/functions/lib/build-info.json
 supabase/.temp/
+
+# New fixture PDFs stay out of this PUBLIC repo until the PARSER-HANDOFF s9
+# decision is made. scripts/export-candidate.js writes here and never commits;
+# this keeps `git add -A` from committing for it. PDFs already tracked are not
+# affected. `git add -f` is the deliberate override, once s9 says yes.
+test/fixtures/pdf/*.pdf

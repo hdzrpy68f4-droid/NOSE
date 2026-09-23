@@ -92,4 +92,20 @@ async function measure(store, key) {
   return { bytes: buf.length, sha256: crypto.createHash('sha256').update(buf).digest('hex') };
 }
 
-module.exports = { STORE_NAME, connect, open, put, keys, measure, metadataFor };
+/* Download one stored PDF with its metadata, for the Codespace scripts that
+ * read the archive back (scripts/reparse.js --reextract, backfill, export).
+ * Null when there is no such key. The bytes are checked against their key -
+ * the SHA-256 they were stored under - and a copy that does not match is
+ * refused, never used. The metadata passes the same rules as a write. */
+async function read(store, key) {
+  if (!SHA256_HEX.test(String(key))) throw new Error('pdf-store: the key must be a SHA-256 hex digest');
+  const got = await store.getWithMetadata(key, { type: 'arrayBuffer' });
+  if (got == null || got.data == null) return null;
+  const bytes = Buffer.from(got.data);
+  if (crypto.createHash('sha256').update(bytes).digest('hex') !== key) {
+    throw new Error('pdf-store: the stored copy does not match its key - not used');
+  }
+  return { bytes, metadata: metadataFor(got.metadata || {}) };
+}
+
+module.exports = { STORE_NAME, connect, open, put, keys, measure, read, metadataFor };
