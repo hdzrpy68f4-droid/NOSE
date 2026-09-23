@@ -18,6 +18,16 @@
  * guard below and rejected rather than silently mis-parsed.
  */
 
+/* Which code produced a reading: the commit build.sh stamps (lib/version.js,
+   PARSER-HANDOFF s13). Output only - nothing here branches on it. Guarded, so
+   this file still runs on its own, as it does when attached to a parser
+   session by itself (s1); it then reads 'dev'. */
+let currentParserVersion = () => 'dev';
+try {
+  const version = require('./version');
+  currentParserVersion = () => version.buildInfo().parserVersion;
+} catch { /* running without lib/version.js */ }
+
 /* ---------------------------------------------------------------- constants */
 
 const LOOKAHEAD_LINES = 14;   // how far past an analyte name a result may sit
@@ -354,6 +364,7 @@ function parseCoa(text){
   let unmodelledTotal = 0;
   let totalTerpenes = null, moisture = null, waterActivity = null;
   let strain = null, harvestDate = null, batch = null, labId = null;
+  let reportDate = null, client = null;   // additive output, s7
 
   /* Several labs print the SAME analyte twice — a page-1 "top ten" summary and
      the full screen further in (Modern Canna flower, ACS, ACT). The accumulator
@@ -433,6 +444,18 @@ function parseCoa(text){
     if (!batch && batchLabel) batch = valueOrNext(batchLabel[1], lines[i+1]);
     const idLabel = line.match(/^(?:Lab ID|Sample\s+\w+\s*#):?\s*(.*)$/i);
     if (!labId && idLabel) labId = valueOrNext(idLabel[1], lines[i+1]);
+
+    /* Additive output (s7), read like harvestDate: a labelled row, the value
+       inline or on the next line, first occurrence wins, and nothing branches
+       on either. The whole remainder is taken rather than split on ':' - a
+       report date may carry a time. Labels must match exactly: TerpLife's
+       "Client Lic#:" is a licence number and ACS's "Client Information:" heads
+       an address block, and neither is read as the client. cleanStrain drops
+       the "Field: value" tail some labs append on the same line. */
+    const reportLabel = line.match(/^(?:Report\s+Date|Date\s+Reported|Date\s+of\s+Analysis)\s*:\s*(.*)$/i);
+    if (!reportDate && reportLabel) reportDate = cleanStrain(valueOrNext(reportLabel[1], lines[i+1]));
+    const clientLabel = line.match(/^(?:Client|Customer|Producer)\s*:\s*(.*)$/i);
+    if (!client && clientLabel) client = cleanStrain(valueOrNext(clientLabel[1], lines[i+1]));
 
     /* Track whether we are inside a terpene table, so unrecognised analyte
        names can be reported without dragging in every stray line of the
@@ -1173,7 +1196,10 @@ function parseCoa(text){
     unmapped: [...unmapped].sort(),
     terpenesTested,
     usable: rejectReasons.length === 0,
-    rejectReasons, warnings
+    rejectReasons, warnings,
+    /* Additive (s7): stored with every archived parse, not sent to the app. */
+    reportDate, client,
+    parserVersion: currentParserVersion()
   };
 }
 
