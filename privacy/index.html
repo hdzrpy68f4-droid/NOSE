@@ -111,7 +111,7 @@
       <p>We do not check the address against a list of approved laboratory domains. This page previously said we did, and that was wrong &mdash; the check was removed some time ago and the sentence describing it was left behind. It was removed deliberately: real reports reach people through whoever sold the jar rather than from the laboratory&rsquo;s own website, so a list of lab hostnames turned away genuine reports while doing nothing about a convincing fake hosted on an approved one. What stands in its place is that the file must be a real PDF, and the figures inside it must add up to the total the laboratory printed itself. A fabricated report fails that test whatever address it arrived from.</p>
     </article>
 
-    <article class="card article-card">
+    <article class="card article-card" id="lab-reports">
       <h2>Lab reports, and what we keep from them</h2>
       <p><strong>Switched on September 22, 2026.</strong> Nothing was kept before that day.</p>
       <p>When a report is fetched, we keep a copy of what we read: the text pulled out of the PDF, the address it first came from (with everything after a &ldquo;?&rdquo; removed, because one-off links can carry codes there that point back at whoever received them), its size, a fingerprint of the file, and everything our parser found in it &mdash; laboratory, strain, batch, batch identifier, product class, the terpene values, and, where we refused to trust a reading, the reasons we refused. We record the <strong>day</strong> a report was first fetched and the day it was read, never the time of day, so a stored report cannot be lined up against the server logs our host keeps.</p>

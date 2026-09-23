@@ -805,6 +805,11 @@ prevent.
 - **Provenance**: `context` is `production`; `parser_version` is the commit
 `build.sh` stamps; `extractor_version` must name the unpdf in
 `package-lock.json` — the test fails when a dependency bump leaves it stale.
+- **Said where it happens.** Both ways into the archive in `app.html` — the QR
+scanner and the paste-a-link panel — say in one line that the server keeps a
+copy of what the report says and nothing about the person, linking to
+`/privacy/#lab-reports`. Change what is kept, and those two lines change with
+the privacy page.
 
 `store.js`'s bounded connection is tested against pg's real semantics, read
 from the 8.23.0 source: `end()` destroys the socket when a query is active, so a
@@ -881,6 +886,10 @@ project from the dashboard before debugging anything else.
 - The parser does not emit ISO `harvestOn` / `reportOn` or `client` yet, so
 those columns stay NULL. Adding them is a parser session's job, as additive
 output fields, which the working rules allow only when a prompt says so.
+- The **Upload a report** tab in `app.html` only checks a file's type and size;
+nothing reads the file. Its text, and the message `js/nose.*.js` shows after a
+file is chosen, still say "in this static preview". Fixing the message changes
+the bundle, so `build.sh` re-fingerprints it - commit the renamed file.
 - The terms page's "Before launch" box still lists the operating entity's legal
 name and address, a governing-law clause, an effective date, and a lawyer's
 review.
