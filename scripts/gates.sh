@@ -66,6 +66,8 @@ gate 'archive scripts' 'archive-scripts clean'   '^archive-scripts clean$' \
   node test/archive-scripts-test.js
 gate 'rerun tools'    'rerun clean'              '^rerun clean$' \
   node test/rerun-test.js
+gate 'review queue'   'review-queue clean'       '^review-queue clean$' \
+  node test/review-queue-test.js
 gate 'build'          'OK — ready to deploy'     '^OK — ready to deploy$' \
   bash build.sh
 

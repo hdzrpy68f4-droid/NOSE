@@ -152,7 +152,7 @@ Also run `node test/resolver-test.js` - expect `resolver clean`, and
 
 **Or all at once:** `bash scripts/gates.sh` runs these, the Kaycha anchors,
 `novelty-test`, `store-test`, `probe-test`, `archive-wiring-test`,
-`archive-scripts-test` and `rerun-test`, prints the line each gate produced,
+`archive-scripts-test`, `rerun-test` and `review-queue-test`, prints the line each gate produced,
 and ends with `ALL GATES GREEN`. It passes
 a gate only on its exact expected line, so when a session legitimately changes
 a count, update the script in the same commit.
@@ -204,6 +204,7 @@ a stale one fails the lint rather than misleading the next session.
 | `reparse.js --reextract` | only after `extract-text.js` changes: extract every stored PDF again, keep new texts, then parse (`--dry-run` works too) |
 | `backfill-from-blobs.js` | a PDF with no database row (scanned while Supabase was paused or down) is extracted, parsed and saved as `backfill` |
 | `export-candidate.js <sha>` | an archived report's PDF and text into the fixture folders, to name and baseline by hand (§10); never commits |
+| `review-queue.js` | **what needs a look**: documents whose latest reading was refused or has `novelty` (§7), newest first, with reasons; reads only |
 
 ---
 
@@ -735,6 +736,8 @@ test/store-test.js                                    PGlite, in memory, 66 chec
 test/archive-wiring-test.js                           coa.js -> archive.js, offline, 38 checks
 test/archive-scripts-test.js                          version, pdf-store, health, seed, rerun helper; offline, 24 checks
 test/rerun-test.js                                    reparse, backfill, export on PGlite; offline, 85 checks
+test/review-queue-test.js                             the review queue on PGlite; offline, 19 checks
+test/novelty-test.js                                  the parser's novelty notes (s7); lists fixtures with any
 test/probe-test.js                                    the probe's pass/fail rules, offline
 scripts/embed-supabase-ca.js                          writes supabase-ca.js from the download
 scripts/set-writer-password.js                        rotates nose_writer, prints NOSE_DB_URL once
@@ -745,6 +748,7 @@ scripts/seed-from-fixtures.js                         every fixture PDF through 
 scripts/reparse.js                                    every document through today's parser (--reextract: extractor too)
 scripts/backfill-from-blobs.js                        PDFs with no document row get one, context backfill
 scripts/export-candidate.js                           an archived report into the fixture folders, never committed
+scripts/review-queue.js                               latest reading refused or new to the parser, newest first
 scripts/lib/rerun.js                                  what those share: the stamp-or-refuse helper, reads, comparison
 scripts/check-published.js                            run by build.sh
 ```
@@ -1044,6 +1048,23 @@ batch and the LAB-FORM names in use for that lab, and refuses to overwrite a
 file or reuse a name the baseline holds. The gates then count the new files and
 fail until the baseline is written by hand (§10) and the counts in §2 and
 `scripts/gates.sh` move.
+- **`review-queue.js [--limit N] [--fixtures]`** lists every document whose
+latest reading - newest extraction, latest parse, as `reparse.js` reads it - is
+refused or carries `novelty`, newest first (first-fetched day, then arrival),
+with `rejectReasons` and the novelty notes, and ends with the
+`export-candidate.js` command. It selects no text and no address. Documents
+first stored by the seed are the fixtures themselves, so they are counted, not
+listed, unless `--fixtures`. A reading from before `novelty` existed is
+counted with the command that fills it in (`reparse.js`). Only the newest 50
+print unless `--limit` says more.
+- **The first real reparse after `novelty` changes every document** and only
+that: each prints `also changed: novelty (new)` (a scan read by `main`'s
+parser adds `client (new)` and `reportDate (new)`), counted as `values
+changed`, with `usable`, `readBy`, `totalTerpenes` and every terpene the same
+before and after. Rehearsed on a local copy of the seeded archive: 60 of 60
+changed that way, nothing else moved, and a second run changed nothing.
+Anything else in the dry run - a terpene that moved, an accepted→rejected - is
+a parser fault: stop and bring the lines.
 - **Ids jump after a run.** `INSERT … ON CONFLICT DO NOTHING` takes an identity
 number even when it conflicts, so a reparse uses up one document id and one
 extraction id per document. Nothing is lost; count rows, never ids.
