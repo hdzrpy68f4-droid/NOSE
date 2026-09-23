@@ -355,6 +355,17 @@ const valueOrNext = (inline, next) => {
   return (next && !LOOKS_LIKE_LABEL.test(next)) ? next : null;
 };
 
+/* The additive fields (s7) are stricter about the next line: after an empty
+   "Client:", a line like "Address: 25548 County Rd" is another field with its
+   value, not the client. A next line shaped "Label: value" - a label with no
+   digits in it - is refused as well. Existing fields keep valueOrNext. */
+const LABELLED_ROW = /^[A-Za-z][A-Za-z .#/()&'-]{0,40}:\s*\S/;
+const ownValueOrNext = (inline, next) => {
+  const v = String(inline || '').trim();
+  if (v) return v;
+  return (next && !LOOKS_LIKE_LABEL.test(next) && !LABELLED_ROW.test(next)) ? next : null;
+};
+
 /* ------------------------------------------------------------------- parser */
 
 function parseCoa(text){
@@ -453,9 +464,9 @@ function parseCoa(text){
        an address block, and neither is read as the client. cleanStrain drops
        the "Field: value" tail some labs append on the same line. */
     const reportLabel = line.match(/^(?:Report\s+Date|Date\s+Reported|Date\s+of\s+Analysis)\s*:\s*(.*)$/i);
-    if (!reportDate && reportLabel) reportDate = cleanStrain(valueOrNext(reportLabel[1], lines[i+1]));
+    if (!reportDate && reportLabel) reportDate = cleanStrain(ownValueOrNext(reportLabel[1], lines[i+1]));
     const clientLabel = line.match(/^(?:Client|Customer|Producer)\s*:\s*(.*)$/i);
-    if (!client && clientLabel) client = cleanStrain(valueOrNext(clientLabel[1], lines[i+1]));
+    if (!client && clientLabel) client = cleanStrain(ownValueOrNext(clientLabel[1], lines[i+1]));
 
     /* Track whether we are inside a terpene table, so unrecognised analyte
        names can be reported without dragging in every stray line of the
