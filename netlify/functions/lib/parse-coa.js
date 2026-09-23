@@ -28,6 +28,13 @@ try {
   currentParserVersion = () => version.buildInfo().parserVersion;
 } catch { /* running without lib/version.js */ }
 
+/* harvestDate and reportDate as ISO days, for the archive (s7): lib/coa-dates.js.
+   Output only, computed from the two fields after they are read - nothing here
+   branches on it. Guarded like version.js, so this file still runs on its own;
+   both then read null. */
+let isoDate = () => null;
+try { ({ isoDate } = require('./coa-dates')); } catch { /* running without lib/coa-dates.js */ }
+
 /* ---------------------------------------------------------------- constants */
 
 const LOOKAHEAD_LINES = 14;   // how far past an analyte name a result may sit
@@ -1213,6 +1220,7 @@ function parseCoa(text){
     rejectReasons, warnings, novelty,
     /* Additive (s7): stored with every archived parse, not sent to the app. */
     reportDate, client,
+    harvestOn: isoDate(harvestDate), reportOn: isoDate(reportDate),
     parserVersion: currentParserVersion()
   };
 }

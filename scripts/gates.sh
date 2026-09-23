@@ -56,6 +56,8 @@ gate 'kaycha anchors' 'KAY-CAR-001 4.124 KAY-PRR-001 0.944' '^KAY-CAR-001 4\.124
   anchors
 gate 'novelty'        'novelty clean'            '^novelty clean$' \
   node test/novelty-test.js
+gate 'coa dates'      'coa-dates clean'          '^coa-dates clean$' \
+  node test/coa-dates-test.js
 gate 'store'          'store clean'              '^store clean$' \
   node test/store-test.js
 gate 'probe logic'    'probe-test clean'         '^probe-test clean$' \
