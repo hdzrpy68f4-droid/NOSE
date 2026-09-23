@@ -1199,6 +1199,9 @@ function parseCoa(text){
 
   const freshnessApplies = productClass === 'flower';
 
+  /* Additive (s7), computed after everything above and read by nothing above. */
+  const novelty = noveltyOf(lines, lab, [...unmapped].sort());
+
   return {
     lab, strain, batch, labId, harvestDate, productClass,
     totalTerpenes, moisture, waterActivity, freshnessApplies,
@@ -1207,7 +1210,7 @@ function parseCoa(text){
     unmapped: [...unmapped].sort(),
     terpenesTested,
     usable: rejectReasons.length === 0,
-    rejectReasons, warnings,
+    rejectReasons, warnings, novelty,
     /* Additive (s7): stored with every archived parse, not sent to the app. */
     reportDate, client,
     parserVersion: currentParserVersion()
@@ -1411,3 +1414,146 @@ function readColumnMajor(rawLines, printedTotal){
 }
 
 module.exports.readColumnMajor = readColumnMajor;
+
+/* ------------------------------------------------------------------ novelty --
+ * Is this document new to the parser? Output field `novelty` (s7): short
+ * notes, one per kind of thing the parser has not met, [] when there is none.
+ *
+ * Computed AFTER the reading, from what the reading already saw - the lab it
+ * recognised, the names it could not map, and the lines of the terpene section
+ * held against the reader's own vocabularies. Nothing reads it back: no other
+ * field depends on it, so a document reads exactly as it did before it existed.
+ *
+ *   lab not recognised        detectLab() matched nothing in LABS
+ *   unmapped: ...             the `unmapped` diagnostic is not empty
+ *   unit not read: "..."      a figure and a concentration unit that VALUE_LINE
+ *                             does not accept, so the reader never saw a value
+ *   verdict not known: "..."  a verdict word the row reader does not act on
+ *   heading not known: "..."  a column heading that is not in SECTION_LABELS,
+ *                             not stepped over by SKIPPABLE_IN_ROW, and not
+ *                             on a fixture already (SEEN_HEADINGS)
+ *
+ * The last three look only inside the terpene section, tracked exactly as the
+ * loop tracks it for `unmapped` - so they share its blind spot: Method closes
+ * the section in its summary tiles, and its table sits outside it.
+ *
+ * The notes are for the archive and scripts/review-queue.js, never for a
+ * person: the confirmation card prints one fixed sentence when the list is not
+ * empty. At most three examples per note, each cut to 40 characters, so an
+ * odd document cannot grow it without bound. Deterministic, so the same text
+ * always gives the same list and a reparse adds a row only when it changes. */
+
+/* The loop's section tracking, repeated rather than shared so the loop stays
+   exactly as it was. test/novelty-test.js fails if the two ever differ. */
+const NOVELTY_SECTION_OPEN = /^(TERPENES?|Terpene Screen by GC\/MS|Terpenes Summary|TERPENES SUMMARY.*)$/i;
+const NOVELTY_SECTION_CLOSE = /^(Pesticides?|Heavy Metals|Microbials?|Mycotoxins|Residual Solvents|Potency|Cannabinoids?|Filth[\/ ](and )?Foreign|Foreign Matter|Microbial)\b/i;
+
+/* Every verdict word the parser acts on: the row reader's pin (TESTED, PASSED,
+   PASS, FAIL, FAILED) and terpenesWereTested's tiles (COMPLETED, NOT TESTED). */
+const KNOWN_VERDICT = /^(TESTED|PASSED|PASS|FAIL|FAILED|NOT\s*TESTED|COMPLETED)$/i;
+/* A whole line a lab could print in a verdict column. N/A is not one - it is a
+   placeholder, and three ACS fixtures print it under an action level. */
+const VERDICT_LIKE = /^(PASS(?:ED|ES|ING)?|FAIL(?:ED|S|ING)?|(?:NOT\s+|UN)?TESTED|COMPLETED?|COMPLIES|(?:NON-?\s?)?COMPLIANT|(?:NON-?\s?)?CONFORM(?:S|ING)?|MEETS(?:\s+SPEC(?:IFICATIONS?)?)?|DOES\s+NOT\s+MEET|ACCEPT(?:ED|ABLE)?|REJECT(?:ED)?|(?:UN)?SATISFACTORY|WITHIN\s+(?:LIMITS?|SPEC)|OUT\s+OF\s+SPEC|OOS|INCONCLUSIVE|NT|NR|INFO(?:RMATIONAL)?|REPORT\s+ONLY|PENDING)$/i;
+
+/* A table cell: figures, then a unit of CONCENTRATION. A mass or volume alone
+   (Kaycha's "0.227 g" and "10 ml", ACS's "0.500 g") and a dilution ("1 x") are
+   sample details on known layouts, never a terpene result. */
+const CONCENTRATION_UNIT = String.raw`(?:%(?:\s*(?:w\/w|w\/v|v\/v|wt))?|wt\s*%|w\/w|(?:mg|g|ug|[µμ]g|mcg|ng)\s*\/\s*[A-Za-z]+|mg|ppm|ppb|ppt|aw)`;
+const UNIT_CELL = new RegExp(String.raw`^[<≤]?\s*\d[\d.,]*(?:\s+[<≤]?\d[\d.,]*)*\s*(?:(?:±|\+\/-)\s*\d[\d.,]*\s*)?` +
+                             CONCENTRATION_UNIT + String.raw`(?![A-Za-z])`, 'i');
+const UNIT_CELL_MAX = 32;   // a cell, not a footnote that happens to open with "20%"
+/* "22.8% (798 mg)": a percentage with its mass beside it. resultToNumber names
+   the form, and Modern Canna prints its cannabinoid totals this way inside the
+   terpene section on six fixtures. VALUE_LINE does not take it, and does not
+   need to - the terpene rows beside it are read. */
+const PERCENT_WITH_MASS = /^\d[\d.,]*\s*%\s*\(\s*\d[\d.,]*\s*mg\s*\)$/i;
+
+/* A column heading: at most six words, no figures, not a "Label:", naming a
+   column - a word from the reader's own heading vocabulary or a common
+   alternative to one - and not a line of a footnote (isHeadingLine). */
+const HEADING_WORD = /^(ANALYTES?|COMPOUNDS?|RESULTS?|AMOUNT|CONC|CONCENTRATION|LOD|LOQ|LLOQ|ULOQ|MDL|PQL|RL|MRL|LIMITS?|SPEC|SPECIFICATIONS?|UNITS?|DILUTION|DILN|STATUS|QUALIFIER|FLAGS?|PASS\/FAIL|%|MG\/G|MG\/UNIT|MG\/ML|MG\/KG|UG\/G|UG\/ML|UG\/KG|[µμ]G\/G|[µμ]G\/ML|MCG\/G|NG\/G|NG\/ML|W\/W|WT%|PPM|PPB|AW)$/i;
+const HEADING_MAX = 40;
+/* Headings the fixtures print that SECTION_LABELS and SKIPPABLE_IN_ROW do not
+   name. Seen, so not new: each is on an accepted, baselined document. Kept as
+   whole lines, uppercased, like ANALYTE_MAP's spellings - a heading that only
+   shares words with one of these is still new. Add a heading here when a
+   fixture that prints it is baselined, not before. Read by novelty only.
+   Green Scientific's "Results (%)" is deliberately absent: its one fixture is
+   refused, so that layout has never been read. */
+const SEEN_HEADINGS = new Set([
+  '(MG/UNIT) QUALIFIER',                                  // Kaycha, 10 fixtures
+  'TOTAL (%)',                                            // Kaycha, 6
+  '(LOD)', '(LOQ)',                                       // Kaycha, Grease_monkey_live_resin
+  'WEIGHT VOLUME DILUTION LIMIT LOD',                     // Kaycha, KAY-CAR-003
+  'RESULT(%) (MG/UNIT) QUALIFIER PASS/FAIL',              //   the same
+  'LOD (%)',                                              // Kaycha KAY-CAR-001, ACT
+  'LOQ (%)',                                              // ACT, LAB-0425BSWS-20250731
+  'LIMIT (UG/ML)', 'LOQ (UG/ML)',                         // ACT, 2
+  'RESULT (MG/G)',                                        // ACS, 8
+  'REG. LIMIT',                                           // Modern Canna, 5
+  'LIMIT OF QUANTIFICATION', 'METHOD DETECTION LIMIT',    // Modern Canna, 2
+  'PRACTICAL QUANTITATION LIMIT'                          //   the same
+]);
+
+const NOVELTY_EXAMPLES = 3;
+const NOVELTY_CHARS = 40;
+const NOVELTY_NAMES = 5;
+
+function isHeadingLine(line){
+  if (line.length > HEADING_MAX || /\d/.test(line) || /:\s*$/.test(line)) return false;
+  if (isResultToken(line) || CANNABINOID.test(line)) return false;
+  const u = canonicalAnalyte(line);
+  if (ANALYTE_MAP[u] || UNMODELLED.test(u)) return false;
+  const words = line.split(/\s+/).map(w => w.replace(/^[(\[]+|[)\].,]+$/g, ''));
+  if (words.length > 6 || !words.some(w => HEADING_WORD.test(w))) return false;
+  if (words.every(w => HEADING_WORD.test(w))) return true;   // "ug/mL", "RESULT (%)"
+  /* Otherwise not a footnote. ACS and Kaycha print theirs inside the section:
+     "(ppm) =", "moisture concentration.", "Terpenes % is dry-weight corrected." */
+  return !/=|[,;]$/.test(line) && !/^[a-z]/.test(line) && !(/\.$/.test(line) && words.length >= 3);
+}
+
+const knownHeading = line => SECTION_LABELS.test(line) || SKIPPABLE_IN_ROW.test(line)
+  || SEEN_HEADINGS.has(line.toUpperCase().replace(/\s+/g, ' '));
+
+/* `lines` as parseCoa normalised them, `lab` as detected, `unmapped` sorted. */
+function noveltyOf(lines, lab, unmapped){
+  const notes = [];
+  if (!lab) notes.push('lab not recognised');
+  if (unmapped.length){
+    const more = unmapped.length - NOVELTY_NAMES;
+    notes.push(`unmapped: ${unmapped.slice(0, NOVELTY_NAMES).join(', ')}${more > 0 ? ` (+${more} more)` : ''}`);
+  }
+
+  const units = [], verdicts = [], headings = [];
+  let inSection = false;
+  for (const line of lines){
+    if (NOVELTY_SECTION_OPEN.test(line)) inSection = true;
+    else if (NOVELTY_SECTION_CLOSE.test(line)) inSection = false;
+    if (!inSection) continue;
+    if (line.length <= UNIT_CELL_MAX && UNIT_CELL.test(line) && !VALUE_LINE.test(line) && !PERCENT_WITH_MASS.test(line))
+      units.push(line);
+    else if (VERDICT_LIKE.test(line) && !KNOWN_VERDICT.test(line))
+      verdicts.push(line);
+    else if (isHeadingLine(line) && !knownHeading(line))
+      headings.push(line);
+  }
+
+  const quoted = (label, found) => {
+    const distinct = [...new Set(found)];
+    if (!distinct.length) return;
+    const cut = s => (s.length > NOVELTY_CHARS ? s.slice(0, NOVELTY_CHARS - 1) + '…' : s);
+    const more = distinct.length - NOVELTY_EXAMPLES;
+    notes.push(`${label}: ${distinct.slice(0, NOVELTY_EXAMPLES).map(s => JSON.stringify(cut(s))).join(', ')}` +
+               (more > 0 ? ` (+${more} more)` : ''));
+  };
+  quoted('unit not read', units);
+  quoted('verdict not known', verdicts);
+  quoted('heading not known', headings);
+  return notes;
+}
+
+module.exports.noveltyOf = noveltyOf;
+module.exports._novelty = {
+  NOVELTY_SECTION_OPEN, NOVELTY_SECTION_CLOSE, KNOWN_VERDICT, VERDICT_LIKE,
+  UNIT_CELL, PERCENT_WITH_MASS, HEADING_WORD, SEEN_HEADINGS, isHeadingLine
+};

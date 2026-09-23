@@ -151,8 +151,9 @@ Also run `node test/resolver-test.js` - expect `resolver clean`, and
 `bash build.sh` - expect `OK - ready to deploy`.
 
 **Or all at once:** `bash scripts/gates.sh` runs these, the Kaycha anchors,
-`store-test`, `probe-test`, `archive-wiring-test`, `archive-scripts-test` and
-`rerun-test`, prints the line each gate produced, and ends with `ALL GATES GREEN`. It passes
+`novelty-test`, `store-test`, `probe-test`, `archive-wiring-test`,
+`archive-scripts-test` and `rerun-test`, prints the line each gate produced,
+and ends with `ALL GATES GREEN`. It passes
 a gate only on its exact expected line, so when a session legitimately changes
 a count, update the script in the same commit.
 
@@ -189,6 +190,7 @@ someone to look.
 | `fixture-lint.js` | corpus hygiene: control bytes, shell-hostile names, baseline arithmetic |
 | `mutation-test.js <dir> <parser>` | corrupt fixtures; require identical-or-reject |
 | `resolver-test.js` | viewer-page resolution, offline, against saved portal pages |
+| `novelty-test.js` | the five `novelty` notes (§7); lists the fixtures that have any, as information |
 
 The counts in section 2 are checked by `fixture-lint.js` against the corpus, so
 a stale one fails the lint rather than misleading the next session.
@@ -328,6 +330,42 @@ reportDate  client  parserVersion
   deploy alone never makes a new parse row.
 - None is in the baseline and parity compares named fields only, so none can
   DIFFER. The mutation harness compares terpenes and total only: still 35.
+
+**`novelty` — is this document new to the parser?** An additive `string[]`,
+`[]` when nothing is new. Stored with every archived parse, so it is
+queryable as `output->'novelty'` with no migration. Computed after the
+reading, from what the reading already saw, and read back by nothing in the
+parser: on all 59 fixtures every other field is identical with and without it.
+One note per kind, in this order:
+
+```
+lab not recognised          detectLab() matched nothing in LABS
+unmapped: A, B              the unmapped diagnostic is not empty (5 names, then a count)
+unit not read: "…"          a figure and a concentration unit VALUE_LINE does not accept
+verdict not known: "…"      a whole-line verdict word (Complies, Conforms, OOS…) the
+                            reader does not act on; N/A is not a verdict
+heading not known: "…"      a column heading not in SECTION_LABELS, not stepped over by
+                            SKIPPABLE_IN_ROW, and not in SEEN_HEADINGS
+```
+
+- The last three look only inside the terpene section, tracked exactly as the
+  loop tracks it for `unmapped` (so the same blind spot: Method's table sits
+  outside it). At most three quoted examples per note.
+- **`SEEN_HEADINGS`** lists, as whole lines, the headings accepted fixtures
+  print that the two vocabularies do not name - `RESULT (MG/G)`, `REG. LIMIT`,
+  `(MG/UNIT) QUALIFIER` and twelve more. Without it the literal rule flagged
+  about 30 of the 56 accepted fixtures, which would make the fact meaningless.
+  Add a heading only when a fixture printing it is baselined;
+  `test/novelty-test.js` fails if an entry is printed by no accepted fixture.
+- Concentration units only: `0.500 g`, `10 ml` and `1 x` are sample details on
+  known layouts. `82.4% (824 mg)` is `resultToNumber`'s documented form.
+- **On the corpus, 6 of 59 have novelty** - listed by `test/novelty-test.js`
+  every run, information and never a failure. Four accepted ACS files carry
+  only `unmapped` furniture (`Moisture` ×3, `License No.`, `AAGZ997-`), which
+  the card already prints today as "Measured but outside the six families:
+  Moisture." Teaching `NOT_AN_ANALYTE` those words would clear both, but it
+  changes `unmapped`, an existing field: a prompt has to ask for it. The other
+  two are refusals (Harmony's `Results (%)`, hemp-bombs' `Hemp`).
 
 ---
 
