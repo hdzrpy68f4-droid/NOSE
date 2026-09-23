@@ -165,6 +165,57 @@ async function run(db, log = console.log) {
   check('an ISO harvestOn is kept', dates.harvest_on, '2025-07-07');
   check('a lab-format date is left NULL, not stored wrong', dates.report_on, null);
 
+  /* --- reparse_runs: a run is on record even when it changed nothing ------ */
+  const lastDoc = (await one('select max(id)::int as n from nose.documents')).n;
+  const RUN_SQL = `insert into nose.reparse_runs
+      (mode, parser_version, extractor_version, documents, last_document_id, unchanged, values_changed,
+       accepted_to_rejected, rejected_to_accepted, failed, new_texts, no_pdf)
+      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      returning id, run_on::text as day, pg_typeof(run_on)::text as t,
+                ((now() at time zone 'UTC')::date)::text as utc_day`;
+  const run1 = { mode: 'reparse', parser: 'abc1234', extractor: null, documents: 5, last: lastDoc,
+                 unchanged: 5, changed: 0, a2r: 0, r2a: 0, failed: 0, newTexts: 0, noPdf: 0 };
+  const insertRun = r => db.query(RUN_SQL, [r.mode, r.parser, r.extractor, r.documents, r.last, r.unchanged,
+                                             r.changed, r.a2r, r.r2a, r.failed, r.newTexts, r.noPdf]);
+  const refusedBy = async (r, constraint) => {
+    const e = await rejects(() => insertRun(r));
+    return !!e && e.message.includes(constraint);
+  };
+  /* UTC+14 and UTC-12, written as POSIX specs so no tz database is needed: at
+     any hour, at least one of them is on a different day from UTC. */
+  const runDays = [];
+  let zonesSet = true;
+  for (const zone of ['<+14>-14', '<-12>+12']) {
+    try { await db.exec(`set timezone = '${zone}'`); }
+    catch { zonesSet = false; }
+    try { runDays.push((await insertRun(run1)).rows[0]); }
+    finally { await db.exec('reset timezone'); }
+  }
+  const runRow = runDays[0];
+  check('a run that changed nothing is recorded', runRow.id != null, true);
+  if (!zonesSet) log('skip  other session timezones - this engine cannot set them, so the next check proves less');
+  check('...on the UTC day, whatever the session timezone',
+    runDays.every(r => r.day === r.utc_day) ? 'utc' : JSON.stringify(runDays), 'utc');
+  check('...in a date column', runRow.t, 'date');
+  const rx = (await insertRun({ ...run1, mode: 'reextract', extractor: '0123456789ab', unchanged: 2, changed: 1,
+                                a2r: 1, r2a: 0, failed: 1, newTexts: 2, noPdf: 1 })).rows[0];
+  check('a re-extract run with its extractor is recorded', !!rx.id, true);
+  check('counts that do not add up are refused',
+    await refusedBy({ ...run1, unchanged: 4 }, 'every_document_counted_once'), true);
+  check('a dev parser version is refused', await refusedBy({ ...run1, parser: 'dev' }, 'parser_version_check'), true);
+  check('a plain reparse claiming an extractor is refused',
+    await refusedBy({ ...run1, extractor: '0123456789ab' }, 'extractor_only_when_reextracting'), true);
+  check('a re-extract without its extractor is refused',
+    await refusedBy({ ...run1, mode: 'reextract' }, 'extractor_only_when_reextracting'), true);
+  check('a plain reparse claiming new texts is refused',
+    await refusedBy({ ...run1, newTexts: 1 }, 'texts_only_when_reextracting'), true);
+  check('documents walked with no last document is refused',
+    await refusedBy({ ...run1, last: null }, 'last_document_when_any'), true);
+  const noDoc = await rejects(() => insertRun({ ...run1, last: lastDoc + 1000 }));
+  check('a last document that does not exist is refused', !!noDoc && /foreign key/.test(noDoc.message), true);
+  check('an empty archive records no last document',
+    !!(await insertRun({ ...run1, documents: 0, last: null, unchanged: 0 })).rows[0].id, true);
+
   /* --- privileges, as the roles themselves -------------------------------- */
   let canSetRole = true;
   try { await db.exec('set role nose_writer'); await db.exec('reset role'); }
@@ -177,11 +228,13 @@ async function run(db, log = console.log) {
     try {
       const w = await save(payload({ sha256: sha('as-writer'), output: { lab: 'written as nose_writer' } }));
       check('nose_writer can save through save_scan', w.parseWritten, true);
+      const wr = await rejects(() => insertRun(run1));
+      check('nose_writer can record a run', wr ? wr.message : 'recorded', 'recorded');
       /* An ordinary column per table: updating an identity or generated column
        * fails for that reason before the privilege check runs, which would
        * pass this test for the wrong reason. */
-      const plainColumn = { documents: 'byte_size', extractions: 'extractor_version', parses: 'context' };
-      for (const t of ['documents', 'extractions', 'parses']) {
+      const plainColumn = { documents: 'byte_size', extractions: 'extractor_version', parses: 'context', reparse_runs: 'failed' };
+      for (const t of ['documents', 'extractions', 'parses', 'reparse_runs']) {
         for (const [verb, sql] of [
           ['UPDATE',   `update nose.${t} set ${plainColumn[t]} = ${plainColumn[t]} where false`],
           ['DELETE',   `delete from nose.${t} where false`],
@@ -200,6 +253,8 @@ async function run(db, log = console.log) {
     try {
       const sel = await rejects(() => db.query('select count(*) from nose.parses'));
       check('a role with no grants cannot read the archive', !!sel && /permission denied/.test(sel.message), true);
+      const runs = await rejects(() => db.query('select count(*) from nose.reparse_runs'));
+      check('...nor the record of runs', !!runs && /permission denied/.test(runs.message), true);
       const ex = await rejects(() => db.query('select nose.save_scan($1::jsonb)', [JSON.stringify(payload())]));
       check('a role with no grants cannot call save_scan', !!ex && /permission denied/.test(ex.message), true);
     } finally {

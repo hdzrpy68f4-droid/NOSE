@@ -200,8 +200,8 @@ async function main() {
     ok('connected as nose_writer', (await w.query('select current_user as u')).rows[0].u === 'nose_writer');
 
     /* --- append-only, on the real project --------------------------------- */
-    const plain = { documents: 'byte_size', extractions: 'extractor_version', parses: 'context' };
-    for (const tbl of ['documents', 'extractions', 'parses']) {
+    const plain = { documents: 'byte_size', extractions: 'extractor_version', parses: 'context', reparse_runs: 'failed' };
+    for (const tbl of ['documents', 'extractions', 'parses', 'reparse_runs']) {
       await expectDenied(w, `nose_writer cannot UPDATE ${tbl}`,   `update nose.${tbl} set ${plain[tbl]} = ${plain[tbl]} where false`);
       await expectDenied(w, `nose_writer cannot DELETE ${tbl}`,   `delete from nose.${tbl} where false`);
       await expectDenied(w, `nose_writer cannot TRUNCATE ${tbl}`, `truncate nose.${tbl}`);
@@ -218,6 +218,19 @@ async function main() {
     try {
       const r = (await w.query('select nose.save_scan($1::jsonb) as result', [JSON.stringify(payload)])).rows[0].result;
       ok('nose_writer can save through save_scan (inside a transaction)', r && r.parseWritten === true, JSON.stringify(r));
+      /* The record scripts/reparse.js keeps of every real run, in the same
+         transaction, so it is rolled back with the save. */
+      try {
+        await w.query(`insert into nose.reparse_runs (mode, parser_version, documents, last_document_id,
+                         unchanged, values_changed, accepted_to_rejected, rejected_to_accepted, failed)
+                       values ('reparse', '0000000', 1, $1, 1, 0, 0, 0, 0)`, [r.documentId]);
+        ok('nose_writer can record a reparse run (same transaction)', true);
+      } catch (e) {
+        ok('nose_writer can record a reparse run (same transaction)', false,
+          /does not exist/.test(e.message)
+            ? 'nose.reparse_runs is missing - push the migration: npx supabase db push --db-url "$NOSE_DB_ADMIN_URL"'
+            : e.message);
+      }
     } catch (e) {
       ok('nose_writer can save through save_scan (inside a transaction)', false, e.message);
     } finally {
