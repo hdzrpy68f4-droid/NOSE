@@ -718,8 +718,10 @@ was connected — that page promises to change before collection does.
 Built 2026-09-22 (US Eastern) and held off main on purpose: it ships with the
 next prompt's work - now `novelty`, built on `rerun-tools`, which is built on
 it; merging `novelty` brings all three. Until it merges, production keeps no PDFs and the rest of
-this section describes code that is not deployed. The privacy page and the two
-lines in `app.html` changed in the same commits, so they go live with it. The
+this section describes code that is not deployed. The two lines in `app.html`
+changed in the same commits, so they go live with it; the privacy page
+describes it first, as not switched on yet, from `privacy-notice` (Still
+open), and the dated text goes live with the code. The
 parts it adds: a copy of each PDF in Netlify Blobs, the production-only switch
 in `build-info.json`, the "Certificate of Analysis" rule, a 2000ms budget for
 both writes together, the seed and health scripts, and the parser's
@@ -1191,7 +1193,8 @@ NULL (`client` now fills). Adding them is a parser session's job, as additive
 output fields, which the working rules allow only when a prompt says so.
 - **Three branches wait, each built on the last: `archive-pdf-blobs`, then
 `rerun-tools`, then `novelty`; merging `novelty` brings all three.** All three
-are pushed. The seed has run (59 test PDFs stored 2026-09-23) and the
+are pushed. `privacy-notice` goes to `main` before them - see the privacy
+bullet below. The seed has run (59 test PDFs stored 2026-09-23) and the
 `reparse_runs` migration is pushed. When they merge: do the checks above.
 - **Run `reparse.js` once more after `novelty` deploys.** Every stored
 reading carries novelty since run #2 (above). Until the deploy, a jar
@@ -1217,16 +1220,20 @@ real archive as recorded above.
 - `pdf-store.read()` asks Blobs for `getWithMetadata`, which only a stand-in
 has answered so far; the first `reparse.js --reextract --dry-run`, backfill or
 export in the Codespace is its first real proof.
-- **The privacy page's own promise, and a decision for the owner.** Its
-"Honest status" box says a new kind of collection is described "before that
-ships, not after". On this branch the page and the collection change in the
-same deploy — atomic, so no PDF is kept while the page says otherwise, but
-not "before". To keep the promise to the letter, ship the page first: a
-commit that describes the PDF copy, the report date, the tested-for business
-and the phrase rule as "not switched on yet", deployed on its own; then the
-code, with the page's third change dated in the same commit, as §13's first
-paragraph describes for the database. Which way to go is the owner's call.
-- The "third, smaller change" paragraph has no date, for the same reason.
+- **The privacy page ships first - decided 2026-09-23.** Its "Honest status"
+box says new collection is described "before that ships, not after", so the
+page is kept to the letter, as it was for the store itself (a78ab91, then
+the switch-on 7582599 the same day). **Merge order:**
+  1. `privacy-notice` (e45bded) into `main`, alone: the PDF copies and the
+     certificate-of-analysis rule described as "not switched on yet", and
+     the report date, tested-for business and novelty note named as
+     already read - the 2026-09-23 reparse added them, from report text the
+     store already kept. Nothing the site does changes. Wait for the
+     deploy and see the page live.
+  2. Then fast-forward `main` to `novelty`, which merged `privacy-notice` in
+     (so no conflict) and dates the third change **September 23, 2026**, in
+     both the "What changed" note and the lab-reports section. That date is
+     the day `novelty` deploys: deployed on another day, change both first.
 - The seed and the re-run tools run from the Codespace: this cloud workspace
 cannot reach npm, Supabase or Netlify. Offline, `@netlify/blobs` is a stand-in
 built from its published types (v10: `set` returns `{ modified }`, and
