@@ -843,6 +843,25 @@ wrote one row per table with `total_terpenes` 4.124 and 15 terpene rows, the
 stored address had lost its query, the dates were UTC days, and a second scan
 of the same file wrote nothing.
 
+### Live, 2026-09-22 evening (US Eastern)
+
+- The deploy bundled `pg` into `coa.js` and into the ESM `keep-awake.js`
+(which imports the CommonJS `store.js`) without complaint.
+- The first real scan was archived: one row per table, a Method Testing Labs
+flower report, usable, context `production`, dated 2026-09-23 — the database
+keeps UTC days, and it was already past midnight UTC.
+- **Its parse is `#3`, not `#1`, and nothing is missing.** Each probe run makes
+a save and rolls it back, and identity values are not transactional: a rolled
+back insert still uses up its number. Two probe runs used 1 and 2. Expect gaps
+wherever the probe has run; count rows, never trust ids to count them.
+- `keep-awake` "Run now": `[keep-awake] ok { ms: 147 }` — connect, TLS and one
+read from Netlify to the pooler in 147ms, so the 1.5s write budget in `coa.js`
+has about ten times what it needs.
+- The contact address on the privacy and terms pages is
+`contact@nose-app.com`. `nose-app.com` routes mail through Cloudflare Email
+Routing, so that address works only while a routing rule (or catch-all) for it
+exists there.
+
 ### After a deploy — check it
 
 1. `node scripts/archive-status.js` in the Codespace (reads as `nose_writer`).
@@ -862,5 +881,6 @@ project from the dashboard before debugging anything else.
 - The parser does not emit ISO `harvestOn` / `reportOn` or `client` yet, so
 those columns stay NULL. Adding them is a parser session's job, as additive
 output fields, which the working rules allow only when a prompt says so.
-- The privacy page still carries "replace this line with a real contact address
-before launch".
+- The terms page's "Before launch" box still lists the operating entity's legal
+name and address, a governing-law clause, an effective date, and a lawyer's
+review.
