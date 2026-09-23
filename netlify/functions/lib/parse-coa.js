@@ -1458,8 +1458,8 @@ const VERDICT_LIKE = /^(PASS(?:ED|ES|ING)?|FAIL(?:ED|S|ING)?|(?:NOT\s+|UN)?TESTE
 /* A table cell: figures, then a unit of CONCENTRATION. A mass or volume alone
    (Kaycha's "0.227 g" and "10 ml", ACS's "0.500 g") and a dilution ("1 x") are
    sample details on known layouts, never a terpene result. */
-const CONCENTRATION_UNIT = String.raw`(?:%(?:\s*(?:w\/w|w\/v|v\/v|wt))?|wt\s*%|w\/w|(?:mg|g|ug|[µμ]g|mcg|ng)\s*\/\s*[A-Za-z]+|mg|ppm|ppb|ppt|aw)`;
-const UNIT_CELL = new RegExp(String.raw`^[<≤]?\s*\d[\d.,]*(?:\s+[<≤]?\d[\d.,]*)*\s*(?:(?:±|\+\/-)\s*\d[\d.,]*\s*)?` +
+const CONCENTRATION_UNIT = String.raw`(?:%(?:\s*(?:w\/w|w\/v|v\/v|wt))?|wt\s*%|w\/w|(?:mg|g|ug|[\u00B5\u03BC]g|mcg|ng)\s*\/\s*[A-Za-z]+|mg|ppm|ppb|ppt|aw)`;
+const UNIT_CELL = new RegExp(String.raw`^[<\u2264]?\s*\d[\d.,]*(?:\s+[<\u2264]?\d[\d.,]*)*\s*(?:(?:\u00B1|\+\/-)\s*\d[\d.,]*\s*)?` +
                              CONCENTRATION_UNIT + String.raw`(?![A-Za-z])`, 'i');
 const UNIT_CELL_MAX = 32;   // a cell, not a footnote that happens to open with "20%"
 /* "22.8% (798 mg)": a percentage with its mass beside it. resultToNumber names
@@ -1471,7 +1471,7 @@ const PERCENT_WITH_MASS = /^\d[\d.,]*\s*%\s*\(\s*\d[\d.,]*\s*mg\s*\)$/i;
 /* A column heading: at most six words, no figures, not a "Label:", naming a
    column - a word from the reader's own heading vocabulary or a common
    alternative to one - and not a line of a footnote (isHeadingLine). */
-const HEADING_WORD = /^(ANALYTES?|COMPOUNDS?|RESULTS?|AMOUNT|CONC|CONCENTRATION|LOD|LOQ|LLOQ|ULOQ|MDL|PQL|RL|MRL|LIMITS?|SPEC|SPECIFICATIONS?|UNITS?|DILUTION|DILN|STATUS|QUALIFIER|FLAGS?|PASS\/FAIL|%|MG\/G|MG\/UNIT|MG\/ML|MG\/KG|UG\/G|UG\/ML|UG\/KG|[µμ]G\/G|[µμ]G\/ML|MCG\/G|NG\/G|NG\/ML|W\/W|WT%|PPM|PPB|AW)$/i;
+const HEADING_WORD = /^(ANALYTES?|COMPOUNDS?|RESULTS?|AMOUNT|CONC|CONCENTRATION|LOD|LOQ|LLOQ|ULOQ|MDL|PQL|RL|MRL|LIMITS?|SPEC|SPECIFICATIONS?|UNITS?|DILUTION|DILN|STATUS|QUALIFIER|FLAGS?|PASS\/FAIL|%|MG\/G|MG\/UNIT|MG\/ML|MG\/KG|UG\/G|UG\/ML|UG\/KG|[\u00B5\u03BC]G\/G|[\u00B5\u03BC]G\/ML|MCG\/G|NG\/G|NG\/ML|W\/W|WT%|PPM|PPB|AW)$/i;
 const HEADING_MAX = 40;
 /* Headings the fixtures print that SECTION_LABELS and SKIPPABLE_IN_ROW do not
    name. Seen, so not new: each is on an accepted, baselined document. Kept as
