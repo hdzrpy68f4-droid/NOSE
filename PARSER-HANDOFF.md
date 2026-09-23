@@ -1251,6 +1251,23 @@ address or secret): `node scripts/drift.js "Grease Monkey"`, `node
 scripts/drift.js "Grease Monkey" --lab "Kaycha Labs"`, `node
 scripts/lab-stats.js`.
 
+**Privacy.** Nothing new is collected. `harvestOn` and `reportOn` restate
+dates the stored output already held as printed, and studying the collection
+"between batches, between growers, and between laboratories" is the use the
+privacy page already announces. The page needs no change for this layer.
+
+**Built 2026-09-23 in the cloud workspace, not yet run on the real
+project.** npm was blocked there, so, as for the sessions before it: the
+parser gates ran on pdfjs-dist 5.7.284 standing in for unpdf (56/3, 56/0,
+clean, 4.124/0.944 on the untouched `b596508` first), the PGlite tests on a
+stand-in that gives each test a throwaway PostgreSQL 16 cluster, the
+scripts through a stand-in `pg` over the same wire protocol, and `build.sh`
+with the committed html5-qrcode in place of the jsdelivr download. The
+migration, the reparse, `probe-db.js`, `drift.js` and `lab-stats.js` ran
+against a local PostgreSQL 16 holding the 59 seeded fixtures, as
+`nose_writer`. The `db push`, the first reparse with `harvestOn` and the
+first runs on real data are the Codespace's to do.
+
 ### Keeping the free project awake
 
 Supabase pauses a free project after a week without enough database activity —
@@ -1364,6 +1381,9 @@ again.
 4. Netlify → Logs → Functions → `keep-awake` → Run now → `[keep-awake] ok`.
 5. Netlify → Logs → Functions → `coa`: no `archive incomplete` line. One names
 which half failed, and why, with nothing about the report.
+6. The home page shows a match score in its hero, and on `/app` choosing a
+candidate jar shows a score. Both read their maths from
+`js/match-math.<hash>.js`; an empty score means that file did not load.
 
 ### Still open
 
