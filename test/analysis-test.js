@@ -15,8 +15,8 @@
  * and that both are read-only and security_invoker; then drives
  * scripts/drift.js over a strain with dated, same-day, undated, refused and
  * other-strain batches from two labs, checking every score against the app's
- * own maths and every line for effect wording. As in the other PGlite tests,
- * the assertions live in run(db).
+ * own maths and every line for effect wording, and scripts/lab-stats.js over
+ * three labs. As in the other PGlite tests, the assertions live in run(db).
  */
 
 const crypto = require('crypto');
@@ -167,6 +167,7 @@ async function run(db, log = console.log) {
                     and (p.proacl is null or exists (select 1 from aclexplode(p.proacl) g where g.grantee = 0))`))[0].n, 0);
 
   await driftChecks(db, check);
+  await labStatsChecks(db, save, check);
   cliChecks(check);
   return failures;
 }
@@ -272,6 +273,58 @@ async function driftChecks(db, check) {
     [{ strain: 'Gelato', lab: 'ACS Laboratory', client: 'X' }, true, true, true, true, true]);
 }
 
+/* ========================================================== lab-stats.js */
+async function labStatsChecks(db, save, check) {
+  const count = check;
+  const { labStats, median, commonest, kindOf } = require(path.join(ROOT, 'scripts/lab-stats.js'));
+
+  const w = {
+    rows: p => `the terpene rows on this report add up to ${p}% of the total the lab printed — the individual figures are as listed, but the report's own arithmetic does not close`,
+    one: 'one terpene accounts for most of the profile — unusual, though some cultivars genuinely are'
+  };
+  const L1 = 'Stats Lab One';
+  const L2 = 'Stats Lab Two';
+  await save('s1', reading({ lab: L1, measuredCoverage: 1.0, warnings: [w.rows(103.8)] }));
+  await save('s2', reading({ lab: L1, measuredCoverage: 0.98, warnings: [w.rows(102.2), w.one] }));
+  await save('s3', reading({ lab: L1, measuredCoverage: 0.99, warnings: [w.one] }), { context: 'production' });
+  await save('s4', reading({ lab: L1, measuredCoverage: 1.01, warnings: [] }), { context: 'production' });
+  await save('s5', reading({ lab: L1, usable: false, measuredCoverage: 0.5, rejectReasons: ['only 50.0% ...'], warnings: [w.rows(101.5)] }));
+  await save('s6', reading({ lab: L2, measuredCoverage: null, warnings: [] }), { context: 'production' });
+  await save('s7', reading({ lab: L2, usable: false, measuredCoverage: 0.95 }), { context: 'production' });
+  await save('s8', reading({ lab: null, usable: false, measuredCoverage: null, warnings: [w.one] }), { context: 'production' });
+
+  const lines = [];
+  const res = await labStats({ db, log: l => lines.push(l) });
+  const block = name => { const i = lines.indexOf(name); return i < 0 ? null : lines.slice(i + 1, i + 5); };
+  count(`lab-stats: ${L1} - documents, fixtures, accepted rate, median coverage, commonest kind of warning`, block(L1), [
+    '  documents            5  (3 test fixtures)',
+    '  accepted             4 of 5 (80%)',
+    '  median coverage      99.0%  (5 readings carry one)',
+    `  most common warning  3 of 5: ${kindOf(w.rows(103.8))}`]);
+  count(`${L2}: a reading without coverage is not counted as zero; no warning is "none"`, block(L2), [
+    '  documents            2',
+    '  accepted             1 of 2 (50%)',
+    '  median coverage      95.0%  (1 reading carries one)',
+    '  most common warning  none']);
+  count('a reading whose lab was not recognised is its own group, listed last', [block('(lab not recognised)'), res.labs[res.labs.length - 1].lab], [[
+    '  documents            1',
+    '  accepted             0 of 1 (0%)',
+    '  median coverage      none recorded',
+    `  most common warning  1 of 1: ${w.one}`], '(lab not recognised)']);
+  const docs = (await db.query('select count(*)::int as n from nose.documents')).rows[0].n;
+  count('it says how many are test fixtures and how many came from scans',
+    lines[1], `(${res.fixtures} of them are test fixtures stored by the seed; the other ${docs - res.fixtures} came from scans)`);
+  count('the header and the total cover every document', [lines[0].includes(`${docs} documents`), res.documents === docs,
+    lines.some(l => l.startsWith(`all labs: ${docs} documents, accepted ${res.accepted} of ${docs}`))], [true, true, true]);
+  count('labs by documents, most first', res.labs.map(s => s.documents).slice(0, -1).every((n, i, a) => i === 0 || a[i - 1] >= n), true);
+  count('a kind of warning is its sentence with the figures as #', kindOf(w.rows(103.8)) === kindOf(w.rows(99.9)) && kindOf(w.rows(1)).includes('add up to #%'), true);
+  count('median: odd, even, and nothing', [median([3, 1, 2]), median([4, 1, 3, 2]), median([null, 'x', NaN]), median([])], [2, 2.5, null, null]);
+  count('a tie is said, and broken alphabetically', commonest([['b 1'], ['a 2']]), { kind: 'a #', count: 1, tied: 1 });
+  const text = lines.join('\n');
+  count('lab-stats: no effect wording, no report text, no address', [EFFECT_WORDS.test(text), text.includes(SECRET_TEXT), text.includes('example.org')],
+    [false, false, false]);
+}
+
 /* ============================================ the command lines refuse */
 function cliChecks(check) {
   const count = check;
@@ -279,13 +332,15 @@ function cliChecks(check) {
   const os = require('os');
   const bare = { PATH: process.env.PATH, HOME: process.env.HOME || os.tmpdir() };
   const cli = (script, args) => spawnSync(process.execPath, [path.join(ROOT, 'scripts', script), ...args], { env: bare, encoding: 'utf8', timeout: 20000 });
-  for (const [script, args] of [['drift.js', ['Gelato']]]) {
+  for (const [script, args] of [['drift.js', ['Gelato']], ['lab-stats.js', []]]) {
     const res = cli(script, args);
     count(`${script} with no secrets refuses`, res.status === 1 && /^REFUSED: NOSE_DB_URL.* not set/.test(res.stderr), true);
   }
   const d = cli('drift.js', []);
   count('drift.js with no strain prints its usage', d.status === 2 && /usage: node scripts\/drift\.js/.test(d.stderr), true);
-  const sources = ['scripts/drift.js', 'scripts/lib/match.js', 'netlify/functions/lib/coa-dates.js',
+  const l = cli('lab-stats.js', ['--everything']);
+  count('lab-stats.js with an argument prints its usage', l.status === 2 && /usage: node scripts\/lab-stats\.js/.test(l.stderr), true);
+  const sources = ['scripts/drift.js', 'scripts/lab-stats.js', 'scripts/lib/match.js', 'netlify/functions/lib/coa-dates.js',
                    'supabase/migrations/20260923170000_nose_analysis_views.sql',
                    path.relative(ROOT, require(path.join(ROOT, 'scripts/lib/match.js')).matchFile())]
     .map(f => [f, fs.readFileSync(path.join(ROOT, f), 'utf8')]);

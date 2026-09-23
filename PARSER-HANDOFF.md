@@ -210,6 +210,7 @@ a stale one fails the lint rather than misleading the next session.
 | `export-candidate.js <sha>` | an archived report's PDF and text into the fixture folders, to name and baseline by hand (§10); never commits |
 | `review-queue.js` | **what needs a look**: documents whose latest reading was refused or has `novelty` (§7), newest first, with reasons; reads only |
 | `drift.js "<strain>" [--lab X] [--client Y]` | one strain's usable batches in date order - total terpenes, top five as share of total - and the app's own score and band between consecutive batches; undated batches apart; reads only |
+| `lab-stats.js` | per lab: documents, accepted rate, median measured coverage, most common kind of warning; reads only |
 
 ---
 
@@ -790,6 +791,7 @@ scripts/export-candidate.js                           an archived report into th
 scripts/review-queue.js                               latest reading refused or new to the parser, newest first
 scripts/lib/rerun.js                                  what those share: the stamp-or-refuse helper, reads, comparison
 scripts/drift.js                                      one strain's batches over time, scored as the app scores a match
+scripts/lab-stats.js                                  per lab: documents, accepted, median coverage, commonest warning
 scripts/lib/match.js                                  loads js/match-math.<hash>.js for the scripts; no maths of its own
 js/match-math.<hash>.js                               the matching maths, loaded by the app and the scripts alike
 scripts/check-published.js                            run by build.sh
@@ -1230,6 +1232,24 @@ substring, and list the names there are when nothing matches.
 - On the rehearsal archive every batch is undated but four: Kaycha's
   two-digit years (§7). "Grease Monkey" is three undated batches from two
   labs and three product forms.
+
+**`scripts/lab-stats.js`** - per lab, from `latest_parses`: documents (and
+how many are seeded test fixtures), accepted count and rate, the median
+`measuredCoverage` over the readings that carry one (§6 - a reading without
+one is left out, never counted as zero), and the most common kind of
+warning with how many readings carry it. A kind is the parser's sentence
+with its figures shown as `#`, so "add up to 103.8%" and "add up to 102.2%"
+count as one; a tie is said, and broken alphabetically. Readings whose lab
+was not recognised are a group of their own, listed last. It describes the
+parser's readings, not any product. On the rehearsal archive: 7 labs, 59
+documents (all fixtures), 56 accepted; Modern Canna's one warning is
+MCL-FLW-002's 103.8% (§3).
+
+**Run them, from the Codespace** (after the `db push` above; `NOSE_DB_URL`
+is enough - both read only, as `nose_writer`, and print no report text,
+address or secret): `node scripts/drift.js "Grease Monkey"`, `node
+scripts/drift.js "Grease Monkey" --lab "Kaycha Labs"`, `node
+scripts/lab-stats.js`.
 
 ### Keeping the free project awake
 
