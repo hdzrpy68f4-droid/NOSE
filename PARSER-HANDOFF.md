@@ -716,7 +716,8 @@ was connected — that page promises to change before collection does.
 
 **The PDF itself is kept too, once branch `archive-pdf-blobs` reaches main.**
 Built 2026-09-22 (US Eastern) and held off main on purpose: it ships with the
-next prompt's work. Until it merges, production keeps no PDFs and the rest of
+next prompt's work - now `novelty`, built on `rerun-tools`, which is built on
+it; merging `novelty` brings all three. Until it merges, production keeps no PDFs and the rest of
 this section describes code that is not deployed. The privacy page and the two
 lines in `app.html` changed in the same commits, so they go live with it. The
 parts it adds: a copy of each PDF in Netlify Blobs, the production-only switch
@@ -1168,14 +1169,32 @@ project from the dashboard before debugging anything else.
 - The parser does not emit ISO `harvestOn` / `reportOn`, so those columns stay
 NULL (`client` now fills). Adding them is a parser session's job, as additive
 output fields, which the working rules allow only when a prompt says so.
-- **Branch `archive-pdf-blobs` is not on main**, and neither is `rerun-tools`,
-built on top of it; merging `rerun-tools` brings both. The seed has run
-(59 test PDFs stored 2026-09-23). When they merge: do the checks above.
-- **The `reparse_runs` migration is not on the real project yet.** Push it
-from the Codespace (`npx supabase db push --db-url "$NOSE_DB_ADMIN_URL"`) and
-run `node scripts/probe-db.js` before the first real `reparse.js`; a dry run
-works without it. It adds a table and nothing the deployed site reads, so it can
-go before the merge.
+- **Three branches wait, each built on the last: `archive-pdf-blobs`, then
+`rerun-tools`, then `novelty`; merging `novelty` brings all three.** The seed
+has run (59 test PDFs stored 2026-09-23) and the `reparse_runs` migration is
+pushed. When they merge: do the checks above.
+- **The first real `reparse.js` after `novelty` is the Codespace's to run** -
+this workspace cannot reach Supabase. Dry run first; expect the §13 re-run
+section's picture exactly (every document `also changed: novelty (new)`,
+nothing else). Until `novelty` is deployed, a jar scanned again on the live
+site is saved as the old parser reads it, without novelty, and that becomes
+its latest reading - so run `reparse.js` once more after the deploy.
+- **The paste-a-link path never shows its confirmation card.** `#coaConfirm`
+lives inside `#scanPanel`, which is hidden while the COA link tab is open: the
+link is read, the message says "Check the values below, then add the jar",
+and nothing is below. Seen in Chromium, 2026-09-23; it predates `novelty`, and
+it hides the new line, the warnings and the Use this jar button alike on that
+path. The scanner path shows the card. A UI prompt should move the card (or a
+second one) where both paths can see it.
+- **Known ACS jars get the novelty line** while `unmapped` carries furniture
+(`Moisture`, `License No.`, a batch-code fragment) - §7. The fix is
+`NOT_AN_ANALYTE`, which changes an existing field, so it waits for a prompt.
+- **How `novelty` was verified, 2026-09-23.** No npm here: the gates ran on
+pdfjs-dist 5.7.284 standing in for unpdf (56/3, 56/0, clean, 4.124/0.944 on the
+untouched branch first), PGlite's API over a throwaway Postgres 16 cluster, and
+`build.sh` with the committed html5-qrcode served in place of the jsdelivr
+download. The first `bash scripts/gates.sh` in the Codespace is the first run
+on the real packages.
 - `pdf-store.read()` asks Blobs for `getWithMetadata`, which only a stand-in
 has answered so far; the first `reparse.js --reextract --dry-run`, backfill or
 export in the Codespace is its first real proof.
