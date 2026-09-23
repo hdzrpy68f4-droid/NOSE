@@ -192,6 +192,7 @@ someone to look.
 | `mutation-test.js <dir> <parser>` | corrupt fixtures; require identical-or-reject |
 | `resolver-test.js` | viewer-page resolution, offline, against saved portal pages |
 | `novelty-test.js` | the five `novelty` notes (§7); lists the fixtures that have any, as information |
+| `match-test.js` | the matching maths has one home, `js/match-math.*.js`: the app takes it from there, nothing else holds a copy, and it returns every score in `test/fixtures/match-golden.json` to the last bit |
 | `coa-dates-test.js` | `lib/coa-dates.js` and the parser's `harvestOn` / `reportOn` (§7): the three forms, the near misses, and every other field identical without it |
 | `analysis-test.js` | the analysis layer (§13) on PGlite: the two views, their grants |
 
@@ -208,6 +209,7 @@ a stale one fails the lint rather than misleading the next session.
 | `backfill-from-blobs.js` | a PDF with no database row (scanned while Supabase was paused or down) is extracted, parsed and saved as `backfill` |
 | `export-candidate.js <sha>` | an archived report's PDF and text into the fixture folders, to name and baseline by hand (§10); never commits |
 | `review-queue.js` | **what needs a look**: documents whose latest reading was refused or has `novelty` (§7), newest first, with reasons; reads only |
+| `drift.js "<strain>" [--lab X] [--client Y]` | one strain's usable batches in date order - total terpenes, top five as share of total - and the app's own score and band between consecutive batches; undated batches apart; reads only |
 
 ---
 
@@ -401,15 +403,18 @@ heading not known: "…"      a column heading not in SECTION_LABELS, not steppe
 ## 8. Adding a terpene key takes TWO edits
 
 `ANALYTE_MAP` in the parser is only half. The key also needs a family in
-`js/nose.*.js`:
+`TERPENES`, which since 2026-09-23 lives in `js/match-math.*.js` - the one
+home of the matching maths, shared by the app and the scripts (§13):
 
 ```js
 farnesene:{name:'Farnesene',family:'herbal'}
 ```
 
 Without it the compound is measured and then silently discarded by
-`familyShares()`. This happened with farnesene. **Flag any new key so the app side
-is updated in the same pass.**
+`sanitizeTerps()` - from the score and the fingerprint bar alike. This happened
+with farnesene. **Flag any new key so the app side is updated in the same
+pass** - and since it changes scores, `test/fixtures/match-golden.json`
+fails, on purpose: regenerate it in the same commit, saying why.
 
 The same failure nearly recurred with nerolidol: `TRANS-`, `CIS-`, `E-` and `Z-`
 were mapped but bare `NEROLIDOL` was in `UNMODELLED`, so a lab printing one summed
@@ -767,7 +772,10 @@ test/archive-wiring-test.js                           coa.js -> archive.js, offl
 test/archive-scripts-test.js                          version, pdf-store, health, seed, rerun helper; offline, 24 checks
 test/rerun-test.js                                    reparse, backfill, export on PGlite; offline, 85 checks
 test/review-queue-test.js                             the review queue on PGlite; offline, 19 checks
-test/analysis-test.js                                 the analysis views on PGlite; offline
+test/analysis-test.js                                 the analysis views and scripts on PGlite; offline
+test/match-test.js                                    the matching maths: one copy, the scores it gave before it moved
+test/fixtures/match-golden.json                       those scores, from js/nose.81d6bb53.js at b596508
+test/match-golden-make.js                             wrote them, once; never re-run to make a test pass
 test/novelty-test.js                                  the parser's novelty notes (s7); lists fixtures with any
 test/probe-test.js                                    the probe's pass/fail rules, offline
 scripts/embed-supabase-ca.js                          writes supabase-ca.js from the download
@@ -781,6 +789,9 @@ scripts/backfill-from-blobs.js                        PDFs with no document row 
 scripts/export-candidate.js                           an archived report into the fixture folders, never committed
 scripts/review-queue.js                               latest reading refused or new to the parser, newest first
 scripts/lib/rerun.js                                  what those share: the stamp-or-refuse helper, reads, comparison
+scripts/drift.js                                      one strain's batches over time, scored as the app scores a match
+scripts/lib/match.js                                  loads js/match-math.<hash>.js for the scripts; no maths of its own
+js/match-math.<hash>.js                               the matching maths, loaded by the app and the scripts alike
 scripts/check-published.js                            run by build.sh
 ```
 
@@ -1166,6 +1177,60 @@ read by the analysis scripts. Nothing in it writes; nothing in it is UI.
   the seeded archive: 59 documents, 56 in `batch_series`, 4 of them dated,
   and `probe-db.js` against it passed every view and grant check.
 
+**One copy of the maths: `js/match-math.<hash>.js`.** The app's `normalize`,
+`cosine` and `matchBand` lived inside `js/nose.*.js`'s closure, which Node
+cannot import. They moved - verbatim, 81 lines, with `TERPENES`,
+`sanitizeTerps`, `averageProfiles` and the unused `total` - into one file that
+the app loads before its bundle (it sets `window.NoseMatch`) and the scripts
+load through `scripts/lib/match.js` (`module.exports`). Nothing else holds a
+copy; `test/match-test.js` fails if anything does, apart from the unfinished
+draft in `wip/`, which nothing loads.
+
+- **Fingerprinted like every bundle**, because `/js/*` is cached for a year:
+  `build.sh` checks its syntax, hashes it, rewrites the two pages, and fails
+  the build if a page loads `js/nose` without `js/match-math` before it.
+  `scripts/lib/match.js` finds it by pattern - exactly one must exist.
+- **The app's scores are unchanged, proven three ways.** The removed lines
+  and the moved lines are byte-identical. `test/fixtures/match-golden.json`
+  holds what the pre-move bundle's own code returned - 1830 pair scores over
+  the five demo profiles and the 56 accepted fixtures, 65 palates, the bands
+  at every edge, `sanitizeTerps` and `coerce` on raw lab spellings - and
+  `match-test.js` gets every one back to the last bit (a change of summation
+  order fails it). And in headless Chromium, the old tree (b596508) and the
+  new one rendered the same text for every hero pair (25) and 366 matcher
+  states (palates of 1 to 6 jars against 61 candidates), with no page errors.
+- **Key order.** `cosine()` sums in key order, and jsonb returns keys in its
+  own order, not the order they were written in, so a score computed from
+  stored terps can differ from one on the written order in the 16th decimal
+  place (1.1e-16 measured) - far below anything shown.
+- **A regenerated golden file means the maths changed.** Do it only with a
+  change that is meant to change scores, in the same commit, saying so.
+
+**`scripts/drift.js "<strain>" [--lab X] [--client Y]`** - one strain's
+lab reports over time. The name is keyed with `nose.strain_key()` itself;
+`--lab` and `--client` match a whole name, case and spacing aside, never a
+substring, and list the names there are when nothing matches.
+
+- Dated batches, oldest first: the date and whether it is the harvest or the
+  report day, lab, client, batch, form, parse id, the name as printed, the
+  total terpenes the report printed, and the top five terpenes as share of
+  total (`normalize()`, so zeros and cannabinoids never appear).
+- Then each batch against the one before: `cosine()` of the two
+  share-of-total profiles, printed to three places, then as the app shows it
+  (`Math.round(score * 100)`) with `matchBand()`'s label and band. Batches of
+  the same day have no order between them, so each is compared with every
+  batch of the day before and with each other (`3a ~ 3b`).
+- Undated batches are listed apart and compared with nothing.
+- Notes when the series mixes labs, clients, product forms, or harvest and
+  report days, or when readings under the name were refused - each is a
+  reason two reports differ that is not the batch.
+- It says, first and last, that drift is between lab reports, not between
+  experiences. `test/analysis-test.js` drives it on PGlite and fails on any
+  effect wording in its output or in the layer's files.
+- On the rehearsal archive every batch is undated but four: Kaycha's
+  two-digit years (§7). "Grease Monkey" is three undated batches from two
+  labs and three product forms.
+
 ### Keeping the free project awake
 
 Supabase pauses a free project after a week without enough database activity —
@@ -1288,6 +1353,24 @@ preview kept elsewhere needs `node scripts/check-published.js <file>` run on it.
 - Supabase free projects pause after a week idle, which looks like a connection
 fault. `keep-awake.js` exists to prevent it; if its log says FAILED, resume the
 project from the dashboard before debugging anything else.
+- **The app's alias table contradicts §4.** `TERP_ALIAS` (now in
+`js/match-math.*.js`) folds `caryophyllene-oxide` into caryophyllene,
+`linalool-oxide` into linalool and a bare `pinene` into α-pinene. The parser
+never emits those keys, but a hand-made palate file brought in through
+Import reaches them. Moved verbatim, because the scores had to stay
+identical; `wip/nose-farnesene-wip.js` is an unfinished draft that removes
+them. Fixing it changes scores, so it needs its own prompt and a
+regenerated `match-golden.json` in the same commit.
+- **A score shown as 75 can carry the band below Good.** The app rounds the
+  score for display (`Math.round(score * 100)`) but bands the unrounded one:
+  the home page's default pair (Lemon Tart Pucker against Cold Creek Kush)
+  is 0.7452, shown as "75" and banded "Partial overlap" / Moderate, though 75
+  is where Good begins. `drift.js` prints the unrounded score beside the
+  rounded one, so the difference is visible there. Which to band is a UI
+  decision.
+- **The static preview keeps its own copy of the maths** (it is not in this
+  repo, §13 above). `match-test.js` cannot see it; a preview built after
+  today should load `js/match-math.<hash>.js` rather than carry a copy.
 - **Kaycha's harvest dates read null** (`harvestOn`, §7): it prints
 `MM/DD/YY`, and the rule accepts four-digit years only. Kaycha is most of the
 corpus, so most batches are undated for the analysis scripts, which list them

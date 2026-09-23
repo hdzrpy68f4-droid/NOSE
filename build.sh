@@ -23,6 +23,10 @@
 #          of error that looks fine in the build log and broken in the browser.
 #   [NEW]  Warns (does not fail) if the nose.example placeholder domain is still
 #          present, so a staging deploy is still possible.
+#   [NEW]  js/match-math.js - the matching algorithm, shared by the app and the
+#          Codespace scripts - is syntax-checked and fingerprinted like the other
+#          bundles, and a page that loads js/nose without js/match-math BEFORE
+#          it fails the build: the app reads its maths from window.NoseMatch.
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -101,11 +105,12 @@ fingerprint() {
   fi
   echo "==> $new"
 }
-for f in js/nose*.js js/hero*.js js/agegate*.js js/account*.js; do
+for f in js/nose*.js js/match-math*.js js/hero*.js js/agegate*.js js/account*.js; do
   [ -f "$f" ] || continue
   node --check "$f" || { echo "FAIL: $f has a syntax error"; exit 1; }
 done
 fingerprint js  nose    js
+fingerprint js  match-math js
 fingerprint css shell   css
 fingerprint css hero    css
 fingerprint js  hero    js
@@ -147,6 +152,19 @@ grep -q "style-src 'self';"  _headers || { echo "FAIL: style-src loosened";  exi
 for f in "${HTML[@]}"; do
   if grep -oE '<script[^>]*>[^<]' "$f" | grep -qv 'application/ld+json'; then
     echo "FAIL: inline script in $f"; exit 1
+  fi
+done
+
+# The app bundle takes its maths from js/match-math (window.NoseMatch), so every
+# page that loads js/nose must load js/match-math first. Both are deferred
+# scripts, which run in document order. (grep finding nothing is the normal
+# case on most pages; "|| true" keeps pipefail from ending the build there.)
+for f in "${HTML[@]}"; do
+  n=$(grep -n -m1 '/js/nose\.[0-9a-f]*\.js' "$f" | cut -d: -f1 || true)
+  [ -n "$n" ] || continue
+  m=$(grep -n -m1 '/js/match-math\.[0-9a-f]*\.js' "$f" | cut -d: -f1 || true)
+  if [ -z "$m" ] || [ "$m" -ge "$n" ]; then
+    echo "FAIL: $f loads js/nose without js/match-math before it"; exit 1
   fi
 done
 
