@@ -8,11 +8,11 @@
  *
  *  1. PUBLISHED files must not name the database at all: no postgres:// or
  *     postgresql:// URL, no pooler.supabase.com, no <ref>.supabase.co host, no
- *     sb_secret_. A link to supabase.com - on the privacy page, say - is fine;
- *     the .supabase.co match is exact for that reason.
+ *     sb_secret_, no Netlify token. A link to supabase.com - on the privacy
+ *     page, say - is fine; the .supabase.co match is exact for that reason.
  *
  *  2. EVERY file in git must not hold a credential: no URL with a password in
- *     it, no Supabase secret key. The repo is public.
+ *     it, no Supabase secret key, no Netlify token. The repo is public.
  *
  * "Published" is computed, not listed: everything in the publish directory
  * except .git, node_modules and whatever _redirects blocks with a FORCED 404.
@@ -30,15 +30,22 @@ const { execFileSync } = require('child_process');
 
 const ROOT = path.resolve(__dirname, '..');
 
+/* Netlify's own tokens start nfp_ (personal access), nfc_ (CLI), nfo_ (OAuth),
+   nfu_ (app) or nfb_ (build). NETLIFY_AUTH_TOKEN, which the archive scripts
+   use, is a personal access token and lives only in Codespaces secrets. */
+const NETLIFY_TOKEN = [/\bnf[pcoub]_[A-Za-z0-9]{20,}/, 'a Netlify access token'];
+
 const PUBLISHED_PATTERNS = [
   [/postgres(?:ql)?:\/\//i, 'a postgres:// URL'],
   [/pooler\.supabase\.com/i, 'the Supabase pooler host'],
   [/\b[a-z0-9-]+\.supabase\.co(?![a-z0-9-])/i, 'a <project>.supabase.co host'],
-  [/sb_secret_/, 'a Supabase secret key prefix']
+  [/sb_secret_/, 'a Supabase secret key prefix'],
+  NETLIFY_TOKEN
 ];
 const CREDENTIAL_PATTERNS = [
   [/postgres(?:ql)?:\/\/[^\s:@/'"`<>]+:[^\s@/'"`<>]+@/i, 'a database URL with a password in it'],
-  [/sb_secret_[A-Za-z0-9_-]{8,}/, 'a Supabase secret key']
+  [/sb_secret_[A-Za-z0-9_-]{8,}/, 'a Supabase secret key'],
+  NETLIFY_TOKEN
 ];
 
 const BINARY = /\.(pdf|png|jpe?g|gif|webp|avif|ico|woff2?|ttf|otf|zip|tar|gz|br)$/i;

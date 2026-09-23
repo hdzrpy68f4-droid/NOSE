@@ -112,7 +112,7 @@
             <section class="card panel input-panel" role="tabpanel" id="scanPanel" aria-labelledby="scanTab" hidden>
               <h2>Scan a QR code</h2>
               <p class="small">Use the rear camera to scan a COA QR code, or choose a saved QR image. Camera access is requested only after you press Start camera.</p>
-              <p class="small">When a code is read, our server fetches the lab report it points to and keeps a copy of what the report says &mdash; nothing about you. <a href="/privacy/#lab-reports">What we keep</a>.</p>
+              <p class="small">When a code is read, our server fetches the lab report it points to and keeps a copy of the report and what it says &mdash; nothing about you. <a href="/privacy/#lab-reports">What we keep</a>.</p>
               <div class="scanner-shell">
                 <div id="qrReader" class="scanner-reader" aria-label="QR camera preview"></div>
                 <div class="camera-picker" id="cameraPicker" hidden>
@@ -150,7 +150,7 @@
 
             <section class="card panel input-panel" role="tabpanel" id="urlPanel" aria-labelledby="urlTab" hidden>
               <h2>Paste a COA link</h2>
-              <p class="small">Only secure HTTPS links are accepted. Our server fetches the report at this link, reads it, and keeps a copy of what it says &mdash; nothing about you. <a href="/privacy/#lab-reports">What we keep</a>.</p>
+              <p class="small">Only secure HTTPS links are accepted. Our server fetches the report at this link, reads it, and keeps a copy of the report and what it says &mdash; nothing about you. <a href="/privacy/#lab-reports">What we keep</a>.</p>
               <label for="coaUrl">Secure report URL</label>
               <input id="coaUrl" type="url" inputmode="url" placeholder="https://lab.example/report/…" autocomplete="url">
               <div class="button-row u-mt-14"><button class="button button-primary" id="validateUrlButton" type="button">Read report</button></div>

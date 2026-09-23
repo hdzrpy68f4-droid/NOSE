@@ -10,3 +10,6 @@ build.sh.backup
 .netlify
 test/fixtures/extracted/
 .env
+
+# Written by build.sh at deploy time (lib/version.js). Never commit one.
+netlify/functions/lib/build-info.json

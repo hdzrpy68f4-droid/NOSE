@@ -34,12 +34,15 @@
  * (5) is the substantive boundary. A fabricated report on an allowlisted
  * domain would pass a hostname check and fail reconciliation.
  *
- * Every parse of a lab report is also kept in the archive (archiveScan,
- * below): the report, never anything about the person who scanned it.
+ * On the production deploy, every lab report fetched is also kept in the
+ * archive (archiveScan, below): the PDF and what was read from it, never
+ * anything about the person who scanned it.
  */
 
 const { extractCoaText } = require('./lib/extract-text');
 const { parseCoa } = require('./lib/parse-coa');
+const { buildInfo } = require('./lib/version');
+const archive = require('./lib/archive');
 
 const MAX_BYTES   = 12 * 1024 * 1024;   // COAs run to a few hundred KB; 12MB is generous
 /* One BUDGET for the whole chain, not per request. Each fetch used to start a
@@ -53,24 +56,20 @@ const MAX_REDIRECTS = 3;
 const MAX_PAGE_HOPS = 2;   // a portal may put a listings page before the report page
 
 /* The archive (PARSER-HANDOFF s13). The whole handler must finish inside
-   Netlify's 10s ceiling and the fetch chain alone may spend 8s of it, so a
-   write gets a small bounded slice of whatever is left, and is skipped outright
-   when too little is left to be worth starting. A stored row is worth less
-   than a reply that arrives. */
+   Netlify's 10s ceiling and the fetch chain alone may spend 8s of it, so the
+   two writes together get at most 2s of whatever is left, and are skipped
+   outright when too little is left to be worth starting. A stored row is
+   worth less than a reply that arrives. */
 const ARCHIVE_DEADLINE_MS = 9000;         // measured from the start of the handler
-const ARCHIVE_BUDGET_MS   = 1500;         // the most a write may take
-const ARCHIVE_MIN_MS      = 300;          // below this, do not start one
-const ARCHIVE_MAX_TEXT    = 256 * 1024;   // real reports run 2-30KB of text
+const ARCHIVE_BUDGET_MS   = 2000;         // the PDF and database writes, together
+const ARCHIVE_MIN_MS      = 300;          // below this, do not start
 
-/* Provenance labels stored with every scan. EXTRACTOR_VERSION must name the
-   unpdf that package-lock.json installs: test/archive-wiring-test.js fails when
-   they drift, so a dependency bump cannot silently mislabel every extraction.
-   The parser version is the commit build.sh stamps into the bundle. */
-const EXTRACTOR_VERSION = 'unpdf@1.8.0';
-function parserVersion(){
-  try { return String(require('./lib/parser-version')) || 'unknown'; }
-  catch { return 'unknown'; }
-}
+/* ONLY the production deploy stores anything. Deploy previews and branch
+   deploys share the site's Blobs store, so a preview scan would write into the
+   real archive. The context, like the two version stamps stored with every
+   scan, comes from build-info.json, which build.sh writes and esbuild bundles
+   (lib/version.js); a missing file reads as 'dev', and dev stores nothing. */
+const archiveOn = () => buildInfo().deployContext === 'production';
 
 /* Labs whose text ordering under unpdf does not match the committed fixtures.
  * test/extraction-parity.js reports these as DIFFER. A DIFFER is not a near
@@ -287,87 +286,58 @@ async function fetchPdf(startUrl){
   return { error: 'That link is not a PDF. Lab reports must be the report itself, not a page about one.' };
 }
 
-/* Only documents that are recognisably lab reports are kept: a laboratory
-   template the parser knows, or at least one terpene it read. Anything else -
-   a menu, an invoice, somebody's letter linked by mistake - is not ours to
-   keep, and could carry a person's details. */
-function isLabReport(result){
-  return !!(result && (result.lab || (result.terps && Object.keys(result.terps).length > 0)));
+/* Lambda compatibility: a function written as exports.handler is not handed
+   the Blobs context the way a (Request, Context) function is, and without it
+   every Blobs write fails. connectLambda reads event.blobs and the site and
+   deploy ids Netlify adds as headers - which site, never who is asking - and
+   keeps nothing else. A failure here only means the PDF write fails and says
+   so; the database write does not depend on it. */
+function connectBlobs(event){
+  try { require('./lib/pdf-store').connect(event); }
+  catch { /* reported by the PDF write itself */ }
 }
 
-/* Where the file came from, minus the query string and fragment. One-off
-   links - signed storage URLs, order pages - carry tokens there, and a token
-   can point back at whoever received the link. The origin never includes
-   credentials. */
-function sourceAddress(finalUrl){
-  try {
-    const u = new URL(finalUrl);
-    return u.protocol === 'https:' ? u.origin + u.pathname : null;
-  } catch {
-    return null;
-  }
-}
-
-/* Keep what was read, without ever changing what the person is told.
+/* Keep the report and what was read from it, without ever changing what the
+ * person is told. The storage path itself is lib/archive.js, shared with the
+ * seed script so a seed run proves this code.
  *
  * WHAT IS PASSED: the PDF bytes, the address they came from, the extracted
  * text and the parser's output. Nothing about the person - no IP, no header,
  * no user agent, no session, no account. `event` is deliberately not in scope
  * here, and test/archive-wiring-test.js fails if this function ever names it.
  *
- * WHAT IS KEPT: lab reports only (isLabReport), and only when the text is a
- * plausible size - one 12MB PDF of text should not be able to fill the
- * database. The database records the day, never the time.
+ * WHAT IS KEPT: whatever looks like a lab report - a laboratory the parser
+ * recognised, "Certificate of Analysis" in the text, or a terpene it read -
+ * refusals included. The PDF goes to Netlify Blobs and what was read goes to
+ * Postgres, independently: either can fail without touching the other.
  *
  * HOW IT STAYS OUT OF THE WAY:
- *   - NOSE_DB_URL unset is a complete no-op: store.js and pg are never loaded,
- *     so deploy previews and local runs behave exactly as before
- *   - the write gets at most ARCHIVE_BUDGET_MS of what is left before the
- *     deadline, and is skipped when less than ARCHIVE_MIN_MS remains
+ *   - production only (archiveOn): previews and local runs store nothing
+ *   - NOSE_DB_URL unset: the database half is a no-op, store.js never loaded
+ *   - both writes together get at most ARCHIVE_BUDGET_MS of what is left
+ *     before the deadline, and are skipped when less than ARCHIVE_MIN_MS
+ *     remains
  *   - every failure is swallowed; the reply never depends on this
  *
  * NOTHING IS LOGGED ON SUCCESS, and a failure logs no detail of the document.
  * Netlify timestamps every log line, and a line naming the report would line
  * a stored scan up with the request logs - the thing the day-only dates in the
- * schema exist to prevent.
+ * archive exist to prevent.
  */
 async function archiveScan(buffer, finalUrl, text, result, deadline){
-  if (!process.env.NOSE_DB_URL) return { stored: false, reason: 'not configured' };
-  if (!isLabReport(result)) return { stored: false, reason: 'not a lab report' };
-  if (typeof text !== 'string' || text.length > ARCHIVE_MAX_TEXT)
-    return { stored: false, reason: 'text too large' };
   const left = deadline - Date.now();
-  if (left < ARCHIVE_MIN_MS) return { stored: false, reason: 'no time left' };
-
-  const budget = Math.min(ARCHIVE_BUDGET_MS, left);
-  let backstop;
+  if (left < ARCHIVE_MIN_MS) return { kept: false, reason: 'no time left' };
   try {
-    const crypto = require('crypto');
-    const store = require('./lib/store');
-    const write = store.saveScan({
-      sha256: crypto.createHash('sha256').update(buffer).digest('hex'),
-      byteSize: buffer.length,
-      sourceUrl: sourceAddress(finalUrl),
-      fetchedAt: null,              // the database records the day itself, in UTC
-      extractorVersion: EXTRACTOR_VERSION,
-      text,
-      parserVersion: parserVersion(),
-      context: 'production',
-      output: result
-    }, { timeoutMs: budget });
-    /* store.js bounds the write and closes the connection itself. This second
-       timer is the backstop: whatever happens inside store.js, the reply is
-       never held more than 50ms past the budget. */
-    const saved = await Promise.race([write, new Promise((_, reject) => {
-      backstop = setTimeout(() => reject(new Error('archive write timed out')), budget + 50);
-    })]);
-    return { stored: true, parseWritten: !!(saved && saved.parseWritten) };
+    const { parserVersion, extractorVersion } = buildInfo();
+    const outcome = await archive.storeScan(
+      { buffer, finalUrl, text, output: result, context: 'production', parserVersion, extractorVersion },
+      { timeoutMs: Math.min(ARCHIVE_BUDGET_MS, left) });
+    if (outcome.failed && outcome.failed.length)
+      console.error('coa: archive incomplete, reply unaffected:', outcome.failed.join('; '));
+    return outcome;
   } catch (err) {
-    console.error('coa: archive write skipped, reply unaffected:',
-                  String((err && err.message) || err).slice(0, 200));
-    return { stored: false, reason: 'failed' };
-  } finally {
-    clearTimeout(backstop);
+    console.error('coa: archive skipped, reply unaffected:', archive.reason(err));
+    return { kept: false, reason: 'failed' };
   }
 }
 
@@ -411,10 +381,15 @@ exports.handler = async function(event){
 
   /* One call site, covering every outcome below: a usable read, an unusable
      one, and a layout this tool refuses. All three are parses that happened,
-     and the refusals are how parser faults get found. Awaited, because
-     Netlify freezes the function the moment it returns and an unawaited write
-     would be cut off; bounded, so it can never be what makes a reply late. */
-  await archiveScan(fetched.buffer, fetched.finalUrl, text, result, archiveDeadline);
+     and the refusals are how parser faults get found. Production only.
+     connectBlobs first, or the PDF write fails. Awaited, because this is a
+     Lambda-style function and Netlify freezes it the moment it returns, so an
+     unawaited write would be cut off; bounded, so it can never be what makes
+     a reply late. */
+  if (archiveOn()){
+    connectBlobs(event);
+    await archiveScan(fetched.buffer, fetched.finalUrl, text, result, archiveDeadline);
+  }
 
   /* Known-unsafe extraction ordering: refuse rather than risk reading the
      wrong column. This is a limitation of this tool, not a fault in the
@@ -474,7 +449,5 @@ exports.handler = async function(event){
 };
 exports._resolvePdfFromPage = resolvePdfFromPage;
 exports._archiveScan = archiveScan;
-exports._isLabReport = isLabReport;
-exports._sourceAddress = sourceAddress;
-exports._EXTRACTOR_VERSION = EXTRACTOR_VERSION;
-exports._ARCHIVE_LIMITS = { ARCHIVE_DEADLINE_MS, ARCHIVE_BUDGET_MS, ARCHIVE_MIN_MS, ARCHIVE_MAX_TEXT };
+exports._archiveOn = archiveOn;
+exports._ARCHIVE_LIMITS = { ARCHIVE_DEADLINE_MS, ARCHIVE_BUDGET_MS, ARCHIVE_MIN_MS };
