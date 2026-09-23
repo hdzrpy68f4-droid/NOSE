@@ -1173,10 +1173,11 @@ read by the analysis scripts. Nothing in it writes; nothing in it is UI.
   grant audit stays clean. An INSERT into a joining view is refused by the
   rewriter before any privilege is checked, so the checks ask
   `has_table_privilege` instead of trying one.
-- **Push it once, from the Codespace:** `npx supabase db push --db-url
-  "$NOSE_DB_ADMIN_URL"`, then `node scripts/probe-db.js` - which now also
-  checks that `nose_writer` can read both views and holds nothing more on
-  them. With `NOSE_DB_ADMIN_URL` set, its grant audit covers the function.
+- **Push it once, from the Codespace** (done 2026-09-23, below): `npx
+  supabase db push --db-url "$NOSE_DB_ADMIN_URL"`, then `node
+  scripts/probe-db.js` - which now also checks that `nose_writer` can read
+  both views and holds nothing more on them. With `NOSE_DB_ADMIN_URL` set,
+  its grant audit covers the function.
 - **Tested** by `test/analysis-test.js` on PGlite: A → B → A, two extractions,
   refused and verdict-less readings, the strain key, the date fallback, a
   real ACS report (dated 2026-04-03 by its own harvest line), the columns,
@@ -1262,8 +1263,9 @@ dates the stored output already held as printed, and studying the collection
 "between batches, between growers, and between laboratories" is the use the
 privacy page already announces. The page needs no change for this layer.
 
-**Built 2026-09-23 in the cloud workspace, not yet run on the real
-project.** npm was blocked there, so, as for the sessions before it: the
+**Built 2026-09-23 in the cloud workspace, run on the real project the
+same day** (below, "Live, 2026-09-23 (US Eastern): the analysis layer").
+npm was blocked in the workspace, so, as for the sessions before it: the
 parser gates ran on pdfjs-dist 5.7.284 standing in for unpdf (56/3, 56/0,
 clean, 4.124/0.944 on the untouched `b596508` first), the PGlite tests on a
 stand-in that gives each test a throwaway PostgreSQL 16 cluster, the
@@ -1271,8 +1273,8 @@ scripts through a stand-in `pg` over the same wire protocol, and `build.sh`
 with the committed html5-qrcode in place of the jsdelivr download. The
 migration, the reparse, `probe-db.js`, `drift.js` and `lab-stats.js` ran
 against a local PostgreSQL 16 holding the 59 seeded fixtures, as
-`nose_writer`. The `db push`, the first reparse with `harvestOn` and the
-first runs on real data are the Codespace's to do.
+`nose_writer`. Then the Codespace ran all of it on the real packages and the
+real project.
 
 ### Keeping the free project awake
 
@@ -1374,6 +1376,40 @@ by the old parser: `client (new), novelty (new), reportDate (new)`, with
 fixtures counted, not listed.
 - #184 and #185 follow #62 because every reparse run takes an identity number
 per document (above: "Ids jump"). Count rows, never ids.
+
+### Live, 2026-09-23 (US Eastern): the analysis layer
+
+Built in the cloud workspace (above, "The analysis layer"), handed over as a
+git bundle, and applied in the Codespace:
+
+- **The bundle**, `git pull --ff-only`: `b596508..cc9ca3a`, a fast-forward,
+  7 commits. `bash scripts/gates.sh`: ALL GATES GREEN, 16 gates - the first
+  run of `coa-dates-test`, `match-test` and `analysis-test` on the real
+  unpdf and PGlite.
+- **`reparse.js --dry-run`, then `reparse.js`**: run #5, parser `cc9ca3a`, 62
+  documents through #185 - `0 unchanged / 62 values changed / 0
+  accepted→rejected / 0 rejected→accepted / 0 failed`, every one by
+  `harvestOn (new), reportOn (new)` alone; no verdict, total or terpene
+  moved. The dry run said the same, line for line.
+- **`npx supabase db push`**: `20260923170000_nose_analysis_views.sql`
+  applied. `probe-db.js`: probe clean - both new view checks, and the admin
+  grant audit (only `postgres` and `nose_writer` hold grants; PUBLIC
+  executes no nose function, `strain_key` included; the API roles reach
+  nothing). The Data API checks were skipped: no `NOSE_PUBLISHABLE_KEY` in
+  that run.
+- **`lab-stats.js`**: 7 labs, 62 documents (59 fixtures, 3 scans), 59
+  accepted. The 3 refusals are the fixtures refused by design; all 3 scans
+  were accepted. **`drift.js "Grease Monkey"`** printed the rehearsal
+  exactly: those are fixture reports.
+- **`git push`**, `b596508..cc9ca3a`, deployed. `archive-health.js` ok before
+  and after one scan on the new deploy: a Kaycha concentrate report, usable,
+  15 terpene values, context `production`, parser `cc9ca3a`, extractor
+  `2e793bebe82a`, its PDF kept - 61 files, 49.0 MB. The same two documents
+  lack a PDF (#3, #184), both expected. The after-deploy checks below were
+  reported passing, the home page's score and `/app`'s included - the live
+  proof that `js/match-math.<hash>.js` loads.
+- The scan is parse #190 and document #311, after #188 and #185: ids jump
+  after every reparse run. Count rows, never ids.
 
 ### After a deploy — check it
 
