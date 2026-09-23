@@ -27,6 +27,9 @@
 #          Codespace scripts - is syntax-checked and fingerprinted like the other
 #          bundles, and a page that loads js/nose without js/match-math BEFORE
 #          it fails the build: the app reads its maths from window.NoseMatch.
+#   [NEW]  scripts/check-trust.mjs fails the build if the About page's old
+#          promise - that NOSE keeps nothing - comes back anywhere a visitor
+#          can read it. Lab reports are kept (PARSER-HANDOFF.md s13).
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -172,6 +175,11 @@ done
 # credential. The repo is public; connection strings live only in Netlify
 # environment variables and Codespaces secrets.
 node scripts/check-published.js || exit 1
+
+# The About page once promised that NOSE kept nothing. Lab reports are kept now
+# (PARSER-HANDOFF.md s13, the privacy page), so that promise may not come back:
+# not in a page, a bundle, a meta description or a server reply.
+node scripts/check-trust.mjs || exit 1
 
 echo "==> asset checks"
 

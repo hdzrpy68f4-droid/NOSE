@@ -74,6 +74,8 @@ gate 'match maths'    'match clean'              '^match clean$' \
   node test/match-test.js
 gate 'analysis'       'analysis clean'           '^analysis clean$' \
   node test/analysis-test.js
+gate 'trust guard'    'check-trust clean'        '^check-trust clean$' \
+  node test/check-trust-test.js
 gate 'build'          'OK — ready to deploy'     '^OK — ready to deploy$' \
   bash build.sh
 
