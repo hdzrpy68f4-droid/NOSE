@@ -13,3 +13,4 @@ test/fixtures/extracted/
 
 # Written by build.sh at deploy time (lib/version.js). Never commit one.
 netlify/functions/lib/build-info.json
+supabase/.temp/
