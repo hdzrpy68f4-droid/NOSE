@@ -348,15 +348,17 @@ reportDate  client  parserVersion  harvestOn  reportOn
   `coa-dates.js` unavailable, every other field of all 59 fixtures is
   identical (`test/coa-dates-test.js` proves it each run). Printed dates do
   not sort as text; ISO days do, and the archive's `harvest_on` / `report_on`
-  columns read these two. Only the WHOLE value, in one of three forms a US lab
-  cannot mean two ways: `MM/DD/YYYY`, `YYYY-MM-DD`, `Mon D, YYYY`. Anything
-  else is null - including **Kaycha's two-digit years (`"07/07/25"`)**, a
-  one-digit month or day, a full month name, a time after the date - and so
-  is a day the calendar lacks, a day after today (UTC), or one before
-  2014-01-01. On the corpus: the three ACS harvest dates (printed ISO already)
-  and the two TerpLife report dates read; Kaycha's 16 printed harvest dates
-  read null.
-  Widening the forms needs a prompt that asks for it.
+  columns read these two. Only the WHOLE value, in one of four forms a US lab
+  cannot mean two ways: `MM/DD/YYYY`, `MM/DD/YY` read as 20YY (Kaycha's
+  harvest dates, `"07/07/25"`; asked for on 2026-09-23), `YYYY-MM-DD`, `Mon D,
+  YYYY`. Anything else is null - a one-digit month or day, a one- or
+  three-digit year, a full month name, a time after the date - and so is a
+  day the calendar lacks, a day after today (UTC), or one before 2014-01-01.
+  With those two bounds a two-digit year reads only from 14 to the current
+  year, so 20YY is never a guess between centuries. On the corpus every
+  printed date reads: 19 harvest dates (3 ACS, printed ISO already; 16
+  Kaycha) and 2 TerpLife report dates. Widening the forms again needs a
+  prompt that asks for it.
 - None is in the baseline and parity compares named fields only, so none can
   DIFFER. The mutation harness compares terpenes and total only: still 35.
 
@@ -847,8 +849,8 @@ only valid ISO dates. The parser's `harvestDate` and `reportDate` are the
 lab's own format (`"07/07/25"` on KAY-CAR-001, `"11/17/2025"` on TerpLife),
 and as text that sorts a 2025 date before a 2024 one. Since 2026-09-23 the
 parser also emits the ISO forms (§7, `lib/coa-dates.js`), so the columns fill
-wherever the printed date is one of the three accepted forms - and stay NULL
-for Kaycha's two-digit years. They fill for a stored document only once it is
+wherever the printed date is one of the four accepted forms - Kaycha's
+two-digit years included. They fill for a stored document only once it is
 read again: `node scripts/reparse.js`. The `client` column fills too.
 - **No `ON DELETE CASCADE`.** Deleting a document with parses must fail loudly.
 - **One writer at a time per extraction** (`pg_advisory_xact_lock`), so "only
@@ -1037,9 +1039,9 @@ stores it (the key is new). `archive-health.js` lists them.
 
 `node scripts/seed-from-fixtures.js` puts every PDF in `test/fixtures/pdf`
 through `storeScan()`, context `seed`, no source address. It stamps
-`parserVersion` from git and refuses to write while `parse-coa.js` or
-`extract-text.js` has uncommitted changes — the stamp has to name the code
-that ran. Safe to run again: it adds only what is missing. Run it once, before
+`parserVersion` from git and refuses to write while `parse-coa.js`,
+`coa-dates.js` or `extract-text.js` has uncommitted changes — the stamp has
+to name the code that ran. Safe to run again: it adds only what is missing. Run it once, before
 any real scan depends on the PDF half: it proves both halves end to end.
 
 `node scripts/archive-health.js` prints rows per table, the newest parse in
@@ -1064,8 +1066,8 @@ listens — `withClient` always listens.
 `reparse.js`, `backfill-from-blobs.js` and `export-candidate.js` (one line each
 in §5) connect as `nose_writer`, print no report text, addresses or secrets,
 and share `scripts/lib/rerun.js` with the seed: a run that writes is stamped
-from git and refuses while `parse-coa.js` or `extract-text.js` has uncommitted
-changes; `--dry-run` writes nothing and runs on anything.
+from git and refuses while `parse-coa.js`, `coa-dates.js` or `extract-text.js`
+has uncommitted changes; `--dry-run` writes nothing and runs on anything.
 
 - **`reparse.js`** parses each document's newest extraction again, 100 at a
 time, and saves through `save_scan` with context `reparse`, so only a changed
@@ -1411,11 +1413,6 @@ regenerated `match-golden.json` in the same commit.
 - **The static preview keeps its own copy of the maths** (it is not in this
   repo, §13 above). `match-test.js` cannot see it; a preview built after
   today should load `js/match-math.<hash>.js` rather than carry a copy.
-- **Kaycha's harvest dates read null** (`harvestOn`, §7): it prints
-`MM/DD/YY`, and the rule accepts four-digit years only. Kaycha is most of the
-corpus, so most batches are undated for the analysis scripts, which list them
-apart rather than place them. Accepting `MM/DD/YY` as 20YY is one line in
-`lib/coa-dates.js` - a prompt has to ask for it - then a reparse.
 - **The paste-a-link path never shows its confirmation card.** `#coaConfirm`
 lives inside `#scanPanel`, which is hidden while the COA link tab is open: the
 link is read, the message says "Check the values below, then add the jar",

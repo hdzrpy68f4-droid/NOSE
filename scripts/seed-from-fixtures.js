@@ -10,7 +10,7 @@
  * depends on it. The rows say context 'seed' and carry no source address.
  *
  * The stamps come from git (lib/version.js), so the run REFUSES to write while
- * parse-coa.js or extract-text.js has uncommitted changes: a stamp has to
+ * parse-coa.js, coa-dates.js or extract-text.js has uncommitted changes: a stamp has to
  * name the code that actually ran.
  *
  * Safe to run twice: a PDF already stored is not rewritten, and a parse equal

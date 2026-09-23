@@ -55,6 +55,7 @@ function makeCheckout(name, { unpdf = '1.8.0', extractor = '// extractor v1\n' }
   fs.copyFileSync(path.join(LIB, 'version.js'), path.join(root, 'netlify/functions/lib/version.js'));
   fs.writeFileSync(path.join(root, 'netlify/functions/lib/extract-text.js'), extractor);
   fs.writeFileSync(path.join(root, 'netlify/functions/lib/parse-coa.js'), '// parser\n');
+  fs.writeFileSync(path.join(root, 'netlify/functions/lib/coa-dates.js'), '// parser dates\n');
   fs.writeFileSync(path.join(root, '.gitignore'), 'node_modules/\nnetlify/functions/lib/build-info.json\n');
   if (unpdf) {
     fs.mkdirSync(path.join(root, 'node_modules/unpdf'), { recursive: true });
@@ -330,10 +331,11 @@ async function main() {
     assert.ok(!/secret-value/.test(refusal));
   });
 
-  await test('seed: refuses while parse-coa.js or extract-text.js has uncommitted changes', async () => {
+  await test('seed: refuses while parse-coa.js, coa-dates.js or extract-text.js has uncommitted changes', async () => {
     const s = makeCheckout('seed-checkout');
     const sHead = gitIn(s, 'rev-parse', '--short', 'HEAD').trim();
-    assert.deepStrictEqual(seed.STAMPED_FILES, ['netlify/functions/lib/parse-coa.js', 'netlify/functions/lib/extract-text.js']);
+    assert.deepStrictEqual(seed.STAMPED_FILES, ['netlify/functions/lib/parse-coa.js', 'netlify/functions/lib/coa-dates.js',
+                                                'netlify/functions/lib/extract-text.js']);
     for (const f of seed.STAMPED_FILES) {
       fs.appendFileSync(path.join(s, f), '// uncommitted\n');
       const { refusal } = seed.stampsOrRefusal({ root: s, env: SECRETS });

@@ -26,7 +26,10 @@ const ROOT = path.resolve(__dirname, '../..');
 const LIB = path.join(ROOT, 'netlify/functions/lib');
 const version = require(path.join(LIB, 'version.js'));
 
-const STAMPED_FILES = ['netlify/functions/lib/parse-coa.js', 'netlify/functions/lib/extract-text.js'];
+/* The code a stored reading depends on. coa-dates.js writes the parser's
+   harvestOn / reportOn, so an uncommitted change there is a parser change. */
+const STAMPED_FILES = ['netlify/functions/lib/parse-coa.js', 'netlify/functions/lib/coa-dates.js',
+                       'netlify/functions/lib/extract-text.js'];
 const SECRETS = ['NOSE_DB_URL', 'NETLIFY_SITE_ID', 'NETLIFY_AUTH_TOKEN'];
 const MIN_TEXT = 200;          // coa.js refuses a PDF with less text than this, before parsing
 const PAGE_SIZE = 100;

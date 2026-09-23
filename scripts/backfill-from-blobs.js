@@ -18,8 +18,8 @@
  * stores nothing. Neither does one whose metadata has no valid day - nothing
  * is guessed. Each is listed with its reason. The PDFs are never changed.
  *
- * Stamped from git; REFUSES to write while parse-coa.js or extract-text.js
- * has uncommitted changes (--dry-run is allowed). Safe to run again: a PDF
+ * Stamped from git; REFUSES to write while parse-coa.js, coa-dates.js or
+ * extract-text.js has uncommitted changes (--dry-run is allowed). Safe to run again: a PDF
  * that has its document row is no longer an orphan. Connects as nose_writer.
  * Prints no report text, no addresses, no secrets.
  *
