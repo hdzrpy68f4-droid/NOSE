@@ -151,10 +151,10 @@ Also run `node test/resolver-test.js` - expect `resolver clean`, and
 `bash build.sh` - expect `OK - ready to deploy`.
 
 **Or all at once:** `bash scripts/gates.sh` runs these, the Kaycha anchors,
-`store-test`, `probe-test` and `archive-wiring-test`, prints the line each gate
-produced, and ends with `ALL GATES GREEN`. It passes a gate only on its exact
-expected line, so when a session legitimately changes a count, update the
-script in the same commit.
+`store-test`, `probe-test`, `archive-wiring-test` and `archive-scripts-test`,
+prints the line each gate produced, and ends with `ALL GATES GREEN`. It passes
+a gate only on its exact expected line, so when a session legitimately changes
+a count, update the script in the same commit.
 
 **The harnesses do not cover `build.sh`.** All five ran green through a session
 in which the deploy was failing on a CSP sanity check, so every fix sat
@@ -294,6 +294,28 @@ usable  rejectReasons  warnings
   a change of route is reported even when the numbers agree. `layout` only
   separates column-major from everything else, which left the three row-wise
   readers indistinguishable.
+
+**Additive fields, for the archive (§13) — the app does not read them and
+`coa.js` does not send them:**
+
+```
+reportDate  client  parserVersion
+```
+
+- `reportDate` and `client` are read like `harvestDate`: a labelled row, the
+  value inline or on the next line, first occurrence wins. Labels are exact:
+  `Report Date`, `Date Reported`, `Date of Analysis`; `Client`, `Customer`,
+  `Producer`. TerpLife's `Client Lic#:` is a licence number and ACS's
+  `Client Information:` heads an address block — neither matches. On the corpus
+  `reportDate` reads on 2 documents (TerpLife, GreenRoads) and `client` on 10
+  (every Method file, plus hemp-bombs), each checked against its text. Other
+  labs print `Completion Date`, `Date Analyzed` and so on, or an unlabelled
+  client name; widening the labels needs a prompt that asks for it.
+- `parserVersion` is the commit `build.sh` stamps (`lib/version.js`), `dev`
+  when the file runs on its own. The database's `output_hash` ignores it, so a
+  deploy alone never makes a new parse row.
+- None is in the baseline and parity compares named fields only, so none can
+  DIFFER. The mutation harness compares terpenes and total only: still 35.
 
 ---
 
@@ -607,9 +629,9 @@ is computed once and passed down, because three hops at 7.5s each would exceed
 Netlify's 10s ceiling and the person would see the platform's error page rather
 than ours. Not covered by any test — exercising it needs a slow server.
 
-**After every parse, `coa.js` hands the result to the archive (§13)**: one call
-site, bounded, and unable to change the reply. `test/archive-wiring-test.js`
-drives the real handler to prove the last part.
+**After every parse on the production deploy, `coa.js` hands the result to the
+archive (§13)**: one call site, bounded, and unable to change the reply.
+`test/archive-wiring-test.js` drives the real handler to prove the last part.
 - **Two dialects declare the same thing and only one was recognised.** ACS and
 ACT print the unit in the header - `(aw)`, `Limit (%)` - while Kaycha names the
 column `Units` and puts the `%` or `aw` in the data row. The binding rule was
@@ -629,6 +651,16 @@ per parse. It was switched on in the same commit that dated the privacy page,
 which had described it in full, marked "not switched on yet", before any of it
 was connected — that page promises to change before collection does.
 
+**The PDF itself is kept too, once branch `archive-pdf-blobs` reaches main.**
+Built 2026-09-22 (US Eastern) and held off main on purpose: it ships with the
+next prompt's work. Until it merges, production keeps no PDFs and the rest of
+this section describes code that is not deployed. The privacy page and the two
+lines in `app.html` changed in the same commits, so they go live with it. The
+parts it adds: a copy of each PDF in Netlify Blobs, the production-only switch
+in `build-info.json`, the "Certificate of Analysis" rule, a 2000ms budget for
+both writes together, the seed and health scripts, and the parser's
+`reportDate`, `client` and `parserVersion` fields (§7).
+
 An earlier attempt (a `public`-schema store, a `.env`-based test, and a storage
 call already wired into `coa.js`) was removed in full when the database moved to
 Supabase. It never held data. It lives in git history if anyone needs it.
@@ -640,17 +672,27 @@ supabase/migrations/20260922180000_nose_archive.sql   the whole schema
 supabase/config.toml                                  minimal, for the CLI
 netlify/functions/lib/store.js                        saveScan(payload, { client, timeoutMs }), touch()
 netlify/functions/lib/supabase-ca.js                  generated; Supabase's public root CA
+netlify/functions/lib/archive.js                      storeScan(): the storage path, both halves
+netlify/functions/lib/pdf-store.js                    Netlify Blobs, store "coa-pdf"
+netlify/functions/lib/version.js                      the one version helper
+netlify/functions/lib/build-info.json                 GENERATED by build.sh, gitignored
 netlify/functions/coa.js                              archiveScan(): the one call site
 netlify/functions/keep-awake.js                       scheduled read every 4 hours
 test/store-test.js                                    PGlite, in memory, 49 checks
-test/archive-wiring-test.js                           coa.js -> store.js, offline, 26 checks
+test/archive-wiring-test.js                           coa.js -> archive.js, offline, 36 checks
+test/archive-scripts-test.js                          version, pdf-store, health, seed; offline, 19 checks
 test/probe-test.js                                    the probe's pass/fail rules, offline
 scripts/embed-supabase-ca.js                          writes supabase-ca.js from the download
 scripts/set-writer-password.js                        rotates nose_writer, prints NOSE_DB_URL once
 scripts/probe-db.js                                   checks the real project
 scripts/archive-status.js                             counts and latest parses, read-only
+scripts/archive-health.js                             both halves: rows, sizes, orphans, newest parse
+scripts/seed-from-fixtures.js                         every fixture PDF through storeScan, context seed
 scripts/check-published.js                            run by build.sh
 ```
+
+`netlify/functions/lib/parser-version.js` is gone: `build-info.json` replaced
+it.
 
 **Schema `nose`**, not `public`: `documents` (one row per distinct PDF, by the
 SHA-256 of its bytes), `extractions` (one per distinct text), `parses` (one per
@@ -692,11 +734,13 @@ date still supports tracking batches over time. `save_scan` pins
 `timezone = UTC`: without it a session in Tokyo recorded "2026-09-22" as the
 21st — verified, not supposed.
 - **`harvest_on` and `report_on` read `harvestOn` and `reportOn`**, which the
-parser does not emit yet, and keep only valid ISO dates. The parser's
-`harvestDate` is the lab's own format (`"07/07/25"` on KAY-CAR-001, null on most
-labs), and as text that sorts a 2025 date before a 2024 one. `client` is NULL
-for the same reason. Adding these is a parser session's job, as additive output
-fields — which the working rules allow only when a prompt says so.
+parser does not emit, and keep only valid ISO dates. The parser's
+`harvestDate` and `reportDate` are the lab's own format (`"07/07/25"` on
+KAY-CAR-001, `"11/17/2025"` on TerpLife), and as text that sorts a 2025 date
+before a 2024 one, so both columns stay NULL; `reportDate` is still in the
+stored output. The `client` column does fill: the parser emits `client` (§7).
+ISO `harvestOn` / `reportOn` would be further additive fields, which the
+working rules allow only when a prompt says so.
 - **No `ON DELETE CASCADE`.** Deleting a document with parses must fail loudly.
 - **One writer at a time per extraction** (`pg_advisory_xact_lock`), so "only
 if the latest differs" holds when two people scan the same jar at once. It is
@@ -725,6 +769,14 @@ with the password, fails without it.
 environment variables — never in git, a `.env`, client JS or a log. Netlify's
 "Functions" scope needs a Pro plan; "Production" context works on every plan;
 tick "Contains secret values" so Netlify also scans build output for the value.
+- `NETLIFY_SITE_ID` and `NETLIFY_AUTH_TOKEN` — **Codespaces secrets only**, for
+`archive-health.js` and `seed-from-fixtures.js`, which reach Blobs from outside
+Netlify. The function needs neither: `connectLambda` hands it the Blobs context
+per request. The token is a personal access token and can do anything the
+account can, so it gets an expiry date and is replaced when it lapses; Netlify
+answers an expired one with 401, which the health script reports as such.
+`check-published.js` fails the build on any `nfp_` / `nfc_` / `nfo_` / `nfu_` /
+`nfb_` token in a published or tracked file.
 
 ### How it is tested
 
@@ -776,40 +828,103 @@ and the guard scans that path again.
 
 `archiveScan()` is called once, right after `parseCoa`, before any refusal, so
 usable reads, unusable ones and refused layouts are all kept — the refusals are
-how parser faults get found (§10). What it guarantees, each one pinned by
+how parser faults get found (§10). The storage path itself is
+`lib/archive.js`'s `storeScan()`, shared with the seed script so that a seed
+run proves the same code. What it guarantees, each one pinned by
 `test/archive-wiring-test.js`:
 
+- **Production only.** `build.sh` writes `build-info.json` —
+`parserVersion` (git short SHA), `extractorVersion` (short hash of
+`extract-text.js` plus the INSTALLED unpdf version) and `deployContext`
+(`$CONTEXT`) — and esbuild bundles it into the function. An environment
+variable exported by `build.sh` never reaches a function at runtime, which is
+why it is a file. `coa.js` stores nothing unless `deployContext` is exactly
+`production`: deploy previews and branch deploys share the site's Blobs
+store and would write into the real archive. A missing or broken file reads
+as `dev` in every field, so a local run fails closed. Checked with esbuild
+0.27: the file is inlined when present, and a bundle built without it loads
+and reads `dev`.
+- **Two halves, independent.** The PDF goes to Blobs and what was read goes to
+Postgres under one `Promise.allSettled`, each bounded by the same budget:
+either can fail or hang and the other still lands. `archive-health.js` finds
+a PDF without its document row, or the reverse.
 - **The reply never depends on it.** The handler's response is byte-identical
-whether the write succeeds, fails, hangs, or is not configured. Every failure
-is swallowed. The write gets at most 1.5s of what is left under a 9s deadline
-and is skipped below 0.3s; `store.js` bounds the connection itself, and a
-second timer in `coa.js` is the backstop.
-- **Unset `NOSE_DB_URL` is a complete no-op** — `store.js` and `pg` are never
-loaded. Only Netlify's Production context has the variable, so deploy
-previews and local runs write nothing.
-- **Nothing about the person.** `event` is not in scope in `archiveScan`, and
-the test fails if it is ever named there. The stored address is origin + path:
-the query string and fragment are dropped, because signed links and order pages
-carry tokens there. The cost: a portal that identifies the file only in the
-query (coaportal's `?pdf=<n>`) cannot be re-fetched from the archive.
-- **Lab reports only**: a laboratory the parser recognises, or at least one
-terpene it read. Anything else — a menu, an invoice, a letter linked by
-mistake — is not kept. Every fixture in the corpus counts as a lab report, and
-the test checks that too, so the filter cannot quietly drop a real lab.
+whether either write succeeds, fails, hangs, or is not configured. Every
+failure is swallowed. Both writes together get at most 2s of what is left
+under a 9s deadline (the 8s fetch chain plus 2s would pass Netlify's 10s) and
+are skipped below 0.3s; `store.js` bounds the connection itself, and a 50ms
+backstop bounds `store.js`. Awaited, not `context.waitUntil`: this is a
+Lambda-style function, and Netlify freezes it the moment it returns.
+- **Unset `NOSE_DB_URL` makes the database half a no-op** — `store.js` and
+`pg` are never loaded. Only Netlify's Production context has the variable.
+- **Nothing about the person.** `event` is not in scope in `archiveScan` or
+anywhere in `lib/archive.js`, and the test fails if either names it. The one
+place the event goes is `connectLambda`, which reads `event.blobs` and the
+`x-nf-site-id` / `x-nf-deploy-id` headers. The stored address is origin +
+path in both halves: the whole query string and fragment are dropped, which
+takes every presigned-link credential (`X-Amz-*`, `Signature`, `Expires`)
+with it, and the tokens order pages carry too. The cost: a portal that
+identifies the file only in the query (coaportal's `?pdf=<n>`) cannot be
+re-fetched from its stored address.
+- **Lab reports only**: a laboratory the parser recognises, "Certificate of
+Analysis" in the text, or at least one terpene read. Anything else — a menu,
+an invoice, a letter linked by mistake — is kept nowhere, neither file nor
+text: it could be someone's personal document. Every fixture in the corpus
+counts, and on its lab or terpenes alone, not only its heading — the test
+checks both.
 - **Text over 256KB is not kept.** Real reports are 2–30KB; without a cap one
 12MB PDF of text could fill the free database.
-- **Nothing is logged on success, and a failure logs no detail of the
-document.** Netlify timestamps every log line; a line naming the report would
-line a stored scan up with the request logs, which the day-only dates exist to
-prevent.
-- **Provenance**: `context` is `production`; `parser_version` is the commit
-`build.sh` stamps; `extractor_version` must name the unpdf in
-`package-lock.json` — the test fails when a dependency bump leaves it stale.
+- **Nothing is logged on success, and a failure logs one line with no detail
+of the document.** Netlify timestamps every log line; a line naming the
+report would line a stored scan up with the request logs, which the day-only
+dates exist to prevent. `archive.reason()` scrubs file fingerprints,
+addresses, database hosts and IP addresses out of any error it passes on.
+- **Provenance**: `context` is `production`; `parser_version` and
+`extractor_version` come from `build-info.json`, so neither can go stale by
+hand.
 - **Said where it happens.** Both ways into the archive in `app.html` — the QR
 scanner and the paste-a-link panel — say in one line that the server keeps a
-copy of what the report says and nothing about the person, linking to
+copy of the report and what it says, and nothing about the person, linking to
 `/privacy/#lab-reports`. Change what is kept, and those two lines change with
 the privacy page.
+
+### The PDF half — Netlify Blobs
+
+- **One site-wide store, `coa-pdf`** (`getStore`, never `getDeployStore`: a
+deploy store belongs to one deploy, so every deploy would start an empty
+archive).
+- **Key: the SHA-256 of the bytes** — the same fingerprint `nose.documents`
+is keyed by, so the two halves join on it. Written with `onlyIfNew`: the same
+file scanned again writes nothing, and a stored copy is never replaced.
+- **Metadata `{ sourceUrl, fetchedAt }`, nothing else.** `sourceUrl` is the
+stripped address, or null when there is none or it would pass Blobs' 2KB
+metadata limit. `fetchedAt` is the UTC DAY, never a time — the database's
+rule. Blobs' own storage may record when each object was written; nothing of
+ours reads or copies that, and the privacy page says it exists.
+- **`connectLambda(event)` first.** A function written as `exports.handler`
+is not handed the Blobs context, and without it every Blobs write fails.
+- **Documents from before the PDF half have no PDF.** Scanning that jar again
+stores it (the key is new). `archive-health.js` lists them.
+
+### Seeding and health, from the Codespace
+
+`node scripts/seed-from-fixtures.js` puts every PDF in `test/fixtures/pdf`
+through `storeScan()`, context `seed`, no source address. It stamps
+`parserVersion` from git and refuses to write while `parse-coa.js` or
+`extract-text.js` has uncommitted changes — the stamp has to name the code
+that ran. Safe to run again: it adds only what is missing. Run it once, before
+any real scan depends on the PDF half: it proves both halves end to end.
+
+`node scripts/archive-health.js` prints rows per table, the newest parse in
+full, database size against the free plan's 500 MB, PDF count and bytes, and
+the PDFs and documents that lack their other half. A PDF with a document row
+is measured from the row — its key is the hash of those very bytes — so only
+orphans are downloaded; `--verify` downloads and re-hashes every file. It
+prints no text, no addresses and no secrets.
+
+Both need three Codespaces secrets: `NOSE_DB_URL`, `NETLIFY_SITE_ID`,
+`NETLIFY_AUTH_TOKEN`. A Codespace sees a secret added after it started only
+once it is restarted.
 
 `store.js`'s bounded connection is tested against pg's real semantics, read
 from the 8.23.0 source: `end()` destroys the socket when a query is active, so a
@@ -869,11 +984,16 @@ exists there.
 
 ### After a deploy — check it
 
-1. `node scripts/archive-status.js` in the Codespace (reads as `nose_writer`).
+1. `node scripts/archive-health.js` in the Codespace (reads as `nose_writer`;
+`archive-status.js` still works for the database half alone).
 2. Scan one real jar on the live site.
-3. Run it again: one more row in each table the first time a report is seen;
-nothing new for the same report again.
+3. Run it again: the newest parse is that jar, dated today (UTC), context
+`production`, with the deploy's commit as its parser version, and one more PDF
+than before the first time a report is seen; nothing new for the same report
+again.
 4. Netlify → Logs → Functions → `keep-awake` → Run now → `[keep-awake] ok`.
+5. Netlify → Logs → Functions → `coa`: no `archive incomplete` line. One names
+which half failed, and why, with nothing about the report.
 
 ### Still open
 
@@ -883,9 +1003,18 @@ preview kept elsewhere needs `node scripts/check-published.js <file>` run on it.
 - Supabase free projects pause after a week idle, which looks like a connection
 fault. `keep-awake.js` exists to prevent it; if its log says FAILED, resume the
 project from the dashboard before debugging anything else.
-- The parser does not emit ISO `harvestOn` / `reportOn` or `client` yet, so
-those columns stay NULL. Adding them is a parser session's job, as additive
+- The parser does not emit ISO `harvestOn` / `reportOn`, so those columns stay
+NULL (`client` now fills). Adding them is a parser session's job, as additive
 output fields, which the working rules allow only when a prompt says so.
+- **Branch `archive-pdf-blobs` is not on main.** It ships with the next
+prompt's work. When it merges: the privacy page's "third, smaller change" has
+no date, so add the merge date there if wanted; run the seed once if it has
+not been run; then do the checks above.
+- The seed has to run from the Codespace: this cloud workspace cannot reach
+npm, Supabase or Netlify. Its first real run is the first proof of the Blobs
+half against real Netlify; offline, `@netlify/blobs` is a stand-in built from
+its published types (v10: `set` returns `{ modified }`, and `onlyIfNew` answers
+a 412 with `modified: false` rather than throwing).
 - The **Upload a report** tab in `app.html` only checks a file's type and size;
 nothing reads the file. Its text, and the message `js/nose.*.js` shows after a
 file is chosen, still say "in this static preview". Fixing the message changes
