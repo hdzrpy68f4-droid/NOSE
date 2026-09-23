@@ -238,6 +238,25 @@ async function main() {
     }
     const left = (await w.query('select count(*)::int as n from nose.documents where sha256 = $1', [sha])).rows[0].n;
     ok('...and the rollback left nothing behind', left === 0, `${left} row(s) remain`);
+
+    /* --- the analysis views: readable, and nothing else ------------------- */
+    /* Privileges are asked for rather than tried: an INSERT into a view that
+       joins tables is refused by the rewriter ("cannot insert into view")
+       before any privilege is checked, so trying one proves nothing. */
+    for (const view of ['latest_parses', 'batch_series']) {
+      const label = `nose_writer can read nose.${view} and cannot write to it`;
+      try {
+        await w.query(`select 1 from nose.${view} limit 1`);
+        const can = (await w.query(
+          `select has_table_privilege($1, 'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER') as writes`,
+          [`nose.${view}`])).rows[0];
+        ok(label, can.writes === false, 'it holds a privilege beyond SELECT');
+      } catch (e) {
+        ok(label, false, /does not exist/.test(e.message)
+          ? `nose.${view} is missing - push the migration: npx supabase db push --db-url "$NOSE_DB_ADMIN_URL"`
+          : e.message);
+      }
+    }
   } finally {
     await w.end().catch(() => {});
   }

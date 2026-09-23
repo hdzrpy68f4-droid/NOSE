@@ -152,7 +152,8 @@ Also run `node test/resolver-test.js` - expect `resolver clean`, and
 
 **Or all at once:** `bash scripts/gates.sh` runs these, the Kaycha anchors,
 `novelty-test`, `coa-dates-test`, `store-test`, `probe-test`, `archive-wiring-test`,
-`archive-scripts-test`, `rerun-test` and `review-queue-test`, prints the line each gate produced,
+`archive-scripts-test`, `rerun-test`, `review-queue-test` and
+`analysis-test`, prints the line each gate produced,
 and ends with `ALL GATES GREEN`. It passes
 a gate only on its exact expected line, so when a session legitimately changes
 a count, update the script in the same commit.
@@ -192,6 +193,7 @@ someone to look.
 | `resolver-test.js` | viewer-page resolution, offline, against saved portal pages |
 | `novelty-test.js` | the five `novelty` notes (§7); lists the fixtures that have any, as information |
 | `coa-dates-test.js` | `lib/coa-dates.js` and the parser's `harvestOn` / `reportOn` (§7): the three forms, the near misses, and every other field identical without it |
+| `analysis-test.js` | the analysis layer (§13) on PGlite: the two views, their grants |
 
 The counts in section 2 are checked by `fixture-lint.js` against the corpus, so
 a stale one fails the lint rather than misleading the next session.
@@ -749,6 +751,7 @@ Supabase. It never held data. It lives in git history if anyone needs it.
 ```
 supabase/migrations/20260922180000_nose_archive.sql   the whole schema
 supabase/migrations/20260923140000_nose_reparse_runs.sql   one row per real reparse run
+supabase/migrations/20260923170000_nose_analysis_views.sql   latest_parses, batch_series, strain_key(): read-only
 supabase/config.toml                                  minimal, for the CLI
 netlify/functions/lib/store.js                        saveScan(payload, { client, timeoutMs }), touch()
 netlify/functions/lib/supabase-ca.js                  generated; Supabase's public root CA
@@ -764,6 +767,7 @@ test/archive-wiring-test.js                           coa.js -> archive.js, offl
 test/archive-scripts-test.js                          version, pdf-store, health, seed, rerun helper; offline, 24 checks
 test/rerun-test.js                                    reparse, backfill, export on PGlite; offline, 85 checks
 test/review-queue-test.js                             the review queue on PGlite; offline, 19 checks
+test/analysis-test.js                                 the analysis views on PGlite; offline
 test/novelty-test.js                                  the parser's novelty notes (s7); lists fixtures with any
 test/probe-test.js                                    the probe's pass/fail rules, offline
 scripts/embed-supabase-ca.js                          writes supabase-ca.js from the download
@@ -787,7 +791,9 @@ it.
 SHA-256 of its bytes), `extractions` (one per distinct text), `parses` (one per
 distinct parse), the view `terpene_values`, `save_scan(payload)`, which is
 the only write path for scans, and `reparse_runs` (one row per real reparse
-run, inserted directly). Documents and extractions are reused on conflict. A parse
+run, inserted directly). The analysis layer adds two read-only views and one
+function (below, "The analysis layer"): `latest_parses`, `batch_series` and
+`strain_key()`. Documents and extractions are reused on conflict. A parse
 is written only when its output differs from the **most recent** parse of that
 extraction, so A → B → A leaves three rows with A latest. Reaching this schema
 is possible only through the `pg` driver from server code or Codespace scripts:
@@ -1093,6 +1099,16 @@ on the real one (below, "Novelty on the real project"): 60 of 60 changed that
 way both times, nothing else moved, and a second run changed nothing.
 Anything else in a dry run - a terpene that moved, an accepted→rejected - is
 a parser fault: stop and bring the lines.
+- **The first real reparse after `harvestOn` / `reportOn` (§7) changes every
+document the same way**: each prints `also changed: harvestOn (new),
+reportOn (new)` and nothing else - `usable`, `readBy`, `totalTerpenes` and
+every terpene the same before and after. Rehearsed on a local copy of the
+seeded archive (the 59 fixtures read by `b596508`, reparsed by `0cc68e8`):
+the dry run and the real run both said `0 unchanged / 59 values changed / 0
+accepted→rejected / 0 rejected→accepted / 0 failed` with those two names on
+all 59 and nothing else; a second run said `59 unchanged`. `harvest_on` then
+held 3 dates and `report_on` 2. On the real archive, expect every document,
+fixture or scan, to show that one line - anything else is a parser fault.
 - **Ids jump after a run.** `INSERT … ON CONFLICT DO NOTHING` takes an identity
 number even when it conflicts, so a reparse uses up one document id and one
 extraction id per document. Nothing is lost; count rows, never ids.
@@ -1111,6 +1127,44 @@ a parser change seen by `--dry-run` and refused for real while uncommitted, an
 extractor change and its revert, a backfill and an export. None has yet touched
 the real project or real Blobs; the first `bash scripts/gates.sh` in the
 Codespace is the first run on PGlite and the real unpdf.
+
+### The analysis layer — read-only, from the Codespace
+
+Two views and one function, `supabase/migrations/20260923170000_nose_analysis_views.sql`,
+read by the analysis scripts. Nothing in it writes; nothing in it is UI.
+
+- **`nose.latest_parses`** - one row per document: the latest parse of its
+  NEWEST extraction, exactly the reading `reparse.js` and `review-queue.js`
+  stand by. That differs from "the highest parse id" only after an extractor
+  revert (an older text reused, then parsed again), and there the view agrees
+  with the scripts rather than with the id. It carries the parse's columns
+  and its output, and leaves out the document's address and text.
+- **`nose.batch_series`** - the usable ones: `lab`, `client`, `strain_key`,
+  `batch`, `batch_date` = `coalesce(harvest_on, report_on)`, `total_terpenes`,
+  `parse_id`. A NULL `batch_date` is an undated batch. Refused readings, and
+  outputs with no boolean `usable`, are not in it.
+- **`nose.strain_key(text)`** - the one rule for "same strain": lowercase,
+  whitespace runs collapsed and trimmed, a leading `(I)`, `(S)` or `(H)`
+  dropped (any case). Nothing else: `GMO #2` is not `GMO`. The view uses it,
+  and so does `drift.js` for its argument, so the rule exists once.
+- **Read-only by grant.** `security_invoker = true` on both views, like
+  `terpene_values`: a role holding the views alone reaches nothing. The first
+  migration's default privileges would hand `nose_writer` INSERT on any new
+  relation, so the migration revokes everything and grants SELECT back;
+  `strain_key` is revoked from PUBLIC and granted to `nose_writer`, so the
+  grant audit stays clean. An INSERT into a joining view is refused by the
+  rewriter before any privilege is checked, so the checks ask
+  `has_table_privilege` instead of trying one.
+- **Push it once, from the Codespace:** `npx supabase db push --db-url
+  "$NOSE_DB_ADMIN_URL"`, then `node scripts/probe-db.js` - which now also
+  checks that `nose_writer` can read both views and holds nothing more on
+  them. With `NOSE_DB_ADMIN_URL` set, its grant audit covers the function.
+- **Tested** by `test/analysis-test.js` on PGlite: A → B → A, two extractions,
+  refused and verdict-less readings, the strain key, the date fallback, a
+  real ACS report (dated 2026-04-03 by its own harvest line), the columns,
+  security_invoker in practice, and the grants. Rehearsed on a local copy of
+  the seeded archive: 59 documents, 56 in `batch_series`, 4 of them dated,
+  and `probe-db.js` against it passed every view and grant check.
 
 ### Keeping the free project awake
 

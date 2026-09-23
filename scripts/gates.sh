@@ -70,6 +70,8 @@ gate 'rerun tools'    'rerun clean'              '^rerun clean$' \
   node test/rerun-test.js
 gate 'review queue'   'review-queue clean'       '^review-queue clean$' \
   node test/review-queue-test.js
+gate 'analysis'       'analysis clean'           '^analysis clean$' \
+  node test/analysis-test.js
 gate 'build'          'OK — ready to deploy'     '^OK — ready to deploy$' \
   bash build.sh
 
