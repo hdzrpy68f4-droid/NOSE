@@ -23,8 +23,12 @@
  *     hides: the message said "Check the values below, then add the jar."
  *     and nothing was below (PARSER-HANDOFF s13)
  *   - on both paths, the warnings line (MCL-FLW-002's 103.8%) and the novelty
- *     line (ACS-FLW-002) show when the reply carries them and not otherwise;
- *     KAY-CAR-001 shows its 4.124; "Use this jar" and "Discard" do what they say
+ *     line show when the reply carries them and not otherwise; KAY-CAR-001
+ *     shows its 4.124; "Use this jar" and "Discard" do what they say. The
+ *     novelty line is shown on ACS-FLW-002 with one column heading added that
+ *     no fixture prints: ACS-FLW-002 itself carries no novelty since
+ *     2026-09-24 - its layout is known, and the handler's reply for it says so
+ *     (PARSER-HANDOFF s7)
  *   - the card hides with its tab, and moves to the panel of the next request
  *   - a refused report shows its reasons and no card
  *   - Upload: the tab and the message after choosing a file say plainly that
@@ -62,8 +66,15 @@ const EXTRACTED = path.join(ROOT, 'test/fixtures/extracted');
 const QR_PNG = path.join(ROOT, 'test/fixtures/qr/coa-link.png');
 const QR_URL = 'https://lab.example/coa/input-paths-test.pdf';
 const LINK_URL = 'https://lab.example/coa/pasted-link.pdf';
-const FIXTURES = { plain: 'KAY-CAR-001', warned: 'MCL-FLW-002', novel: 'ACS-FLW-002',
+/* An accepted fixture carries no novelty (test/novelty-test.js fails if one
+   does), so the novelty case is a real report with one line added inside its
+   terpene section, as novelty-test adds one: a column heading no fixture
+   prints. Nothing else about the reading moves - checked below. */
+const NOVEL_BASE = 'ACS-FLW-002';
+const UNSEEN_HEADING = 'Conc. (ug/g)';
+const FIXTURES = { plain: 'KAY-CAR-001', warned: 'MCL-FLW-002', novel: `${NOVEL_BASE} + "${UNSEEN_HEADING}"`,
   refused: 'GreenRoadsFullSpectrumCBDOil750mgLot24007' };
+const FILES = [FIXTURES.plain, FIXTURES.warned, NOVEL_BASE, FIXTURES.refused];
 /* The card's one novelty sentence, as js/nose.*.js publishes it (s7). */
 const NOVELTY_LINE = 'NOSE hasn\'t seen this lab\'s layout before — check the top three against the report.';
 
@@ -102,7 +113,7 @@ if (!playwright) {
   console.error('FAIL: Playwright is not installed - run: npm install --no-save playwright && npx playwright install --with-deps chromium');
   process.exit(1);
 }
-for (const id of Object.values(FIXTURES)) {
+for (const id of FILES) {
   if (!fs.existsSync(path.join(EXTRACTED, `${id}.txt`))) {
     console.error(`FAIL: ${path.relative(ROOT, EXTRACTED)}/${id}.txt is missing - run: node test/extract-dump.js`);
     process.exit(1);
@@ -128,12 +139,23 @@ install(path.join(FN, 'lib/extract-text.js'), {
 });
 require(path.join(FN, 'lib/version.js')).pin({ parserVersion: 'dev', extractorVersion: 'dev', deployContext: 'dev' });
 const coa = require(path.join(FN, 'coa.js'));
+const { _novelty: NOVELTY } = require(path.join(FN, 'lib/parse-coa.js'));
 const PDF = Buffer.concat([Buffer.from('%PDF-1.4\n'), Buffer.alloc(1024, 0x20)]);
+
+/* A fixture's extracted text; for the novelty case, NOVEL_BASE's with the
+   unseen heading after the line that opens its first terpene section. */
+function textOf(fixture) {
+  if (fixture !== FIXTURES.novel) return fs.readFileSync(path.join(EXTRACTED, `${fixture}.txt`), 'utf8');
+  const lines = fs.readFileSync(path.join(EXTRACTED, `${NOVEL_BASE}.txt`), 'utf8').split('\n');
+  const at = lines.findIndex(l => NOVELTY.NOVELTY_SECTION_OPEN.test(l.trim()));
+  if (at < 0) throw new Error(`${NOVEL_BASE} has no terpene section to add a heading to`);
+  return [...lines.slice(0, at + 1), UNSEEN_HEADING, ...lines.slice(at + 1)].join('\n');
+}
 
 /* The handler's reply to `body`, the report being the fixture's text. Only
    the PDF download is replaced, and only while the handler runs. */
 async function handlerReply(fixture, body) {
-  fixtureText = fs.readFileSync(path.join(EXTRACTED, `${fixture}.txt`), 'utf8');
+  fixtureText = textOf(fixture);
   const saved = globalThis.fetch;
   globalThis.fetch = async () => new Response(PDF, { status: 200, headers: { 'content-type': 'application/pdf' } });
   try { return await coa.handler({ httpMethod: 'POST', body, headers: {} }); }
@@ -145,7 +167,7 @@ async function handlerReply(fixture, body) {
 {
   const body = JSON.stringify({ url: LINK_URL });
   const r = {};
-  for (const [k, id] of Object.entries(FIXTURES)) {
+  for (const [k, id] of [...Object.entries(FIXTURES), ['base', NOVEL_BASE]]) {
     const reply = await handlerReply(id, body);
     r[k] = { status: reply.statusCode, data: JSON.parse(reply.body) };
   }
@@ -154,8 +176,16 @@ async function handlerReply(fixture, body) {
     JSON.stringify(r.plain.data).slice(0, 200));
   check(`the handler reads ${FIXTURES.warned} with a warning and no novelty`,
     r.warned.status === 200 && r.warned.data.warnings.length > 0 && !r.warned.data.novelty.length);
-  check(`the handler reads ${FIXTURES.novel} with novelty and no warning`,
-    r.novel.status === 200 && r.novel.data.usable === true && r.novel.data.novelty.length > 0 && !r.novel.data.warnings.length);
+  check(`the handler reads ${NOVEL_BASE} with no novelty, nothing unmapped and no warning - a known layout`,
+    r.base.status === 200 && r.base.data.usable === true && !r.base.data.novelty.length && !r.base.data.unmapped.length
+      && !r.base.data.warnings.length,
+    JSON.stringify({ novelty: r.base.data.novelty, unmapped: r.base.data.unmapped, warnings: r.base.data.warnings }));
+  check(`the handler reads ${FIXTURES.novel} with that heading as its one novelty note, and ${NOVEL_BASE}'s values`,
+    r.novel.status === 200 && r.novel.data.usable === true && !r.novel.data.warnings.length
+      && JSON.stringify(r.novel.data.novelty) === JSON.stringify([`heading not known: "${UNSEEN_HEADING}"`])
+      && r.novel.data.totalTerpenes === r.base.data.totalTerpenes
+      && JSON.stringify(r.novel.data.terps) === JSON.stringify(r.base.data.terps),
+    JSON.stringify({ novelty: r.novel.data.novelty, totalTerpenes: r.novel.data.totalTerpenes }));
   check(`the handler refuses ${FIXTURES.refused}, with reasons`,
     r.refused.status === 422 && Array.isArray(r.refused.data.reasons) && r.refused.data.reasons.length > 0);
 }

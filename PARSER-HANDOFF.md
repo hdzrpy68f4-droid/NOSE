@@ -198,7 +198,7 @@ someone to look.
 | `fixture-lint.js` | corpus hygiene: control bytes, shell-hostile names, baseline arithmetic |
 | `mutation-test.js <dir> <parser>` | corrupt fixtures; require identical-or-reject |
 | `resolver-test.js` | viewer-page resolution, offline, against saved portal pages |
-| `novelty-test.js` | the five `novelty` notes (§7); lists the fixtures that have any, as information |
+| `novelty-test.js` | the five `novelty` notes (§7) and the furniture the `unmapped` diagnostic skips; FAILS if an accepted fixture carries any novelty, and lists the refused ones that do, as information |
 | `match-test.js` | the matching maths has one home, `js/match-math.*.js`: the app takes it from there, nothing else holds a copy, and it returns every score in `test/fixtures/match-golden.json` to the last bit; every score is shown and sent through `shownScore()`, floored (§13, "The shown score"), and the worked examples on `learn/intensity-versus-character/` are the numbers the app shows |
 | `coa-dates-test.js` | `lib/coa-dates.js` and the parser's `harvestOn` / `reportOn` (§7): the three forms, the near misses, and every other field identical without it |
 | `analysis-test.js` | the analysis layer (§13) on PGlite: the two views, their grants |
@@ -400,15 +400,35 @@ heading not known: "…"      a column heading not in SECTION_LABELS, not steppe
   `test/novelty-test.js` fails if an entry is printed by no accepted fixture.
 - Concentration units only: `0.500 g`, `10 ml` and `1 x` are sample details on
   known layouts. `82.4% (824 mg)` is `resultToNumber`'s documented form.
-- **On the corpus, 6 of 59 have novelty** - listed by `test/novelty-test.js`
-  every run, information and never a failure. Four accepted ACS files carry
-  only `unmapped` furniture (`Moisture` ×3, `License No.`, `AAGZ997-`), which
-  the card already prints today as "Measured but outside the six families:
-  Moisture." - and so an ACS jar like those also gets the new line, though the
-  layout is known. Teaching `NOT_AN_ANALYTE` those words would clear both, but
-  it changes `unmapped`, an existing field: a prompt has to ask for it. The
-  other two are refusals (Harmony's `Results (%)`, hemp-bombs' `Hemp`), which
-  never reach the card.
+- **No accepted fixture carries novelty, and `test/novelty-test.js` fails if
+  one does** (since 2026-09-24). An accepted fixture's layout is known by
+  definition, and on a usable read the card would tell someone holding that
+  jar the opposite. So a new fixture that brings novelty with it is baselined
+  in the same commit as whatever quiets it - a `SEEN_HEADINGS` entry, a
+  spelling in `ANALYTE_MAP` or `UNMODELLED`, a furniture word (below). On the
+  corpus 2 of 59 have novelty, both refusals (Harmony's `Results (%)`,
+  hemp-bombs' `Hemp`), which never reach the card; the test lists them as
+  information.
+- **Furniture the `unmapped` diagnostic skips** - `notAnAnalyteHere`, since
+  2026-09-24: structure labels (bare `Moisture`, which heads ACS's moisture
+  table), licence and ID labels (`License No.`: a label ending in `No.`,
+  `Number` or `ID`, or a bare `License` / `Licence`), and the line after a
+  `Label:` or `Label #:` with nothing after its colon, which is that label's
+  value (`Lab Batch #:` then `AAGZ997-`). Until then four accepted ACS files
+  carried only this furniture in `unmapped` (`Moisture` ×3, `License No.`,
+  `AAGZ997-`), so each of their cards said "NOSE hasn't seen this lab's layout
+  before" and "Measured but outside the six families: Moisture." (§13, "Known
+  ACS layouts").
+- **Only the diagnostic reads that check.** Bare `MOISTURE` stays out of
+  `SECTION_LABELS`, which the look-ahead also reads (it ends rows there) and
+  which names novelty's known headings. Tried on 2026-09-24: adding it there
+  would change no reading on today's 59 fixtures, because the look-ahead's
+  name-shaped rule, just after its `SECTION_LABELS` test, already ends a row at
+  a bare "Moisture" - but a list the reader shares is the wrong home for a
+  diagnostic's vocabulary, and the next layout may not be so forgiving.
+  `novelty-test` parses the corpus with the check switched off: only
+  `unmapped` and `novelty` differ, on those four files. Across the corpus, none
+  of the 5077 lines that follow a line ending in a colon is an analyte name.
 
 ---
 
@@ -788,7 +808,7 @@ test/analysis-test.js                                 the analysis views and scr
 test/match-test.js                                    the matching maths: one copy, the scores it gave before it moved, the numbers it shows
 test/fixtures/match-golden.json                       those scores, from js/nose.81d6bb53.js at b596508
 test/match-golden-make.js                             wrote them, once; never re-run to make a test pass
-test/novelty-test.js                                  the parser's novelty notes (s7); lists fixtures with any
+test/novelty-test.js                                  the parser's novelty notes (s7); fails if an accepted fixture has any
 test/probe-test.js                                    the probe's pass/fail rules, offline
 scripts/embed-supabase-ca.js                          writes supabase-ca.js from the download
 scripts/set-writer-password.js                        rotates nose_writer, prints NOSE_DB_URL once
@@ -1196,6 +1216,11 @@ expect every document, fixture or scan, to show that one line - anything
 else is a parser fault. **If the archive was already reparsed by `635ac02`**
 (before `MM/DD/YY` was read), only the Kaycha reports change, each by `also
 changed: harvestOn` alone: 16 of 59 on the rehearsal, 43 unchanged.
+- **The first real reparse after `notAnAnalyteHere` (§7, 2026-09-24) changes
+only ACS reports**, each by `also changed: novelty, unmapped` alone: the four
+ACS fixtures, and any real ACS scan whose `unmapped` held the same furniture.
+Rehearsed on a local copy of the seeded archive: `55 unchanged / 4 values
+changed`, then `59 unchanged` (below, "Known ACS layouts, 2026-09-24").
 - **Ids jump after a run.** `INSERT … ON CONFLICT DO NOTHING` takes an identity
 number even when it conflicts, so a reparse uses up one document id and one
 extraction id per document. Nothing is lost; count rows, never ids.
@@ -1506,13 +1531,18 @@ showed it. The fault predated `novelty`.
   "Static preview" is gone from the page.
 - **`account/index.html`** no longer says to use the export button "in the
   meantime".
-- **`test/input-paths-test.mjs`** is the check: 65 checks in headless Chromium,
+- **`test/input-paths-test.mjs`** is the check: 65 checks in headless Chromium
+  (66 since 2026-09-24),
   against a local copy of the site served with `_headers` (CSP included). Each
   POST to `/.netlify/functions/coa` is answered by the real `coa.js` handler and
   parser in the test's own process. Only the PDF download and unpdf are stood in
   for, and unpdf returns a fixture's extracted text. The fixtures:
   `KAY-CAR-001` (4.124, nothing extra), `MCL-FLW-002` (the 103.8% warning),
-  `ACS-FLW-002` (novelty) and `GreenRoads…` (refused, with reasons). Scan QR runs
+  `ACS-FLW-002` (novelty) and `GreenRoads…` (refused, with reasons). Since
+  2026-09-24 ACS-FLW-002 carries no novelty, so the novelty case is ACS-FLW-002
+  with one column heading added that no fixture prints, `Conc. (ug/g)`, and
+  ACS-FLW-002 itself is read through the handler as a known layout (below,
+  "Known ACS layouts"). Scan QR runs
   twice: by Chromium's fake camera playing `test/fixtures/qr/coa-link.png`, and by
   "Choose QR image". The test also checks that the card hides with its tab, that
   it moves to the panel of the next request, that a refused report shows no card,
@@ -1613,6 +1643,72 @@ above their own.
   untouched, so no reparse is needed. The Codespace run on the real packages is
   the one that counts.
 
+### Known ACS layouts, 2026-09-24
+
+**Four accepted ACS reports told people NOSE had not seen their lab's
+layout.** `ACS-FLW-002` and `ACS-PRR-001` carried `Moisture` in `unmapped`,
+`ACS-LRS-002` `License No.`, and `COA_GassiusClay_…` both `Moisture` and
+`AAGZ997-` - the first half of its `Lab Batch #:` value, which the extractor
+split from its `25`. A usable read with novelty gets the card's novelty line
+(§7), so a jar with any of those reports was told "NOSE hasn't seen this lab's
+layout before - check the top three against the report", and "Measured but
+outside the six families: Moisture." with it. Both were false.
+
+- **The probe, before any edit**, on `29f2881`: `node test/novelty-test.js`
+  listed exactly those four, accepted, and Harmony and hemp-bombs, refused. In
+  headless Chromium the ACS-FLW-002 card showed the novelty line, on Scan QR
+  and on COA link.
+- **The fix, in `parse-coa.js`:** `notAnAnalyteHere(line, previous line)`, one
+  more condition in front of `unmapped.add` and called nowhere else, with its
+  three patterns beside `NOT_AN_ANALYTE` (§7, "Furniture the unmapped
+  diagnostic skips").
+- **What moved, all 59 fixtures parsed before and after, every field
+  compared:** `unmapped` and `novelty` on those four files, both now `[]`, and
+  nothing else. Every terpene value, total, verdict, reason, warning, `readBy`,
+  class and freshness figure is the same; `unmapped` is the same on the other
+  55 (hemp-bombs keeps `Hemp`), and so are Harmony's and hemp-bombs' notes.
+- **`novelty-test` fails when an accepted fixture carries novelty** (§7). It
+  also checks each kind of furniture on KAY-CAR-001 with lines added, that an
+  unknown name straight after them still counts, that only the filter calls
+  the check, and - parsing the corpus again with the call switched off - that
+  nothing but `unmapped` and `novelty` differs, on those four files. Against
+  the unpatched parser it fails 7 of its checks, the corpus rule among them.
+- **`input-paths-test` changed with it.** Its novelty case was ACS-FLW-002,
+  which has none now. The case is ACS-FLW-002 with one column heading added
+  that no fixture prints, `Conc. (ug/g)` - the novelty line still shows on both
+  paths - and a new check reads ACS-FLW-002 itself through the handler:
+  usable, no novelty, nothing unmapped, no warning. 66 checks; against the
+  unpatched parser it fails the two ACS-FLW-002 checks and nothing else.
+- **The archive.** A reparse changes the stored reading of those four
+  fixtures, and of any real ACS report with the same furniture, by `unmapped`
+  and `novelty` alone. `review-queue.js` lists every document with novelty, so
+  run it first: an ACS scan listed there with `unmapped: Moisture`,
+  `License No.` or a batch-code fragment is one more expected change. Then
+  `reparse.js --dry-run` prints, for each, `usable true → true   readBy forward
+  → forward` and an unchanged total, then `also changed: novelty, unmapped`,
+  and nothing else. The four fixtures, by the short fingerprint it prints:
+  `30ec0091` SFV OG (ACS-FLW-002), `00a19f3e` Space Age Cake (ACS-LRS-002),
+  `d904685d` Squirrell Thai Stick (ACS-PRR-001), `76024424` Gassius Clay. Any
+  other lab, a terpene that moved, or an accepted→rejected is a fault: stop and
+  bring the lines.
+- **Rehearsed on a local copy of the seeded archive** (the 59 fixtures, read
+  by `29f2881`, in a local PostgreSQL 16 as `nose_writer`): the dry run, then
+  a real run of the change committed, both said `59 documents: 55 unchanged /
+  4 values changed / 0 accepted→rejected / 0 rejected→accepted / 0 failed`,
+  the four above each by `novelty, unmapped` alone. A second run said `59
+  unchanged`. `review-queue.js` then counted `3 test fixtures (seeded)` where
+  it had counted 7, and `--fixtures` listed the three refusals and nothing
+  else.
+- **How it was verified, 2026-09-24, in the cloud workspace.** npm was blocked
+  there, so as in earlier sessions the gates ran on stand-ins: pdfjs-dist
+  5.7.284 for unpdf, a throwaway PostgreSQL 16 cluster behind PGlite's API,
+  the committed html5-qrcode in place of `build.sh`'s download, and Playwright
+  1.56.0's Chromium; the rehearsal used a `pg` over the same wire protocol and
+  a folder standing in for Blobs. ALL GATES GREEN on `29f2881` before the edit
+  and on the change after it, with `KAY-CAR-001` 4.124 and `KAY-PRR-001`
+  0.944. `build.sh` renamed nothing: no file in `js/` changed. The Codespace
+  run on the real packages and the real archive is the one that counts.
+
 ### After a deploy — check it
 
 1. `node scripts/archive-health.js` in the Codespace (reads as `nose_writer`;
@@ -1673,9 +1769,6 @@ panel it takes the card from, on both paths, so it waits for its own prompt.
 (`index.html`, "Add a jar you liked"). The Upload tab now says that isn't
 available yet.
 - **`account/index.html`'s footer lists Account twice.**
-- **Known ACS jars get the novelty line** while `unmapped` carries furniture
-(`Moisture`, `License No.`, a batch-code fragment) - §7. The fix is
-`NOT_AN_ANALYTE`, which changes an existing field, so it waits for a prompt.
 - **How `novelty` was verified, 2026-09-23.** No npm here: the gates ran on
 pdfjs-dist 5.7.284 standing in for unpdf (56/3, 56/0, clean, 4.124/0.944 on the
 untouched branch first), PGlite's API over a throwaway Postgres 16 cluster, and

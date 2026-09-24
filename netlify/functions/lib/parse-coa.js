@@ -137,6 +137,36 @@ const SECTION_LABELS = /^(TOTAL TERPENES|MOISTURE CONTENT|WATER ACTIVITY|ACTIVIT
 const TOTAL_OF_CANNABINOID = /^Total\s+(THC|CBD|CBG|CBN|CBC|CBL|CBT|Cannabinoids?|Active)/i;
 const NOT_AN_ANALYTE = /\b(CBD|CBDA|CBDV|CBG|CBGA|CBN|CBC|THC|THCA|THCV|THCVA|Total|Unit|Labs?|Laboratories|Laboratory|Accreditation|Director|LLC|Inc|PJLA|CMTL|SOP|Batch|Florida|Others|Reg\.|Limit|Widget|cfu|ppm|ppb|Absence|Coli|Salmonella|Aspergillus|Aflatoxin|Yeast|Mold)\b/i;
 
+/* Three more kinds of line that are not analytes - read by the unmapped
+   diagnostic ALONE (notAnAnalyteHere, below). Nothing that reads a value sees
+   them, so they move `unmapped` and `novelty` and never a reading. All three
+   are furniture that four accepted ACS reports put in `unmapped`, and the card
+   then told someone holding a jar from a known lab "NOSE hasn't seen this
+   lab's layout before" (PARSER-HANDOFF s7).
+
+   STRUCTURE_LABEL  a row label that is structure. Bare "Moisture" heads ACS's
+                    moisture table - "Moisture / 15 / 12.8", limit then result
+                    - and the freshness reader further down reads that very
+                    row as the moisture figure. It stays OUT of SECTION_LABELS
+                    on purpose: that list is also read by the look-ahead, where
+                    it ends rows, and by novelty's known headings.
+   ID_LABEL         a licence or identifier label. "License No." heads the
+                    licence number on every ACS page. A label ending in No.,
+                    Number or ID, or a bare License / Licence; no analyte name
+                    ends that way.
+   LABEL_ALONE      a "Label:" or "Label #:" with nothing after the colon. The
+                    line after it is that label's value, however name-shaped:
+                    "Lab Batch #:" then "AAGZ997-", the first half of a batch
+                    code the extractor split from its "25". On the corpus, every
+                    line after such a label inside a terpene section is a value
+                    - a strain, a facility, a batch code, an instrument - and
+                    none is an analyte. */
+const STRUCTURE_LABEL = /^MOISTURE$/i;
+const ID_LABEL = /^(?:[A-Za-z.]+ )?(?:No\.?|Number|ID)$|^Licen[cs]e$/i;
+const LABEL_ALONE = /:$/;
+const notAnAnalyteHere = (line, prev) =>
+  STRUCTURE_LABEL.test(line) || ID_LABEL.test(line) || (prev != null && LABEL_ALONE.test(prev));
+
 /* ACT writes Greek letters as bare initials: a-Pinene, b-Myrcene, g-Terpinene.
    This is notation, not chemistry - the same class as beta/β - so expanding it
    is safe and keeps ANALYTE_MAP from doubling in size. `d-` is deliberately
@@ -565,6 +595,7 @@ function parseCoa(text){
         && !/^TOTAL TERPENES$/i.test(line)
         && !NOT_AN_ANALYTE.test(line.replace(/^Total\s+/i, ''));
       if (inTerpeneSection && !SECTION_LABELS.test(upper)
+          && !notAnAnalyteHere(line, lines[i - 1])
           && (totalOfUnknown || !NOT_AN_ANALYTE.test(line)) &&
           /^[A-Za-z0-9(][A-Za-z0-9()+\-\/. ]{2,29}$/.test(line) &&
           /[A-Za-z]{3}/.test(line) &&              // must be a name, not a figure
