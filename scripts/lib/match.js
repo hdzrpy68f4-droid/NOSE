@@ -3,9 +3,9 @@
  *
  * Loads js/match-math.<hash>.js - the very file the app loads before
  * js/nose.<hash>.js - and returns what it exports: TERPENES, sanitizeTerps,
- * normalize, averageProfiles, cosine, matchBand. There is no copy of any of
- * it here, and there must never be one: a script's score has to be the score
- * the app would show.
+ * normalize, averageProfiles, cosine, matchBand, shownScore. There is no copy
+ * of any of it here, and there must never be one: a script's score has to be
+ * the score the app would show.
  *
  * build.sh fingerprints the file, so its name changes whenever it does. It is
  * found by pattern, and exactly one must exist - an edited, unbuilt

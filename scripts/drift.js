@@ -203,7 +203,7 @@ async function drift({ db, strain, lab = null, client = null, log = console.log,
       const [label, band] = M.matchBand(p.score);
       const link = `${p.from.label} ${p.sameDay ? '~' : '→'} ${p.to.label}`;
       const when = p.sameDay ? `same day, ${p.to.batch_date}` : `${p.from.batch_date} → ${p.to.batch_date}`;
-      log(`  ${link.padEnd(10)}${when.padEnd(27)}${p.score.toFixed(3)}  ${String(Math.round(p.score * 100)).padStart(3)}  ${label} (${band})`);
+      log(`  ${link.padEnd(10)}${when.padEnd(27)}${p.score.toFixed(3)}  ${String(M.shownScore(p.score)).padStart(3)}  ${label} (${band})`);
     }
   } else if (dayList.length === 1 && dayList[0].batches.length === 1) {
     log('');

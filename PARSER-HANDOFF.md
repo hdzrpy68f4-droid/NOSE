@@ -199,7 +199,7 @@ someone to look.
 | `mutation-test.js <dir> <parser>` | corrupt fixtures; require identical-or-reject |
 | `resolver-test.js` | viewer-page resolution, offline, against saved portal pages |
 | `novelty-test.js` | the five `novelty` notes (§7); lists the fixtures that have any, as information |
-| `match-test.js` | the matching maths has one home, `js/match-math.*.js`: the app takes it from there, nothing else holds a copy, and it returns every score in `test/fixtures/match-golden.json` to the last bit |
+| `match-test.js` | the matching maths has one home, `js/match-math.*.js`: the app takes it from there, nothing else holds a copy, and it returns every score in `test/fixtures/match-golden.json` to the last bit; every score is shown and sent through `shownScore()`, floored (§13, "The shown score"), and the worked examples on `learn/intensity-versus-character/` are the numbers the app shows |
 | `coa-dates-test.js` | `lib/coa-dates.js` and the parser's `harvestOn` / `reportOn` (§7): the three forms, the near misses, and every other field identical without it |
 | `analysis-test.js` | the analysis layer (§13) on PGlite: the two views, their grants |
 | `check-trust-test.js` | `scripts/check-trust.mjs` (§13, "The trust guard") on throwaway sites: every form of the old promise fails, true sentences pass; offline |
@@ -785,7 +785,7 @@ test/archive-scripts-test.js                          version, pdf-store, health
 test/rerun-test.js                                    reparse, backfill, export on PGlite; offline, 85 checks
 test/review-queue-test.js                             the review queue on PGlite; offline, 19 checks
 test/analysis-test.js                                 the analysis views and scripts on PGlite; offline
-test/match-test.js                                    the matching maths: one copy, the scores it gave before it moved
+test/match-test.js                                    the matching maths: one copy, the scores it gave before it moved, the numbers it shows
 test/fixtures/match-golden.json                       those scores, from js/nose.81d6bb53.js at b596508
 test/match-golden-make.js                             wrote them, once; never re-run to make a test pass
 test/novelty-test.js                                  the parser's novelty notes (s7); lists fixtures with any
@@ -1261,7 +1261,9 @@ cannot import. They moved - verbatim, 81 lines, with `TERPENES`,
 the app loads before its bundle (it sets `window.NoseMatch`) and the scripts
 load through `scripts/lib/match.js` (`module.exports`). Nothing else holds a
 copy; `test/match-test.js` fails if anything does, apart from the unfinished
-draft in `wip/`, which nothing loads.
+draft in `wip/`, which nothing loads. Since 2026-09-24 the file also holds
+`shownScore()`, the one way a score becomes a whole number - an addition, not
+a move (below, "The shown score").
 
 - **Fingerprinted like every bundle**, because `/js/*` is cached for a year:
   `build.sh` checks its syntax, hashes it, rewrites the two pages, and fails
@@ -1294,7 +1296,8 @@ substring, and list the names there are when nothing matches.
   total (`normalize()`, so zeros and cannabinoids never appear).
 - Then each batch against the one before: `cosine()` of the two
   share-of-total profiles, printed to three places, then as the app shows it
-  (`Math.round(score * 100)`) with `matchBand()`'s label and band. Batches of
+  (`shownScore()`, floored - `Math.round` until 2026-09-24) with
+  `matchBand()`'s label and band. Batches of
   the same day have no order between them, so each is compared with every
   batch of the day before and with each other (`3a ~ 3b`).
 - Undated batches are listed apart and compared with nothing.
@@ -1306,8 +1309,9 @@ substring, and list the names there are when nothing matches.
   effect wording in its output or in the layer's files.
 - On the rehearsal archive 20 of the 56 usable batches are dated. "Grease
   Monkey" is a Kaycha cart and a Kaycha concentrate from one harvest day,
-  2026-03-23 - `1a ~ 1b`, 0.997, shown as 100, Close match - and a Modern
-  Canna flower report with no date, listed apart.
+  2026-03-23 - `1a ~ 1b`, 0.997, shown as 99 since 2026-09-24 (100 while
+  the app rounded), Close match - and a Modern Canna flower report with no
+  date, listed apart.
 
 **`scripts/lab-stats.js`** - per lab, from `latest_parses`: documents (and
 how many are seeded test fixtures), accepted count and rate, the median
@@ -1489,7 +1493,7 @@ message said "<lab> read. Check the values below, then add the jar." The card's
 panel: no values, no warnings or novelty line, no Use this jar. The scanner path
 showed it. The fault predated `novelty`.
 
-- **The fix, in `js/nose.*.js`** (now `js/nose.705c9bba.js`): `placeCoaConfirm()`
+- **The fix, in `js/nose.*.js`** (then `js/nose.705c9bba.js`): `placeCoaConfirm()`
   runs in `renderCoaConfirmation()` just before the card is shown. It moves the
   card into the tab panel that holds that request's message, straight after the
   message, so the card hides with its tab. A card already in that panel, as on
@@ -1539,6 +1543,76 @@ showed it. The fault predated `novelty`.
   reparse was needed. The Codespace run on the real packages is the one that
   counts.
 
+### The shown score, 2026-09-24
+
+**A score shown as 75 carried the band below Good.** The app rounded a score
+for display (`Math.round(score * 100)`) and banded the unrounded one, so the
+home page's default pair - Lemon Tart Pucker against Cold Creek Kush, 0.7452 -
+read "75 · Partial overlap", though the published method says 75 and up is
+Good. The `/app` result, its summary line, the match-feedback vote and
+`drift.js` did the same. Rounding put 49 of the 1964 real scores in
+`match-golden.json` (pairs, self-scores, edge cases, palates) in the band
+above their own.
+
+- **The fix: one helper in `js/match-math.*.js`, `shownScore(s) =
+  Math.floor(s * 100 + 1e-9)`**, used everywhere a score is shown or sent: the
+  hero, the result score and its summary, and the feedback payload in
+  `js/nose.*.js`, and `drift.js`. A floored number stays inside the score's
+  band. `cosine()` and `matchBand()` are byte-identical, and
+  `match-golden.json` was not regenerated: every score in it still comes back
+  to the last bit. Flooring changes the number shown for 971 of the 1964 - by
+  one, down.
+- **The home page reads 74 · Partial overlap**, and so does `/app`, whose
+  default is the same pair. Opening on a Good match would mean choosing a
+  different default pair - a separate decision; the rounding stays. Among the
+  five demo jars, Lemon Tart Pucker against Pepper Grove shows 88 · Related
+  profile.
+- **Why the 1e-9.** A profile scored against itself can come back a hair under
+  1, which a plain floor shows as 99: 14 of the 61 golden self-scores - 12 of
+  the 56 accepted fixtures (3 at 0.9999999999999998, 9 at 0.9999999999999999)
+  and 2 of the demo jars. With it, all 61 show 100.
+- **Its cost, pinned in `match-test.js`.** A score within 1e-11 below 0.55,
+  0.75 or 0.90 is lifted to the edge while `matchBand()` gives the band below.
+  No real golden score falls there; the golden file's three band-edge probes,
+  one step below each edge, do, and the test lists them so any change shows.
+  No constant avoids it: a self-score two steps under 1 is further from 100
+  than one step under 0.75 is from 75.
+- **The feedback score switched from round to floor on 2026-09-24** (US
+  Eastern), with the deploy of this change. A stored vote from before carries
+  `Math.round(cosine * 100)`, one from after it `shownScore()`: a Good vote at
+  cosine 0.8963 was stored as 90, and now as 89. A tab opened before the deploy
+  keeps its old bundle until reloaded, so the first votes after it may still be
+  rounded. Each vote carries the server's `ts`, which splits them. Only Strong
+  and Good votes are stored at all - see "Still open".
+- **The worked examples moved too.** `learn/intensity-versus-character/` says
+  its scores are exactly what NOSE's matcher returns. Floored, the palate built
+  from shares scores 85 against the loud jar (the page said 86), and the palate
+  of raw values 62 against the quiet jar (it said 63). The page now prints 85
+  and 62, with `dateModified` and the sitemap's `lastmod` at 2026-09-24. Its
+  other four numbers - 100, 33, 85, 98 - did not move.
+- **`match-test.js` checks all of it**: the export list; the four places the
+  app shows or sends a score, and `drift.js`, by the code that does it; no file
+  in `js/` or `scripts/` rounding a score; every real golden score shown inside
+  its band; the 1e-9 and its cost; the article's jars and its six numbers,
+  recomputed; the hero anchor, now 74. Six deliberately broken copies each fail
+  it: the hero rounding again, the vote rounding again, `drift.js` rounding
+  again, a floor without the 1e-9, a `shownScore()` that rounds, and the
+  article's old 86. `analysis-test.js` checks that `drift.js` prints
+  `shownScore()`.
+- **How it was verified, 2026-09-24, in the cloud workspace.** npm was blocked
+  there, so as in earlier sessions the gates ran on stand-ins: pdfjs-dist
+  5.7.284 for unpdf, a throwaway PostgreSQL 16 cluster behind PGlite's API, the
+  committed html5-qrcode in place of `build.sh`'s download, and Playwright
+  1.56.0's Chromium. ALL GATES GREEN on `45aa164` before the edit and on the
+  change after it, with `KAY-CAR-001` 4.124 and `KAY-PRR-001` 0.944. The probe
+  ran first: through `scripts/lib/match.js`, the hero pair gave
+  0.7452381945084086 → 75 → Partial overlap. In headless Chromium on the built
+  site, before: the hero and `/app` read 75 · Partial overlap, and a vote sent
+  score 75, band Moderate. After: 74 · Partial overlap, and 74. No page errors
+  either time. `parse-coa.js`, `coa-dates.js` and `extract-text.js` are
+  untouched, so no reparse is needed. The Codespace run on the real packages is
+  the one that counts.
+
 ### After a deploy — check it
 
 1. `node scripts/archive-health.js` in the Codespace (reads as `nose_writer`;
@@ -1553,7 +1627,8 @@ again.
 which half failed, and why, with nothing about the report.
 6. The home page shows a match score in its hero, and on `/app` choosing a
 candidate jar shows a score. Both read their maths from
-`js/match-math.<hash>.js`; an empty score means that file did not load.
+`js/match-math.<hash>.js`; an empty score means that file did not load. On
+the default pair both read 74 · Partial overlap (75 before 2026-09-24).
 
 ### Still open
 
@@ -1573,16 +1648,20 @@ Import reaches them. Moved verbatim, because the scores had to stay
 identical; `wip/nose-farnesene-wip.js` is an unfinished draft that removes
 them. Fixing it changes scores, so it needs its own prompt and a
 regenerated `match-golden.json` in the same commit.
-- **A score shown as 75 can carry the band below Good.** The app rounds the
-  score for display (`Math.round(score * 100)`) but bands the unrounded one:
-  the home page's default pair (Lemon Tart Pucker against Cold Creek Kush)
-  is 0.7452, shown as "75" and banded "Partial overlap" / Moderate, though 75
-  is where Good begins. `drift.js` prints the unrounded score beside the
-  rounded one, so the difference is visible there. Which to band is a UI
-  decision.
+- **Votes on a Partial overlap or Different profile match are refused.** The
+  app sends `matchBand(score)[1]` as the vote's band - Strong, Good, Moderate
+  or Low - and `match-feedback.js` accepts Strong, Good, Partial and Weak. So
+  a vote on a Moderate or Low match gets a 400 `bad-band` and is never
+  stored, and `sendBeacon` drops the answer, so nobody sees it. The default
+  `/app` pair, 74 · Partial overlap, is one of them. Seen 2026-09-24 by
+  running the handler with a stand-in store: Strong and Good stored, Moderate
+  and Low refused. It predates the shown score. A fix changes which votes are
+  stored and the band slugs in their keys - map the names in the client, or
+  accept both on the server - so it waits for its own prompt.
 - **The static preview keeps its own copy of the maths** (it is not in this
   repo, §13 above). `match-test.js` cannot see it; a preview built after
-  today should load `js/match-math.<hash>.js` rather than carry a copy.
+  today should load `js/match-math.<hash>.js` rather than carry a copy. Its
+  copy predates `shownScore()`, so until it is rebuilt that way it rounds.
 - **A COA link card taken by a scan leaves its message behind.** Read a link,
 leave its card open, then scan a code on Scan QR. The card moves to Scan QR with
 the new report, and the COA link tab still says "<lab> read. Check the values

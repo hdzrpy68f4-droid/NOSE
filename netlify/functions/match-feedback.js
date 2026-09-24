@@ -67,10 +67,13 @@ function validate(d) {
   // vote worth having) into null. Validate the range instead of coercing.
   if (!isInt(d.score, 0, 100)) return { ok: false, reason: 'bad-score' };
 
-  // Deliberately NOT cross-checked against the band: the client derives the
-  // band from the raw cosine value and rounds the score afterwards, so a
-  // boundary match (cosine 0.895 → band Good, score 90) is legitimate and a
-  // strict check would throw away real votes.
+  // Deliberately NOT cross-checked against the band. The client derives the
+  // band from the raw cosine value. Until 2026-09-24 it rounded the score, so
+  // a stored boundary vote can carry a number from the band above (cosine
+  // 0.895 → band Good, score 90). Since then it sends shownScore(), which
+  // floors, so the two agree - except in a window 1e-11 wide below each edge
+  // (js/match-math.*.js). A strict check would throw away real votes either
+  // way. PARSER-HANDOFF s13.
 
   if (!isId(d.candidate)) return { ok: false, reason: 'bad-candidate' };
 

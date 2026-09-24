@@ -62,8 +62,10 @@
     /* The matching algorithm - TERPENES, the spec-compliance rules
        (sanitizeTerps), normalize, averageProfiles, cosine and matchBand - lives
        in js/match-math.*.js, which the page loads before this file, so that the
-       app and scripts/drift.js run one copy of it. PARSER-HANDOFF s13. */
-    const { TERPENES, normalize, averageProfiles, cosine, matchBand } = window.NoseMatch;
+       app and scripts/drift.js run one copy of it. So does shownScore, the one
+       way a score becomes the number on the page or in a feedback vote: floored,
+       not rounded, to keep the number in the score's band. PARSER-HANDOFF s13. */
+    const { TERPENES, normalize, averageProfiles, cosine, matchBand, shownScore } = window.NoseMatch;
 
     const PROFILES = [
       {id:'lemon-tart',name:'Lemon Tart Pucker',subtitle:'Earthy-spice with citrus lift',terps:{myrcene:.59,caryophyllene:.299,limonene:.153,humulene:.0954,bisabolol:.0869,linalool:.0484,pinene_b:.0232}},
@@ -123,7 +125,7 @@
       const a=profileById(state.heroPalate), b=profileById(state.heroCandidate);
       const score=cosine(normalize(a.terps),normalize(b.terps));
       renderBar('heroPalateBar',a.terps); renderBar('heroCandidateBar',b.terps);
-      document.getElementById('heroScore').textContent=Math.round(score*100);
+      document.getElementById('heroScore').textContent=shownScore(score);
       document.getElementById('heroScoreLabel').textContent=matchBand(score)[0];
       document.getElementById('heroScoreCopy').textContent=describeMatch(a,b,score);
     }
@@ -227,7 +229,7 @@
     }
     function resetFeedback(score,candidate){
       feedbackContext={
-        score:Math.round(score*100),
+        score:shownScore(score),   // the number the page shows; rounded until 2026-09-24 (PARSER-HANDOFF s13)
         band:matchBand(score)[1],
         palate:palateProfiles().map(reportableId),
         palateSize:palateProfiles().length,
@@ -279,8 +281,8 @@
       document.getElementById('fullResult').hidden=false;
       document.getElementById('resultNames').textContent=`${a.name} compared with ${b.name}`;
       document.getElementById('resultBadge').textContent=matchBand(score)[0];
-      document.getElementById('resultScore').textContent=Math.round(score*100);
-      document.getElementById('resultSummary').textContent=`${Math.round(score*100)}% aroma similarity — ${matchBand(score)[1].toLowerCase()} confidence band`;
+      document.getElementById('resultScore').textContent=shownScore(score);
+      document.getElementById('resultSummary').textContent=`${shownScore(score)}% aroma similarity — ${matchBand(score)[1].toLowerCase()} confidence band`;
       document.getElementById('resultExplanation').textContent=describeMatch(a,b,score);
       resetFeedback(score,b);
       document.getElementById('sharedBackbone').textContent=shared.length?shared.slice(0,2).map(key=>FAMILIES[key].label).join(' + '):'No strong shared family';

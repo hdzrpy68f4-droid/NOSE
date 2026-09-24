@@ -220,7 +220,7 @@ async function driftChecks(db, check) {
   /* The terps come back in jsonb's own key order, not the order they were
      written in, and cosine() sums in key order - so the exact check is made
      on the objects drift read, and the written-order score agrees to far
-     below anything shown (the app rounds to whole percent). */
+     below anything shown (the app shows whole percent). */
   count('...every score is the app\'s own cosine of the app\'s own share-of-total profiles, to the last bit',
     r.pairs.every(p => Object.is(p.score, M.cosine(M.normalize(p.from.terps), M.normalize(p.to.terps)))
                        && JSON.stringify(p.from.shares) === JSON.stringify(M.normalize(p.from.terps))), true);
@@ -229,8 +229,8 @@ async function driftChecks(db, check) {
     r.pairs.every(p => Math.abs(p.score - M.cosine(byBatch[p.from.batch], byBatch[p.to.batch])) < 1e-12), true);
   const firstPair = all.lines.find(l => /^ {2}1 → 2 /.test(l));
   const s12 = M.cosine(byBatch.K1, byBatch.A1);
-  count('...printed with the app\'s rounding and the app\'s band',
-    firstPair.trim().split(/\s{2,}/).slice(-3), [s12.toFixed(3), String(Math.round(s12 * 100)), `${M.matchBand(s12)[0]} (${M.matchBand(s12)[1]})`]);
+  count('...printed as the app shows it (shownScore, floored) and with the app\'s band',
+    firstPair.trim().split(/\s{2,}/).slice(-3), [s12.toFixed(3), String(M.shownScore(s12)), `${M.matchBand(s12)[0]} (${M.matchBand(s12)[1]})`]);
   const shares = Object.entries(byBatch.K1).sort((a, b) => b[1] - a[1]).slice(0, 5)
     .map(([k, v]) => `${M.TERPENES[k].name} ${(v * 100).toFixed(1)}%`).join(' · ');
   count('...top five as share of total, from the app\'s normalize(), a zero never listed',

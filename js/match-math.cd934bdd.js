@@ -17,6 +17,9 @@
  *   averageProfiles() core rule 2: a palate is the mean of normalised profiles
  *   cosine()          core rule 3: the match score, 0..1
  *   matchBand()       core rule 4: the score bands
+ *   shownScore()      the score as the whole number the app shows and sends:
+ *                     floored, so it never sits above its band (added
+ *                     2026-09-24; everything above moved here unchanged)
  *
  * Aroma and flavour only.
  *
@@ -115,6 +118,17 @@
     }
     function cosine(a,b){ const keys=new Set([...Object.keys(a),...Object.keys(b)]); let dot=0,aa=0,bb=0; keys.forEach(key=>{ const x=a[key]||0,y=b[key]||0; dot+=x*y; aa+=x*x; bb+=y*y; }); return aa&&bb ? dot/(Math.sqrt(aa)*Math.sqrt(bb)) : 0; }
     function matchBand(score){ if(score>=.90) return ['Close match','Strong']; if(score>=.75) return ['Related profile','Good']; if(score>=.55) return ['Partial overlap','Moderate']; return ['Different profile','Low']; }
+    /* The score as the whole number the app shows, and the match-feedback
+       payload sends. matchBand() bands the unrounded score, so this floors
+       rather than rounds: Math.round showed 0.7452 as "75" beside "Partial
+       overlap", though the published method says 75 and up is Good. A
+       floored number never sits above its band. The 1e-9 is for floating
+       point: a report scored against itself can come back as
+       0.9999999999999998, which a plain floor shows as 99. Its cost is a
+       window 1e-11 wide below 0.55, 0.75 and 0.90, where the number reaches
+       the edge while matchBand() gives the band below; no real score in
+       test/fixtures/match-golden.json falls in it. PARSER-HANDOFF s13. */
+    function shownScore(score){ return Math.floor(score*100+1e-9); }
 
-    return Object.freeze({ TERPENES, TERP_ALIAS, coerce, sanitizeTerps, total, normalize, averageProfiles, cosine, matchBand });
+    return Object.freeze({ TERPENES, TERP_ALIAS, coerce, sanitizeTerps, total, normalize, averageProfiles, cosine, matchBand, shownScore });
 });
