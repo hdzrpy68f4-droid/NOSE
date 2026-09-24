@@ -1220,7 +1220,9 @@ changed: harvestOn` alone: 16 of 59 on the rehearsal, 43 unchanged.
 only ACS reports**, each by `also changed: novelty, unmapped` alone: the four
 ACS fixtures, and any real ACS scan whose `unmapped` held the same furniture.
 Rehearsed on a local copy of the seeded archive: `55 unchanged / 4 values
-changed`, then `59 unchanged` (below, "Known ACS layouts, 2026-09-24").
+changed`, then `59 unchanged`. On the real archive, run #7: `62 unchanged / 4
+values changed`, the same four, then `66 unchanged` (below, "Known ACS
+layouts, 2026-09-24").
 - **Ids jump after a run.** `INSERT … ON CONFLICT DO NOTHING` takes an identity
 number even when it conflicts, so a reparse uses up one document id and one
 extraction id per document. Nothing is lost; count rows, never ids.
@@ -1708,6 +1710,17 @@ outside the six families: Moisture." with it. Both were false.
   and on the change after it, with `KAY-CAR-001` 4.124 and `KAY-PRR-001`
   0.944. `build.sh` renamed nothing: no file in `js/` changed. The Codespace
   run on the real packages and the real archive is the one that counts.
+- **On the real archive, 2026-09-24 (US Eastern)**, from the Codespace on
+  `8a03081`, pulled from a git bundle: `reparse.js --dry-run`, then
+  `reparse.js` - run #7, 66 documents through #314 - both said `62 unchanged
+  / 4 values changed / 0 accepted→rejected / 0 rejected→accepted / 0 failed`.
+  The four were the four fixtures above, by the same short fingerprints, each
+  by `novelty, unmapped` alone, with `usable`, `readBy` and the total the same
+  before and after. None of the seven documents that are not fixtures
+  changed, so no real ACS scan carried the furniture. Run #8 said `66
+  unchanged`. `review-queue.js`: `0 documents to look at` of 66, and `3 test
+  fixtures (seeded)` counted where there had been 7 - the three refusals.
+  Then `git push`, `29f2881..8a03081`.
 
 ### After a deploy — check it
 
