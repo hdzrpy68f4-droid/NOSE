@@ -158,6 +158,11 @@ and ends with `ALL GATES GREEN`. It passes
 a gate only on its exact expected line, so when a session legitimately changes
 a count, update the script in the same commit.
 
+**`test/input-paths-test.mjs` is not a gate yet.** It drives the app in headless
+Chromium, and Playwright is not a project dependency, so it has not yet been run
+in the Codespace. Run it by hand (§13, "The input paths"). Add it to `gates.sh` only
+once it prints `input-paths clean` there.
+
 **The harnesses do not cover `build.sh`.** All five ran green through a session
 in which the deploy was failing on a CSP sanity check, so every fix sat
 unpublished while the tests said otherwise. Run the build before believing that
@@ -196,6 +201,7 @@ someone to look.
 | `coa-dates-test.js` | `lib/coa-dates.js` and the parser's `harvestOn` / `reportOn` (§7): the three forms, the near misses, and every other field identical without it |
 | `analysis-test.js` | the analysis layer (§13) on PGlite: the two views, their grants |
 | `check-trust-test.js` | `scripts/check-trust.mjs` (§13, "The trust guard") on throwaway sites: every form of the old promise fails, true sentences pass; offline |
+| `input-paths-test.mjs` | the app's ways in, in headless Chromium: Scan QR (fake camera and QR image), COA link, Upload. The real `coa.js` and parser answer, with only the download and unpdf stood in for (§13, "The input paths"). Needs Playwright; not in `gates.sh` |
 
 The counts in section 2 are checked by `fixture-lint.js` against the corpus, so
 a stale one fails the lint rather than misleading the next session.
@@ -1472,6 +1478,64 @@ git bundle, and applied in the Codespace:
 - The scan is parse #190 and document #311, after #188 and #185: ids jump
   after every reparse run. Count rows, never ids.
 
+### The input paths, 2026-09-23
+
+**The COA link tab could not add a jar.** `#coaConfirm` is markup inside
+`#scanPanel`, and the COA link tab hides that panel. After "Read report" the
+message said "<lab> read. Check the values below, then add the jar." The card's
+`hidden` attribute was removed, but the card stayed invisible inside its hidden
+panel: no values, no warnings or novelty line, no Use this jar. The scanner path
+showed it. The fault predated `novelty`.
+
+- **The fix, in `js/nose.*.js`** (now `js/nose.705c9bba.js`): `placeCoaConfirm()`
+  runs in `renderCoaConfirmation()` just before the card is shown. It moves the
+  card into the tab panel that holds that request's message, straight after the
+  message, so the card hides with its tab. A card already in that panel, as on
+  every scan, stays where it is. The markup in `app.html` is unchanged.
+- **Upload** says plainly, in the tab and again after a file is chosen, that
+  reading an uploaded file isn't available yet, and points to Scan QR, COA link
+  and Manual. `validateUpload()` still checks type and size, and nothing sends
+  the file anywhere. So the privacy page's sentence ("checked for type and size
+  locally, and are still not sent anywhere") stays true without a change.
+  "Static preview" is gone from the page.
+- **`account/index.html`** no longer says to use the export button "in the
+  meantime".
+- **`test/input-paths-test.mjs`** is the check: 65 checks in headless Chromium,
+  against a local copy of the site served with `_headers` (CSP included). Each
+  POST to `/.netlify/functions/coa` is answered by the real `coa.js` handler and
+  parser in the test's own process. Only the PDF download and unpdf are stood in
+  for, and unpdf returns a fixture's extracted text. The fixtures:
+  `KAY-CAR-001` (4.124, nothing extra), `MCL-FLW-002` (the 103.8% warning),
+  `ACS-FLW-002` (novelty) and `GreenRoads…` (refused, with reasons). Scan QR runs
+  twice: by Chromium's fake camera playing `test/fixtures/qr/coa-link.png`, and by
+  "Choose QR image". The test also checks that the card hides with its tab, that
+  it moves to the panel of the next request, that a refused report shows no card,
+  and that Upload makes no request at all. The build stamp is pinned to `dev` and
+  no database address is set, so nothing reaches the archive.
+- **On `1cbc198`, before the fix**, it failed 15 checks. Every failure was on
+  COA link (the card, its warnings and novelty lines, its buttons) or on Upload's
+  wording. Every Scan QR check passed, camera and image, warnings and novelty
+  lines included. After the fix it passed 65 of 65 on every run.
+- **The QR image** encodes `https://lab.example/coa/input-paths-test.pdf`, a
+  reserved example domain. It was drawn with libqrencode at error correction L,
+  8 pixels to a module, and read back with zbar. Redraw it the same way:
+  html5-qrcode 2.3.8 does not read the same address drawn at level M, by camera
+  or from a file.
+- **Run it in the Codespace**: `npm install --no-save playwright`, then
+  `npx playwright install --with-deps chromium`, then
+  `node test/input-paths-test.mjs`. Expect `input-paths clean`. `npm ci` removes
+  Playwright again. Once it passes there, `gates.sh` can take it:
+  `gate 'input paths' 'input-paths clean' '^input-paths clean$' node test/input-paths-test.mjs`.
+- **How it was verified, 2026-09-23, in the cloud workspace.** npm was blocked
+  there, so as in earlier sessions the gates ran on stand-ins: pdfjs-dist
+  5.7.284 for unpdf, a throwaway PostgreSQL 16 cluster behind PGlite's API, and
+  the committed html5-qrcode in place of `build.sh`'s download. ALL GATES GREEN
+  on `1cbc198` before the edit and on the change after it, with `KAY-CAR-001`
+  4.124 and `KAY-PRR-001` 0.944. The probe ran on Playwright 1.56.0's Chromium.
+  `parse-coa.js`, `coa-dates.js` and `extract-text.js` are untouched, so no
+  reparse was needed. The Codespace run on the real packages is the one that
+  counts.
+
 ### After a deploy — check it
 
 1. `node scripts/archive-health.js` in the Codespace (reads as `nose_writer`;
@@ -1516,13 +1580,19 @@ regenerated `match-golden.json` in the same commit.
 - **The static preview keeps its own copy of the maths** (it is not in this
   repo, §13 above). `match-test.js` cannot see it; a preview built after
   today should load `js/match-math.<hash>.js` rather than carry a copy.
-- **The paste-a-link path never shows its confirmation card.** `#coaConfirm`
-lives inside `#scanPanel`, which is hidden while the COA link tab is open: the
-link is read, the message says "Check the values below, then add the jar",
-and nothing is below. Seen in Chromium, 2026-09-23; it predates `novelty`, and
-it hides the new line, the warnings and the Use this jar button alike on that
-path. The scanner path shows the card. A UI prompt should move the card (or a
-second one) where both paths can see it.
+- **A COA link card taken by a scan leaves its message behind.** Read a link,
+leave its card open, then scan a code on Scan QR. The card moves to Scan QR with
+the new report, and the COA link tab still says "<lab> read. Check the values
+below, then add the jar." with nothing below it. Seen in Chromium, 2026-09-23.
+The reverse cannot happen: opening Scan QR restarts the camera, which replaces
+that tab's message. A fix would change what `fetchCoaReport()` says in the
+panel it takes the card from, on both paths, so it waits for its own prompt.
+- **`test/input-paths-test.mjs` is not in `gates.sh`** until it has passed in
+the Codespace (§13, "The input paths").
+- **The home page still offers "upload a report"** as a way to add a jar
+(`index.html`, "Add a jar you liked"). The Upload tab now says that isn't
+available yet.
+- **`account/index.html`'s footer lists Account twice.**
 - **Known ACS jars get the novelty line** while `unmapped` carries furniture
 (`Moisture`, `License No.`, a batch-code fragment) - §7. The fix is
 `NOT_AN_ANALYTE`, which changes an existing field, so it waits for a prompt.
@@ -1539,10 +1609,6 @@ export in the Codespace is its first real proof.
 cannot reach npm, Supabase or Netlify. Offline, `@netlify/blobs` is a stand-in
 built from its published types (v10: `set` returns `{ modified }`, and
 `onlyIfNew` answers a 412 with `modified: false` rather than throwing).
-- The **Upload a report** tab in `app.html` only checks a file's type and size;
-nothing reads the file. Its text, and the message `js/nose.*.js` shows after a
-file is chosen, still say "in this static preview". Fixing the message changes
-the bundle, so `build.sh` re-fingerprints it - commit the renamed file.
 - The terms page's "Before launch" box still lists the operating entity's legal
 name and address, a governing-law clause, an effective date, and a lawyer's
 review.
@@ -1561,6 +1627,3 @@ on the privacy page. The account functions' `SUPABASE_URL` and
 - **An `npm audit` warning** was seen in the Codespace (reported 2026-09-23)
 and has not been looked at: the cloud workspace cannot reach npm. Next step:
 `npm audit` in the Codespace, and bring its output.
-- `account/index.html` still ends its palate card with "Use the export button
-in the matcher to move a palate between devices in the meantime." - written
-before Save to account existed.

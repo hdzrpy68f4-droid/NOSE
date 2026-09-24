@@ -353,6 +353,17 @@
       if(card) card.hidden=true;
     }
 
+    /* The card is written inside the Scan QR panel, and the COA link tab hides
+       that panel: a pasted link said "Check the values below" over nothing.
+       Before it is shown, the card moves into the tab panel that holds this
+       request's message, straight after the message, so it hides with its tab.
+       Already in that panel, it stays where it is. */
+    function placeCoaConfirm(card,messageId){
+      const message=$id(messageId);
+      const panel=message&&message.closest('[role="tabpanel"]');
+      if(panel&&!panel.contains(card)) message.insertAdjacentElement('afterend',card);
+    }
+
     async function fetchCoaReport(href,messageId){
       hideCoaConfirm();
       showMessage(messageId,'Reading the lab report\u2026','neutral');
@@ -499,6 +510,7 @@
         holder.append(row);
       });
 
+      placeCoaConfirm(card,messageId);
       card.hidden=false;
       showMessage(messageId,`${data.lab||'Report'} read. Check the values below, then add the jar.`,'success');
       card.scrollIntoView({block:'nearest'});
@@ -856,7 +868,7 @@
       if(!r.ok){ showMessage('urlMessage',r.message,'error'); hideCoaConfirm(); return; }
       fetchCoaReport(r.url.href,'urlMessage');
     }
-    function validateUpload(file){ if(!file){ document.getElementById('uploadMessage').hidden=true; return; } const allowed=['application/pdf','image/jpeg','image/png','image/webp']; if(!allowed.includes(file.type)){ showMessage('uploadMessage','Use a PDF, JPG, PNG, or WebP file.','error'); return; } if(file.size>10*1024*1024){ showMessage('uploadMessage','The selected file is larger than 10 MB.','error'); return; } showMessage('uploadMessage',`${file.name} selected. The file remains local in this static preview.`,'success'); }
+    function validateUpload(file){ if(!file){ document.getElementById('uploadMessage').hidden=true; return; } const allowed=['application/pdf','image/jpeg','image/png','image/webp']; if(!allowed.includes(file.type)){ showMessage('uploadMessage','Use a PDF, JPG, PNG, or WebP file.','error'); return; } if(file.size>10*1024*1024){ showMessage('uploadMessage','The selected file is larger than 10 MB.','error'); return; } showMessage('uploadMessage','Reading an uploaded file isn’t available yet, and this file was not sent anywhere. Use Scan QR or COA link to read the lab report, or Manual to type its values in.','neutral'); }
 
     /* Routing after the Tier-2 split.
        Every destination is now a real URL:
