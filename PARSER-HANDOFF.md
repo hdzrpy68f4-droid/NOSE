@@ -153,15 +153,17 @@ Also run `node test/resolver-test.js` - expect `resolver clean`, and
 **Or all at once:** `bash scripts/gates.sh` runs these, the Kaycha anchors,
 `novelty-test`, `coa-dates-test`, `store-test`, `probe-test`, `archive-wiring-test`,
 `archive-scripts-test`, `rerun-test`, `review-queue-test`,
-`analysis-test` and `check-trust-test`, prints the line each gate produced,
-and ends with `ALL GATES GREEN`. It passes
+`analysis-test`, `check-trust-test` and, after the build, `input-paths-test`.
+It prints the line each gate produced and ends with `ALL GATES GREEN`. It passes
 a gate only on its exact expected line, so when a session legitimately changes
 a count, update the script in the same commit.
 
-**`test/input-paths-test.mjs` is not a gate yet.** It drives the app in headless
-Chromium, and Playwright is not a project dependency, so it has not yet been run
-in the Codespace. Run it by hand (§13, "The input paths"). Add it to `gates.sh` only
-once it prints `input-paths clean` there.
+**The input-paths gate needs Playwright and its Chromium**, which are not
+project dependencies. Install them once per Codespace, and again after any
+`npm ci`, which removes Playwright: `npm install --no-save playwright`, then
+`npx playwright install --with-deps chromium`. Without them the gate fails and
+prints that command. It runs after the build, so it tests the pages as they
+deploy (§13, "The input paths").
 
 **The harnesses do not cover `build.sh`.** All five ran green through a session
 in which the deploy was failing on a CSP sanity check, so every fix sat
@@ -201,7 +203,7 @@ someone to look.
 | `coa-dates-test.js` | `lib/coa-dates.js` and the parser's `harvestOn` / `reportOn` (§7): the three forms, the near misses, and every other field identical without it |
 | `analysis-test.js` | the analysis layer (§13) on PGlite: the two views, their grants |
 | `check-trust-test.js` | `scripts/check-trust.mjs` (§13, "The trust guard") on throwaway sites: every form of the old promise fails, true sentences pass; offline |
-| `input-paths-test.mjs` | the app's ways in, in headless Chromium: Scan QR (fake camera and QR image), COA link, Upload. The real `coa.js` and parser answer, with only the download and unpdf stood in for (§13, "The input paths"). Needs Playwright; not in `gates.sh` |
+| `input-paths-test.mjs` | the app's ways in, in headless Chromium: Scan QR (fake camera and QR image), COA link, Upload. The real `coa.js` and parser answer, with only the download and unpdf stood in for (§13, "The input paths"). Needs Playwright; a gate, run after the build |
 
 The counts in section 2 are checked by `fixture-lint.js` against the corpus, so
 a stale one fails the lint rather than misleading the next session.
@@ -1521,11 +1523,12 @@ showed it. The fault predated `novelty`.
   8 pixels to a module, and read back with zbar. Redraw it the same way:
   html5-qrcode 2.3.8 does not read the same address drawn at level M, by camera
   or from a file.
-- **Run it in the Codespace**: `npm install --no-save playwright`, then
-  `npx playwright install --with-deps chromium`, then
-  `node test/input-paths-test.mjs`. Expect `input-paths clean`. `npm ci` removes
-  Playwright again. Once it passes there, `gates.sh` can take it:
-  `gate 'input paths' 'input-paths clean' '^input-paths clean$' node test/input-paths-test.mjs`.
+- **In the Codespace, 2026-09-24** (US Eastern), on `e7d27ff`: after
+  `npm install --no-save playwright` and `npx playwright install --with-deps
+  chromium`, `node test/input-paths-test.mjs` ended `input-paths clean`, as
+  reported. So `gates.sh` now runs it, as its last gate, after the build.
+  `npm ci` removes Playwright, and the gate then fails until both commands
+  run again.
 - **How it was verified, 2026-09-23, in the cloud workspace.** npm was blocked
   there, so as in earlier sessions the gates ran on stand-ins: pdfjs-dist
   5.7.284 for unpdf, a throwaway PostgreSQL 16 cluster behind PGlite's API, and
@@ -1587,8 +1590,6 @@ below, then add the jar." with nothing below it. Seen in Chromium, 2026-09-23.
 The reverse cannot happen: opening Scan QR restarts the camera, which replaces
 that tab's message. A fix would change what `fetchCoaReport()` says in the
 panel it takes the card from, on both paths, so it waits for its own prompt.
-- **`test/input-paths-test.mjs` is not in `gates.sh`** until it has passed in
-the Codespace (§13, "The input paths").
 - **The home page still offers "upload a report"** as a way to add a jar
 (`index.html`, "Add a jar you liked"). The Upload tab now says that isn't
 available yet.
