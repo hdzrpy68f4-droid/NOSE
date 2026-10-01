@@ -153,7 +153,7 @@ Also run `node test/resolver-test.js` - expect `resolver clean`, and
 **Or all at once:** `bash scripts/gates.sh` runs these, the Kaycha anchors,
 `novelty-test`, `coa-dates-test`, `store-test`, `probe-test`, `archive-wiring-test`,
 `archive-scripts-test`, `rerun-test`, `review-queue-test`,
-`analysis-test`, `check-trust-test` and, after the build, `input-paths-test`.
+`analysis-test`, `duplicates-test`, `check-trust-test` and, after the build, `input-paths-test`.
 It prints the line each gate produced and ends with `ALL GATES GREEN`. It passes
 a gate only on its exact expected line, so when a session legitimately changes
 a count, update the script in the same commit.
@@ -202,6 +202,7 @@ someone to look.
 | `match-test.js` | the matching maths has one home, `js/match-math.*.js`: the app takes it from there, nothing else holds a copy, and it returns every score in `test/fixtures/match-golden.json` to the last bit; every score is shown and sent through `shownScore()`, floored (§13, "The shown score"), and the worked examples on `learn/intensity-versus-character/` are the numbers the app shows |
 | `coa-dates-test.js` | `lib/coa-dates.js` and the parser's `harvestOn` / `reportOn` (§7): the three forms, the near misses, and every other field identical without it |
 | `analysis-test.js` | the analysis layer (§13) on PGlite: the two views, their grants |
+| `duplicates-test.js` | `duplicates.js` and `download-twice.js` (§13, "One report, many documents"): on PGlite, and on fixture PDFs behind a stand-in fetch - a PDF rebuilt between downloads, the same file twice, a text that changes, a link that fails; offline |
 | `check-trust-test.js` | `scripts/check-trust.mjs` (§13, "The trust guard") on throwaway sites: every form of the old promise fails, true sentences pass; offline |
 | `input-paths-test.mjs` | the app's ways in, in headless Chromium: Scan QR (fake camera and QR image), COA link, Upload. The real `coa.js` and parser answer, with only the download and unpdf stood in for (§13, "The input paths"). Needs Playwright; a gate, run after the build |
 
@@ -220,6 +221,8 @@ a stale one fails the lint rather than misleading the next session.
 | `review-queue.js` | **what needs a look**: documents whose latest reading was refused or has `novelty` (§7), newest first, with reasons; reads only |
 | `drift.js "<strain>" [--lab X] [--client Y]` | one strain's usable batches in date order - total terpenes, top five as share of total - and the app's own score and band between consecutive batches; undated batches apart; reads only |
 | `lab-stats.js` | per lab: documents, accepted rate, median measured coverage, most common kind of warning; reads only |
+| `duplicates.js [--limit N]` | the reports the archive holds as more than one document: documents sharing an extraction text (the first stored is the report, the rest copies) and documents sharing a lab and lab ID; ends `duplicates already stored: N documents`; reads only |
+| `download-twice.js <link>...` | each link fetched as the scanner fetches it, twice, 65 seconds apart: whether the bytes and the extracted text changed, and the lines that did; writes nothing, needs no secrets |
 
 ---
 
@@ -823,6 +826,9 @@ scripts/review-queue.js                               latest reading refused or 
 scripts/lib/rerun.js                                  what those share: the stamp-or-refuse helper, reads, comparison
 scripts/drift.js                                      one strain's batches over time, scored as the app scores a match
 scripts/lab-stats.js                                  per lab: documents, accepted, median coverage, commonest warning
+scripts/duplicates.js                                 reports kept as more than one document: shared texts, shared lab IDs
+scripts/download-twice.js                             a link fetched twice: did the bytes or the text change?
+test/duplicates-test.js                               those two on PGlite and fixture PDFs; offline
 scripts/lib/match.js                                  loads js/match-math.<hash>.js for the scripts; no maths of its own
 js/match-math.<hash>.js                               the matching maths, loaded by the app and the scripts alike
 scripts/check-published.js                            run by build.sh
@@ -1722,6 +1728,92 @@ outside the six families: Moisture." with it. Both were false.
   fixtures (seeded)` counted where there had been 7 - the three refusals.
   Then `git push`, `29f2881..8a03081`.
 
+### One report, many documents - the probe, 2026-10-01
+
+**A document is keyed by the SHA-256 of the PDF's bytes, and Method Testing
+Labs' portal builds its PDF when it is downloaded.** So every fetch of one
+Method report adds a document, an extraction, a parse and, since 2026-09-23,
+a PDF copy. Three consequences: the privacy page says "We do not count how
+many times a report is fetched" while the archive keeps one dated row per
+fetch; `batch_series`, `drift.js` and `lab-stats.js` count one sample several
+times; and storage grows per scan, not per report. Prompt 4 asked for a probe
+before any edit. This is the probe; the fix waits on what it finds.
+
+- **The fixture PDFs, read offline** (`pdfinfo`, `qpdf --qdf`). All eight
+  `MTL-*` PDFs (mPDF 7.0.3) were made on one of two days - five on the
+  evening of 2026-07-25, three on 2026-09-06, the days they were downloaded -
+  six days to seventeen months after the batch dates and sign-offs they
+  print (MTL-CAR-001 and MTL-LRS-001: batch date 2/27/2025, signed
+  3/3/2025). In MTL-CAR-001 the moment of making is written in five
+  places and no others: `/CreationDate` and `/ModDate` in the Info
+  dictionary, the `/M` of its two link annotations, and the trailer `/ID`.
+  None is page content, so none should reach the extracted text - a
+  prediction, which only downloading twice tests.
+- **Kaycha and ACS are not proven fixed by their dates.** 24 of the 30
+  Kaycha (mPDF 8.2.x) and ACS (Chromium) fixture PDFs were made on their
+  printed completion day. Of the other six, two Kaycha reports were made on
+  the revision day they print (KAY-FLW-003, Grease_monkey_live_resin) and
+  ACS-LRS-001 the day after completion - but KAY-AIO-002, KAY-CAR-002 and
+  KAY-LRS-001 print no revision and were all made on 2025-12-22, 3 to 41 days
+  after completion, which is what a portal that builds a file on first
+  download looks like. Modern Canna's Crystal Reports PDFs carry no creation
+  date at all.
+- **`scripts/duplicates.js`** - probe 1. Read-only, `NOSE_DB_URL`; with
+  `NETLIFY_SITE_ID` and `NETLIFY_AUTH_TOKEN` set it also counts the copies'
+  PDFs in Blobs. Documents joined by any extraction text they share are one
+  report: the first stored is the report, every later one a copy (joined, not
+  merely grouped, because a document extracted twice holds two texts and a
+  copy may share either). Then documents whose latest readings name the same
+  lab and lab ID, saying whether they share one text - two texts there are an
+  amended report, a re-render that changed its text, or one ID on two
+  reports. It ends `duplicates already stored: N documents`, after the
+  copies by lab and the extractions, parses and PDFs they hold. Prints no
+  text, no address, no full fingerprint.
+- **`scripts/download-twice.js <link>...`** - probe 3. Writes nothing, needs
+  no secrets. Each link is fetched as the scanner fetches it (coa.js's own
+  `_resolvePdfFromPage`, up to two pages deep), every link once, then again
+  after 65 seconds (`--wait`). For each pair: the SHA-256 of the bytes, the
+  PDF's creation and change stamps and file ID, the SHA-256 of the text as
+  the archive computes it (`extract-text.js`, then `store.js`'s cleaning),
+  and the lab and lab ID read. When the texts differ it prints the differing
+  lines, as extracted, with their line numbers, and exits 1. A link is
+  printed as its host only.
+- **`test/duplicates-test.js`**, a gate (`duplicates clean`): both scripts,
+  on PGlite and on fixture PDFs behind a stand-in fetch - a coaportal report
+  page whose PDF is rebuilt between downloads (`rebuilt()` rewrites every
+  stamp of its making and the file ID in place; the text stays identical,
+  which the test checks with the real extractor), a viewer page serving one
+  file twice, a text that changes, a link that fails.
+- **Rehearsed on a local copy of the seeded archive** (the 59 fixtures, read
+  by `035fded`, in a local PostgreSQL 16 as `nose_writer`, a folder standing
+  in for Blobs): `duplicates.js` said `59 documents hold 59 distinct reports`
+  and `0 documents`. Then MTL-CAR-001, rebuilt twice with new stamps, went
+  through `storeScan` as two production scans: each wrote a new document,
+  extraction, parse and PDF, and `duplicates.js` said `61 documents hold 59
+  distinct reports by text - 2 documents are copies`, both Method, `2 of 2
+  with a PDF in Blobs`. That reproduces the mechanism. What the portals
+  actually do, and what the real archive holds, only probes 1 to 3 in the
+  Codespace can say.
+- **Still to run, in the Codespace**: probe 1 on the real archive; probe 2,
+  one Method jar scanned twice on the live site a minute apart, then probe 1
+  again; probe 3, `download-twice.js` with one link each from coaportal,
+  yourcoa, ACS and Modern Canna. A text that differs between downloads
+  stops the work: bring the lines, and normalise nothing by guesswork. Bytes
+  that differ with texts that match send the work on to Prompt 4's fix, and
+  `duplicates already stored` is the number for its choice between an admin
+  cleanup and a privacy-page sentence.
+- **How it was verified, 2026-10-01, in the cloud workspace.** npm was
+  blocked there, so as in earlier sessions the gates ran on stand-ins - this
+  time pdfjs-dist 6.2.108 for unpdf (it reproduced 56/3, 56/0, clean and
+  4.124/0.944 exactly), a throwaway PostgreSQL 16 cluster behind PGlite's
+  API, a `pg` over the same wire protocol (without TLS), a folder for Blobs,
+  the committed html5-qrcode in place of `build.sh`'s download, and
+  Playwright 1.56.0's Chromium. ALL GATES GREEN on `035fded` before any edit
+  and with the probe added, `KAY-CAR-001` 4.124 and `KAY-PRR-001` 0.944.
+  `parse-coa.js`, `coa-dates.js` and `extract-text.js` are untouched, so no
+  reparse is needed, and no file in `js/` changed. The Codespace run on the
+  real packages is the one that counts.
+
 ### After a deploy — check it
 
 1. `node scripts/archive-health.js` in the Codespace (reads as `nose_writer`;
@@ -1741,6 +1833,11 @@ the default pair both read 74 · Partial overlap (75 before 2026-09-24).
 
 ### Still open
 
+- **Every download of a Method report is stored as a new document** (above,
+  "One report, many documents"). The probe is built and rehearsed; the
+  Codespace runs, Prompt 4's fix and the count of copies already stored wait
+  on it. Until then the privacy page's "We do not count how many times a
+  report is fetched" is not true of Method reports scanned more than once.
 - **The static preview is not in this repo**, and cannot be: `build.sh` fails
 any `.html` with inline script. The guards check only what the build sees; a
 preview kept elsewhere needs `node scripts/check-published.js <file>` and
