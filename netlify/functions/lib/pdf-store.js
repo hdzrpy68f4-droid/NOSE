@@ -108,4 +108,14 @@ async function read(store, key) {
   return { bytes, metadata: metadataFor(got.metadata || {}) };
 }
 
-module.exports = { STORE_NAME, connect, open, put, keys, measure, read, metadataFor };
+/* Delete one stored PDF. Used by one Codespace script only,
+ * scripts/remove-copies.js, run by hand with the admin connection to remove
+ * duplicate copies of a stored report (PARSER-HANDOFF s13). Never called by
+ * a function: the scanner only ever adds. Deleting a key that is not there
+ * is not an error. */
+async function remove(store, key) {
+  if (!SHA256_HEX.test(String(key))) throw new Error('pdf-store: the key must be a SHA-256 hex digest');
+  await store.delete(key);
+}
+
+module.exports = { STORE_NAME, connect, open, put, keys, measure, read, remove, metadataFor };

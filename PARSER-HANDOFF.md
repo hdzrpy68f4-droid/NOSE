@@ -153,7 +153,7 @@ Also run `node test/resolver-test.js` - expect `resolver clean`, and
 **Or all at once:** `bash scripts/gates.sh` runs these, the Kaycha anchors,
 `novelty-test`, `coa-dates-test`, `store-test`, `probe-test`, `archive-wiring-test`,
 `archive-scripts-test`, `rerun-test`, `review-queue-test`,
-`analysis-test`, `duplicates-test`, `check-trust-test` and, after the build, `input-paths-test`.
+`analysis-test`, `duplicates-test`, `remove-copies-test`, `check-trust-test` and, after the build, `input-paths-test`.
 It prints the line each gate produced and ends with `ALL GATES GREEN`. It passes
 a gate only on its exact expected line, so when a session legitimately changes
 a count, update the script in the same commit.
@@ -203,6 +203,7 @@ someone to look.
 | `coa-dates-test.js` | `lib/coa-dates.js` and the parser's `harvestOn` / `reportOn` (§7): the three forms, the near misses, and every other field identical without it |
 | `analysis-test.js` | the analysis layer (§13) on PGlite: the two views, their grants |
 | `duplicates-test.js` | `duplicates.js` and `download-twice.js` (§13, "One report, many documents"): on PGlite, and on fixture PDFs behind a stand-in fetch - a PDF rebuilt between downloads, the same file twice, a text that changes, a link that fails; offline |
+| `remove-copies-test.js` | `remove-copies.js` (§13, "One report, many documents - the cleanup") on PGlite: copies made by the old `save_scan`, the copies it keeps and why, a Blobs failure, a second run, no text lost, nose_writer refused; offline |
 | `check-trust-test.js` | `scripts/check-trust.mjs` (§13, "The trust guard") on throwaway sites: every form of the old promise fails, true sentences pass; offline |
 | `input-paths-test.mjs` | the app's ways in, in headless Chromium: Scan QR (fake camera and QR image), COA link, Upload. The real `coa.js` and parser answer, with only the download and unpdf stood in for (§13, "The input paths"). Needs Playwright; a gate, run after the build |
 
@@ -222,6 +223,7 @@ a stale one fails the lint rather than misleading the next session.
 | `drift.js "<strain>" [--lab X] [--client Y]` | one strain's usable batches - one per sample (§13) - in date order - total terpenes, top five as share of total - and the app's own score and band between consecutive batches; undated batches apart; reads only |
 | `lab-stats.js` | per lab: samples (and the documents they come from), accepted rate, median measured coverage, most common kind of warning; reads only |
 | `duplicates.js [--limit N]` | the reports the archive holds as more than one document: documents sharing an extraction text (the first stored is the report, the rest copies) and documents sharing a lab and lab ID; ends `duplicates already stored: N documents`; reads only |
+| `remove-copies.js [--apply]` | **admin, by hand**: removes duplicate copies of stored reports - PDF first, then rows in one transaction; a dry run without `--apply`; needs `NOSE_DB_ADMIN_URL` |
 | `download-twice.js <link>...` | each link fetched as the scanner fetches it, twice, 65 seconds apart: whether the bytes and the extracted text changed, and the lines that did; writes nothing, needs no secrets |
 
 ---
@@ -829,6 +831,8 @@ scripts/drift.js                                      one strain's batches over 
 scripts/lab-stats.js                                  per lab: documents, accepted, median coverage, commonest warning
 scripts/duplicates.js                                 reports kept as more than one document: shared texts, shared lab IDs
 scripts/download-twice.js                             a link fetched twice: did the bytes or the text change?
+scripts/remove-copies.js                              admin cleanup: duplicate copies removed, PDF and rows; dry run by default
+test/remove-copies-test.js                            that cleanup on PGlite; offline
 test/duplicates-test.js                               those two on PGlite and fixture PDFs; offline
 scripts/lib/match.js                                  loads js/match-math.<hash>.js for the scripts; no maths of its own
 js/match-math.<hash>.js                               the matching maths, loaded by the app and the scripts alike
@@ -1903,10 +1907,9 @@ the archive already keeps.
   passed every archive and grant check (it fails, locally, only the pooler
   address and SSL checks a local database cannot meet).
 - **What it does not undo.** The copy already stored (#449, the probe's) is
-  still a document with its PDF; `duplicates.js` keeps listing it. Whether it
-  is removed by an admin cleanup or the privacy page says it exists is the
-  owner's choice, made in the same push. And a scan made while the database
-  is down still leaves a dated PDF copy in Blobs - the price of backfill.
+  still a document with its PDF; the owner chose an admin cleanup for it
+  (below). And a scan made while the database is down still leaves a dated
+  PDF copy in Blobs - the price of backfill.
 - **How it was verified, 2026-10-02, in the cloud workspace**, on the same
   stand-ins as the probe (pdfjs-dist 6.2.108 for unpdf, PostgreSQL 16 behind
   PGlite's API and `pg`, a folder for Blobs, the committed html5-qrcode,
@@ -1917,6 +1920,43 @@ the archive already keeps.
   push`) and `probe-db.js` run before the deploy - the new `archive.js`
   against the old `save_scan` would still store every copy, since the old
   function never answers `matchedBy: 'text'`.
+
+### One report, many documents - the cleanup, 2026-10-02
+
+The owner chose an admin cleanup over a privacy-page sentence for the one
+copy stored (#449), in the same push as the fix.
+
+- **`scripts/remove-copies.js`** - the only code that deletes from the
+  archive. Run by hand from the Codespace with `NOSE_DB_ADMIN_URL`, never by
+  a function; it refuses to run as `nose_writer`, whose grants stay
+  append-only. A dry run unless `--apply`. A copy is a document sharing an
+  extracted text with an earlier one - the documents `duplicates.js` counts.
+  Each is removed whole only when every text it holds an earlier document
+  also holds: its PDF from Blobs first (`pdf-store.remove()`, called nowhere
+  else), then its parses, extractions and document row in one transaction,
+  so a failure leaves a document without a PDF that a second run finishes,
+  never a PDF without its row. It keeps, and says why, a copy holding a text
+  of its own, a copy whose report has no PDF while it has one (its PDF would
+  be the only file), and a copy a `reparse_runs` row names as its last
+  document (that record is append-only, and the foreign key would refuse).
+  The report is never touched. Prints no text, address or full fingerprint.
+- **`test/remove-copies-test.js`**, a gate: an archive built as the real one
+  was - copies saved by the old `save_scan`, then the migration - with each
+  kind of copy; the dry run changes nothing; a Blobs failure leaves that
+  copy's rows untouched and a second run finishes it; every text is still
+  held; the reports and their PDFs are untouched; `duplicates.js` then
+  counts only the copies kept; nose_writer is refused.
+- **Rehearsed** on the local copy of the seeded archive: the dry run listed
+  the two rebuilt MTL-CAR-001 copies (#60, #61), `--apply` removed both and
+  their PDFs, `duplicates.js` then said `0 documents`, `lab-stats.js` `59
+  samples`, `reparse.js --dry-run` `59 unchanged`.
+- **On the real archive, after the deploy and `db push`**: `node
+  scripts/remove-copies.js`, expecting `would remove document #449 ... a copy
+  of document #448`, then the same with `--apply`, then `duplicates.js`
+  (`0 documents`) and `archive-health.js` (ok).
+- **The privacy page is unchanged.** It says nothing in the store is edited
+  or deleted by the application, and that stays true: this is a maintenance
+  script removing a second copy of a report the store still holds once.
 
 ### After a deploy — check it
 
@@ -1938,8 +1978,9 @@ the default pair both read 74 · Partial overlap (75 before 2026-09-24).
 ### Still open
 
 - **One copy is stored: #449**, the second document of the probe's Method
-  jar (above, "One report, many documents"). Admin cleanup or a privacy-page
-  sentence - the owner's choice, in the same push as the fix. Probe 3 found
+  jar (above, "One report, many documents"). The owner chose the admin
+  cleanup; `remove-copies.js --apply` removes it once the fix is deployed and
+  the migration pushed (above, "the cleanup"). Probe 3 found
   no lab whose text changes between downloads (Kaycha, ACS and Modern Canna
   serve the same file each time), so after the fix the privacy page's "We do
   not count how many times a report is fetched" holds for every lab seen,
