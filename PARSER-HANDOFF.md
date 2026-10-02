@@ -1950,10 +1950,16 @@ copy stored (#449), in the same push as the fix.
   the two rebuilt MTL-CAR-001 copies (#60, #61), `--apply` removed both and
   their PDFs, `duplicates.js` then said `0 documents`, `lab-stats.js` `59
   samples`, `reparse.js --dry-run` `59 unchanged`.
-- **On the real archive, after the deploy and `db push`**: `node
-  scripts/remove-copies.js`, expecting `would remove document #449 ... a copy
-  of document #448`, then the same with `--apply`, then `duplicates.js`
-  (`0 documents`) and `archive-health.js` (ok).
+- **On the real archive, 2026-10-02 (US Eastern)**, from the Codespace on
+  `aeb4418`: `git push` deployed the fix; `npx supabase db push` applied
+  `20261002180000_nose_one_document_per_text.sql`, and `probe-db.js` was
+  reported passing (probe clean). Then `remove-copies.js` (dry run): `1 copy
+  ... would remove document #449 ... a copy of document #448 - 1 extraction,
+  1 parse, its PDF`, and nothing else. `--apply`: `1 copy: 1 removed (1
+  PDF), 0 kept, 0 failed`. `duplicates.js`: `67 documents hold 67 distinct
+  reports by text`, `0 documents`. `archive-health.js`: ok - 67 documents,
+  67 extractions, 194 parses, 65 PDFs, no PDF without its row; the two
+  documents without a PDF are the expected #3 and #184.
 - **The privacy page is unchanged.** It says nothing in the store is edited
   or deleted by the application, and that stays true: this is a maintenance
   script removing a second copy of a report the store still holds once.
@@ -1977,10 +1983,8 @@ the default pair both read 74 · Partial overlap (75 before 2026-09-24).
 
 ### Still open
 
-- **One copy is stored: #449**, the second document of the probe's Method
-  jar (above, "One report, many documents"). The owner chose the admin
-  cleanup; `remove-copies.js --apply` removes it once the fix is deployed and
-  the migration pushed (above, "the cleanup"). Probe 3 found
+- **The one copy stored, #449, was removed on 2026-10-02** (above, "the
+  cleanup"); the archive holds no copies. Probe 3 found
   no lab whose text changes between downloads (Kaycha, ACS and Modern Canna
   serve the same file each time), so after the fix the privacy page's "We do
   not count how many times a report is fetched" holds for every lab seen,
