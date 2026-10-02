@@ -3,18 +3,34 @@
  * seed script (scripts/seed-from-fixtures.js), so a seed run proves the same
  * code a real scan runs.
  *
- *   storeScan(scan, options) -> { kept, pdf, db, saved, failed }
+ *   storeScan(scan, options) -> { kept, pdf, db, copyOf, saved, failed }
  *
  * One fetch's worth - the PDF bytes, where they came from, the text extracted
- * from them and the parser's output - is kept in two places at once:
+ * from them and the parser's output - is kept in two places:
  *
- *   the PDF itself   Netlify Blobs, store "coa-pdf"      (lib/pdf-store.js)
  *   what was read    Postgres, through nose.save_scan    (lib/store.js)
+ *   the PDF itself   Netlify Blobs, store "coa-pdf"      (lib/pdf-store.js)
  *
- * INDEPENDENT: the two writes run together under Promise.allSettled, each
- * bounded by the same timeout. Neither can stop, delay past the timeout, or
- * undo the other; scripts/archive-health.js reports a file that one half has
- * and the other lacks.
+ * DATABASE FIRST. save_scan says which document the scan belongs to: a new
+ * one, the one with these very bytes, or an earlier document holding the same
+ * text - a portal that builds its PDF at the moment of download (Method
+ * Testing Labs') hands over new bytes for the same report every time
+ * (PARSER-HANDOFF s13). The PDF is then written unless it is such a copy:
+ *
+ *   database stored a new document          PDF written
+ *   database matched these same bytes       PDF written - a no-op when it is
+ *                                           there (onlyIfNew), and it fills in
+ *                                           a document kept before PDFs were
+ *   database matched another document's     PDF not written: the report's own
+ *     text (a copy)                         PDF is the one kept
+ *   database failed, timed out, or is not   PDF written, so backfill-from-
+ *     configured                            blobs.js can still save it later
+ *
+ * BOUNDED TOGETHER: the database gets at most half of timeoutMs, and the PDF
+ * whatever is left of the whole, so neither a hung database nor a hung Blobs
+ * write can take the pair past timeoutMs. A database that hangs still leaves
+ * the PDF its half. scripts/archive-health.js reports a file that one half
+ * has and the other lacks.
  *
  * WHAT IS KEPT: whatever looks like a lab report - the parser named a
  * laboratory, the text says "Certificate of Analysis", or at least one terpene
@@ -37,6 +53,8 @@ const crypto = require('crypto');
 const MAX_TEXT = 256 * 1024;        // real reports run 2-30KB of text
 const DEFAULT_TIMEOUT_MS = 2000;
 const BACKSTOP_MS = 50;             // store.js bounds itself; this bounds store.js
+const DATABASE_SHARE = 0.5;         // of timeoutMs; the PDF has the rest
+const MIN_PDF_MS = 50;              // less than this left: the PDF write is not started
 const NOT_CONFIGURED = 'not configured';
 
 function looksLikeLabReport(output, text) {
@@ -107,11 +125,10 @@ async function storeScan(scan, {
 
   const sha256 = crypto.createHash('sha256').update(buffer).digest('hex');
   const sourceUrl = sourceAddress(finalUrl);
+  const deadline = Date.now() + timeoutMs;
+  const dbMs = Math.max(1, Math.floor(timeoutMs * DATABASE_SHARE));
 
-  const [pdf, db] = await Promise.allSettled([
-    bounded(() => require('./pdf-store').put(openPdfStore(), sha256, buffer,
-                                             { sourceUrl, fetchedAt: utcDay() }),
-            timeoutMs, 'pdf write'),
+  const [db] = await Promise.allSettled([
     bounded(() => saveScan({
       sha256,
       byteSize: buffer.length,
@@ -122,20 +139,41 @@ async function storeScan(scan, {
       parserVersion,
       context,
       output
-    }, { timeoutMs }), timeoutMs + BACKSTOP_MS, 'database write')
+    }, { timeoutMs: dbMs }), dbMs + BACKSTOP_MS, 'database write')
   ]);
+  const saved = db.status === 'fulfilled' && db.value && typeof db.value === 'object' ? db.value : null;
+
+  /* A copy of a report the database already holds by its text: its PDF is
+     the report's own, kept under the report's fingerprint. */
+  const copyOf = saved && saved.matchedBy === 'text' ? saved.documentId : null;
+
+  let pdf;
+  if (copyOf != null) {
+    pdf = { status: 'skipped' };
+  } else {
+    const left = deadline - Date.now();
+    pdf = left < MIN_PDF_MS
+      ? { status: 'rejected', reason: new Error(`pdf write skipped - ${Math.max(0, left)}ms left of ${timeoutMs}ms`) }
+      : (await Promise.allSettled([
+          bounded(() => require('./pdf-store').put(openPdfStore(), sha256, buffer,
+                                                   { sourceUrl, fetchedAt: utcDay() }),
+                  left, 'pdf write')
+        ]))[0];
+  }
 
   const failed = [];
   if (pdf.status === 'rejected') failed.push(`pdf: ${reason(pdf.reason)}`);
   if (db.status === 'rejected') failed.push(`database: ${reason(db.reason)}`);
 
-  const saved = db.status === 'fulfilled' && db.value && typeof db.value === 'object' ? db.value : null;
   return {
     kept: pdf.status === 'fulfilled' || !!saved,
-    pdf: pdf.status === 'rejected' ? 'failed' : pdf.value.written ? 'written' : 'already stored',
+    pdf: pdf.status === 'skipped' ? 'copy, not kept'
+      : pdf.status === 'rejected' ? 'failed' : pdf.value.written ? 'written' : 'already stored',
     db: db.status === 'rejected' ? 'failed'
       : db.value === NOT_CONFIGURED ? NOT_CONFIGURED
+      : copyOf != null ? (saved.parseWritten ? 'copy, parse written' : 'copy, nothing new')
       : saved && saved.parseWritten ? 'parse written' : 'nothing new',
+    copyOf,
     saved,
     failed
   };
@@ -143,5 +181,5 @@ async function storeScan(scan, {
 
 module.exports = {
   storeScan, looksLikeLabReport, sourceAddress, reason, utcDay,
-  MAX_TEXT, DEFAULT_TIMEOUT_MS
+  MAX_TEXT, DEFAULT_TIMEOUT_MS, DATABASE_SHARE, MIN_PDF_MS
 };

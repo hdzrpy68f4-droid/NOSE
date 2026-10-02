@@ -15,7 +15,14 @@
  *
  * The same gates as a live scan: a PDF with under 200 characters of text, one
  * the parser throws on, or one that is not a lab report by the scanner's rule
- * stores nothing. Neither does one whose metadata has no valid day - nothing
+ * stores nothing.
+ *
+ * A PDF whose text a stored document already holds is not an orphan but a
+ * DUPLICATE COPY: the same report under other bytes, from a portal that builds
+ * its PDF at the moment of download (PARSER-HANDOFF s13). The scanner keeps
+ * no PDF of a copy when the database answers, but writes one when it cannot,
+ * so a copy can reach Blobs while the database is down. It is listed with the
+ * document it copies and nothing is saved for it. Neither does one whose metadata has no valid day - nothing
  * is guessed. Each is listed with its reason. The PDFs are never changed.
  *
  * Stamped from git; REFUSES to write while parse-coa.js, coa-dates.js or
@@ -30,6 +37,13 @@ const path = require('path');
 const rerun = require('./lib/rerun');
 
 const { LIB, MIN_TEXT } = rerun;
+
+/* The first document holding a text, by the fingerprint save_scan uses. */
+const COPY_OF_SQL = `
+  select document_id::text as id from nose.extractions
+   where text_sha256 = $1
+   order by document_id, id
+   limit 1`;
 const USAGE = 'usage: node scripts/backfill-from-blobs.js [--dry-run]';
 
 async function backfill({ db, blobs, parse, extract, dryRun = false, stamps, log = console.log }) {
@@ -40,7 +54,7 @@ async function backfill({ db, blobs, parse, extract, dryRun = false, stamps, log
   const keys = (await pdfStore.keys(blobs)).sort();
   const known = new Set((await db.query('select sha256 from nose.documents')).rows.map(r => r.sha256));
   const orphans = keys.filter(k => !known.has(k));
-  const counts = { pdfs: keys.length, orphans: orphans.length, saved: 0, skipped: 0, failed: 0 };
+  const counts = { pdfs: keys.length, orphans: orphans.length, saved: 0, copies: 0, skipped: 0, failed: 0 };
 
   for (const key of orphans) {
     const head = rerun.short(key);
@@ -68,6 +82,17 @@ async function backfill({ db, blobs, parse, extract, dryRun = false, stamps, log
     catch (e) { fail(`the parser threw: ${archive.reason(e)}`); continue; }
     if (!archive.looksLikeLabReport(output, text)) { skip('not a lab report by the scanner\'s own rule - nothing stored'); continue; }
     if (text.length > archive.MAX_TEXT) { skip('its text is over 256KB, which the archive does not keep'); continue; }
+
+    /* The same text as a stored document: a duplicate copy, not an orphan. */
+    let copyOf;
+    try { copyOf = (await db.query(COPY_OF_SQL, [rerun.textSha(text)])).rows[0] || null; }
+    catch (e) { fail(`database: ${archive.reason(e)}`); continue; }
+    if (copyOf) {
+      counts.copies++;
+      log(`copy  ${head}  first fetched ${day}  ${rerun.labStrain(null, output)}  -> a duplicate copy of document #${copyOf.id}: ` +
+          'the same text under other bytes - nothing saved');
+      continue;
+    }
     if (!dryRun && output.parserVersion !== stamps.parserVersion) {
       throw new Error(`the parser stamped "${output.parserVersion}", not ${stamps.parserVersion} - lib/version.js did not load`);
     }
@@ -100,7 +125,7 @@ async function backfill({ db, blobs, parse, extract, dryRun = false, stamps, log
   if (orphans.length) log('');
   if (dryRun) log('dry run - nothing was written');
   log(`${counts.pdfs} PDFs in Blobs, ${counts.orphans} with no document row: ${counts.saved} ${dryRun ? 'would be saved' : 'saved'}, ` +
-      `${counts.skipped} skipped, ${counts.failed} failed`);
+      `${counts.copies} duplicate ${counts.copies === 1 ? 'copy' : 'copies'}, ${counts.skipped} skipped, ${counts.failed} failed`);
   return counts;
 }
 
@@ -140,7 +165,7 @@ async function main(argv = process.argv.slice(2)) {
   }
 }
 
-module.exports = { backfill, USAGE };
+module.exports = { backfill, COPY_OF_SQL, USAGE };
 if (require.main === module) {
   main().catch(e => { console.error('backfill failed:', e && e.message); process.exit(1); });
 }

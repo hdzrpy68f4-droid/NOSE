@@ -56,7 +56,8 @@ function payload(overrides = {}) {
 async function run(db, log = console.log) {
   let failures = 0;
   const check = (label, actual, expected) => {
-    const ok = Object.is(actual, expected);
+    /* Arrays compare whole; everything else exactly. */
+    const ok = Array.isArray(actual) ? JSON.stringify(actual) === JSON.stringify(expected) : Object.is(actual, expected);
     if (!ok) failures++;
     log(`${ok ? 'ok  ' : 'FAIL'}  ${label}${ok ? '' : `  (got ${JSON.stringify(actual)}, want ${JSON.stringify(expected)})`}`);
   };
@@ -95,6 +96,51 @@ async function run(db, log = console.log) {
   check('A -> B -> A leaves three parses', await count('select count(*)::int as n from nose.parses'), 3);
   const latest = await one('select total_terpenes::text as t from nose.parses where extraction_id = $1 order by id desc limit 1', [back.extractionId]);
   check('the latest parse is A again', latest.t, '1.5');
+
+  /* --- one document per report: the same text under new bytes ------------ */
+  /* A portal that builds its PDF at the moment of download hands over new
+     bytes for the same report each time (PARSER-HANDOFF s13). */
+  const docRows = async () => count('select count(*)::int as n from nose.documents');
+  const r1 = await save(payload({ sha256: sha('download-1'), text: 'ONE REPORT, BUILT ON DOWNLOAD' }));
+  const docsAfterFirst = await docRows();
+  const r2 = await save(payload({ sha256: sha('download-2'), text: 'ONE REPORT, BUILT ON DOWNLOAD', sourceUrl: 'https://lab.example/again.pdf' }));
+  check('first download: a new document', [r1.documentWritten, r1.matchedBy], [true, 'new']);
+  check('same text, different bytes: one document - no new row', [r2.documentWritten, r2.matchedBy, await docRows()], [false, 'text', docsAfterFirst]);
+  check('...the copy is the first download\'s document and extraction', [r2.documentId, r2.extractionId, r2.extractionWritten], [r1.documentId, r1.extractionId, false]);
+  check('...the same reading writes no parse', r2.parseWritten, false);
+  check('...and nothing is kept under the copy\'s bytes', await count('select count(*)::int as n from nose.documents where sha256 = $1', [sha('download-2')]), 0);
+  const firstSeen = await one('select first_source_url as u from nose.documents where id = $1', [r1.documentId]);
+  check('...nor its address: the first address stays', firstSeen.u, 'https://lab.example/report.pdf');
+
+  const r3 = await save(payload({ sha256: sha('download-3'), text: 'ONE REPORT, BUILT ON DOWNLOAD, AMENDED' }));
+  check('different text: two documents', [r3.documentWritten, r3.matchedBy, r3.documentId !== r1.documentId, await docRows()],
+    [true, 'new', true, docsAfterFirst + 1]);
+
+  const r4 = await save(payload({ sha256: sha('download-4'), text: 'ONE REPORT, BUILT ON DOWNLOAD',
+                                  output: { lab: 'Test Lab', totalTerpenes: 1.6, usable: true, terps: { limonene: 1.1 } }, context: 'reparse' }));
+  check('a copy read differently: the new reading goes on the report\'s extraction, still no document',
+    [r4.documentId, r4.extractionId, r4.parseWritten, await docRows()], [r1.documentId, r1.extractionId, true, docsAfterFirst + 1]);
+
+  const r5 = await save(payload({ sha256: sha('download-1'), text: 'ONE REPORT, EXTRACTED AGAIN' }));
+  check('the same bytes come first: a new text for a document stays with it, as a new extraction',
+    [r5.documentId, r5.matchedBy, r5.extractionWritten], [r1.documentId, 'bytes', true]);
+
+  /* Two documents with one text, as stored before this rule: the first one
+     stored is the report, and each keeps answering to its own bytes. */
+  await db.exec(`insert into nose.documents (sha256, byte_size, first_fetched_on) values ('${sha('legacy-1')}', 9, '2026-09-30'), ('${sha('legacy-2')}', 9, '2026-10-01');
+                 insert into nose.extractions (document_id, extractor_version, text)
+                   select id, 'x', 'TEXT STORED TWICE BEFORE' from nose.documents where sha256 in ('${sha('legacy-1')}', '${sha('legacy-2')}')`);
+  const legacyId = async n => (await one('select id::int as id from nose.documents where sha256 = $1', [sha(n)])).id;
+  const l2 = await save(payload({ sha256: sha('legacy-2'), text: 'TEXT STORED TWICE BEFORE' }));
+  const l3 = await save(payload({ sha256: sha('legacy-3'), text: 'TEXT STORED TWICE BEFORE' }));
+  check('an old copy still answers to its own bytes (reparse reaches it)', [Number(l2.documentId), l2.matchedBy], [await legacyId('legacy-2'), 'bytes']);
+  check('new bytes with a text two documents hold: the first one stored', [Number(l3.documentId), l3.matchedBy], [await legacyId('legacy-1'), 'text']);
+
+  check('extractions are indexed by text fingerprint',
+    await count(`select count(*)::int as n from pg_indexes where schemaname = 'nose' and tablename = 'extractions'
+                   and indexdef like '%(text_sha256)'`), 1);
+  const noText = await rejects(() => db.query('select nose.save_scan($1::jsonb)', [JSON.stringify({ ...payload({ sha256: sha('no-text') }), text: null })]));
+  check('a payload with no text is refused plainly', !!noText && /payload\.text is required/.test(noText.message), true);
 
   /* --- generated columns equal the output --------------------------------- */
   const { out: real, real: isReal } = sampleOutput();
@@ -151,7 +197,7 @@ async function run(db, log = console.log) {
 
   const extras = [];
   const spy = { query: async (text, params) => { extras.push(JSON.parse(params[0])); return db.query(text, params); } };
-  await store.saveScan({ ...payload({ sha256: sha('extras') }), ip: '203.0.113.9', outputHash: 'caller-supplied' }, { client: spy });
+  await store.saveScan({ ...payload({ sha256: sha('extras'), text: 'EXTRAS TEXT' }), ip: '203.0.113.9', outputHash: 'caller-supplied' }, { client: spy });
   check('a top-level ip on the payload is never sent', 'ip' in extras[0], false);
   check('a caller-supplied outputHash is never sent', 'outputHash' in extras[0], false);
 
@@ -160,7 +206,7 @@ async function run(db, log = console.log) {
   check('a full timestamp keeps only the day', day.d, '2026-09-22');
   check('...in a date column', day.t, 'date');
 
-  const iso = await save(payload({ sha256: sha('iso'), output: { harvestOn: '2025-07-07', reportOn: '07/07/25' } }));
+  const iso = await save(payload({ sha256: sha('iso'), text: 'ISO TEXT', output: { harvestOn: '2025-07-07', reportOn: '07/07/25' } }));
   const dates = await one('select harvest_on, report_on from nose.parses where id = $1', [iso.parseId]);
   check('an ISO harvestOn is kept', dates.harvest_on, '2025-07-07');
   check('a lab-format date is left NULL, not stored wrong', dates.report_on, null);
@@ -226,8 +272,10 @@ async function run(db, log = console.log) {
   } else {
     await db.exec('set role nose_writer');
     try {
-      const w = await save(payload({ sha256: sha('as-writer'), output: { lab: 'written as nose_writer' } }));
+      const w = await save(payload({ sha256: sha('as-writer'), text: 'WRITER TEXT', output: { lab: 'written as nose_writer' } }));
       check('nose_writer can save through save_scan', w.parseWritten, true);
+      const wc = await save(payload({ sha256: sha('as-writer-again'), text: 'WRITER TEXT', output: { lab: 'written as nose_writer' } }));
+      check('...and a copy of it, by its text, writes nothing', [wc.documentId, wc.documentWritten, wc.parseWritten], [w.documentId, false, false]);
       const wr = await rejects(() => insertRun(run1));
       check('nose_writer can record a run', wr ? wr.message : 'recorded', 'recorded');
       /* An ordinary column per table: updating an identity or generated column

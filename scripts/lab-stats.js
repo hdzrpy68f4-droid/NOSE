@@ -5,10 +5,14 @@
  *   node scripts/lab-stats.js
  *
  * From nose.latest_parses - each document's latest reading, as reparse.js and
- * review-queue.js read it - one block per lab:
+ * review-queue.js read it - counted by SAMPLE: the lab and its lab ID, else the
+ * document (nose.sample_key, the rule batch_series uses). A report kept as
+ * several documents - a portal that builds its PDF on download, an amended
+ * report - is one sample, read from its newest document. One block per lab:
  *
- *   documents            documents whose latest reading names the lab, and
- *                        how many of them are test fixtures stored by the seed
+ *   samples              samples whose reading names the lab, how many are
+ *                        test fixtures stored by the seed, and how many
+ *                        documents they come from when that is more
  *   accepted             how many of those readings are usable, and the rate
  *   median coverage      the median measuredCoverage (s6: did we read the
  *                        table?) over the readings that carry one
@@ -33,7 +37,9 @@ const UNRECOGNISED = '(lab not recognised)';
 /* No text, no address: the lab, the verdict, two fields of the output, and
    whether the seed stored the document (it is then a test fixture). */
 const STATS_SQL = `
-  select l.lab, l.usable,
+  select l.document_id::text as document_id,
+         nose.sample_key(l.lab, l.lab_id, l.document_id) as sample,
+         l.lab, l.usable,
          l.output -> 'measuredCoverage' as coverage,
          l.output -> 'warnings' as warnings,
          exists (select 1
@@ -70,7 +76,23 @@ function commonest(warningLists) {
   return { kind, count, tied: ranked.filter(([, n]) => n === count).length - 1 };
 }
 
-function summarise(rows) {
+/* One row per sample: its newest document's reading; a test fixture if any of
+   its documents is; and how many documents it comes from. */
+function samplesOf(rows) {
+  const bySample = new Map();
+  for (const r of rows) {
+    const key = r.sample || `document ${r.document_id}`;
+    const s = bySample.get(key);
+    if (!s) { bySample.set(key, { ...r, documents: 1 }); continue; }
+    const seeded = s.seeded || r.seeded;
+    const documents = s.documents + 1;
+    bySample.set(key, Number(r.document_id) > Number(s.document_id) ? { ...r, seeded, documents } : { ...s, seeded, documents });
+  }
+  return [...bySample.values()];
+}
+
+function summarise(documentRows) {
+  const rows = samplesOf(documentRows);
   const labs = new Map();
   for (const r of rows) {
     const name = r.lab || UNRECOGNISED;
@@ -80,41 +102,47 @@ function summarise(rows) {
   return [...labs.entries()]
     .map(([lab, rs]) => ({
       lab,
-      documents: rs.length,
+      samples: rs.length,
+      documents: rs.reduce((n, r) => n + (r.documents || 1), 0),
       fixtures: rs.filter(r => r.seeded).length,
       accepted: rs.filter(r => r.usable === true).length,
       coverage: median(rs.map(r => r.coverage)),
       withCoverage: rs.filter(r => typeof r.coverage === 'number' && Number.isFinite(r.coverage)).length,
       warning: commonest(rs.map(r => r.warnings))
     }))
-    .sort((a, b) => (a.lab === UNRECOGNISED) - (b.lab === UNRECOGNISED) || b.documents - a.documents || a.lab.localeCompare(b.lab));
+    .sort((a, b) => (a.lab === UNRECOGNISED) - (b.lab === UNRECOGNISED) || b.samples - a.samples || a.lab.localeCompare(b.lab));
 }
 
 async function labStats({ db, log = console.log }) {
-  const rows = (await db.query(STATS_SQL)).rows;
-  const labs = summarise(rows);
+  const documentRows = (await db.query(STATS_SQL)).rows;
+  const rows = samplesOf(documentRows);
+  const labs = summarise(documentRows);
   const fixtures = rows.filter(r => r.seeded).length;
+  const documents = documentRows.length;
+  const fromDocs = n => (n !== rows.length ? ` from ${plural(n, 'document')}` : '');
 
-  log(`lab-stats: ${plural(labs.length, 'lab')}, ${plural(rows.length, 'document')} - each document's latest reading, as reparse.js reads it`);
+  log(`lab-stats: ${plural(labs.length, 'lab')}, ${plural(rows.length, 'sample')}${fromDocs(documents)} - ` +
+      'each sample\'s latest reading (the lab and its lab ID, else the document), as reparse.js reads it');
   if (fixtures === rows.length && fixtures) log(`(${fixtures === 1 ? 'it is a test fixture' : `all ${fixtures} are test fixtures`} stored by the seed - nothing scanned yet)`);
   else if (fixtures) log(`(${fixtures} of them ${fixtures === 1 ? 'is a test fixture' : 'are test fixtures'} stored by the seed; the other ${rows.length - fixtures} came from scans)`);
 
   for (const s of labs) {
     log('');
     log(s.lab);
-    log(`  documents            ${s.documents}${s.fixtures ? `  (${plural(s.fixtures, 'test fixture')})` : ''}`);
-    log(`  accepted             ${s.accepted} of ${s.documents} (${pct(s.accepted, s.documents)})`);
+    log(`  samples              ${s.samples}${s.fixtures ? `  (${plural(s.fixtures, 'test fixture')})` : ''}` +
+        (s.documents !== s.samples ? `  from ${plural(s.documents, 'document')}` : ''));
+    log(`  accepted             ${s.accepted} of ${s.samples} (${pct(s.accepted, s.samples)})`);
     log(`  median coverage      ${s.coverage === null ? 'none recorded'
       : `${(s.coverage * 100).toFixed(1)}%  (${plural(s.withCoverage, 'reading')} ${s.withCoverage === 1 ? 'carries' : 'carry'} one)`}`);
     log(`  most common warning  ${s.warning === null ? 'none'
-      : `${s.warning.count} of ${s.documents}${s.warning.tied ? ` (tied with ${plural(s.warning.tied, 'other')})` : ''}: ${s.warning.kind}`}`);
+      : `${s.warning.count} of ${s.samples}${s.warning.tied ? ` (tied with ${plural(s.warning.tied, 'other')})` : ''}: ${s.warning.kind}`}`);
   }
 
   const accepted = rows.filter(r => r.usable === true).length;
   log('');
-  log(`all labs: ${plural(rows.length, 'document')}, accepted ${accepted} of ${rows.length} (${pct(accepted, rows.length)})`);
+  log(`all labs: ${plural(rows.length, 'sample')}${fromDocs(documents)}, accepted ${accepted} of ${rows.length} (${pct(accepted, rows.length)})`);
   log('Coverage is measured coverage (PARSER-HANDOFF s6): the analytes read, against the total the lab printed. A warning is the parser\'s own sentence, figures shown as #.');
-  return { labs, documents: rows.length, accepted, fixtures };
+  return { labs, samples: rows.length, documents, accepted, fixtures };
 }
 
 async function main(argv = process.argv.slice(2)) {
@@ -140,7 +168,7 @@ async function main(argv = process.argv.slice(2)) {
   }
 }
 
-module.exports = { labStats, summarise, median, commonest, kindOf, STATS_SQL, USAGE };
+module.exports = { labStats, summarise, samplesOf, median, commonest, kindOf, STATS_SQL, USAGE };
 if (require.main === module) {
   main().catch(e => { console.error('lab-stats failed:', e && e.message); process.exit(1); });
 }

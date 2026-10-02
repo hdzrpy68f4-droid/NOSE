@@ -53,10 +53,13 @@ async function run(db, log = console.log) {
     log(`${ok ? 'ok  ' : 'FAIL'}  ${label}${ok ? '' : `\n        got  ${JSON.stringify(actual)}\n        want ${JSON.stringify(expected)}`}`);
   };
 
+  /* The archive as it stood before one document per text (2026-10-02): the
+     copies below are saved by the old save_scan, as the real ones were. The
+     rest of the migrations are applied after them. */
   const dir = path.join(ROOT, 'supabase/migrations');
-  for (const f of fs.readdirSync(dir).filter(f => f.endsWith('.sql')).sort()) {
-    await db.exec(fs.readFileSync(path.join(dir, f), 'utf8'));
-  }
+  const ONE_PER_TEXT = '20261002180000_nose_one_document_per_text.sql';
+  const migrations = fs.readdirSync(dir).filter(f => f.endsWith('.sql')).sort();
+  for (const f of migrations.filter(f => f < ONE_PER_TEXT)) await db.exec(fs.readFileSync(path.join(dir, f), 'utf8'));
 
   /* ======================================================== duplicates.js */
   const reading = (lab, strain, labId, extra = {}) => ({
@@ -84,6 +87,10 @@ async function run(db, log = console.log) {
   await save('old-copy', reading('TerpLife Labs', 'GrpeBblGm', null, { totalTerpenes: 1.6 }), { day: '2026-09-28', text: 'terplife second text' });
   await save('mtl-2', M, { day: '2026-10-01', text: 'method report' });
   await save('mtl-3', M, { day: '2026-10-01', text: 'method report' });
+  for (const f of migrations.filter(f => f >= ONE_PER_TEXT)) await db.exec(fs.readFileSync(path.join(dir, f), 'utf8'));
+  const after = await save('mtl-4', M, { day: '2026-10-02', text: 'method report' });
+  check('after the migration, a fourth download of the Method report adds no document - it is the first one\'s',
+    [after.documentWritten, after.matchedBy, after.parseWritten], [false, 'text', false]);
 
   const blobs = { async list() { return { blobs: [sha('mtl-1'), sha('mtl-2'), sha('fixture-scan'), sha('kay')].map(key => ({ key, etag: '"e"' })), directories: [] }; } };
   const lines = [];

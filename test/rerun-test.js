@@ -94,6 +94,7 @@ async function run(db, log = console.log) {
     const n = nameOf(bytes);
     if (variant[n] === 'short') return { text: 'too short', pages: 1 };
     if (variant[n] === 'none') return { text: 'no marker here, and nothing that looks like a report at all. '.repeat(5), pages: 1 };
+    if (variant[n] === 'copy of B') return { text: textFor('B', 'v1'), pages: 1 };   // other bytes, B's seeded text
     return { text: textFor(n, variant[n] || 'v1'), pages: 1 };
   };
 
@@ -262,14 +263,22 @@ async function run(db, log = console.log) {
   const H = orphan('H', { sourceUrl: null });
   variant.J = 'short';
   const J = orphan('J', { sourceUrl: null, fetchedAt: '2026-09-21' });
+  /* A PDF of B under other bytes - a portal that builds its PDF on download,
+     scanned while the database was down. */
+  variant.K = 'copy of B';
+  const K = orphan('K', { sourceUrl: null, fetchedAt: '2026-09-21' });
   const I = sha(Buffer.from('the bytes it was stored under'));
   blobs.put(I, Buffer.from('%PDF-1.4 stand-in I - not those bytes'), { fetchedAt: '2026-09-21' });
 
   const documents = await count('documents');
   const bLines = [];
   const bdry = await backfill({ db, blobs, parse, extract, dryRun: true, stamps: stampsAt(stamp), log: l => bLines.push(l) });
-  check('backfill, dry run: 5 orphans - 1 would be saved, 3 skipped, 1 failed',
-    `${bdry.orphans} ${bdry.saved} ${bdry.skipped} ${bdry.failed}`, '5 1 3 1');
+  check('backfill, dry run: 6 orphans - 1 would be saved, 1 duplicate copy, 3 skipped, 1 failed',
+    `${bdry.orphans} ${bdry.saved} ${bdry.copies} ${bdry.skipped} ${bdry.failed}`, '6 1 1 3 1');
+  const idB = (await one('select id::text as id from nose.documents where sha256 = $1', [docs.B])).id;
+  check('...a PDF whose text a stored document holds is a duplicate copy of it, not an orphan',
+    has(bLines, new RegExp(`^copy  ${K.slice(0, 8)}  first fetched 2026-09-21  Modern Canna \\| Bravo  -> a duplicate copy of document #${idB}: the same text under other bytes - nothing saved$`)), true);
+  check('...and the count says so', bLines[bLines.length - 1].endsWith('6 with no document row: 1 would be saved, 1 duplicate copy, 3 skipped, 1 failed'), true);
   check('...nothing written', await count('documents'), documents);
   check('...a copy that does not match its key fails', has(bLines, new RegExp(`^FAIL  ${I.slice(0, 8)}  could not read the PDF: .*does not match its key`)), true);
   check('...no fetch day is not guessed', has(bLines, new RegExp(`^skip  ${H.slice(0, 8)}  its metadata holds no valid fetch day`)), true);
@@ -278,7 +287,7 @@ async function run(db, log = console.log) {
 
   const bLines2 = [];
   const breal = await backfill({ db, blobs, parse, extract, stamps: stampsAt(stamp), log: l => bLines2.push(l) });
-  check('backfill: one document saved', `${breal.saved} ${await count('documents')}`, `1 ${documents + 1}`);
+  check('backfill: one document saved, nothing for the copy', `${breal.saved} ${breal.copies} ${await count('documents')}`, `1 1 ${documents + 1}`);
   const f = await one(`select d.first_fetched_on::text as day, d.first_source_url as url, p.context, p.parser_version,
                               e.extractor_version, p.strain
                          from nose.documents d join nose.extractions e on e.document_id = d.id
@@ -287,7 +296,7 @@ async function run(db, log = console.log) {
   check('...its address without the query', f.url, 'https://lab.example/f.pdf');
   check('...context backfill, stamped parser and extractor', `${f.context} ${f.parser_version} ${f.extractor_version}`, `backfill ${stamp} 0123456789ab`);
   const breal2 = await backfill({ db, blobs, parse, extract, stamps: stampsAt(stamp), log: () => {} });
-  check('backfill again: F is no longer an orphan', `${breal2.orphans} ${breal2.saved}`, '4 0');
+  check('backfill again: F is no longer an orphan; the copy is still a copy', `${breal2.orphans} ${breal2.saved} ${breal2.copies}`, '5 0 1');
 
   /* --- export-candidate ---------------------------------------------------- */
   const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'nose-rerun-'));

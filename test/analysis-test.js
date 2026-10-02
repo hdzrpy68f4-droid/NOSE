@@ -98,11 +98,12 @@ async function run(db, log = console.log) {
     (await parseIdsOf('two texts')).slice(-1)[0] === two.parse, false);
 
   const series = await rows(`
-    select lab, client, strain_key, batch, batch_date, total_terpenes::float8 as total, parse_id::text as parse
+    select lab, client, strain_key, batch, batch_date, total_terpenes::float8 as total, parse_id::text as parse, copies
       from nose.batch_series order by parse_id`);
   const byBatch = Object.fromEntries(series.map(r => [r.batch, r]));
   check('batch_series: usable latest readings only - not the refused one, not one without a verdict',
     series.map(r => r.batch).sort(), ['1006 1837 9110 9527', 'B-1', 'B-2', 'B-3', 'G-1', 'T-1']);
+  check('...and one row per document while every document is its own sample', series.every(r => r.copies === 1), true);
   check('the strain key: lowercase, whitespace collapsed, a leading (I) dropped',
     ['B-1', 'B-2', 'B-3'].map(b => byBatch[b].strain_key), ['banana papaya', 'banana papaya', 'banana papaya']);
   check('batch_date: harvest when printed, else report, else null',
@@ -113,6 +114,31 @@ async function run(db, log = console.log) {
     [byBatch['1006 1837 9110 9527'].strain_key, byBatch['1006 1837 9110 9527'].batch_date, byBatch['1006 1837 9110 9527'].total],
     ['sfv og', '2026-04-03', 2.008]);
 
+  /* One sample, several documents: the same lab and lab ID, saved under three
+     fingerprints with three texts (downloaded again, amended). One row in
+     batch_series, the newest document's reading, copies 3 - a refused
+     document of the sample does not count, and a lab ID of another lab is
+     another sample. */
+  const M1 = reading({ lab: 'Method Testing Labs', strain: 'Banana Cough', batch: 'M-1', labId: '2609CBR0139-007', harvestOn: '2026-09-01', totalTerpenes: 2 });
+  await save('sample-a', M1, { text: 'method sample, first download' });
+  await save('sample-b', { ...M1, totalTerpenes: 2.1 }, { text: 'method sample, amended' });
+  await save('sample-c', { ...M1, totalTerpenes: 2.2 }, { text: 'method sample, amended again' });
+  await save('sample-refused', { ...M1, usable: false, rejectReasons: ['coverage too low'] }, { text: 'method sample, refused reading' });
+  await save('sample-other-lab', { ...M1, lab: 'Kaycha Labs', batch: 'M-2' }, { text: 'kaycha report with the same lab id' });
+  const sampleRows = await rows(`select batch, copies, total_terpenes::float8 as total, parse_id::text as parse
+                                   from nose.batch_series where strain_key = 'banana cough' order by batch`);
+  check('batch_series: one row per sample - the same lab and lab ID count once, with how many documents hold it',
+    sampleRows.map(r => [r.batch, r.copies, r.total]), [['M-1', 3, 2.2], ['M-2', 1, 2]]);
+  check('...the row is the newest document\'s latest reading',
+    sampleRows[0].parse, (await latestOf('sample-c')).parse);
+  check('...a document without a lab ID is its own sample, copies 1',
+    (await rows(`select copies from nose.batch_series where batch in ('B-1', 'B-2', 'B-3') order by batch`)).map(r => r.copies), [1, 1, 1]);
+  const skey = async (lab, id, doc) => (await rows('select nose.sample_key($1::text, $2::text, $3::bigint) as k', [lab, id, doc]))[0].k;
+  check('sample_key: lab and lab ID where one was read, else the document; names cannot run together',
+    [await skey('Method Testing Labs', ' 26-1 ', 9), await skey(null, '26-1', 9), await skey('A', '', 9), await skey('A', null, 9),
+     (await skey('A B', 'C', 1)) === (await skey('A', 'B C', 1))],
+    ['lab 19:Method Testing Labs id 26-1', 'lab - id 26-1', 'document 9', 'document 9', false]);
+
   const key = async s => (await rows('select nose.strain_key($1::text) as k', [s]))[0].k;
   check('strain_key: markers (I) (S) (H) in any case, and nothing else',
     [await key('(S) Ocifer'), await key('(h)GMO'), await key(' (I)  Gelato  de   Limon '), await key('GMO #2'),
@@ -122,7 +148,7 @@ async function run(db, log = console.log) {
   check('batch_series has exactly the columns asked for',
     (await rows(`select column_name from information_schema.columns
                   where table_schema = 'nose' and table_name = 'batch_series' order by ordinal_position`)).map(r => r.column_name),
-    ['lab', 'client', 'strain_key', 'batch', 'batch_date', 'total_terpenes', 'parse_id']);
+    ['lab', 'client', 'strain_key', 'batch', 'batch_date', 'total_terpenes', 'parse_id', 'copies']);
   check('latest_parses carries neither the address nor the text',
     (await rows(`select column_name from information_schema.columns
                   where table_schema = 'nose' and table_name = 'latest_parses'
@@ -142,9 +168,10 @@ async function run(db, log = console.log) {
              has_table_privilege('nose.batch_series', 'SELECT') as read_series,
              has_table_privilege('nose.latest_parses', 'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER') as write_latest,
              has_table_privilege('nose.batch_series', 'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER') as write_series,
-             has_function_privilege('nose.strain_key(text)', 'EXECUTE') as run_key`))[0];
-    check('nose_writer reads both views, writes neither, runs strain_key',
-      [n, can.read_latest, can.read_series, can.write_latest, can.write_series, can.run_key], [series.length, true, true, false, false, true]);
+             has_function_privilege('nose.strain_key(text)', 'EXECUTE') as run_key,
+             has_function_privilege('nose.sample_key(text, text, bigint)', 'EXECUTE') as run_sample`))[0];
+    check('nose_writer reads both views, writes neither, runs strain_key and sample_key',
+      [n, can.read_latest, can.read_series, can.write_latest, can.write_series, can.run_key, can.run_sample], [series.length + 2, true, true, false, false, true, true]);
   } finally {
     await db.exec('reset role');
   }
@@ -153,7 +180,8 @@ async function run(db, log = console.log) {
   await db.exec(`create role nose_test_viewer nologin;
                  grant usage on schema nose to nose_test_viewer;
                  grant select on nose.latest_parses, nose.batch_series to nose_test_viewer;
-                 grant execute on function nose.strain_key(text) to nose_test_viewer`);
+                 grant execute on function nose.strain_key(text) to nose_test_viewer;
+                 grant execute on function nose.sample_key(text, text, bigint) to nose_test_viewer`);
   await db.exec('set role nose_test_viewer');
   let refused;
   try { refused = await rejects(() => db.query('select count(*) from nose.batch_series')); }
@@ -198,7 +226,8 @@ async function driftChecks(db, check) {
   await scan('d-A1', bp('A1', { lab: 'ACS Laboratory', productClass: 'vape', harvestOn: '2026-02-01', client: 'Grower A' }));
   await scan('d-K2', bp('K2', { reportOn: '2026-03-05', client: 'Grower A' }));
   await scan('d-K3', bp('K3', { strain: 'gelato  DE limon', harvestOn: '2026-03-05', client: 'Grower B' }));
-  await scan('d-K4', bp('K4', { harvestOn: '2026-05-01', client: 'Grower A' }));
+  await scan('d-K4', bp('K4', { harvestOn: '2026-05-01', client: 'Grower A', labId: 'MI60501001-001' }));
+  await scan('d-K4-again', bp('K4', { harvestOn: '2026-05-01', client: 'Grower A', labId: 'MI60501001-001' }));
   await scan('d-U1', bp('U1', { client: 'Grower A' }));
   await scan('d-R1', bp('K1', { batch: 'R1', usable: false, rejectReasons: ['only 1 terpene found'], harvestOn: '2026-04-01' }));
   await scan('d-other', bp('K1', { strain: 'Gelato de Limon #2', batch: 'O1', harvestOn: '2026-02-02' }));
@@ -242,7 +271,11 @@ async function driftChecks(db, check) {
   count('...the notes: two labs, two clients, two forms, mixed date kinds, one refusal',
     [/reported by 2 labs \(Kaycha Labs, ACS Laboratory\)/.test(all.text), /2 clients \(Grower A, Grower B\)/.test(all.text),
      /mix product forms \(flower, vape\)/.test(all.text), /mix harvest days and report days/.test(all.text),
-     /1 reading under this strain key was refused/.test(all.text)], [true, true, true, true, true]);
+     /1 sample under this strain key was refused/.test(all.text)], [true, true, true, true, true]);
+  count('...a sample kept as two documents is one batch, and says so',
+    [all.lines.filter(l => / · one sample, kept as 2 documents$/.test(l)).length,
+     /1 sample was kept as more than one document - the same lab and lab ID, downloaded again or amended - and each is one batch here/.test(all.text)],
+    [1, true]);
   count('...and it says what drift is: between lab reports, not between experiences',
     [all.lines[1], all.lines[all.lines.length - 1]],
     ['Every figure below is as read from a lab report. Drift here is between lab reports, not between experiences.',
@@ -292,31 +325,45 @@ async function labStatsChecks(db, save, check) {
   await save('s6', reading({ lab: L2, measuredCoverage: null, warnings: [] }), { context: 'production' });
   await save('s7', reading({ lab: L2, usable: false, measuredCoverage: 0.95 }), { context: 'production' });
   await save('s8', reading({ lab: null, usable: false, measuredCoverage: null, warnings: [w.one] }), { context: 'production' });
+  /* One sample under two fingerprints: the seeded fixture, then a scan of an
+     amended report with the same lab ID. One sample, a test fixture, read
+     from its newest document. */
+  const L3 = 'Stats Lab Three';
+  await save('s9', reading({ lab: L3, labId: 'S3-1', usable: false, measuredCoverage: 0.5, rejectReasons: ['x'] }), { text: 's9 first' });
+  await save('s10', reading({ lab: L3, labId: 'S3-1', measuredCoverage: 0.97 }), { context: 'production', text: 's10 amended' });
 
   const lines = [];
   const res = await labStats({ db, log: l => lines.push(l) });
   const block = name => { const i = lines.indexOf(name); return i < 0 ? null : lines.slice(i + 1, i + 5); };
   count(`lab-stats: ${L1} - documents, fixtures, accepted rate, median coverage, commonest kind of warning`, block(L1), [
-    '  documents            5  (3 test fixtures)',
+    '  samples              5  (3 test fixtures)',
     '  accepted             4 of 5 (80%)',
     '  median coverage      99.0%  (5 readings carry one)',
     `  most common warning  3 of 5: ${kindOf(w.rows(103.8))}`]);
   count(`${L2}: a reading without coverage is not counted as zero; no warning is "none"`, block(L2), [
-    '  documents            2',
+    '  samples              2',
     '  accepted             1 of 2 (50%)',
     '  median coverage      95.0%  (1 reading carries one)',
     '  most common warning  none']);
   count('a reading whose lab was not recognised is its own group, listed last', [block('(lab not recognised)'), res.labs[res.labs.length - 1].lab], [[
-    '  documents            1',
+    '  samples              1',
     '  accepted             0 of 1 (0%)',
     '  median coverage      none recorded',
     `  most common warning  1 of 1: ${w.one}`], '(lab not recognised)']);
+  count(`${L3}: two documents of one sample count once, from the newest, a fixture because one of them is`, block(L3), [
+    '  samples              1  (1 test fixture)  from 2 documents',
+    '  accepted             1 of 1 (100%)',
+    '  median coverage      97.0%  (1 reading carries one)',
+    '  most common warning  none']);
   const docs = (await db.query('select count(*)::int as n from nose.documents')).rows[0].n;
-  count('it says how many are test fixtures and how many came from scans',
-    lines[1], `(${res.fixtures} of them are test fixtures stored by the seed; the other ${docs - res.fixtures} came from scans)`);
-  count('the header and the total cover every document', [lines[0].includes(`${docs} documents`), res.documents === docs,
-    lines.some(l => l.startsWith(`all labs: ${docs} documents, accepted ${res.accepted} of ${docs}`))], [true, true, true]);
-  count('labs by documents, most first', res.labs.map(s => s.documents).slice(0, -1).every((n, i, a) => i === 0 || a[i - 1] >= n), true);
+  const samples = (await db.query('select count(distinct nose.sample_key(lab, lab_id, document_id))::int as n from nose.latest_parses')).rows[0].n;
+  count('it says how many samples are test fixtures and how many came from scans',
+    lines[1], `(${res.fixtures} of them are test fixtures stored by the seed; the other ${samples - res.fixtures} came from scans)`);
+  count('the header and the total cover every sample, and the documents they come from',
+    [samples < docs, lines[0].includes(`${samples} samples from ${docs} documents`), res.samples === samples, res.documents === docs,
+     lines.some(l => l.startsWith(`all labs: ${samples} samples from ${docs} documents, accepted ${res.accepted} of ${samples}`))],
+    [true, true, true, true, true]);
+  count('labs by samples, most first', res.labs.map(s => s.samples).slice(0, -1).every((n, i, a) => i === 0 || a[i - 1] >= n), true);
   count('a kind of warning is its sentence with the figures as #', kindOf(w.rows(103.8)) === kindOf(w.rows(99.9)) && kindOf(w.rows(1)).includes('add up to #%'), true);
   count('median: odd, even, and nothing', [median([3, 1, 2]), median([4, 1, 3, 2]), median([null, 'x', NaN]), median([])], [2, 2.5, null, null]);
   count('a tie is said, and broken alphabetically', commonest([['b 1'], ['a 2']]), { kind: 'a #', count: 1, tied: 1 });
@@ -342,6 +389,7 @@ function cliChecks(check) {
   count('lab-stats.js with an argument prints its usage', l.status === 2 && /usage: node scripts\/lab-stats\.js/.test(l.stderr), true);
   const sources = ['scripts/drift.js', 'scripts/lab-stats.js', 'scripts/lib/match.js', 'netlify/functions/lib/coa-dates.js',
                    'supabase/migrations/20260923170000_nose_analysis_views.sql',
+                   'supabase/migrations/20261002180000_nose_one_document_per_text.sql',
                    path.relative(ROOT, require(path.join(ROOT, 'scripts/lib/match.js')).matchFile())]
     .map(f => [f, fs.readFileSync(path.join(ROOT, f), 'utf8')]);
   count('no effect wording in the analysis layer\'s own files', sources.filter(([, s]) => EFFECT_WORDS.test(s)).map(([f]) => f), []);

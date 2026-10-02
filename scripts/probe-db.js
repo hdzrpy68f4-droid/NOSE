@@ -209,6 +209,7 @@ async function main() {
 
     /* --- the write path, rolled back -------------------------------------- */
     const sha = crypto.randomBytes(32).toString('hex');
+    const copySha = crypto.randomBytes(32).toString('hex');
     const payload = {
       sha256: sha, byteSize: 1, sourceUrl: null, fetchedAt: null,
       extractorVersion: 'probe', text: 'probe', parserVersion: 'probe', context: 'seed',
@@ -218,6 +219,17 @@ async function main() {
     try {
       const r = (await w.query('select nose.save_scan($1::jsonb) as result', [JSON.stringify(payload)])).rows[0].result;
       ok('nose_writer can save through save_scan (inside a transaction)', r && r.parseWritten === true, JSON.stringify(r));
+      /* The same text under other bytes - a portal that builds its PDF on
+         download - is the same document, and writes nothing (PARSER-HANDOFF
+         s13, "One report, many documents"). In the same transaction, so it
+         is rolled back with the save. */
+      const copy = (await w.query('select nose.save_scan($1::jsonb) as result', [JSON.stringify({ ...payload, sha256: copySha })])).rows[0].result;
+      ok('save_scan keeps one document per text (other bytes, same text: no new row, same document)',
+        copy && copy.matchedBy === 'text' && copy.documentWritten === false && copy.parseWritten === false &&
+        String(copy.documentId) === String(r.documentId),
+        copy && copy.matchedBy === undefined
+          ? 'the old save_scan answered - push the migration: npx supabase db push --db-url "$NOSE_DB_ADMIN_URL"'
+          : JSON.stringify(copy));
       /* The record scripts/reparse.js keeps of every real run, in the same
          transaction, so it is rolled back with the save. */
       try {
@@ -236,7 +248,7 @@ async function main() {
     } finally {
       await w.query('rollback');
     }
-    const left = (await w.query('select count(*)::int as n from nose.documents where sha256 = $1', [sha])).rows[0].n;
+    const left = (await w.query('select count(*)::int as n from nose.documents where sha256 = any($1::text[])', [[sha, copySha]])).rows[0].n;
     ok('...and the rollback left nothing behind', left === 0, `${left} row(s) remain`);
 
     /* --- the analysis views: readable, and nothing else ------------------- */

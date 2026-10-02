@@ -308,8 +308,11 @@ function connectBlobs(event){
  *
  * WHAT IS KEPT: whatever looks like a lab report - a laboratory the parser
  * recognised, "Certificate of Analysis" in the text, or a terpene it read -
- * refusals included. The PDF goes to Netlify Blobs and what was read goes to
- * Postgres, independently: either can fail without touching the other.
+ * refusals included. What was read goes to Postgres first, then the PDF to
+ * Netlify Blobs - unless the database recognised the scan as a copy of a
+ * report it already holds, by its text (a portal that builds its PDF at the
+ * moment of download). Either can fail; a failed database still leaves the
+ * PDF written, for backfill.
  *
  * HOW IT STAYS OUT OF THE WAY:
  *   - production only (archiveOn): previews and local runs store nothing

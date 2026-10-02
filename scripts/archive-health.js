@@ -168,7 +168,8 @@ function report({ db, dbError, blobKeys, blobError, measured = new Map(), verify
     for (const k of noRow.slice(0, 10)) lines.push(`    ${short(k)}`);
     if (noRow.length > 10) lines.push(`    ...and ${noRow.length - 10} more`);
     if (noRow.length) {
-      attention.push(`${noRow.length} PDF(s) with no document row - the database write failed while the PDF write worked; scanning the jar again adds the row`);
+      attention.push(`${noRow.length} PDF(s) with no document row - the database write failed while the PDF write worked: ` +
+                     'node scripts/backfill-from-blobs.js saves each, or names it a duplicate copy of a stored report');
     }
     lines.push(`  documents with no PDF          ${noBlob.length}`);
     for (const d of noBlob.slice(0, 10)) lines.push(`    document #${d.id}  first fetched ${d.day}  ${short(d.sha256)}`);

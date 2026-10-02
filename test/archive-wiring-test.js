@@ -382,6 +382,66 @@ async function main() {
     assert.deepStrictEqual(lines, []);
   });
 
+  /* --- database first: one report, one PDF (PARSER-HANDOFF s13) -------------- */
+
+  await test('database first: the PDF write starts only once the database has answered', async () => {
+    reset();
+    let answered = false;
+    saveBehaviour = () => new Promise(r => setTimeout(() => { answered = true; r({ documentId: 5, documentWritten: true, matchedBy: 'new', parseWritten: true }); }, 40));
+    let answeredAtPut = null;
+    pdfBehaviour = () => { answeredAtPut = answered; return Promise.resolve({ written: true }); };
+    const { value, lines } = await quietly(() => coa.handler(EVENT));
+    assert.deepStrictEqual(value, baseline);
+    assert.strictEqual(answeredAtPut, true, 'the PDF write started before the database answered');
+    assert.deepStrictEqual(lines, []);
+  });
+
+  await test('a copy - the database matched an earlier document by its text: no PDF written, the same reply, nothing logged', async () => {
+    reset();
+    saveBehaviour = () => Promise.resolve({ documentId: 7, documentWritten: false, matchedBy: 'text', parseWritten: false });
+    const { value, lines } = await quietly(() => coa.handler(EVENT));
+    assert.deepStrictEqual(value, baseline);
+    assert.strictEqual(calls.length, 1);
+    assert.strictEqual(pdfCalls.length, 0, 'the copy\'s PDF was kept');
+    assert.deepStrictEqual(lines, [], 'a copy is not a failure');
+    const out = (await quietly(() => coa._archiveScan(PDF, SOURCE, TEXT, USABLE, Date.now() + 5000))).value;
+    assert.deepStrictEqual([out.kept, out.pdf, out.db, out.copyOf, out.failed], [true, 'copy, not kept', 'copy, nothing new', 7, []]);
+  });
+
+  for (const [what, answer] of [
+    ['a new document', { documentId: 8, documentWritten: true, matchedBy: 'new', parseWritten: true }],
+    ['the same bytes - a document kept before PDFs were gets its PDF', { documentId: 3, documentWritten: false, matchedBy: 'bytes', parseWritten: false }]
+  ]) {
+    await test(`the database stored ${what}: the PDF is written`, async () => {
+      reset();
+      saveBehaviour = () => Promise.resolve(answer);
+      const out = (await quietly(() => coa._archiveScan(PDF, SOURCE, TEXT, USABLE, Date.now() + 5000))).value;
+      assert.strictEqual(pdfCalls.length, 1);
+      assert.strictEqual(pdfCalls[0].sha256, PDF_SHA);
+      assert.deepStrictEqual([out.pdf, out.copyOf, out.failed], ['written', null, []]);
+    });
+  }
+
+  await test('the database down: the PDF is still written, for backfill to save later', async () => {
+    reset();
+    saveBehaviour = () => Promise.reject(new Error('database down'));
+    const out = (await quietly(() => coa._archiveScan(PDF, SOURCE, TEXT, USABLE, Date.now() + 5000))).value;
+    assert.strictEqual(pdfCalls.length, 1);
+    assert.deepStrictEqual([out.kept, out.pdf, out.db], [true, 'written', 'failed']);
+  });
+
+  await test('the database gets half the budget; a hung database leaves the PDF the other half', async () => {
+    reset();
+    saveBehaviour = () => new Promise(() => {});
+    const t0 = Date.now();
+    let startedAt = null;
+    pdfBehaviour = () => { startedAt = Date.now() - t0; return Promise.resolve({ written: true }); };
+    const out = (await quietly(() => coa._archiveScan(PDF, SOURCE, TEXT, USABLE, t0 + 5000))).value;
+    assert.ok(calls[0].opts.timeoutMs === ARCHIVE_BUDGET_MS * archive.DATABASE_SHARE, `database timeoutMs ${calls[0].opts.timeoutMs}`);
+    assert.ok(startedAt !== null && startedAt < ARCHIVE_BUDGET_MS * archive.DATABASE_SHARE + 150, `the PDF write started at ${startedAt}ms`);
+    assert.deepStrictEqual([out.pdf, out.db], ['written', 'failed']);
+  });
+
   await test('connectLambda throwing does not stop the database write or change the reply', async () => {
     reset();
     connectBehaviour = () => { throw new Error('no blobs context in this event'); };

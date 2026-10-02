@@ -63,7 +63,7 @@ async function main() {
   console.log(`seeding ${files.length} PDFs - parser ${stamps.parserVersion}, extractor ${stamps.extractorVersion} ` +
               `(unpdf ${stamps.unpdf}), context seed\n`);
 
-  const tally = { written: 0, already: 0, pdfFailed: 0, parses: 0, unchanged: 0, dbFailed: 0, skipped: 0 };
+  const tally = { written: 0, already: 0, copies: 0, pdfFailed: 0, parses: 0, unchanged: 0, dbFailed: 0, skipped: 0 };
   let failures = 0;
 
   for (const f of files) {
@@ -108,18 +108,21 @@ async function main() {
     }
     if (r.pdf === 'written') tally.written++;
     else if (r.pdf === 'already stored') tally.already++;
+    else if (r.pdf === 'copy, not kept') tally.copies++;     // its text is a stored document's (s13)
     else tally.pdfFailed++;
-    if (r.db === 'parse written') tally.parses++;
-    else if (r.db === 'nothing new') tally.unchanged++;
+    if (r.db === 'parse written' || r.db === 'copy, parse written') tally.parses++;
+    else if (r.db === 'nothing new' || r.db === 'copy, nothing new') tally.unchanged++;
     else tally.dbFailed++;
     if (r.failed.length) failures++;
 
     const verdict = output.usable ? 'usable' : 'refused by the parser, kept';
     console.log(`${r.failed.length ? 'FAIL' : 'ok  '}  ${name} pdf ${r.pdf.padEnd(15)} database ${r.db.padEnd(14)} ${verdict}` +
+                (r.copyOf != null ? `  (a copy of document #${r.copyOf})` : '') +
                 (r.failed.length ? `\n      ${r.failed.join('\n      ')}` : ''));
   }
 
-  console.log(`\n${files.length} PDFs: ${tally.written} stored now, ${tally.already} already stored, ${tally.pdfFailed} failed` +
+  console.log(`\n${files.length} PDFs: ${tally.written} stored now, ${tally.already} already stored, ` +
+              (tally.copies ? `${tally.copies} copies of a stored report, ` : '') + `${tally.pdfFailed} failed` +
               ` | database: ${tally.parses} parses written, ${tally.unchanged} unchanged, ${tally.dbFailed} failed` +
               (tally.skipped ? ` | ${tally.skipped} skipped` : ''));
   if (failures) {

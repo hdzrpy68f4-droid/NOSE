@@ -6,8 +6,11 @@
  *   node scripts/drift.js "<strain>" --lab "Kaycha Labs"
  *   node scripts/drift.js "<strain>" --client "Sunburn"
  *
- * Reads nose.batch_series (supabase/migrations/20260923170000_nose_analysis_views.sql):
- * each document's latest reading, usable ones only. The strain is keyed by
+ * Reads nose.batch_series (supabase/migrations/20261002180000_nose_one_document_per_text.sql):
+ * one row per SAMPLE - the lab and its lab ID, else the document - with the
+ * latest reading of its newest document, usable ones only. A report kept as
+ * several documents (a portal that builds its PDF on download, an amended
+ * report) is one batch here, and says how many documents it is read from. The strain is keyed by
  * nose.strain_key(), the view's own rule - "(I) Banana Papaya" and
  * "banana  papaya" are one strain, "Banana Papaya #2" is another. --lab and
  * --client pick one lab or one client exactly (case and spacing aside).
@@ -46,7 +49,7 @@ class UsageError extends Error {}
  * else is selected - no text, no address. */
 const SERIES_SQL = `
   select b.lab, b.client, b.batch, b.batch_date, b.total_terpenes::text as total,
-         b.parse_id::text as parse_id, p.strain, p.product_class,
+         b.parse_id::text as parse_id, b.copies::int as copies, p.strain, p.product_class,
          (b.batch_date is not null and b.batch_date = p.harvest_on) as by_harvest,
          p.output -> 'terps' as terps
     from nose.batch_series b
@@ -54,12 +57,17 @@ const SERIES_SQL = `
    where b.strain_key = $1::text
    order by b.batch_date nulls last, b.parse_id`;
 
-/* Latest readings under the same key that are NOT in the series: refused,
- * or without a verdict. Counted, so the series is not mistaken for all of it. */
+/* Samples under the same key that are NOT in the series: none of their
+ * documents' latest readings is usable (refused, or without a verdict).
+ * Counted by sample, as the series is, so the series is not mistaken for all
+ * of it. */
 const LEFT_OUT_SQL = `
   select count(*)::int as n
-    from nose.latest_parses
-   where nose.strain_key(strain) = $1::text and usable is not true`;
+    from (select 1
+            from nose.latest_parses
+           where nose.strain_key(strain) = $1::text
+           group by nose.sample_key(lab, lab_id, document_id)
+          having not bool_or(coalesce(usable, false))) as s`;
 
 /* Keys that contain what was typed, for a name that matches nothing. */
 const NEAR_SQL = `
@@ -151,7 +159,7 @@ async function drift({ db, strain, lab = null, client = null, log = console.log,
   if (!all.length) {
     const near = (await db.query(NEAR_SQL, [key])).rows;
     log('');
-    log(`No usable batch in the archive has this strain key${leftOut ? ` (${plural(leftOut, 'reading')} under it ${leftOut === 1 ? 'was' : 'were'} refused)` : ''}.`);
+    log(`No usable batch in the archive has this strain key${leftOut ? ` (${plural(leftOut, 'sample')} under it ${leftOut === 1 ? 'was' : 'were'} refused)` : ''}.`);
     if (near.length) log(`Strain keys containing "${key}": ${near.map(r => `${r.key} (${r.n})`).join(', ')}`);
     return { key, dated: [], undated: [], pairs: [], leftOut };
   }
@@ -177,7 +185,8 @@ async function drift({ db, strain, lab = null, client = null, log = console.log,
                  b.product_class || 'form not stated'].filter(Boolean).join(' · ');
     const top = topShares(M, b.shares);
     log(`${lead}${who}   parse #${b.parse_id}`);
-    log(`      printed name "${b.strain}" · total terpenes ${b.total == null ? 'not printed' : `${b.total}%`}`);
+    log(`      printed name "${b.strain}" · total terpenes ${b.total == null ? 'not printed' : `${b.total}%`}` +
+        (b.copies > 1 ? ` · one sample, kept as ${b.copies} documents` : ''));
     log(`      top five, share of total: ${top.length ? top.join(' · ') : 'no modelled terpene above zero'}`);
   };
 
@@ -234,8 +243,13 @@ async function drift({ db, strain, lab = null, client = null, log = console.log,
   if (dated.some(b => b.by_harvest) && dated.some(b => !b.by_harvest)) {
     notes.push('The dates mix harvest days and report days, and a report comes after its harvest, so order across the two is approximate.');
   }
+  const kept = rows.filter(r => r.copies > 1);
+  if (kept.length) {
+    notes.push(`${plural(kept.length, 'sample')} ${kept.length === 1 ? 'was' : 'were'} kept as more than one document - the same lab and lab ID, ` +
+               'downloaded again or amended - and each is one batch here, read from its newest document.');
+  }
   if (leftOut) {
-    notes.push(`${plural(leftOut, 'reading')} under this strain key ${leftOut === 1 ? 'was' : 'were'} refused by the parser and ${leftOut === 1 ? 'is' : 'are'} not shown - node scripts/review-queue.js lists refusals.`);
+    notes.push(`${plural(leftOut, 'sample')} under this strain key ${leftOut === 1 ? 'was' : 'were'} refused by the parser and ${leftOut === 1 ? 'is' : 'are'} not shown - node scripts/review-queue.js lists refusals.`);
   }
   notes.push('A score compares the measured proportions of two lab reports - drift between lab reports, not between experiences.');
   log('');
