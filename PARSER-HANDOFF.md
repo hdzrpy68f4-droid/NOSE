@@ -1822,8 +1822,14 @@ before any edit. This is the probe; the fix waits on what it finds.
   of the first, the same size, the same lab ID, one text and one reading, and
   its PDF is in Blobs. So the bytes differ and the text matches, through the
   real scanner, extractor and database. The one copy stored is the probe's
-  own. Probe 3 (`download-twice.js` on coaportal, yourcoa, ACS and Modern
-  Canna) has not been run.
+  own. Probe 3, `download-twice.js` from the Codespace on `ee9151d`, each
+  link fetched twice 65 seconds apart: a Kaycha report through yourcoa's
+  viewer, an ACS report through its portal, and a Modern Canna PDF - all
+  three the same bytes and the same text both times, creation stamps and
+  file IDs unchanged. So only Method's portal rebuilds its PDF on download.
+  No Method link was run through it: the two live scans of probe 2 had
+  already shown Method's case - bytes different, text identical - through
+  the scanner itself.
 - **How it was verified, 2026-10-01, in the cloud workspace.** npm was
   blocked there, so as in earlier sessions the gates ran on stand-ins - this
   time pdfjs-dist 6.2.108 for unpdf (it reproduced 56/3, 56/0, clean and
@@ -1933,11 +1939,13 @@ the default pair both read 74 · Partial overlap (75 before 2026-09-24).
 
 - **One copy is stored: #449**, the second document of the probe's Method
   jar (above, "One report, many documents"). Admin cleanup or a privacy-page
-  sentence - the owner's choice, in the same push as the fix. Probe 3,
-  `download-twice.js` on coaportal, yourcoa, ACS and Modern Canna, is still
-  to run: a lab whose text changes between downloads would still be kept once
-  per download, and the privacy page's "We do not count how many times a
-  report is fetched" would not be true of it.
+  sentence - the owner's choice, in the same push as the fix. Probe 3 found
+  no lab whose text changes between downloads (Kaycha, ACS and Modern Canna
+  serve the same file each time), so after the fix the privacy page's "We do
+  not count how many times a report is fetched" holds for every lab seen,
+  apart from #449 and a PDF kept while the database was down. A lab found
+  later whose text changes per download would be kept once per download -
+  `duplicates.js` lists it under "same lab and lab ID, different texts".
 - **The static preview is not in this repo**, and cannot be: `build.sh` fails
 any `.html` with inline script. The guards check only what the build sees; a
 preview kept elsewhere needs `node scripts/check-published.js <file>` and
