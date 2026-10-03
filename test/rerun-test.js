@@ -94,7 +94,9 @@ async function run(db, log = console.log) {
     const n = nameOf(bytes);
     if (variant[n] === 'short') return { text: 'too short', pages: 1 };
     if (variant[n] === 'none') return { text: 'no marker here, and nothing that looks like a report at all. '.repeat(5), pages: 1 };
-    if (variant[n] === 'copy of B') return { text: textFor('B', 'v1'), pages: 1 };   // other bytes, B's seeded text
+    const copy = /^copy of (\w)$/.exec(variant[n] || '');
+    if (copy) return { text: textFor(copy[1], 'v1'), pages: 1 };                     // other bytes, that document's text
+    if (variant[n] === 'no phrase') return { text: `DOC:${n}:v1\n${FILLER}\n`, pages: 1 };
     return { text: textFor(n, variant[n] || 'v1'), pages: 1 };
   };
 
@@ -298,6 +300,38 @@ async function run(db, log = console.log) {
   const breal2 = await backfill({ db, blobs, parse, extract, stamps: stampsAt(stamp), log: () => {} });
   check('backfill again: F is no longer an orphan; the copy is still a copy', `${breal2.orphans} ${breal2.saved} ${breal2.copies}`, '5 0 1');
 
+  /* --- backfill and the keep rule (PARSER-HANDOFF s13, "What gets kept") --- */
+  /* L: a PDF that names a lab and nothing else, kept under the old one-sign
+     rule while the database was down. M and N: a report since taken out by
+     hand - the same file, and another download of it under other bytes. */
+  readings.L = { lab: 'Kaycha Labs', strain: null, readBy: null, usable: false, totalTerpenes: null, terpenesTested: null,
+                 terps: {}, warnings: [], rejectReasons: ['no terpene panel'] };
+  variant.L = 'no phrase';
+  const L = orphan('L', { sourceUrl: null, fetchedAt: '2026-09-29' });
+  readings.M = { ...readings.F, strain: 'Mike' };
+  const M = orphan('M', { sourceUrl: null, fetchedAt: '2026-09-30' });
+  variant.N = 'copy of M';
+  const N = orphan('N', { sourceUrl: null, fetchedAt: '2026-10-01' });
+  const removalId = (await one(`insert into nose.removals (reason) values ('request') returning id::text as id`)).id;
+  await db.query(`insert into nose.withheld (kind, sha256, removal_id) values ('file', $1, $3::bigint), ('text', $2, $3::bigint)`,
+                 [M, rerun.textSha(textFor('M', 'v1')), removalId]);
+  const docsBeforeRule = await count('documents');
+  const kLines = [];
+  const kdry = await backfill({ db, blobs, parse, extract, dryRun: true, stamps: stampsAt(stamp), log: l => kLines.push(l) });
+  check('backfill, dry run: 8 orphans - L, M and N skipped with G, H and J; nothing would be saved',
+    `${kdry.orphans} ${kdry.saved} ${kdry.copies} ${kdry.skipped} ${kdry.failed}`, '8 0 1 6 1');
+  check('...a PDF with one sign of a lab report is not one, and the line says how its PDF goes',
+    has(kLines, new RegExp(`^skip  ${L.slice(0, 8)}  not a lab report by the scanner's own rule \\(two of its three signs\\) - nothing stored; ` +
+                           `its PDF stays in Blobs until node scripts/remove-document\\.js ${L.slice(0, 8)} --reason notreport --yes deletes it$`)), true);
+  check('...a withheld file is skipped, with the command that deletes its PDF',
+    has(kLines, new RegExp(`^skip  ${M.slice(0, 8)}  withheld - its file was taken out of the archive by hand; nothing saved\\. .*` +
+                           `node scripts/remove-document\\.js ${M.slice(0, 8)} --yes deletes it$`)), true);
+  check('...and so is another download of it, by its text',
+    has(kLines, new RegExp(`^skip  ${N.slice(0, 8)}  withheld - its text was taken out`)), true);
+  const kreal = await backfill({ db, blobs, parse, extract, stamps: stampsAt(stamp), log: l => kLines.push(l) });
+  check('backfill: none of the three is saved, and nothing is written', `${kreal.saved} ${await count('documents')}`, `0 ${docsBeforeRule}`);
+  for (const k of [L, M, N]) blobs.objects.delete(k);
+
   /* --- export-candidate ---------------------------------------------------- */
   const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'nose-rerun-'));
   try {
@@ -343,7 +377,7 @@ async function run(db, log = console.log) {
   }
 
   /* --- what is printed ------------------------------------------------- */
-  const printed = [dry0, dry1, real0, failing, rdry, reverted].flatMap(x => x.lines).concat(bLines, bLines2);
+  const printed = [dry0, dry1, real0, failing, rdry, reverted].flatMap(x => x.lines).concat(bLines, bLines2, kLines);
   check('nothing printed holds an address', printed.some(l => /https?:\/\//.test(l)), false);
   check('nothing printed holds report text', printed.some(l => /Certificate of Analysis|DOC:/.test(l)), false);
 

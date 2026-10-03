@@ -306,13 +306,16 @@ function connectBlobs(event){
  * no user agent, no session, no account. `event` is deliberately not in scope
  * here, and test/archive-wiring-test.js fails if this function ever names it.
  *
- * WHAT IS KEPT: whatever looks like a lab report - a laboratory the parser
- * recognised, "Certificate of Analysis" in the text, or a terpene it read -
- * refusals included. What was read goes to Postgres first, then the PDF to
- * Netlify Blobs - unless the database recognised the scan as a copy of a
- * report it already holds, by its text (a portal that builds its PDF at the
- * moment of download). Either can fail; a failed database still leaves the
- * PDF written, for backfill.
+ * WHAT IS KEPT: a lab report, known by two of its three signs - a laboratory
+ * the parser recognised, "Certificate of Analysis" in the text, a terpene
+ * panel (archive.labReportSigns) - refusals included. One sign is not enough:
+ * a receipt or a label can name a lab. What was read goes to Postgres first,
+ * then the PDF to Netlify Blobs - unless the database recognised the scan as
+ * a copy of a report it already holds, by its text (a portal that builds its
+ * PDF at the moment of download), or answered that it keeps nothing: the file
+ * was removed by hand and is withheld, or today's cap on new documents is
+ * reached. Either write can fail; a failed database still leaves the PDF
+ * written, for backfill.
  *
  * HOW IT STAYS OUT OF THE WAY:
  *   - production only (archiveOn): previews and local runs store nothing
@@ -325,7 +328,10 @@ function connectBlobs(event){
  * NOTHING IS LOGGED ON SUCCESS, and a failure logs no detail of the document.
  * Netlify timestamps every log line, and a line naming the report would line
  * a stored scan up with the request logs - the thing the day-only dates in the
- * archive exist to prevent.
+ * archive exist to prevent. A withheld file logs nothing at all: a line saying
+ * one was scanned again would tie a removed report to a request in those logs.
+ * Reaching the daily cap logs one fixed line, with nothing about the report,
+ * so a day the archive stopped filling can be seen.
  */
 async function archiveScan(buffer, finalUrl, text, result, deadline){
   const left = deadline - Date.now();
@@ -337,6 +343,8 @@ async function archiveScan(buffer, finalUrl, text, result, deadline){
       { timeoutMs: Math.min(ARCHIVE_BUDGET_MS, left) });
     if (outcome.failed && outcome.failed.length)
       console.error('coa: archive incomplete, reply unaffected:', outcome.failed.join('; '));
+    if (outcome.db === archive.DAILY_CAP)
+      console.error('coa: archive at its daily cap - nothing kept, reply unaffected');
     return outcome;
   } catch (err) {
     console.error('coa: archive skipped, reply unaffected:', archive.reason(err));

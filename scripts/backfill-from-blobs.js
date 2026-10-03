@@ -15,7 +15,10 @@
  *
  * The same gates as a live scan: a PDF with under 200 characters of text, one
  * the parser throws on, or one that is not a lab report by the scanner's rule
- * stores nothing.
+ * - two of its three signs, lib/archive.js - stores nothing. Neither does one
+ * WITHHELD: its file, or its text, was taken out of the archive by hand
+ * (scripts/remove-document.js), and save_scan would refuse it anyway. Both
+ * are listed with the command that deletes their PDF.
  *
  * A PDF whose text a stored document already holds is not an orphan but a
  * DUPLICATE COPY: the same report under other bytes, from a portal that builds
@@ -44,6 +47,11 @@ const COPY_OF_SQL = `
    where text_sha256 = $1
    order by document_id, id
    limit 1`;
+/* Taken out by hand: the file, or its text (scripts/remove-document.js). */
+const WITHHELD_SQL = `
+  select kind from nose.withheld
+   where (kind = 'file' and sha256 = $1) or (kind = 'text' and sha256 = $2)
+   limit 1`;
 const USAGE = 'usage: node scripts/backfill-from-blobs.js [--dry-run]';
 
 async function backfill({ db, blobs, parse, extract, dryRun = false, stamps, log = console.log }) {
@@ -55,11 +63,14 @@ async function backfill({ db, blobs, parse, extract, dryRun = false, stamps, log
   const known = new Set((await db.query('select sha256 from nose.documents')).rows.map(r => r.sha256));
   const orphans = keys.filter(k => !known.has(k));
   const counts = { pdfs: keys.length, orphans: orphans.length, saved: 0, copies: 0, skipped: 0, failed: 0 };
+  /* Before the 2026-10-02 removals migration nothing can be withheld. */
+  const canWithhold = (await db.query(`select to_regclass('nose.withheld') is not null as ok`)).rows[0].ok === true;
 
   for (const key of orphans) {
     const head = rerun.short(key);
     const skip = why => { counts.skipped++; log(`skip  ${head}  ${why}`); };
     const fail = why => { counts.failed++; log(`FAIL  ${head}  ${why}`); };
+    const removeWith = extra => `node scripts/remove-document.js ${key.slice(0, 8)}${extra}`;
 
     let pdf;
     try { pdf = await pdfStore.read(blobs, key); }
@@ -80,8 +91,26 @@ async function backfill({ db, blobs, parse, extract, dryRun = false, stamps, log
     let output;
     try { output = rerun.asStored(parse(text)); }
     catch (e) { fail(`the parser threw: ${archive.reason(e)}`); continue; }
-    if (!archive.looksLikeLabReport(output, text)) { skip('not a lab report by the scanner\'s own rule - nothing stored'); continue; }
+    if (!archive.looksLikeLabReport(output, text)) {
+      skip('not a lab report by the scanner\'s own rule (two of its three signs) - nothing stored; ' +
+           `its PDF stays in Blobs until ${removeWith(' --reason notreport --yes')} deletes it`);
+      continue;
+    }
     if (text.length > archive.MAX_TEXT) { skip('its text is over 256KB, which the archive does not keep'); continue; }
+
+    /* Taken out by hand: save_scan would refuse it, so it is not offered. Its
+       PDF got here by a scan made while the database was down, or stayed
+       when a removal could not delete it. */
+    if (canWithhold) {
+      let held;
+      try { held = (await db.query(WITHHELD_SQL, [key, rerun.textSha(text)])).rows[0] || null; }
+      catch (e) { fail(`database: ${archive.reason(e)}`); continue; }
+      if (held) {
+        skip(`withheld - its ${held.kind} was taken out of the archive by hand; nothing saved. This PDF was left ` +
+             `behind (a scan while the database was down, or a deletion that failed): ${removeWith(' --yes')} deletes it`);
+        continue;
+      }
+    }
 
     /* The same text as a stored document: a duplicate copy, not an orphan. */
     let copyOf;
@@ -117,6 +146,10 @@ async function backfill({ db, blobs, parse, extract, dryRun = false, stamps, log
         output
       }, { client: db });
     } catch (e) { fail(`database: ${archive.reason(e)}`); continue; }
+    if (saved && saved.withheld === true) {
+      skip(`withheld - taken out of the archive by hand while this ran; nothing saved: ${removeWith(' --yes')} deletes its PDF`);
+      continue;
+    }
     counts.saved++;
     log(`ok    ${head}  ${what}  -> document #${saved.documentId}` +
         (saved.documentWritten ? '' : ' (its row had appeared in the meantime)'));
@@ -165,7 +198,7 @@ async function main(argv = process.argv.slice(2)) {
   }
 }
 
-module.exports = { backfill, COPY_OF_SQL, USAGE };
+module.exports = { backfill, COPY_OF_SQL, WITHHELD_SQL, USAGE };
 if (require.main === module) {
   main().catch(e => { console.error('backfill failed:', e && e.message); process.exit(1); });
 }

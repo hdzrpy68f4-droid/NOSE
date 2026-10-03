@@ -153,7 +153,7 @@ Also run `node test/resolver-test.js` - expect `resolver clean`, and
 **Or all at once:** `bash scripts/gates.sh` runs these, the Kaycha anchors,
 `novelty-test`, `coa-dates-test`, `store-test`, `probe-test`, `archive-wiring-test`,
 `archive-scripts-test`, `rerun-test`, `review-queue-test`,
-`analysis-test`, `duplicates-test`, `remove-copies-test`, `check-trust-test` and, after the build, `input-paths-test`.
+`analysis-test`, `duplicates-test`, `remove-copies-test`, `remove-document-test`, `check-trust-test` and, after the build, `input-paths-test`.
 It prints the line each gate produced and ends with `ALL GATES GREEN`. It passes
 a gate only on its exact expected line, so when a session legitimately changes
 a count, update the script in the same commit.
@@ -203,7 +203,8 @@ someone to look.
 | `coa-dates-test.js` | `lib/coa-dates.js` and the parser's `harvestOn` / `reportOn` (§7): the three forms, the near misses, and every other field identical without it |
 | `analysis-test.js` | the analysis layer (§13) on PGlite: the two views, their grants |
 | `duplicates-test.js` | `duplicates.js` and `download-twice.js` (§13, "One report, many documents"): on PGlite, and on fixture PDFs behind a stand-in fetch - a PDF rebuilt between downloads, the same file twice, a text that changes, a link that fails; offline |
-| `remove-copies-test.js` | `remove-copies.js` (§13, "One report, many documents - the cleanup") on PGlite: copies made by the old `save_scan`, the copies it keeps and why, a Blobs failure, a second run, no text lost, nose_writer refused; offline |
+| `remove-copies-test.js` | `remove-copies.js` (§13, "One report, many documents - the cleanup") on PGlite: copies made by the old `save_scan`, the copies it keeps and why, a Blobs failure, a second run, no text lost, nose_writer refused; and that only it, `remove-document.js` and the probe's refusals name a DELETE; offline |
+| `remove-document-test.js` | `remove-document.js` and `keep-rule.js` (§13, "What gets kept, and taking it back out") on PGlite: the probe finds the one-sign files and nothing else; dry runs change nothing; a removal takes rows, PDF and every copy of the report, records the day and the word, and withholds file and text so `save_scan` refuses them after; PDFs with no row; a Blobs failure finished by a second run; a database refusal that changes nothing; nothing private printed; offline |
 | `check-trust-test.js` | `scripts/check-trust.mjs` (§13, "The trust guard") on throwaway sites: every form of the old promise fails, true sentences pass; offline |
 | `input-paths-test.mjs` | the app's ways in, in headless Chromium: Scan QR (fake camera and QR image), COA link, Upload. The real `coa.js` and parser answer, with only the download and unpdf stood in for (§13, "The input paths"). Needs Playwright; a gate, run after the build |
 
@@ -224,6 +225,8 @@ a stale one fails the lint rather than misleading the next session.
 | `lab-stats.js` | per lab: samples (and the documents they come from), accepted rate, median measured coverage, most common kind of warning; reads only |
 | `duplicates.js [--limit N]` | the reports the archive holds as more than one document: documents sharing an extraction text (the first stored is the report, the rest copies) and documents sharing a lab and lab ID; ends `duplicates already stored: N documents`; reads only |
 | `remove-copies.js [--apply]` | **admin, by hand**: removes duplicate copies of stored reports - PDF first, then rows in one transaction; a dry run without `--apply`; needs `NOSE_DB_ADMIN_URL` |
+| `keep-rule.js` | new documents per UTC day by how each arrived, today against the daily cap, the withheld count, and every document whose latest reading shows fewer than two of the three signs of a lab report, with the command that takes it out; reads only |
+| `remove-document.js <fingerprint> --reason <word> [--yes]` | **admin, by hand**: takes one report out on request - its rows, every copy of it, its PDF - records the day and the word (`request`, `personal`, `notreport`, `legal`) and withholds its file and text fingerprints; database first, then the PDF; a dry run without `--yes`; needs `NOSE_DB_ADMIN_URL` |
 | `download-twice.js <link>...` | each link fetched as the scanner fetches it, twice, 65 seconds apart: whether the bytes and the extracted text changed, and the lines that did; writes nothing, needs no secrets |
 
 ---
@@ -795,6 +798,7 @@ supabase/migrations/20260922180000_nose_archive.sql   the whole schema
 supabase/migrations/20260923140000_nose_reparse_runs.sql   one row per real reparse run
 supabase/migrations/20260923170000_nose_analysis_views.sql   latest_parses, batch_series, strain_key(): read-only
 supabase/migrations/20261002180000_nose_one_document_per_text.sql   save_scan finds a document by its bytes, else its text; batch_series per sample; sample_key()
+supabase/migrations/20261002230000_nose_removals_and_cap.sql   removals, withheld, the daily cap; save_scan checks both first
 supabase/config.toml                                  minimal, for the CLI
 netlify/functions/lib/store.js                        saveScan(payload, { client, timeoutMs }), touch()
 netlify/functions/lib/supabase-ca.js                  generated; Supabase's public root CA
@@ -805,10 +809,10 @@ netlify/functions/lib/version.js                      the one version helper
 netlify/functions/lib/build-info.json                 GENERATED by build.sh, gitignored
 netlify/functions/coa.js                              archiveScan(): the one call site
 netlify/functions/keep-awake.js                       scheduled read every 4 hours
-test/store-test.js                                    PGlite, in memory, 80 checks
-test/archive-wiring-test.js                           coa.js -> archive.js, offline, 45 checks
+test/store-test.js                                    PGlite, in memory, 111 checks
+test/archive-wiring-test.js                           coa.js -> archive.js, offline, 54 checks
 test/archive-scripts-test.js                          version, pdf-store, health, seed, rerun helper; offline, 24 checks
-test/rerun-test.js                                    reparse, backfill, export on PGlite; offline, 87 checks
+test/rerun-test.js                                    reparse, backfill, export on PGlite; offline, 92 checks
 test/review-queue-test.js                             the review queue on PGlite; offline, 19 checks
 test/analysis-test.js                                 the analysis views and scripts on PGlite; offline
 test/match-test.js                                    the matching maths: one copy, the scores it gave before it moved, the numbers it shows
@@ -833,6 +837,9 @@ scripts/duplicates.js                                 reports kept as more than 
 scripts/download-twice.js                             a link fetched twice: did the bytes or the text change?
 scripts/remove-copies.js                              admin cleanup: duplicate copies removed, PDF and rows; dry run by default
 test/remove-copies-test.js                            that cleanup on PGlite; offline
+scripts/keep-rule.js                                  new documents per UTC day, the cap, and any document below the two-sign rule; reads only
+scripts/remove-document.js                            admin: one report taken out on request, withheld after; dry run unless --yes
+test/remove-document-test.js                          those two on PGlite; offline, 48 checks
 test/duplicates-test.js                               those two on PGlite and fixture PDFs; offline
 scripts/lib/match.js                                  loads js/match-math.<hash>.js for the scripts; no maths of its own
 js/match-math.<hash>.js                               the matching maths, loaded by the app and the scripts alike
@@ -850,7 +857,11 @@ distinct parse), the view `terpene_values`, `save_scan(payload)`, which is
 the only write path for scans, and `reparse_runs` (one row per real reparse
 run, inserted directly). The analysis layer adds two read-only views and one
 function (below, "The analysis layer"): `latest_parses`, `batch_series` and
-`strain_key()`, and `sample_key()` since 2026-10-02. A document is found by
+`strain_key()`, and `sample_key()` since 2026-10-02. Since 2026-10-02 too,
+`removals` (one row per removal made by hand: a UTC day and one word),
+`withheld` (the file and text fingerprints a removal took out, which
+`save_scan` refuses), `daily_document_cap()` and a trigger on `reparse_runs`
+(below, "What gets kept, and taking it back out"). A document is found by
 its bytes, else by its text, else written; extractions are reused on conflict. A parse
 is written only when its output differs from the **most recent** parse of that
 extraction, so A → B → A leaves three rows with A latest. Reaching this schema
@@ -863,8 +874,15 @@ never supabase-js, never the Data API, never from a browser.
 EXECUTE on the helper functions too, not only on `save_scan`: Postgres checks
 function privileges when a generated column or CHECK is evaluated, and without
 those grants every insert fails with "permission denied for function". Any new
-function on the write path needs the same explicit grant.
-2. **Nothing identifies a person.** No column can hold one. `holds_no_person()`
+function on the write path needs the same explicit grant (`daily_document_cap()`
+has it; a trigger function is not checked for EXECUTE when it fires - tested on
+PostgreSQL 16 - so nobody holds the `reparse_runs` trigger's). On `withheld` it
+has SELECT alone, because `save_scan` reads it as the caller, and on `removals`
+nothing. Only the admin role deletes, and only through two scripts run by hand
+from the Codespace: `remove-copies.js` and `remove-document.js`.
+2. **Nothing identifies a person.** No column can hold one - a removal is a
+day and one word from a CHECKed list, so not even a name fits in its reason,
+and `withheld` holds fingerprints. `holds_no_person()`
 is a CHECK on `parses.output` that refuses a naming key at any depth, in any
 case. `save_scan` runs the same check first and raises a message with no data
 in it, because a constraint violation echoes the whole failing row into the
@@ -896,6 +914,12 @@ wherever the printed date is one of the four accepted forms - Kaycha's
 two-digit years included. They fill for a stored document only once it is
 read again: `node scripts/reparse.js`. The `client` column fills too.
 - **No `ON DELETE CASCADE`.** Deleting a document with parses must fail loudly.
+- **`reparse_runs.last_document_id` is a number, not a foreign key**, since
+2026-10-02. The key refused to delete any document a reparse run had walked
+last - likely to be the very scan someone asks to have removed. A `BEFORE
+INSERT` trigger keeps the half that mattered (a run cannot be recorded naming
+a document that does not exist); a run that walked a document since removed
+keeps the number it walked to.
 - **One writer at a time per extraction** (`pg_advisory_xact_lock`), so "only
 if the latest differs" holds when two people scan the same jar at once. It is
 transaction-scoped, which the transaction pooler allows.
@@ -1059,9 +1083,11 @@ as `dev` in every field, so a local run fails closed. Checked with esbuild
 and reads `dev`.
 - **Database first, then the PDF** (since 2026-10-02; until then the two ran
 together, independently). `save_scan` says which document the scan is: new,
-the same bytes, or a copy of an earlier document by its text. The PDF is
-written unless it is a copy - and also when the database fails, times out or
-is not configured, so `backfill-from-blobs.js` can save it later. The
+the same bytes, or a copy of an earlier document by its text - or, since
+2026-10-02, that it keeps nothing: the file or its text is `withheld`, or a
+live scan would take the day past its cap. The PDF is written unless it is a
+copy, withheld or over the cap - and also when the database fails, times out
+or is not configured, so `backfill-from-blobs.js` can save it later. The
 database gets half the budget and the PDF the rest of it, so either can fail
 or hang and the reply still comes in time, and a hung database still leaves
 the PDF its half. `archive-health.js` finds a PDF without its document row,
@@ -1084,22 +1110,29 @@ takes every presigned-link credential (`X-Amz-*`, `Signature`, `Expires`)
 with it, and the tokens order pages carry too. The cost: a portal that
 identifies the file only in the query (coaportal's `?pdf=<n>`) cannot be
 re-fetched from its stored address.
-- **Lab reports only**: a laboratory the parser recognises, the words
-"Certificate of Analysis" anywhere in the text, or at least one terpene read.
-Anything else — a menu, an invoice, a letter linked by mistake — is kept
-nowhere, neither file nor text: it could be someone's personal document. The
-phrase rule is the loosest of the three: an invoice that mentions a
-certificate of analysis would be kept, and the privacy page says "anywhere"
-rather than "heading" for that reason. Every fixture in the corpus counts,
-and on its lab or terpenes alone, not only the phrase — the test checks
-both.
+- **Lab reports only, by two of three signs** (since 2026-10-02; until then
+any one of them): a laboratory the parser recognises, the words "Certificate
+of Analysis" anywhere in the text, a terpene panel (`terpenesTested` not
+null, a printed total, or at least one terpene read). `archive.labReportSigns`
+is the one definition; `coa.js`, the seed and `backfill-from-blobs.js` all
+keep by `looksLikeLabReport`. Anything showing fewer - a receipt or a jar
+label that only names Kaycha, a letter that only mentions a certificate of
+analysis, a menu - is kept nowhere, neither file nor text: it could be
+someone's personal document. Every fixture counts, and which signs each
+shows is pinned: 52 all three, the six ACS reports `lab + panel` (no
+phrase), Harmony `lab + phrase` (no panel). Below, "What gets kept, and
+taking it back out".
 - **Text over 256KB is not kept.** Real reports are 2–30KB; without a cap one
 12MB PDF of text could fill the free database.
 - **Nothing is logged on success, and a failure logs one line with no detail
 of the document.** Netlify timestamps every log line; a line naming the
 report would line a stored scan up with the request logs, which the day-only
 dates exist to prevent. `archive.reason()` scrubs file fingerprints,
-addresses, database hosts and IP addresses out of any error it passes on.
+addresses, database hosts and IP addresses out of any error it passes on. A
+withheld file logs nothing at all: a line saying one was scanned again would
+tie a removed report to a request in those logs. A day at its cap logs one
+fixed line per refused scan, `coa: archive at its daily cap - nothing kept,
+reply unaffected`, so a day the archive stopped filling can be seen.
 - **Provenance**: `context` is `production`; `parser_version` and
 `extractor_version` come from `build-info.json`, so neither can go stale by
 hand.
@@ -1119,7 +1152,8 @@ archive).
 is keyed by, so the two halves join on it. Written with `onlyIfNew`: the same
 file scanned again writes nothing, and a stored copy is never replaced. A
 download whose text the database already holds under other bytes is not
-written at all (below, "One report, many documents").
+written at all (below, "One report, many documents"), nor one the database
+answers withheld or over the cap (below, "What gets kept").
 - **Metadata `{ sourceUrl, fetchedAt }`, nothing else.** `sourceUrl` is the
 stripped address, or null when there is none or it would pass Blobs' 2KB
 metadata limit. `fetchedAt` is the UTC DAY, never a time — the database's
@@ -1198,7 +1232,8 @@ counted. After `extract-text.js` is reverted, a text can equal an EARLIER
 extraction, which is reused, not stored again - so the newest row stays the
 reverted-away text and a plain reparse keeps reading it. The run names each one.
 - **`backfill-from-blobs.js`** applies the scanner's own gates (200 characters,
-a parser that does not throw, the lab-report rule, 256KB). The document takes
+a parser that does not throw, the lab-report rule - two of three signs since
+2026-10-02 - and 256KB) and saves nothing withheld. The document takes
 its day and address from the PDF's metadata; no valid day there, nothing stored.
 - **`export-candidate.js <sha> [LAB-FORM-NNN]`** writes the PDF and today's
 extraction of it into the fixture folders, prints the stored lab, strain and
@@ -1938,7 +1973,8 @@ copy stored (#449), in the same push as the fix.
   never a PDF without its row. It keeps, and says why, a copy holding a text
   of its own, a copy whose report has no PDF while it has one (its PDF would
   be the only file), and a copy a `reparse_runs` row names as its last
-  document (that record is append-only, and the foreign key would refuse).
+  document (that record is append-only; until 2026-10-02 the foreign key would
+  also have refused - it is a number now, checked when a run is recorded).
   The report is never touched. Prints no text, address or full fingerprint.
 - **`test/remove-copies-test.js`**, a gate: an archive built as the real one
   was - copies saved by the old `save_scan`, then the migration - with each
@@ -1964,6 +2000,201 @@ copy stored (#449), in the same push as the fix.
   or deleted by the application, and that stays true: this is a maintenance
   script removing a second copy of a report the store still holds once.
 
+### What gets kept, and taking it back out, 2026-10-02
+
+**A receipt that names Kaycha was kept whole, and forever.** `looksLikeLabReport()`
+kept a PDF when ANY of three things held - a laboratory the parser
+recognised, the words "Certificate of Analysis", a terpene read - and
+`detectLab()` matches a lab's name anywhere in the text. So a dispensary
+receipt or a jar label that merely names Kaycha was kept, file and text, and
+nothing could take it out: `nose_writer` cannot delete, and no removal tool
+existed. The endpoint is also an open, anonymous, permanent write path with
+no ceiling. The any-of-three rule came from the owner's prompt.
+
+- **The probe, before any edit**, on `035fded` and again on `2bbb62a` once
+  Prompt 4 had landed. Through the real `coa.js` handler, the real parser and
+  the unpdf stand-in, with only the download and the two archive halves
+  stood in for: a dispensary receipt and a jar label naming Kaycha (sign:
+  lab) and a letter mentioning a certificate of analysis (sign: phrase) were
+  each kept, PDF and text - the receipt's stored text carried the customer's
+  name, rewards number and card ending. A menu was kept nowhere. Those three
+  files are now a check in `archive-wiring-test`, read by the real parser.
+- **The corpus**: 52 fixtures show all three signs, the six ACS reports
+  `lab + panel` (they print no "Certificate of Analysis"), Harmony
+  `lab + phrase` (no terpene panel). None shows fewer than two, so requiring
+  two keeps all 59.
+- **The real archive**: Prompt 4's records (above) put it at 67 documents on
+  2026-10-02 - the 59 seeded test reports and 8 from live scans, over 11 days.
+  So no day can have held more than 8 new documents from live scans, far below
+  the cap below. `scripts/keep-rule.js` is the probe's archive half - new
+  documents per UTC day, and any document below two signs - and is the first
+  Codespace step (below).
+
+**The fix.**
+
+- **Two of three signs** (`lib/archive.js`). `labReportSigns(output, text)`
+  says which hold - `lab`, `phrase`, `panel`, where a panel is
+  `terpenesTested` not null, a printed total, or at least one terpene read -
+  `signsShown()` names them in that order, and `looksLikeLabReport()` keeps
+  a file only when at least `MIN_SIGNS = 2` hold. No output at all shows no
+  sign, whatever the text says. One definition: `coa.js` (through
+  `storeScan`), the seed and `backfill-from-blobs.js` all keep by it, and
+  `keep-rule.js` reads by it.
+- **`supabase/migrations/20261002230000_nose_removals_and_cap.sql`**:
+  - `nose.removals` - one row per removal made by hand: `removed_on`, the UTC
+    day, and `reason`, CHECKed to one of `request`, `personal`, `notreport`,
+    `legal`. Nothing else, and nothing about who asked: a free-text reason
+    could hold a name, so it is a fixed list.
+  - `nose.withheld` - `(kind, sha256)`, `kind` `file` or `text`, each row part
+    of a removal. `save_scan` checks it right after its text lock, before
+    either lookup and for every context, and answers `{ withheld: true }`
+    with nothing written.
+  - **The daily cap**: `nose.daily_document_cap()` returns 100. A live scan
+    (`context` `production`) that would add a NEW document - neither the same
+    bytes nor the same text as one held - while the UTC day already holds 100
+    documents gets `{ capped: true }`, with nothing written. One count for the
+    site, no per-person key. The count is every document first fetched that
+    day, so a seed or backfill run adds to it, but only live scans are
+    refused. An advisory lock per day, taken after the text lock and before
+    the extraction lock, makes the 100th and 101st scans of a day queue
+    rather than both pass. Indexed: `documents(first_fetched_on)`.
+  - **`reparse_runs.last_document_id` is a number, not a foreign key**: the
+    key would have refused to remove whichever document a reparse run had
+    walked last. A `BEFORE INSERT` trigger,
+    `reparse_run_document_exists()`, keeps the check that mattered: a run
+    cannot be recorded naming a document that does not exist (`23503`, "is
+    not in nose.documents - refused").
+  - Grants: `nose_writer` SELECT on `withheld` only, nothing on `removals`,
+    EXECUTE on the cap; PUBLIC executes nothing; the API roles reach none of
+    it.
+- **The PDF half obeys the database** (`lib/archive.js`): a `withheld` or
+  `capped` answer writes no PDF, and `storeScan` returns `kept: false` with
+  `reason` `withheld` or `daily cap`. The reply is byte-identical either way.
+  `coa.js` logs nothing for a withheld file and one fixed line for the cap.
+- **`scripts/remove-document.js <fingerprint> --reason <word> [--yes]`** -
+  run by hand with `NOSE_DB_ADMIN_URL`; refuses `nose_writer`; a dry run
+  unless `--yes`. The fingerprint is a document's file fingerprint, or a
+  text's, 8 to 64 hex characters as every script prints them; or a PDF in
+  Blobs with no document row, whose text it reads with `extract-text.js`. It
+  takes the document's parses, extractions, row and PDF - and every other
+  document holding one of its texts, another copy of the same report -
+  records one removal, and withholds every file and text fingerprint
+  involved. **Database first**: the removal, the withheld rows and the deletes
+  are one transaction, and PDFs are deleted only after it commits. A PDF that
+  fails to delete stays behind withheld, so no scan and no backfill can make
+  it a document again, and the same command run again deletes it, as part of
+  the same removal - no reason needed. (`remove-copies.js` deletes the PDF
+  first because a copy has no withheld fingerprint to guard a PDF left
+  behind.) A refusing database rolls back whole: no removal, nothing withheld,
+  the PDF untouched. Prints no text, address, strain, client or full
+  fingerprint.
+- **Finding a fingerprint from what someone sends.** A file:
+  `sha256sum file.pdf` is its file fingerprint. A link:
+  `node scripts/download-twice.js --wait 0 <link>` fetches it as the scanner
+  does and prints the short fingerprint of its bytes and of its text - and a
+  Method report's text fingerprint is the one that matches, since its bytes
+  change on every download. `keep-rule.js` prints the short fingerprint of
+  every document below the rule.
+- **`scripts/keep-rule.js`** - reads only, as `nose_writer`: new documents
+  per UTC day by how each arrived (the context of its first parse), the
+  busiest day of live scans, today against the cap, the withheld count, the
+  signs on every document's latest reading, and each document below two
+  signs with its `remove-document.js` command. It runs before the migration
+  too, saying the cap is not there yet.
+- **`backfill-from-blobs.js`** skips a withheld PDF ("withheld - its file was
+  taken out of the archive by hand") and a PDF below two signs, each with the
+  `remove-document.js` command that deletes its PDF; withheld is counted with
+  the skipped, so its last line keeps its form.
+- **`probe-db.js`** checks the migration is pushed, that `nose_writer` reads
+  `withheld` and cannot write it or see `removals`, that `save_scan` checks
+  both before writing, and prints the cap and today's count.
+  `archive-health.js`'s orphan note names withheld and non-report PDFs.
+- **The privacy page** (`/privacy/`): a fourth "what changed" paragraph - we
+  keep less: two signs, and removals - dated "October 2026", the month,
+  because the deploy day was not known when this was committed; the third
+  paragraph now says the certificate rule held "until the fourth change"; the
+  lab-reports paragraph states the two-sign rule, and the ceiling of 100 new
+  reports from scans a UTC day; a new "Taking something back
+  out" paragraph says to email `contact@nose-app.com` with the link or the
+  file, that we do not need to know who is asking and nothing from the
+  message is added to the store, and that a removal leaves the day, one word
+  and the two kinds of fingerprint, so the same file is not stored again;
+  "Records are only ever added" now says things leave the store only by hand;
+  "How long we keep things" says "unless removed on request". The lines in
+  `app.html` and the home page say the server keeps "a copy of the report" -
+  still true, so they are unchanged. `check-trust` clean.
+
+**What did not move.** `parse-coa.js`, `coa-dates.js` and `extract-text.js`
+are untouched, so no reparse is due (the rehearsal's `reparse.js --dry-run`:
+`59 unchanged`). Every fixture is still kept, and the signs each shows are
+pinned. No file in `js/` changed; `build.sh` renamed nothing. ALL GATES GREEN
+before and after, `KAY-CAR-001` 4.124, `KAY-PRR-001` 0.944.
+
+**The tests.** `store-test` 111 checks (was 80): withheld by file and by
+text, for a live scan and a backfill, nothing written; the reason list, the
+fingerprint and kind CHECKs, the removal key; exactly the columns asked for;
+the cap at 100 - the 100th kept, the 101st refused with nothing written, a
+held report by bytes or text not capped, a seed not capped, withheld answered
+first; the index; the trigger's refusal (`23503`); a document a run walked
+last removable, the run's number kept; `nose_writer` reads withheld and the
+cap, and cannot write withheld or touch removals. `archive-wiring-test` 54
+(was 45): one sign of each kind kept nowhere, two of each pair kept, the
+probe's three files through the real parser, withheld and the cap writing no
+PDF with the same reply, the seed's skip, the rule's edge cases, and the
+corpus pinned by signs. `rerun-test` 92 (was 87): backfill skips a one-sign
+PDF and a withheld one by file and by text. `remove-document-test` 48 checks,
+a new gate. `remove-copies-test` now expects `remove-document.js` among the
+scripts that delete and call `pdfStore.remove`. Against the unpatched code
+(the old `archive.js`, `coa.js` and `backfill-from-blobs.js`, no new
+migration) `archive-wiring-test` fails 9 checks and the three PGlite tests
+stop at the missing tables.
+
+**Rehearsed on a local copy of the seeded archive** (a local PostgreSQL 16 as
+`nose_writer`, a folder for Blobs). The 59 fixtures seeded by `2bbb62a`, then
+three live scans under the old rule: a receipt and a letter, and a jar label
+through the old handler. `keep-rule.js`, before the migration, listed exactly
+those three below the rule, by short fingerprint. Then the migration;
+`probe-db.js` passed every archive and grant check, failing only the four a
+local database cannot meet (pooler user, host and port; Enforce SSL).
+`remove-document.js` - without `--reason` it asked for one; the dry run
+changed nothing; `--yes` removed each (`removal #1 recorded: ... notreport`,
+`deleted PDF ...`), and `keep-rule.js` then said `below the rule: none`.
+Through the new handler: the jar label again was kept nowhere; KAY-FLW-001,
+taken out with `--reason request`, scanned again kept nothing, and nor did the
+same report under other bytes; with the day filled to 100 by hand, a new
+two-sign report kept nothing and logged the one line, a report already held
+was answered as before, and once the day had room the same new report was
+kept. With the database down, a scan of the withheld KAY-FLW-001 still wrote
+its PDF; `backfill-from-blobs.js --dry-run` named it withheld with the
+command, and `remove-document.js <short> --yes` deleted it as part of the
+same removal. Afterwards: `reparse.js --dry-run` `59 unchanged`, backfill `0
+with no document row`, `duplicates.js` `0 documents`, `archive-health.js` ok.
+
+**How it was verified, 2026-10-02, in the cloud workspace**, on the same
+stand-ins as before: pdfjs-dist 6.2.108 for unpdf, throwaway PostgreSQL 16
+clusters behind PGlite's API and a `pg` over the same wire protocol (without
+TLS), a folder for Blobs, the committed html5-qrcode in place of `build.sh`'s
+download, Playwright 1.56.0's Chromium. The Codespace run on the real packages
+and the real archive is the one that counts.
+
+**In the Codespace, in this order** (the migration before the deploy: the new
+`archive.js` against the old `save_scan` would keep working as before, but
+nothing could be withheld or capped):
+
+1. `bash scripts/gates.sh` - ALL GATES GREEN.
+2. `node scripts/keep-rule.js` - the probe on the real archive. Record its
+   busiest day of live scans and anything below the rule here. A busiest day
+   anywhere near 100 means stop: the cap was chosen against 8 live-scan
+   documents in all.
+3. `npx supabase db push --db-url "$NOSE_DB_ADMIN_URL"`, then
+   `node scripts/probe-db.js` - probe clean.
+4. `git push` - deploys. Then "After a deploy", below.
+5. For each document `keep-rule.js` listed: `node scripts/remove-document.js
+   <short> --reason notreport`, read the dry run, then again with `--yes`.
+   `keep-rule.js` again: `below the rule: none`.
+
+**On the real archive**: not run yet.
+
 ### After a deploy — check it
 
 1. `node scripts/archive-health.js` in the Codespace (reads as `nose_writer`;
@@ -1975,13 +2206,29 @@ than before the first time a report is seen; nothing new for the same report
 again.
 4. Netlify → Logs → Functions → `keep-awake` → Run now → `[keep-awake] ok`.
 5. Netlify → Logs → Functions → `coa`: no `archive incomplete` line. One names
-which half failed, and why, with nothing about the report.
+which half failed, and why, with nothing about the report. An `archive at its
+daily cap` line means that UTC day reached the cap (§13, "What gets kept").
 6. The home page shows a match score in its hero, and on `/app` choosing a
 candidate jar shows a score. Both read their maths from
 `js/match-math.<hash>.js`; an empty score means that file did not load. On
 the default pair both read 74 · Partial overlap (75 before 2026-09-24).
+7. `node scripts/keep-rule.js`: `below the rule: none`, and today's count
+under the cap.
 
 ### Still open
+
+- **A scan made while the database is down is neither capped nor checked
+  against `withheld`**: the database answers neither, so its PDF is written,
+  for backfill (§13, "What gets kept"). `backfill-from-blobs.js` then refuses
+  a withheld one and names it, and `remove-document.js` deletes it.
+- **The cap bounds a day, not the total.** At 100 new documents a day, the
+  worst a day can add is about 25.6 MB of text to the database (256KB each;
+  the free plan's 500 MB would last about 19 such days) and 1.2 GB of PDFs to
+  Blobs (12 MB each). It is one number in a migration; change it with a new
+  one.
+- **The privacy page dates the fourth change "October 2026"**, the month,
+  because the deploy day was not known when it was committed. Its sitemap
+  `lastmod` (2026-07-20) predates every change on the page.
 
 - **The one copy stored, #449, was removed on 2026-10-02** (above, "the
   cleanup"); the archive holds no copies. Probe 3 found

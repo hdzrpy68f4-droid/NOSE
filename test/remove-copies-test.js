@@ -176,17 +176,21 @@ async function run(db, log = console.log) {
   const unknown = cli(['--force']);
   check('an unknown option prints its usage', unknown.status === 2 && /usage: node scripts\/remove-copies\.js/.test(unknown.stderr), true);
 
-  /* probe-db.js names DELETE only to prove nose_writer is refused it. */
-  check('the only code that deletes from the archive is this script (and the probe, proving the writer cannot)',
+  /* probe-db.js names DELETE only to prove nose_writer is refused it. Since
+     2026-10-02 scripts/remove-document.js deletes too: a report taken out on
+     request (test/remove-document-test.js). */
+  check('the only code that deletes from the archive is this script and remove-document.js (and the probe, proving the writer cannot)',
     ['netlify', 'scripts'].flatMap(d => fs.readdirSync(path.join(ROOT, d), { recursive: true }).map(f => path.join(d, String(f))))
       .filter(f => /\.(js|mjs)$/.test(f))
-      .filter(f => /delete\s+from\s+nose\./i.test(fs.readFileSync(path.join(ROOT, f), 'utf8'))).sort(), ['scripts/probe-db.js', 'scripts/remove-copies.js']);
+      .filter(f => /delete\s+from\s+nose\./i.test(fs.readFileSync(path.join(ROOT, f), 'utf8'))).sort(),
+    ['scripts/probe-db.js', 'scripts/remove-copies.js', 'scripts/remove-document.js']);
   check('...and in the probe only inside expectDenied',
     fs.readFileSync(path.join(ROOT, 'scripts/probe-db.js'), 'utf8').split('\n').filter(l => /delete\s+from\s+nose\./i.test(l)).every(l => /expectDenied\(/.test(l)), true);
-  check('pdf-store.remove is called by this script alone',
+  check('pdf-store.remove is called by this script and remove-document.js alone',
     ['netlify', 'scripts'].flatMap(d => fs.readdirSync(path.join(ROOT, d), { recursive: true }).map(f => path.join(d, String(f))))
       .filter(f => /\.(js|mjs)$/.test(f) && f !== 'netlify/functions/lib/pdf-store.js')
-      .filter(f => /pdfStore\.remove\(/.test(fs.readFileSync(path.join(ROOT, f), 'utf8'))), ['scripts/remove-copies.js']);
+      .filter(f => /pdfStore\.remove\(/.test(fs.readFileSync(path.join(ROOT, f), 'utf8'))).sort(),
+    ['scripts/remove-copies.js', 'scripts/remove-document.js']);
   return failures;
 }
 

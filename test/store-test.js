@@ -142,6 +142,78 @@ async function run(db, log = console.log) {
   const noText = await rejects(() => db.query('select nose.save_scan($1::jsonb)', [JSON.stringify({ ...payload({ sha256: sha('no-text') }), text: null })]));
   check('a payload with no text is refused plainly', !!noText && /payload\.text is required/.test(noText.message), true);
 
+  /* --- withheld: taken out by hand, never kept again ----------------------- */
+  /* scripts/remove-document.js records a removal and withholds the file's
+     fingerprint and its text's (PARSER-HANDOFF s13, "What gets kept, and
+     taking it back out"). The rows are written here as it writes them. */
+  const textSha = t => crypto.createHash('sha256').update(t, 'utf8').digest('hex');
+  const rows3 = async () => [await count('select count(*)::int as n from nose.documents'),
+                             await count('select count(*)::int as n from nose.extractions'),
+                             await count('select count(*)::int as n from nose.parses')];
+  const removal = await one(`insert into nose.removals (reason) values ('notreport')
+                               returning id::text as id, removed_on::text as day, pg_typeof(removed_on)::text as t,
+                                         ((now() at time zone 'UTC')::date)::text as utc_day`);
+  check('a removal records the UTC day, in a date column', [removal.day === removal.utc_day, removal.t], [true, 'date']);
+  await db.query(`insert into nose.withheld (kind, sha256, removal_id) values ('file', $1, $3::bigint), ('text', $2, $3::bigint)`,
+                 [sha('withheld-file'), textSha('A RECEIPT THAT NAMES A LAB'), removal.id]);
+  const beforeHeld = await rows3();
+  const live = (name, text, extra = {}) => payload({ sha256: sha(name), text, context: 'production', fetchedAt: null, ...extra });
+  const h1 = await save(live('withheld-file', 'SOME OTHER TEXT'));
+  check('a withheld file is not kept again, from a live scan',
+    [h1.withheld, h1.documentId, h1.documentWritten, h1.extractionId, h1.parseWritten], [true, null, false, null, false]);
+  const h2 = await save(live('withheld-other-bytes', 'A RECEIPT THAT NAMES A LAB'));
+  check('...nor its text under other bytes - another download of the same report', [h2.withheld, h2.documentId], [true, null]);
+  const h3 = await save(payload({ sha256: sha('withheld-file'), text: 'SOME OTHER TEXT', context: 'backfill' }));
+  check('...whoever asks: a backfill is refused alike', h3.withheld, true);
+  check('...and nothing at all was written', await rows3(), beforeHeld);
+  const h4 = await save(payload({ sha256: sha('not-withheld'), text: 'A REPORT NOBODY REMOVED' }));
+  check('a file that is not withheld is kept as before, and its answer is as before',
+    [h4.documentWritten, h4.matchedBy, 'withheld' in h4, 'capped' in h4], [true, 'new', false, false]);
+
+  const refusedWith = async (sql, params, name) => { const e = await rejects(() => db.query(sql, params)); return !!e && e.message.includes(name); };
+  check('a removal\'s reason is one word from a fixed list - a name does not fit',
+    await refusedWith(`insert into nose.removals (reason) values ('Jane Example')`, [], 'removals_reason_check'), true);
+  check('withheld holds fingerprints only',
+    await refusedWith(`insert into nose.withheld (kind, sha256, removal_id) values ('file', 'not a fingerprint', $1::bigint)`,
+                      [removal.id], 'withheld_sha256_check'), true);
+  check('...of a file or a text, nothing else',
+    await refusedWith(`insert into nose.withheld (kind, sha256, removal_id) values ('address', $1, $2::bigint)`,
+                      [sha('kind'), removal.id], 'withheld_kind_check'), true);
+  check('...each one part of a recorded removal',
+    await refusedWith(`insert into nose.withheld (kind, sha256, removal_id) values ('file', $1, 999999)`,
+                      [sha('orphan-withheld')], 'withheld_removal_id_fkey'), true);
+  const columns = async t => (await db.query(`select column_name from information_schema.columns
+                                                where table_schema = 'nose' and table_name = $1 order by ordinal_position`, [t])).rows.map(c => c.column_name);
+  check('removals has exactly a day and a reason - no column for who asked', await columns('removals'), ['id', 'removed_on', 'reason']);
+  check('withheld has exactly a kind, a fingerprint and its removal', await columns('withheld'), ['kind', 'sha256', 'removal_id']);
+
+  /* --- the daily cap on new documents from live scans ---------------------- */
+  const cap = (await one('select nose.daily_document_cap() as n')).n;
+  check('the daily cap is 100 new documents', cap, 100);
+  const today = `(now() at time zone 'UTC')::date`;
+  const fill = cap - 1 - await count(`select count(*)::int as n from nose.documents where first_fetched_on = ${today}`);
+  const FILLER = `select encode(sha256(convert_to('cap filler ' || g, 'UTF8')), 'hex') from generate_series(1, $1::int) as g`;
+  await db.query(`insert into nose.documents (sha256, byte_size, first_fetched_on) select f, 1, ${today} from (${FILLER}) as t (f)`, [fill]);
+  const k1 = await save(live('cap-1', 'CAP TEXT 1'));
+  check(`a live scan is kept while today holds fewer than ${cap} new documents`, [k1.documentWritten, 'capped' in k1], [true, false]);
+  const beforeCap = await rows3();
+  const k2 = await save(live('cap-2', 'CAP TEXT 2'));
+  check(`at ${cap}, a new report from a live scan keeps nothing`,
+    [k2.capped, k2.documentId, k2.documentWritten, k2.extractionId, k2.parseWritten], [true, null, false, null, false]);
+  check('...and nothing was written', await rows3(), beforeCap);
+  const k3 = await save(live('cap-1', 'CAP TEXT 1'));
+  check('a live scan of a report already held is not new, so not capped', [k3.matchedBy, 'capped' in k3], ['bytes', false]);
+  const k4 = await save(live('cap-1-again', 'CAP TEXT 1'));
+  check('...nor another download of it, matched by its text', [k4.matchedBy, 'capped' in k4], ['text', false]);
+  const k5 = await save(payload({ sha256: sha('cap-seed'), text: 'CAP SEED TEXT', fetchedAt: null }));
+  check('a seed run is not capped', [k5.documentWritten, 'capped' in k5], [true, false]);
+  const k6 = await save(live('withheld-file', 'SOME OTHER TEXT'));
+  check('withheld is answered before the cap', [k6.withheld, 'capped' in k6], [true, false]);
+  check('documents are indexed by the day they were first fetched',
+    await count(`select count(*)::int as n from pg_indexes where schemaname = 'nose' and tablename = 'documents'
+                   and indexdef like '%(first_fetched_on)'`), 1);
+  await db.query(`delete from nose.documents where sha256 in (${FILLER})`, [fill]);
+
   /* --- generated columns equal the output --------------------------------- */
   const { out: real, real: isReal } = sampleOutput();
   log(`      (generated-column check uses ${isReal ? 'real KAY-CAR-001 parser output' : 'an inline fixture'})`);
@@ -258,9 +330,20 @@ async function run(db, log = console.log) {
   check('documents walked with no last document is refused',
     await refusedBy({ ...run1, last: null }, 'last_document_when_any'), true);
   const noDoc = await rejects(() => insertRun({ ...run1, last: lastDoc + 1000 }));
-  check('a last document that does not exist is refused', !!noDoc && /foreign key/.test(noDoc.message), true);
+  check('a last document that does not exist is refused',
+    [!!noDoc && /is not in nose\.documents - refused/.test(noDoc.message), noDoc && noDoc.code], [true, '23503']);
   check('an empty archive records no last document',
     !!(await insertRun({ ...run1, documents: 0, last: null, unchanged: 0 })).rows[0].id, true);
+  /* A number, not a foreign key, since 2026-10-02: a removal may take the
+     document a run walked last, and the run keeps the number it walked to. */
+  const walked = await save(payload({ sha256: sha('walked-last'), text: 'WALKED LAST' }));
+  await insertRun({ ...run1, last: Number(walked.documentId) });
+  await db.query('delete from nose.parses where extraction_id = $1', [walked.extractionId]);
+  await db.query('delete from nose.extractions where id = $1', [walked.extractionId]);
+  const gone = await rejects(() => db.query('delete from nose.documents where id = $1', [walked.documentId]));
+  check('the admin can remove a document a reparse run walked last', gone ? gone.message : 'removed', 'removed');
+  check('...and the run keeps its number',
+    await count('select count(*)::int as n from nose.reparse_runs where last_document_id = $1', [walked.documentId]), 1);
 
   /* --- privileges, as the roles themselves -------------------------------- */
   let canSetRole = true;
@@ -278,6 +361,21 @@ async function run(db, log = console.log) {
       check('...and a copy of it, by its text, writes nothing', [wc.documentId, wc.documentWritten, wc.parseWritten], [w.documentId, false, false]);
       const wr = await rejects(() => insertRun(run1));
       check('nose_writer can record a run', wr ? wr.message : 'recorded', 'recorded');
+      const wh = await save(payload({ sha256: sha('withheld-file'), text: 'SOME OTHER TEXT', context: 'production', fetchedAt: null }));
+      check('...and save_scan, run as nose_writer, reads withheld and keeps nothing', wh.withheld, true);
+      const capRead = await rejects(() => db.query('select nose.daily_document_cap()'));
+      check('nose_writer can read the daily cap', capRead ? capRead.message : 'read', 'read');
+      for (const [what, sql] of [
+        ['INSERT into withheld', `insert into nose.withheld (kind, sha256, removal_id) values ('file', '${'0'.repeat(64)}', 1)`],
+        ['UPDATE withheld', 'update nose.withheld set kind = kind where false'],
+        ['DELETE from withheld', 'delete from nose.withheld where false'],
+        ['TRUNCATE withheld', 'truncate nose.withheld'],
+        ['read removals', 'select count(*) from nose.removals'],
+        ['INSERT into removals', `insert into nose.removals (reason) values ('request')`]
+      ]) {
+        const e = await rejects(() => db.query(sql));
+        check(`nose_writer cannot ${what}`, !!e && /permission denied/.test(e.message), true);
+      }
       /* An ordinary column per table: updating an identity or generated column
        * fails for that reason before the privilege check runs, which would
        * pass this test for the wrong reason. */

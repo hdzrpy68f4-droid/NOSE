@@ -31,10 +31,11 @@
  *     (nose.reparse_runs.last_document_id): that record is append-only
  *
  * The archive is append-only for nose_writer, the role the site and every
- * other script use; this is the one script that deletes, and it refuses to
- * run as anything but an admin role. It removes copies only - never a
- * report. Prints no report text, no address, no secret: ids, days, short
- * fingerprints, lab, strain and lab ID.
+ * other script use; this and scripts/remove-document.js are the only scripts
+ * that delete, and both refuse to run as anything but an admin role. This
+ * one removes copies only - never a report; remove-document.js takes a report
+ * out on request. Prints no report text, no address, no secret: ids, days,
+ * short fingerprints, lab, strain and lab ID.
  *
  * Needs NOSE_DB_ADMIN_URL (the Session pooler string), NETLIFY_SITE_ID and
  * NETLIFY_AUTH_TOKEN. Run node scripts/duplicates.js before and after.

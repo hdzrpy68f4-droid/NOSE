@@ -169,7 +169,8 @@ function report({ db, dbError, blobKeys, blobError, measured = new Map(), verify
     if (noRow.length > 10) lines.push(`    ...and ${noRow.length - 10} more`);
     if (noRow.length) {
       attention.push(`${noRow.length} PDF(s) with no document row - the database write failed while the PDF write worked: ` +
-                     'node scripts/backfill-from-blobs.js saves each, or names it a duplicate copy of a stored report');
+                     'node scripts/backfill-from-blobs.js saves each, or names it a duplicate copy of a stored report, ' +
+                     'a file taken out by hand, or not a lab report');
     }
     lines.push(`  documents with no PDF          ${noBlob.length}`);
     for (const d of noBlob.slice(0, 10)) lines.push(`    document #${d.id}  first fetched ${d.day}  ${short(d.sha256)}`);

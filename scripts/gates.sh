@@ -82,6 +82,8 @@ gate 'duplicates'     'duplicates clean'         '^duplicates clean$' \
   node test/duplicates-test.js
 gate 'remove copies'  'remove-copies clean'      '^remove-copies clean$' \
   node test/remove-copies-test.js
+gate 'remove document' 'remove-document clean'  '^remove-document clean$' \
+  node test/remove-document-test.js
 gate 'trust guard'    'check-trust clean'        '^check-trust clean$' \
   node test/check-trust-test.js
 gate 'build'          'OK — ready to deploy'     '^OK — ready to deploy$' \

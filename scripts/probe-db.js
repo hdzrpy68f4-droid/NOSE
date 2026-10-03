@@ -269,6 +269,40 @@ async function main() {
           : e.message);
       }
     }
+
+    /* --- removals, withheld and the daily cap (PARSER-HANDOFF s13, "What
+       gets kept, and taking it back out"): nose_writer reads withheld,
+       because save_scan checks it as the caller, and nothing more; removals
+       it cannot see at all. ------------------------------------------------- */
+    const there = (await w.query(`select to_regclass('nose.withheld') is not null as withheld,
+                                         to_regclass('nose.removals') is not null as removals,
+                                         to_regprocedure('nose.daily_document_cap()') is not null as cap`)).rows[0];
+    const pushed = there.withheld === true && there.removals === true && there.cap === true;
+    ok('the removals migration is pushed: nose.removals, nose.withheld, the daily cap', pushed,
+      'push the migration: npx supabase db push --db-url "$NOSE_DB_ADMIN_URL"');
+    if (pushed) {
+      try {
+        await w.query('select 1 from nose.withheld limit 1');
+        ok('nose_writer can read nose.withheld - save_scan reads it as the caller', true);
+      } catch (e) {
+        ok('nose_writer can read nose.withheld - save_scan reads it as the caller', false, e.message);
+      }
+      await expectDenied(w, 'nose_writer cannot INSERT into withheld', `insert into nose.withheld (kind, sha256, removal_id) values ('file', '${'0'.repeat(64)}', 1)`);
+      await expectDenied(w, 'nose_writer cannot UPDATE withheld', 'update nose.withheld set kind = kind where false');
+      await expectDenied(w, 'nose_writer cannot DELETE withheld', 'delete from nose.withheld where false');
+      await expectDenied(w, 'nose_writer cannot TRUNCATE withheld', 'truncate nose.withheld');
+      await expectDenied(w, 'nose_writer cannot read removals', 'select 1 from nose.removals limit 1');
+      await expectDenied(w, 'nose_writer cannot INSERT into removals', `insert into nose.removals (reason) values ('request')`);
+      const src = (await w.query(`select prosrc from pg_proc where oid = 'nose.save_scan(jsonb)'::regprocedure`)).rows[0].prosrc;
+      ok('save_scan checks withheld fingerprints and the daily cap before it writes',
+        /nose\.withheld/.test(src) && /nose\.daily_document_cap\(\)/.test(src),
+        'the old save_scan answered - push the migration: npx supabase db push --db-url "$NOSE_DB_ADMIN_URL"');
+      const day = (await w.query(`select nose.daily_document_cap() as cap,
+                                         (select count(*)::int from nose.documents
+                                           where first_fetched_on = (now() at time zone 'UTC')::date) as today`)).rows[0];
+      ok('the daily cap is a positive number of new documents', Number.isInteger(day.cap) && day.cap > 0, String(day.cap));
+      info(`daily cap: ${day.cap} new documents from live scans per UTC day; today so far: ${day.today}`);
+    }
   } finally {
     await w.end().catch(() => {});
   }

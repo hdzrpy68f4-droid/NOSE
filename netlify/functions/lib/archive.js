@@ -23,6 +23,10 @@
  *                                           a document kept before PDFs were
  *   database matched another document's     PDF not written: the report's own
  *     text (a copy)                         PDF is the one kept
+ *   database said WITHHELD - the file, or   PDF not written: a removal took it
+ *     its text, was removed by hand         out (scripts/remove-document.js)
+ *   database said CAPPED - today's new      PDF not written: above the cap
+ *     documents from live scans are full    nothing is kept
  *   database failed, timed out, or is not   PDF written, so backfill-from-
  *     configured                            blobs.js can still save it later
  *
@@ -32,11 +36,12 @@
  * the PDF its half. scripts/archive-health.js reports a file that one half
  * has and the other lacks.
  *
- * WHAT IS KEPT: whatever looks like a lab report - the parser named a
- * laboratory, the text says "Certificate of Analysis", or at least one terpene
- * was read. Refused and unusable reports ARE kept: the refusals are how parser
- * faults get found. A PDF that is none of these is not kept at all, in either
- * place - it could be somebody's personal document, linked by mistake.
+ * WHAT IS KEPT: a lab report, by TWO of its three signs (labReportSigns,
+ * below) - one is not enough, since a receipt or a product label can name a
+ * laboratory and a letter can mention a certificate of analysis. Refused and
+ * unusable reports ARE kept: the refusals are how parser faults get found. A
+ * PDF with fewer signs is not kept at all, in either place - it could be
+ * somebody's personal document, linked by mistake.
  *
  * NOTHING ABOUT THE PERSON. This module is never handed the request, so it
  * cannot store anything from it. The address it keeps has lost its query and
@@ -56,12 +61,43 @@ const BACKSTOP_MS = 50;             // store.js bounds itself; this bounds store
 const DATABASE_SHARE = 0.5;         // of timeoutMs; the PDF has the rest
 const MIN_PDF_MS = 50;              // less than this left: the PDF write is not started
 const NOT_CONFIGURED = 'not configured';
+const WITHHELD = 'withheld';        // save_scan: removed by hand, never kept again
+const DAILY_CAP = 'daily cap';      // save_scan: today's new documents are full
+
+/* The three signs of a lab report (PARSER-HANDOFF s13):
+ *
+ *   lab     the parser recognised a laboratory (detectLab)
+ *   phrase  the text says "Certificate of Analysis", anywhere
+ *   panel   a terpene panel: the report says whether terpenes were tested
+ *           (terpenesTested is not null), it prints a total, or the parser
+ *           read at least one terpene
+ *
+ * A file is kept only when at least TWO hold. Every report in the test corpus
+ * shows two or more - 52 all three, the six ACS reports no phrase, Harmony no
+ * panel - and test/archive-wiring-test.js pins exactly that. No output at all
+ * shows no sign, whatever the text says. */
+const PHRASE = /certificate\s+of\s+analysis/i;
+const SIGNS = ['lab', 'phrase', 'panel'];
+const MIN_SIGNS = 2;
+
+function labReportSigns(output, text) {
+  const o = output && typeof output === 'object' && !Array.isArray(output) ? output : null;
+  if (!o) return { lab: false, phrase: false, panel: false };
+  const terps = o.terps && typeof o.terps === 'object' && !Array.isArray(o.terps) ? o.terps : {};
+  return {
+    lab: !!o.lab,
+    phrase: typeof text === 'string' && PHRASE.test(text),
+    panel: o.terpenesTested != null ||
+           (typeof o.totalTerpenes === 'number' && Number.isFinite(o.totalTerpenes)) ||
+           Object.keys(terps).length > 0
+  };
+}
+
+/* The signs that hold, in their fixed order: ['lab', 'panel'], say. */
+const signsShown = signs => SIGNS.filter(k => signs && signs[k]);
 
 function looksLikeLabReport(output, text) {
-  if (!output || typeof output !== 'object') return false;
-  if (output.lab) return true;
-  if (typeof text === 'string' && /certificate\s+of\s+analysis/i.test(text)) return true;
-  return !!(output.terps && typeof output.terps === 'object' && Object.keys(output.terps).length > 0);
+  return signsShown(labReportSigns(output, text)).length >= MIN_SIGNS;
 }
 
 /* Where the file came from: origin and path only. Dropping the whole query
@@ -143,6 +179,15 @@ async function storeScan(scan, {
   ]);
   const saved = db.status === 'fulfilled' && db.value && typeof db.value === 'object' ? db.value : null;
 
+  /* The database kept nothing, and says why: the file or its text was
+     removed by hand and is withheld, or today's new documents from live scans
+     have reached the cap. The PDF half obeys - nothing is written there
+     either - and neither is a failure. */
+  if (saved && (saved.withheld === true || saved.capped === true)) {
+    const why = saved.withheld === true ? WITHHELD : DAILY_CAP;
+    return { kept: false, reason: why, pdf: 'not kept', db: why, copyOf: null, saved, failed: [] };
+  }
+
   /* A copy of a report the database already holds by its text: its PDF is
      the report's own, kept under the report's fingerprint. */
   const copyOf = saved && saved.matchedBy === 'text' ? saved.documentId : null;
@@ -180,6 +225,6 @@ async function storeScan(scan, {
 }
 
 module.exports = {
-  storeScan, looksLikeLabReport, sourceAddress, reason, utcDay,
-  MAX_TEXT, DEFAULT_TIMEOUT_MS, DATABASE_SHARE, MIN_PDF_MS
+  storeScan, looksLikeLabReport, labReportSigns, signsShown, sourceAddress, reason, utcDay,
+  MAX_TEXT, DEFAULT_TIMEOUT_MS, DATABASE_SHARE, MIN_PDF_MS, MIN_SIGNS, WITHHELD, DAILY_CAP
 };

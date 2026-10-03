@@ -18,7 +18,10 @@
  *     fetchedAt } and nothing else, the fixed database payload keys, the
  *     address without its query string, a UTC day and never a time, context
  *     "production", nothing from the request, and nothing logged on success
- *   - only lab reports are kept, and every real report in the corpus counts
+ *   - only lab reports are kept - two of their three signs, never one - and
+ *     every real report in the corpus counts, by the signs pinned for it
+ *   - the PDF obeys the database: nothing is written for a withheld file or
+ *     above the daily cap, and only the cap logs (one fixed line)
  *   - store.js bounds a write end to end, and survives the failures that
  *     arrive after it stopped waiting - the ones that crash a function later
  *   - keep-awake runs often enough to keep a free project awake
@@ -103,6 +106,7 @@ const PDF = Buffer.concat([Buffer.from('%PDF-1.4\n'), Buffer.alloc(700, 0x20)]);
 const PDF_SHA = crypto.createHash('sha256').update(PDF).digest('hex');
 const TEXT = 'KAYCHA LABS CERTIFICATE OF ANALYSIS - offline wiring test text. '.repeat(6);
 const NOT_A_REPORT_TEXT = 'Dinner menu. Soup of the day, bread, a glass of water. '.repeat(6);
+const PHRASE_ONLY_TEXT = 'CERTIFICATE OF ANALYSIS - offline wiring test text, no laboratory named. '.repeat(6);
 const SOURCE = 'https://lab.example.com/reports/KAY-TEST-001.pdf?token=abc123&order=98765#page=2';
 const STRIPPED = 'https://lab.example.com/reports/KAY-TEST-001.pdf';
 const EVENT = {
@@ -120,7 +124,7 @@ const USABLE = {
   reportDate: '07/11/25', client: 'Test Client', parserVersion: 'c0ffee1'
 };
 const UNUSABLE = { ...USABLE, usable: false, rejectReasons: ['coverage too low'] };
-const NOT_A_REPORT = { ...USABLE, lab: null, terps: {}, usable: false };
+const NOT_A_REPORT = { ...USABLE, lab: null, terps: {}, totalTerpenes: null, terpenesTested: null, usable: false };
 
 let parseResult = USABLE;
 let textResult = TEXT;
@@ -484,13 +488,99 @@ async function main() {
     assert.strictEqual(calls.length, 0, 'the parse was kept');
   });
 
-  await test('"Certificate of Analysis" in the text is enough: no lab, no terpenes, still kept', async () => {
+  /* Two of three signs keep a file (PARSER-HANDOFF s13, "What gets kept, and
+     taking it back out"); until 2026-10-02 any one did. */
+  const ONE_SIGN = [
+    ['the words "Certificate of Analysis" alone', NOT_A_REPORT, PHRASE_ONLY_TEXT],
+    ['a laboratory\'s name alone', { ...NOT_A_REPORT, lab: 'Kaycha Labs' }, NOT_A_REPORT_TEXT],
+    ['a terpene panel alone', { ...NOT_A_REPORT, terps: { limonene: 0.2 } }, NOT_A_REPORT_TEXT]
+  ];
+  for (const [what, output, text] of ONE_SIGN) {
+    await test(`one sign is not enough - ${what}: kept nowhere, nothing logged`, async () => {
+      reset();
+      parseResult = output;
+      textResult = text;
+      const { lines } = await quietly(() => coa.handler(EVENT));
+      parseResult = USABLE;
+      textResult = TEXT;
+      assert.strictEqual(pdfCalls.length, 0, 'the PDF was kept');
+      assert.strictEqual(calls.length, 0, 'the parse was kept');
+      assert.deepStrictEqual(lines, []);
+    });
+  }
+
+  for (const [what, output, text] of [
+    ['a laboratory and the words, no terpene panel (Harmony\'s topical)', { ...NOT_A_REPORT, lab: 'Green Scientific Labs' }, TEXT],
+    ['a laboratory and a panel, no "Certificate of Analysis" (the six ACS reports)', { ...NOT_A_REPORT, lab: 'ACS Laboratory', totalTerpenes: 2.008 }, NOT_A_REPORT_TEXT],
+    ['the words and a panel, no laboratory the parser knows', { ...NOT_A_REPORT, terpenesTested: false }, PHRASE_ONLY_TEXT]
+  ]) {
+    await test(`two signs are enough - ${what}: kept in both places`, async () => {
+      reset();
+      parseResult = output;
+      textResult = text;
+      await quietly(() => coa.handler(EVENT));
+      parseResult = USABLE;
+      textResult = TEXT;
+      assert.strictEqual(pdfCalls.length, 1);
+      assert.strictEqual(calls.length, 1);
+    });
+  }
+
+  await test('the probe\'s files, read by the real parser: a receipt and a jar label naming Kaycha, a letter naming a certificate - one sign each, kept nowhere', async () => {
     reset();
-    parseResult = NOT_A_REPORT;
-    await quietly(() => coa.handler(EVENT));
-    parseResult = USABLE;
-    assert.strictEqual(pdfCalls.length, 1);
+    const docs = {
+      receipt: ['GREEN LEAF DISPENSARY', '123 Example Ave, Clearwater FL 33755', 'Order #48213    10/01/2026 2:32 PM',
+                'Customer: Jane Example', 'Rewards #: 5550 1234', 'Item    Qty    Price', 'Sunset Sherbet 3.5g Flower    1    $35.00',
+                'Batch: SS-0925    Tested by Kaycha Labs', 'Subtotal    $35.00', 'Total    $35.00', 'Paid: VISA ending 4821'],
+      label: ['SUNSET SHERBET', 'Flower - 3.5 g', 'THC 24.1%    CBD <0.1%', 'Batch SS-0925    Harvested 09/10/2026',
+              'Lab tested by Kaycha Labs - scan the code for the full report', 'Packaged by Example Farms LLC, Florida.'],
+      letter: ['Dear Jane,', 'Thank you for your message. We have attached the certificate of analysis you asked for,',
+               'and your order 48213 will ship to 22 Example Street on Monday.', 'Kind regards, The Example Farms team']
+    };
+    const want = { receipt: ['lab'], label: ['lab'], letter: ['phrase'] };
+    for (const [name, lines] of Object.entries(docs)) {
+      const text = lines.join('\n');
+      const out = realParseCoa(text);
+      assert.deepStrictEqual(archive.signsShown(archive.labReportSigns(out, text)), want[name], name);
+      const r = await archive.storeScan({ buffer: PDF, finalUrl: SOURCE, text, output: out, context: 'production',
+                                          parserVersion: 'a', extractorVersion: 'b' });
+      assert.deepStrictEqual(r, { kept: false, reason: 'not a lab report' }, name);
+    }
+    assert.strictEqual(pdfCalls.length + calls.length, 0);
+  });
+
+  await test('withheld - the database says the file was taken out by hand: no PDF written, the same reply, nothing logged', async () => {
+    reset();
+    saveBehaviour = () => Promise.resolve({ withheld: true, documentId: null, documentWritten: false, matchedBy: null,
+                                            extractionId: null, extractionWritten: false, parseId: null, parseWritten: false });
+    const { value, lines } = await quietly(() => coa.handler(EVENT));
+    assert.deepStrictEqual(value, baseline);
     assert.strictEqual(calls.length, 1);
+    assert.strictEqual(pdfCalls.length, 0, 'the PDF of a withheld file was written');
+    assert.deepStrictEqual(lines, [], 'a withheld file was logged - that would tie a removed report to a request');
+    const out = (await quietly(() => coa._archiveScan(PDF, SOURCE, TEXT, USABLE, Date.now() + 5000))).value;
+    assert.deepStrictEqual([out.kept, out.reason, out.pdf, out.db, out.copyOf, out.failed], [false, 'withheld', 'not kept', 'withheld', null, []]);
+  });
+
+  await test('the daily cap - the database kept nothing: no PDF written, the same reply, one fixed log line', async () => {
+    reset();
+    saveBehaviour = () => Promise.resolve({ capped: true, documentId: null, documentWritten: false, matchedBy: null,
+                                            extractionId: null, extractionWritten: false, parseId: null, parseWritten: false });
+    const { value, lines } = await quietly(() => coa.handler(EVENT));
+    assert.deepStrictEqual(value, baseline);
+    assert.strictEqual(pdfCalls.length, 0, 'the PDF was written above the cap');
+    assert.deepStrictEqual(lines, ['coa: archive at its daily cap - nothing kept, reply unaffected']);
+    noDetail(lines[0]);
+    const out = (await quietly(() => coa._archiveScan(PDF, SOURCE, TEXT, USABLE, Date.now() + 5000))).value;
+    assert.deepStrictEqual([out.kept, out.reason, out.pdf, out.db, out.failed], [false, 'daily cap', 'not kept', 'daily cap', []]);
+  });
+
+  await test('the seed path: a withheld fixture is skipped with its reason, as a non-report is', async () => {
+    reset();
+    const base = { buffer: PDF, finalUrl: null, text: TEXT, output: USABLE, context: 'seed', parserVersion: 'a', extractorVersion: 'b' };
+    const r = await archive.storeScan(base, { saveScan: async () => ({ withheld: true }), openPdfStore: () => ({}) });
+    assert.deepStrictEqual([r.kept, r.reason], [false, 'withheld']);
+    assert.strictEqual(pdfCalls.length, 0);
   });
 
   await test('the call site: after parseCoa, before the refusals, production only, connectBlobs first, once', async () => {
@@ -524,15 +614,26 @@ async function main() {
     assert.strictEqual(pdfCalls.length + calls.length, 0);
   });
 
-  await test('what counts as a lab report', async () => {
+  await test('what counts as a lab report: two of three signs', async () => {
     const is = archive.looksLikeLabReport;
-    assert.strictEqual(is(USABLE, ''), true, 'a named laboratory');
-    assert.strictEqual(is({ lab: null, terps: { limonene: 0.2 } }, ''), true, 'one terpene');
-    assert.strictEqual(is({ lab: null, terps: {} }, 'CERTIFICATE OF ANALYSIS'), true, 'the heading');
-    assert.strictEqual(is({ lab: null, terps: {} }, 'Certificate\nof Analysis'), true, 'the heading across lines');
-    assert.strictEqual(is({ lab: null, terps: {} }, 'an invoice, a letter, a menu'), false);
-    assert.strictEqual(is({ lab: null, terps: {} }, ''), false);
-    assert.strictEqual(is(null, 'Certificate of Analysis'), false, 'no parse at all');
+    const signs = archive.labReportSigns;
+    const none = { lab: null, terps: {}, totalTerpenes: null, terpenesTested: null };
+    assert.strictEqual(archive.MIN_SIGNS, 2);
+    assert.deepStrictEqual(signs(USABLE, ''), { lab: true, phrase: false, panel: true }, 'signs are booleans, every one');
+    assert.strictEqual(is(USABLE, ''), true, 'a laboratory and a panel');
+    assert.strictEqual(is({ ...none, lab: 'Kaycha Labs' }, ''), false, 'a laboratory alone');
+    assert.strictEqual(is({ ...none, terps: { limonene: 0.2 } }, ''), false, 'one terpene alone');
+    assert.strictEqual(is(none, 'CERTIFICATE OF ANALYSIS'), false, 'the words alone');
+    assert.strictEqual(is({ ...none, lab: 'Kaycha Labs' }, 'Certificate\nof Analysis'), true, 'a laboratory and the words, across lines');
+    assert.strictEqual(is({ ...none, totalTerpenes: 0 }, 'Certificate of Analysis'), true, 'a printed total of zero is a panel (GreenRoads)');
+    assert.strictEqual(is({ ...none, terpenesTested: false }, 'Certificate of Analysis'), true, '"terpenes not tested" is a panel too (hemp-bombs)');
+    assert.strictEqual(is({ ...none, terps: { limonene: 0 } }, 'Certificate of Analysis'), true, 'a terpene read as zero is still read');
+    assert.strictEqual(is({ ...none, totalTerpenes: NaN }, 'Certificate of Analysis'), false, 'a total that is not a number is not one');
+    assert.strictEqual(is(none, 'an invoice, a letter, a menu'), false);
+    assert.strictEqual(is(none, ''), false);
+    assert.strictEqual(is(null, 'Certificate of Analysis'), false, 'no parse at all shows no sign, whatever the text');
+    assert.deepStrictEqual(signs(null, 'Certificate of Analysis'), { lab: false, phrase: false, panel: false });
+    assert.deepStrictEqual(archive.signsShown({ panel: true, lab: true, phrase: false }), ['lab', 'panel'], 'always in one order');
   });
 
   await test('the stored address drops query, fragment and credentials; only https', async () => {
@@ -684,15 +785,26 @@ async function main() {
 
   const dir = path.join(ROOT, 'test/fixtures/extracted');
   const texts = fs.existsSync(dir) ? fs.readdirSync(dir).filter(f => f.endsWith('.txt')) : [];
-  await test(`every real report counts as one, and none carries a personal key (${texts.length} fixtures)`, async () => {
+  /* Every fixture is kept, by at least two signs - and which two is pinned,
+     so a parser or rule change that leaves a report one sign from refusal
+     shows here: 52 show all three, the six ACS reports print no "Certificate
+     of Analysis", and Harmony's topical runs no terpene panel. */
+  await test(`every real report shows at least two signs, and none carries a personal key (${texts.length} fixtures)`, async () => {
     if (!texts.length) { console.log('note  no extracted fixtures - run: node test/extract-dump.js'); return; }
+    const bySigns = {};
     for (const f of texts) {
       const text = fs.readFileSync(path.join(dir, f), 'utf8');
       const out = realParseCoa(text);
       assert.ok(archive.looksLikeLabReport(out, text), `${f} would not be archived`);
-      assert.ok(archive.looksLikeLabReport(out, ''), `${f} counts only because of its heading`);
+      const shown = archive.signsShown(archive.labReportSigns(out, text)).join(' + ');
+      (bySigns[shown] = bySigns[shown] || []).push(f.replace(/\.txt$/, ''));
       assert.strictEqual(store._findPersonalKey(out), null, `${f} output carries a personal key`);
     }
+    for (const k of Object.keys(bySigns)) bySigns[k].sort();
+    assert.deepStrictEqual(Object.keys(bySigns).sort(), ['lab + panel', 'lab + phrase', 'lab + phrase + panel']);
+    assert.strictEqual(bySigns['lab + phrase + panel'].length, 52);
+    assert.deepStrictEqual(bySigns['lab + panel'], ['ACS-CAR-001', 'ACS-CAR-002', 'ACS-FLW-002', 'ACS-LRS-001', 'ACS-LRS-002', 'ACS-PRR-001']);
+    assert.deepStrictEqual(bySigns['lab + phrase'], ['Harmony-Muscle-Rub-COA-PHRO1']);
   });
 
   await test('no unhandled rejection anywhere in the run', async () => {
