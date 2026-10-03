@@ -2023,12 +2023,13 @@ no ceiling. The any-of-three rule came from the owner's prompt.
   `lab + panel` (they print no "Certificate of Analysis"), Harmony
   `lab + phrase` (no terpene panel). None shows fewer than two, so requiring
   two keeps all 59.
-- **The real archive**: Prompt 4's records (above) put it at 67 documents on
-  2026-10-02 - the 59 seeded test reports and 8 from live scans, over 11 days.
-  So no day can have held more than 8 new documents from live scans, far below
-  the cap below. `scripts/keep-rule.js` is the probe's archive half - new
-  documents per UTC day, and any document below two signs - and is the first
-  Codespace step (below).
+- **The real archive**, from the Codespace on 2026-10-02 (US Eastern), before
+  anything was pushed (below, "On the real archive"): the busiest UTC day had
+  added 4 new documents from live scans, and no stored document shows fewer
+  than two signs. So the risk was prospective - nothing to take out - and the
+  cap below is 25 times the busiest day. `scripts/keep-rule.js` is that
+  probe's archive half, kept: new documents per UTC day, and any document
+  below two signs.
 
 **The fix.**
 
@@ -2182,18 +2183,76 @@ and the real archive is the one that counts.
 nothing could be withheld or capped):
 
 1. `bash scripts/gates.sh` - ALL GATES GREEN.
-2. `node scripts/keep-rule.js` - the probe on the real archive. Record its
-   busiest day of live scans and anything below the rule here. A busiest day
-   anywhere near 100 means stop: the cap was chosen against 8 live-scan
-   documents in all.
+2. `node scripts/keep-rule.js` - the probe on the real archive (done once,
+   below). A busiest day of live scans anywhere near 100 would mean stop: the
+   cap was chosen against a busiest day of 4.
 3. `npx supabase db push --db-url "$NOSE_DB_ADMIN_URL"`, then
    `node scripts/probe-db.js` - probe clean.
 4. `git push` - deploys. Then "After a deploy", below.
-5. For each document `keep-rule.js` listed: `node scripts/remove-document.js
-   <short> --reason notreport`, read the dry run, then again with `--yes`.
-   `keep-rule.js` again: `below the rule: none`.
+5. For each document `keep-rule.js` lists below the rule (on 2026-10-02:
+   none): `node scripts/remove-document.js <short> --reason notreport`, read
+   the dry run, then again with `--yes`. `keep-rule.js` again: `below the
+   rule: none`.
 
-**On the real archive**: not run yet.
+**On the real archive, 2026-10-02 (US Eastern)**, from the Codespace, before
+the migration or the deploy, with the probe as first written - a one-off
+`keep-probe.js`, never committed, making the same queries and the same sign
+test as `scripts/keep-rule.js`:
+
+```
+1. New documents per UTC day (the day each was first fetched), by how it arrived - 67 documents
+
+   day           production        seed    backfill    total
+   2026-09-23             4          59           0       63
+   2026-09-24             3           0           0        3
+   2026-10-02             1           0           0        1
+
+   production scans: 8 new documents over 3 days with any; busiest 2026-09-23 with 4; median 3 on a day with any
+
+2. Signs of a lab report, on the latest reading of each document's newest text - 67 documents
+
+      60  lab + phrase + panel
+       1  lab + phrase
+       6  lab + panel
+
+   fewer than two signs: none
+```
+
+The 59 seeded test reports account for 52 of the 60 with all three signs, the
+six `lab + panel` (ACS) and the one `lab + phrase` (Harmony), so all 8
+documents from live scans show all three.
+
+**Pushed and deployed, 2026-10-03 (US Eastern)**, from the Codespace on
+`78fc4b3`, pulled from a git bundle:
+
+- `probe-db.js` before the migration failed one check only, the new one that
+  it is pushed (`probe: 1 failure`).
+- `npx supabase db push --db-url "$NOSE_DB_ADMIN_URL"` applied
+  `20261002230000_nose_removals_and_cap.sql`, and `git push` deployed
+  `2bbb62a..78fc4b3`. The live `/privacy/` page then carried the two-sign
+  paragraph and "Taking something back out" - checked from the cloud
+  workspace.
+- `probe-db.js`: probe clean. The migration is pushed; `nose_writer` reads
+  `withheld` and cannot insert, update, delete or truncate it, nor read or
+  insert into `removals`; `save_scan` checks withheld fingerprints and the
+  daily cap before it writes; `daily cap: 100 new documents from live scans
+  per UTC day; today so far: 0`. The admin grant audit is clean - only
+  `postgres` and `nose_writer` hold any grant in schema nose, PUBLIC executes
+  no nose function, `anon`, `authenticated` and `service_role` reach nothing -
+  and Enforce SSL is on. The Data API checks were skipped: no
+  `NOSE_PUBLISHABLE_KEY` in that run.
+- `archive-health.js`: ok, with one note - 2 documents with no PDF, the two
+  expected since 2026-09-23 (#3 and #184).
+- `keep-rule.js`: 67 documents and the same table by day; `today
+  (2026-10-03, UTC): 0 new documents of the 100 a day the cap allows from
+  live scans`; `withheld - taken out by hand, never kept again: 0 file
+  fingerprints, 0 text fingerprints`; 60 / 1 / 6 by signs; `below the rule:
+  none`. Nothing needed taking out, so `remove-document.js` has not yet run on
+  the real archive.
+- The migration as applied keeps the note it was committed with on why the
+  cap is 100 ("8 documents from live scans, made over 11 days"); the busiest
+  day, 4, is recorded here instead, because an applied migration is not
+  edited.
 
 ### After a deploy — check it
 
@@ -2227,8 +2286,15 @@ under the cap.
   Blobs (12 MB each). It is one number in a migration; change it with a new
   one.
 - **The privacy page dates the fourth change "October 2026"**, the month,
-  because the deploy day was not known when it was committed. Its sitemap
-  `lastmod` (2026-07-20) predates every change on the page.
+  because the deploy day was not known when it was committed; it went live on
+  2026-10-03 (US Eastern). Its sitemap `lastmod` (2026-07-20) predates every
+  change on the page.
+- **`remove-document.js` has not run on the real archive** - nothing needed
+  taking out on 2026-10-03. Its PDF delete is the `pdf-store.remove()` that
+  `remove-copies.js` used for real on 2026-10-02; its transaction, the
+  withheld rows and a rescan refused afterwards have run only on PGlite and a
+  local PostgreSQL 16, so its first real removal is worth a `keep-rule.js`
+  and an `archive-health.js` after it.
 
 - **The one copy stored, #449, was removed on 2026-10-02** (above, "the
   cleanup"); the archive holds no copies. Probe 3 found
