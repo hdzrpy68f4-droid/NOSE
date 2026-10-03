@@ -880,11 +880,16 @@ PostgreSQL 16 - so nobody holds the `reparse_runs` trigger's). On `withheld` it
 has SELECT alone, because `save_scan` reads it as the caller, and on `removals`
 nothing. Only the admin role deletes, and only through two scripts run by hand
 from the Codespace: `remove-copies.js` and `remove-document.js`.
-2. **Nothing identifies a person.** No column can hold one - a removal is a
-day and one word from a CHECKed list, so not even a name fits in its reason,
-and `withheld` holds fingerprints. `holds_no_person()`
+2. **Nothing about the person who scanned.** No column is for them - a removal
+is a day and one word from a CHECKed list, so not even a name fits in its
+reason, and `withheld` holds fingerprints. `holds_no_person()`
 is a CHECK on `parses.output` that refuses a naming key at any depth, in any
-case. `save_scan` runs the same check first and raises a message with no data
+case - keys, not content. It never reads `extractions.text`, which is the
+report as printed, and reports name lab staff: 56 of the 59 fixtures name a
+laboratory director (below, "Three privacy sentences"). Until 2026-10-03
+this line said "Nothing identifies a person. No column can hold one", as the
+privacy page did; the text column always could. `save_scan` runs the same
+check first and raises a message with no data
 in it, because a constraint violation echoes the whole failing row into the
 Postgres log — the refused field included. `store.js` refuses the same keys
 before sending anything and sends only a fixed list of payload keys, so a stray
@@ -904,7 +909,11 @@ Each is written at the moment someone scans, and Netlify keeps request logs
 with IP addresses. A time of day can be matched to an IP; a date cannot, and a
 date still supports tracking batches over time. `save_scan` pins
 `timezone = UTC`: without it a session in Tokyo recorded "2026-09-22" as the
-21st — verified, not supposed.
+21st — verified, not supposed. **The order survives, though**: every `id` is
+an identity column counting up in arrival order, so a day's scans keep their
+sequence, and a sequence can be set against a log. Days keep the time of day
+out, not the order; the privacy page says so since 2026-10-03 (below, "Three
+privacy sentences").
 - **`harvest_on` and `report_on` read `harvestOn` and `reportOn`** and keep
 only valid ISO dates. The parser's `harvestDate` and `reportDate` are the
 lab's own format (`"07/07/25"` on KAY-CAR-001, `"11/17/2025"` on TerpLife),
@@ -1513,7 +1522,9 @@ and no reading predates novelty.
 
 Strains, fingerprints and times of day of real scans stay out of this file:
 it is public, and a time of day is what the archive's day-only dates exist to
-keep away from the request logs.
+keep away from the request logs. Since 2026-10-03 their ids too: an id carries
+arrival order (above, "Dates, not timestamps"). The ids already in this file
+stay as written.
 
 - **The page first.** `privacy-notice` (`e45bded`) was fast-forwarded onto
 `main` alone and deployed. The live `/privacy/` page then read "A third,
@@ -2254,6 +2265,81 @@ documents from live scans show all three.
   day, 4, is recorded here instead, because an applied migration is not
   edited.
 
+### Three privacy sentences, 2026-10-03
+
+Prompt 6: three sentences on `/privacy/` claimed more than is true. The probe
+ran on `6fbecdd` before any edit, and showed all three.
+
+- **"…never the time of day, so our records cannot be lined up against the
+  server logs our host keeps."** The probe: the five migrations applied to a
+  local PostgreSQL 16, then three scans of three reports saved as
+  `nose_writer` within one UTC day. They came back as documents 1, 2, 3,
+  extractions 1, 2, 3 and parses 1, 2, 3, every one dated the same day: `id`
+  is `GENERATED ALWAYS AS IDENTITY` on all three tables, so the order of a
+  day's scans survives the day-only dates. The same paragraph already said
+  Blobs may note when each PDF was written. Now: "never the time of day"
+  stays, and the next sentence says that recording days is not enough to keep
+  the records from being lined up against the host's logs, because each record
+  is numbered as it arrives and an order can narrow down which request brought
+  which report.
+- **"…no column in the store can hold anything that identifies a person, and
+  the database itself refuses any record that tries to carry one…"**
+  `extractions.text` is the report as printed. In the corpus as the archive's
+  own extractor reads it (`test/fixtures/extracted`), grouped by the lab the
+  parser reads, every Kaycha (22), Modern Canna (13), ACS (8) and TerpLife (2)
+  fixture names a director beside the title, and so do 9 of Method's 10 and 2
+  of ACT's 3 - 56 of the 59; 6 of Modern Canna's 13 name a chief scientific
+  officer as well. 18 fixtures print email addresses, some of
+  them people's own: a laboratory's technical director, and contacts at the
+  businesses that sent the samples. Through `save_scan`
+  as `nose_writer`, a Modern Canna text was kept with those names in it, and
+  the same payload with an `email` key in its output was refused.
+  `holds_no_person()` reads the keys of `parses.output` - the 18 names of
+  `PERSONAL_KEYS` - not their content, and never the text. Now: the store
+  holds nothing about the person who scanned; no column is for them; the
+  database refuses, before anything is written, a reading that carries a field
+  for an account, an email address, an IP address, a device, a browser, a
+  session, a phone number or a palate; lab reports name people - the
+  laboratory director, sometimes a contact at the business that sent the
+  sample - and the text is kept as printed, names and contact details
+  included. **One more sentence moved with it**: "no account, no email
+  address, … anywhere in it" became "no account, email address, IP address,
+  device information, session or palate of yours anywhere in it" - the text
+  holds email addresses, so without "of yours" it contradicted the new
+  sentence.
+- **Login emails** - the open item recorded on 2026-09-23. In the code:
+  `auth-signup.js` calls `/signup` and `auth-reset.js` calls `/recover`,
+  neither with a redirect address, and nothing on NOSE takes a token from an
+  email link, so the only links that work are Supabase's default,
+  `{{ .ConfirmationURL }}` - `https://<ref>.supabase.co/auth/v1/verify?…`,
+  which redirects to the Site URL once it has verified. In the dashboard,
+  2026-10-03 (US Eastern): Site URL `https://nose-app.com`; the template text
+  was not found; whether custom SMTP is on is not known. The owner chose to
+  say it on the page rather than route the links through nose-app.com. A new
+  paragraph under "Who else receives your data": the browser never talks to
+  Supabase while someone uses the site (true by `connect-src 'self'` and
+  `netlify/lib/auth.js`); the confirmation and reset emails link to
+  Supabase's own site, so a click takes the browser there first, and Supabase
+  sees the IP address and browser, and may keep them in its logs, before it
+  sends the person on to NOSE. **Written for Supabase's default templates**:
+  if the dashboard shows the links pointing elsewhere, or a custom SMTP
+  provider rewriting them, the paragraph changes (below, "Still open").
+- Each corrected sentence ends by saying that an earlier version said
+  otherwise, as the page already does for its corrections ("An earlier
+  version of this sentence left out…").
+- "We do not count how many times a report is fetched" is left to Prompt 4.
+- **What did not move.** `check-trust` clean, its patterns untouched.
+  `parse-coa.js`, `coa-dates.js` and `extract-text.js` are untouched, so no
+  reparse is due; no file in `js/` changed, so `build.sh` renamed nothing.
+  ALL GATES GREEN before (`6fbecdd`) and after, `KAY-CAR-001` 4.124 and
+  `KAY-PRR-001` 0.944.
+- **How it was verified, 2026-10-03, in the cloud workspace.** npm was blocked
+  there, so as in earlier sessions the gates ran on stand-ins: pdfjs-dist
+  6.2.108 for unpdf, a throwaway PostgreSQL 16 cluster behind PGlite's API,
+  the committed html5-qrcode in place of `build.sh`'s download, and Playwright
+  1.56.0's Chromium. The probe's database was a plain local PostgreSQL 16. The
+  Codespace run on the real packages is the one that counts.
+
 ### After a deploy — check it
 
 1. `node scripts/archive-health.js` in the Codespace (reads as `nose_writer`;
@@ -2288,7 +2374,7 @@ under the cap.
 - **The privacy page dates the fourth change "October 2026"**, the month,
   because the deploy day was not known when it was committed; it went live on
   2026-10-03 (US Eastern). Its sitemap `lastmod` (2026-07-20) predates every
-  change on the page.
+  change on the page, the three sentences of 2026-10-03 included.
 - **`remove-document.js` has not run on the real archive** - nothing needed
   taking out on 2026-10-03. Its PDF delete is the `pdf-store.remove()` that
   `remove-copies.js` used for real on 2026-10-02; its transaction, the
@@ -2361,18 +2447,51 @@ built from its published types (v10: `set` returns `{ modified }`, and
 - The terms page's "Before launch" box still lists the operating entity's legal
 name and address, a governing-law clause, an effective date, and a lawyer's
 review.
-- **Login emails may show Supabase your IP address, and the privacy page does
-not say so.** Sign-up and password reset call Supabase's auth API from the
-server (`netlify/lib/auth.js`, no forwarded address), but the emails Supabase
-then sends normally link to Supabase's own domain, so whoever clicks one
-reaches Supabase from their own browser, and Supabase's auth logs record the
-address. Whether the links point there is set in the Supabase dashboard
-(Authentication → email templates and URL configuration), not in this repo.
-If the accounts share the archive's project, those logs sit in the same
-database - which is why the privacy page says the IP address never reaches
-the *store*, not the database. Either route the links through NOSE or say it
-on the privacy page. The account functions' `SUPABASE_URL` and
-`SUPABASE_SERVICE_KEY` are not described anywhere in this file either.
+- **Login emails show Supabase the clicker's IP address - said on the privacy
+page since 2026-10-03, for Supabase's default templates** (above, "Three
+privacy sentences"). Sign-up and password reset call Supabase's auth API from
+the server (`netlify/lib/auth.js`, no forwarded address), but the emails link
+to Supabase's own domain, so whoever clicks one reaches Supabase from their
+own browser, and Supabase's auth logs record the address. If the accounts
+share the archive's project, those logs sit in the same database - which is
+why the privacy page says the IP address never reaches the *store*, not the
+database. **Still to read in the dashboard**: the link in Authentication →
+Emails → Templates (Confirm sign up, Reset password) - not found on
+2026-10-03 - and Emails → SMTP Settings. If the links point anywhere but
+Supabase's own site, the new paragraph changes. The account functions'
+`SUPABASE_URL` and `SUPABASE_SERVICE_KEY` are not described anywhere in this
+file either.
+- **No page finishes a password reset.** After a reset link, Supabase verifies
+it and sends the browser to the Site URL (`https://nose-app.com`) with a
+session in the address after `#` - Supabase's documented flow for a request
+made without PKCE, as `auth-reset.js` makes it; not yet watched on the live
+site. Nothing on NOSE reads it, asks for a new password, or calls Supabase to
+set one - no function calls `/user`, read in the code on 2026-10-03 - so a
+reset email cannot lead to a new password today. Routing the links through
+nose-app.com (a landing page, and a server call that verifies the link's
+`token_hash`) would fix this and the IP-address point together, and email
+scanners that open links before people do are the known trap there. It needs
+its own prompt.
+- **Supabase's session is left in the address.** The same redirect, after a
+confirmation or a reset link, puts an `access_token` and a `refresh_token`
+after `#` on nose-app.com (the documented flow again; not yet watched). NOSE
+never reads or clears them - the app's router reads `#` only to name a page -
+so they would stay in that browser's history. Ending the redirect (the item
+above) ends this too.
+- **Custom SMTP: not known whether it is on.** Supabase's docs (read
+2026-10-03): without it, the built-in service delivers only to the project's
+team members, 2 messages an hour, so real people would get no confirmation or
+reset email. With it, that company receives every address it delivers to, and
+the privacy page's "Nobody else" would have to name it; and if it tracks
+clicks, the email links go through its own address first.
+- **The stored address keeps a link's path.** Only what follows "?" (and "#")
+is dropped, so a one-off link that carries a code in its path keeps it. "The
+store holds nothing about the person who scanned" relies on that being rare:
+a jar's QR code is printed for the batch, not the buyer.
+- **The schema still describes itself as holding nothing that identifies a
+person** - the header of `20260922180000_nose_archive.sql` and its `COMMENT ON
+SCHEMA nose`. An applied migration is not edited; a later one can restate the
+schema comment if wanted.
 - **An `npm audit` warning** was seen in the Codespace (reported 2026-09-23)
 and has not been looked at: the cloud workspace cannot reach npm. Next step:
 `npm audit` in the Codespace, and bring its output.
