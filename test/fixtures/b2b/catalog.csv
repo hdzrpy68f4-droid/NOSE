@@ -1,0 +1,26 @@
+product_id,batch_id,category,route,name,brand,coa_url,in_stock,product_url,thc_percent,cbd_percent
+P-101,6650039866516120,vape,inhalation,Grease Monkey Cart,Test Brand A,https://yourcoa.com/coa/coa-view?sample=MI60617015-004,yes,https://shop.example/p/101,82.1,0.2
+P-102,1006183791109527,flower,smoking,SFV OG,Test Brand B,https://coa.example/acs/ACS-FLW-002.pdf,yes,https://shop.example/p/102,24.5,
+P-103,MI60120007-011,pre-roll,smoking,Indica Blend Pre-Roll,Test Brand A,https://coa.example/kaycha/KAY-PRR-001.pdf,yes,,18,0
+P-104,hcb-269-gmo cr1,concentrate,inhalation,GMO Cured Resin,Test Brand C,https://coa.example/kaycha/KAY-LRS-002.pdf,yes,https://shop.example/p/104,71.3,
+P-105,ID1600SPNPCRT1,flower,smoking,Sour Pineapple,Test Brand A,https://coa.example/kaycha/KAY-CAR-001.pdf,yes,,85,
+P-106,TLGF0127202699HS,flower,smoking,Banana Papaya,Test Brand D,https://coa.example/kaycha/KAY-FLW-001.pdf,yes,,21,
+P-107,GR-24007,concentrate,inhalation,Full Spectrum Oil,Test Brand E,https://coa.example/terplife/GreenRoads.pdf,yes,,,
+P-108,B-BROKEN-1,vape,inhalation,Broken Report Cart,Test Brand C,https://coa.example/broken.pdf,yes,,80,
+P-109,B-NOLINK-1,flower,smoking,No Link Flower,Test Brand B,,yes,,19,
+P-110,B-404-1,vape,inhalation,Missing Report Cart,Test Brand A,https://coa.example/gone.pdf,yes,,79,
+P-111,B-METADATA-1,concentrate,inhalation,Odd Link Badder,Test Brand C,https://169.254.169.254/latest/meta-data/,yes,,70,
+P-112,B-REDIRECT-1,flower,smoking,Redirect Flower,Test Brand D,https://coa.example/redirect-inside,yes,,20,
+P-113,MI60403006-004,vape,inhalation,Bubbly Bagel AIO,Test Brand A,https://coa.example/kaycha/KAY-AIO-001.pdf,yes,,88,
+P-114,MI60403006-005,vape,inhalation,Bubbly Bagel AIO 2g,Test Brand A,https://coa.example/kaycha/KAY-AIO-001.pdf#page=1,yes,,88,
+P-115,DA51107019-007,concentrate,inhalation,Ocifer Rosin,Test Brand C,https://coa.example/kaycha/KAY-LRS-001.pdf,no,,74,
+P-116,MI60618012-001,flower,smoking,Cold Creek Kush (last batch),Test Brand F,https://coa.example/kaycha/Kush_Creek.pdf,no,,22,
+P-117,MI60618012-002,flower,smoking,Cold Creek Kush,Test Brand F,https://coa.example/kaycha/Kush_Creek.pdf,yes,https://shop.example/p/117,22,
+P-118,B-EDIBLE-1,edible,oral,Lemon Gummies,Test Brand E,https://coa.example/hemp-bombs.pdf,yes,,,
+P-119,1006183791109527,flower,smoking,SFV OG 7g,Test Brand B,https://coa.example/acs/ACS-FLW-002.pdf,yes,,24.5,
+P-120,9944038602845567,flower,smoking,"=1+1 Lemon | ""Tart"", Pucker",Test Brand F,https://coa.example/kaycha/external-download.pdf,yes,,23,
+P-121,5637041429622699,flower,smoking,Purple Push Pop,Sunburn,https://coaportal.com/sunburn/listings/?search=5637041429622699,yes,,27,
+P-122,FJ02002-08,flower,smoking,Sherbet Cake,Test Brand G,https://coa.example/moderncanna/MCL-FLW-002.pdf,yes,,26,
+P-123,B-HTTP-1,vape,inhalation,Plain Link Cart,Test Brand A,http://coa.example/kaycha/KAY-CAR-002.pdf,yes,,85,
+,,,,,,,,,,
+P-124,MI60618012-003,flower,smoking,Bad CBD Flower,Test Brand F,https://coa.example/kaycha/Kush_Creek.pdf,yes,,22%,ND

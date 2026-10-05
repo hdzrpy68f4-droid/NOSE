@@ -153,7 +153,7 @@ Also run `node test/resolver-test.js` - expect `resolver clean`, and
 **Or all at once:** `bash scripts/gates.sh` runs these, the Kaycha anchors,
 `novelty-test`, `coa-dates-test`, `store-test`, `probe-test`, `archive-wiring-test`,
 `archive-scripts-test`, `rerun-test`, `review-queue-test`,
-`analysis-test`, `duplicates-test`, `remove-copies-test`, `remove-document-test`, `check-trust-test` and, after the build, `input-paths-test`.
+`analysis-test`, `duplicates-test`, `remove-copies-test`, `remove-document-test`, `b2b-coverage-test`, `check-trust-test` and, after the build, `input-paths-test`.
 It prints the line each gate produced and ends with `ALL GATES GREEN`. It passes
 a gate only on its exact expected line, so when a session legitimately changes
 a count, update the script in the same commit.
@@ -205,6 +205,7 @@ someone to look.
 | `duplicates-test.js` | `duplicates.js` and `download-twice.js` (§13, "One report, many documents"): on PGlite, and on fixture PDFs behind a stand-in fetch - a PDF rebuilt between downloads, the same file twice, a text that changes, a link that fails; offline |
 | `remove-copies-test.js` | `remove-copies.js` (§13, "One report, many documents - the cleanup") on PGlite: copies made by the old `save_scan`, the copies it keeps and why, a Blobs failure, a second run, no text lost, nose_writer refused; and that only it, `remove-document.js` and the probe's refusals name a DELETE; offline |
 | `remove-document-test.js` | `remove-document.js` and `keep-rule.js` (§13, "What gets kept, and taking it back out") on PGlite: the probe finds the one-sign files and nothing else; dry runs change nothing; a removal takes rows, PDF and every copy of the report, records the day and the word, and withholds file and text so `save_scan` refuses them after; PDFs with no row; a Blobs failure finished by a second run; a database refusal that changes nothing; nothing private printed; offline |
+| `b2b-coverage-test.js` | `scripts/b2b-coverage.js`, the dispensary coverage report (§14): the test catalog read end to end through the real chain, extractor and parser, only the network stood in for - every outcome, the three flags, the counts with their denominators, one link at a time with the pause, coa.js's own words and deadlines, a file refused for an unknown or a personal-looking column before any row is read, nothing reaching the archive, one copy of the fetch chain; offline |
 | `check-trust-test.js` | `scripts/check-trust.mjs` (§13, "The trust guard") on throwaway sites: every form of the old promise fails, true sentences pass; offline |
 | `input-paths-test.mjs` | the app's ways in, in headless Chromium: Scan QR (fake camera and QR image), COA link, Upload. The real `coa.js` and parser answer, with only the download and unpdf stood in for (§13, "The input paths"). Needs Playwright; a gate, run after the build |
 
@@ -720,10 +721,21 @@ fixture, because no fixture can currently reach it
 
 ---
 
-## 12. The fetcher — `netlify/functions/coa.js`
+## 12. The fetcher — `netlify/functions/lib/fetch-report.js`, called by `coa.js`
 
 Everything above is the parser. This is what gets a PDF to it, and it had no
 test coverage at all until `test/resolver-test.js`.
+
+**Where it lives, since 2026-10-05.** The chain - `validateUrl`,
+`isBlockedHost`, `fetchOnce`, `fetchPdf`, `isPdf`, `looksLikeHtml`,
+`resolvePdfFromPage` and the five limits above them - moved from `coa.js` to
+`netlify/functions/lib/fetch-report.js`, unchanged: the moved lines are
+byte-identical, and `coa.js` requires them and still exports
+`_resolvePdfFromPage` (the same function, not a copy). Its replies are
+byte-identical too (§14). It moved so that `scripts/b2b-coverage.js` can fetch
+through the same guards without loading `coa.js`, and the archive wiring with
+it. `scripts/download-twice.js` still takes only the resolver, through
+`coa.js`, inside its own looser loop (§13, "One report, many documents").
 
 **There is deliberately NO domain allowlist.** COAs reach people through
 whoever sold the jar. The SSRF guard is layered instead: https only, no
@@ -2495,3 +2507,261 @@ schema comment if wanted.
 - **An `npm audit` warning** was seen in the Codespace (reported 2026-09-23)
 and has not been looked at: the cloud workspace cannot reach npm. Next step:
 `npm audit` in the Codespace, and bring its output.
+
+---
+
+## 14. Dispensary integration
+
+The dispensary (B2B) plan, built prompt by prompt; each records itself here.
+Its core promise: **a shopper's purchase history never reaches NOSE.** The
+dispensary's page hands the shopper's batch IDs to the shopper's own browser,
+and the widget builds the palate and ranks there. B2B lives apart from
+everything consumer - its own schema (`b2b`), role (`nose_b2b`), Blobs stores
+and functions, none of which exists yet - and whatever runs on Netlify stays
+off unless `B2B_ENABLED=1` in the Production context and `build-info.json`
+says production. No B2B record or log holds anything about a shopper. A batch
+without an accepted read shows no terpene panel: never a guess, never a
+strain-name lookup.
+
+### The coverage report, 2026-10-05
+
+The first thing a dispensary sees: how many of its in-stock inhalables have a
+terpene panel NOSE can read, by category and by lab, and every one it can't,
+with the reason. A Codespace script that writes one local folder and nothing
+else - no database, no archive, no endpoint.
+
+```
+netlify/functions/lib/fetch-report.js   the fetch chain, moved out of coa.js unchanged (s12)
+netlify/functions/coa.js                requires it; every export and every reply as before
+scripts/b2b-coverage.js                 the report: <catalog.csv> [--out DIR] [--limit N]
+docs/B2B-CATALOG-FORMAT.md              the CSV a dispensary exports
+test/b2b-coverage-test.js               offline, a gate: "b2b-coverage clean"
+test/fixtures/b2b/catalog.csv           25 rows, one for every case; catalog-unknown.csv, catalog-personal.csv
+.gitignore                              b2b-out/, the script's default folder - and where a catalog CSV goes
+```
+
+**The probe, before any edit**, on `c337c70`:
+
+- The chain in coa.js: the five limits (lines 47-56), then `isBlockedHost`,
+  `validateUrl`, `fetchOnce`, `isPdf`, `looksLikeHtml`, `resolvePdfFromPage`
+  and `fetchPdf` (93-287). The handler called `validateUrl` and `fetchPdf`.
+- Tests importing coa.js: `resolver-test` and `duplicates-test`
+  (`_resolvePdfFromPage`), `archive-wiring-test` (the handler, `_archiveScan`,
+  `_ARCHIVE_LIMITS`), `input-paths-test` (the handler). Reading its source:
+  `archive-wiring-test`'s call-site check, which names nothing in the chain,
+  and the tree-wide scans (`match-test`, `remove-copies-test`, the trust
+  guard), which read every file.
+- Nothing outside coa.js could call the fetching functions.
+  `resolvePdfFromPage` alone was reachable, as `_resolvePdfFromPage`, by those
+  two tests and by `scripts/download-twice.js` - which wraps it in a looser
+  loop of its own (redirects followed without a re-check, 30 s, no size cap).
+  That script stays as it is (below, "Still open").
+
+**The move.** The moved lines are byte-identical in `lib/fetch-report.js`;
+coa.js gained the `require` and four header lines and lost nothing else. Its
+exports are the same five, and `_resolvePdfFromPage` is the very function
+`fetch-report.js` exports. Its replies were checked before and after with a
+scratch harness driving the real handler through a stand-in fetch, 57 cases:
+every `validateUrl` refusal (15 private-host forms among them; 172.32.0.1
+correctly is not one), a network error, an abort, a 404 and a 500, every
+redirect fault, three redirects followed and a fourth refused, both size
+limits, under 512 bytes, neither PDF nor page, the viewer and portal pages
+(yourcoa, coaportal two pages deep, a WordPress `&#038;`, `viewer.html?file=`),
+a self-referencing page, accepted reads from each lab, the three refused
+fixtures, an unreadable PDF, one with too little text, a request left hanging
+(7.5 s) and a slow page before a hanging report (the 8 s budget) - plus 8
+resolver pages and the export list. 66 lines, the same SHA-256 before and
+after, the 56 requests the chain made included (address, redirect mode,
+Accept header, signal). The harness is scratch, not committed, like earlier
+probes.
+
+- Netlify: a file in a subdirectory of the functions directory is a function
+  only when it is named `index` or after that subdirectory
+  ([Get started with functions](https://docs.netlify.com/build/functions/get-started/),
+  "Create your first function", read 2026-10-05). So `lib/fetch-report.js`,
+  like every other `lib/` file, is bundled into coa.js and is never a
+  function of its own.
+
+**The format** - `docs/B2B-CATALOG-FORMAT.md`: a header row, UTF-8, the
+eleven columns the prompt named and no other. Decided here, where the prompt
+was silent:
+
+- Required: `product_id`, `batch_id`, `category`, `route`, `name`,
+  `in_stock`. Optional, empty when unknown: `brand`, `coa_url`,
+  `product_url`, `thc_percent`, `cbd_percent`. Every column must be in the
+  header, in any order; column names and the three lists' values are matched
+  ignoring letter case.
+- One row per batch: a later row with the same `batch_id` is refused, naming
+  the first. Prompt 2's `batches` key is (store_id, batch_id), so a batch
+  sold as two products is listed once.
+- A percent is a number from 0 to 100, `%` allowed. `ND` is refused, never
+  read as 0. `product_url` must be `https`: something will link to it.
+  `coa_url` is not checked by the format - the chain refuses a bad link and
+  the report gives its words.
+- The file is refused for a personal-looking column (checked first, so the
+  reason given is the one that matters), any other column outside the format
+  (by name), a missing or doubled column, not UTF-8 (a fatal decoder, never a
+  guess), empty, no header, a quote never closed, or over 20 MB. A row is
+  refused for a wrong number of values, an empty required value, a value off
+  its list, the two above, or a repeated batch. Row numbers count the header
+  as row 1, as a spreadsheet does; blank rows are skipped and counted.
+- **Looks personal**: `PERSONAL_KEYS` from `lib/store.js`, and `customer`,
+  `patient`, `card`, `license` (and `licence`), `dob`, `address`. With case
+  and separators set aside, a word longer than three letters counts anywhere
+  in the name (`Customer E-mail` holds `customer` and `email`); `ip` and
+  `dob` only as a whole part of it (`clientIp`, `IP Address` - not `zip`,
+  `shipping`, `description`). Every such column is outside the format anyway,
+  so the rule decides the reason and the moment - before any row is parsed -
+  never whether such a file is read. The refusal names the column, never a
+  value.
+
+**The script** - `node scripts/b2b-coverage.js <catalog.csv> [--out DIR] [--limit N]`.
+
+- Each in-stock row's `coa_url` goes through `validateUrl` and `fetchPdf`
+  from `lib/fetch-report.js` - coa.js's guards and deadlines, 7.5 s a request
+  and 8 s a link - then `extract-text.js`, then `parseCoa`. The handler's
+  steps in between are restated, because the script must not load coa.js:
+  under 200 characters refused, and the handler's own sentences for an
+  unreadable PDF, no text, a parse that throws and a refusal without reasons.
+  The test pins each against coa.js's source, and fails if
+  `UNSAFE_UNDER_UNPDF` is ever not empty: the report would then count as
+  readable what the scanner refuses.
+- One link at a time; a 1000 ms pause before every request but the first. A
+  link `validateUrl` refuses is never requested, so nothing waits for it.
+  `--limit N` tries the first N links; the rest are "not fetched (--limit)",
+  counted, and the report says it is a partial run.
+- It never loads coa.js, `lib/archive.js` or `lib/pdf-store.js`, and never
+  calls `storeScan`, `saveScan` or `archiveScan`: no catalog's report enters
+  the lab-report archive. `PERSONAL_KEYS` comes from `lib/store.js`, which
+  loads nothing at all until a save.
+- **report.md**: the headline (`N of M (p%) in-stock inhalables have a
+  terpene panel NOSE can read`); panel NOSE can read, report refused, no
+  link, link could not be fetched, overall, by category and by lab (the lab
+  the parser read; a link that gave no report counts as "(no report read)"),
+  every share written "n of m (p%)"; the refusal reasons - the parser's
+  `rejectReasons` verbatim, or the scanner's sentence for a PDF it could not
+  read - and the fetch failures in the chain's words, each with its rows; the
+  three flags; every in-stock batch NOSE can't read; every batch it can; and
+  the rows not read.
+- **Flagged, never fixed.** The report's `productClass` is not the row's
+  category family: a pre-roll is flower, as `parse-coa.js`'s CLASSES reads
+  one, and `unknown` is said as the report not saying which form. The
+  report's `batch` and `labId`, spaces and letter case aside (ACS prints
+  `1006 1837 9110 9527`), do not contain the row's `batch_id`, or NOSE read
+  neither. One link on two batches, across every row in stock or not, links
+  being equal apart from `#` (never sent to a server): the case this exists
+  for is an in-stock batch pointing at the last batch's report.
+- **Numbers only for accepted reads**: the total terpenes the lab printed, and
+  the top three as share of the modelled total through `normalize()` from
+  `js/match-math.<hash>.js` (`scripts/lib/match.js`), one decimal, as
+  `drift.js` shows them - with the card's notes, word for word (its novelty
+  line, the parser's warnings). A refused read shows its reasons and no
+  figure, not even its total.
+- **report.csv**: one line per row, refused and out-of-stock rows included,
+  each outcome named. UTF-8 with a byte-order mark, so a spreadsheet shows β;
+  a cell starting with `=`, `+`, `-` or `@` is written after a `'`, so a name
+  from a catalog, or a batch read off a report, cannot run as a formula.
+- **Links by host only**, in both files: a link can carry a token.
+- It writes `report.md` and `report.csv` into `--out` (default `b2b-out/` at
+  the top of the repo, gitignored) and nothing else, and prints a line per
+  link (row and outcome) and the summary. A refused file writes nothing and
+  exits 1; a usage error exits 2.
+
+**The test** - `test/b2b-coverage-test.js`, 61 checks, a gate after
+`remove document`. The catalog has a row for each case: accepted reads
+through a Kaycha viewer page, through Method's portal two pages deep, and
+direct (ACS, Kaycha, Modern Canna with its warning); a pre-roll whose report
+reads as flower; batch IDs found with spaces or case aside, or by lab ID; a
+vape report listed as flower; a report naming another batch; a refusal
+(GreenRoads, listed as a concentrate: refused, and both flags); an unreadable
+PDF; no link; a 404; the cloud metadata address (never requested); a redirect
+to a private address (not followed); a plain-http link; one link on two
+batches, once with `#page=1`, once with the other batch out of stock; an
+out-of-stock row; three refused rows (an edible on route oral, a repeated
+batch, `ND`); a blank row; and a name built to break a table and run as a
+formula. It checks every outcome; the counts overall, by category and by
+lab; every share's denominator; the top three from `normalize()`, which on
+KAY-CAR-001 are not shares of the printed total; figures on accepted lines
+only; each refusal and failure in the words coa.js's own handler gives for
+the same link through the same stand-in; never two requests open at once,
+and each pause straight before a request; `--limit 3`; a slow page then a
+hanging report ended at 8 s, not 12.5; the unknown-column and personal-column
+files refused before any row (nothing fetched, nothing written, the e-mail
+never echoed) and six more file refusals; `looksPersonal` on 22 personal
+names and on none of the format's columns; CRLF and a byte-order mark read
+as LF; the command line's exit codes; `b2b-out/` ignored by git; coa.js,
+`lib/archive.js`, `lib/pdf-store.js`, `pg` and `@netlify/blobs` never loaded
+during a run, the archive's stand-ins never touched, nothing written outside
+the report folder; only `lib/fetch-report.js` defining the chain under
+`netlify/` and `scripts/`; no effect wording in the report, the script, the
+format document or the catalog; and the format document naming every
+column, value and personal word the script reads.
+
+- **Against broken copies**: 28 deliberate faults, one at a time - shares of
+  the printed total, every link at once, loading coa.js, handing a reading to
+  the archive, no personal rule, a pre-roll as its own family, exact batch
+  comparison, no pause, a pause before refused links, figures for refused
+  reads in the CSV, whole links shown, no formula guard, shares without
+  denominators, `#` making a new link, out-of-stock links left out of the
+  shared-link check, out-of-stock rows fetched, unknown columns ignored,
+  reasons reworded, a sentence of its own for a failed fetch, a copy of
+  `isBlockedHost` in another script, a text floor of 300 in coa.js, an
+  unsafe rule added to coa.js, no 8 s budget, blank rows refused, a repeated
+  batch accepted, the chain bypassed - each fails it. One more, figures
+  computed for refused reads but never written, passes, as it should: both
+  files still show none.
+
+**The test catalog's report**: 12 of 19 (63%) in-stock inhalables have a
+terpene panel NOSE can read; 2 refused, 1 with no link, 4 whose link could
+not be fetched; 2 out of stock, 3 rows refused, 1 blank row skipped; flagged:
+2 forms, 3 batches, 2 shared links. By lab: Kaycha 9 of 9; ACS, Method and
+Modern Canna 1 of 1 each; TerpLife 0 of 1 (refused); 6 with no report read.
+
+**How it was verified, 2026-10-05, in the cloud workspace.** npm was blocked
+there (registry.npmjs.org is not on its allowlist), so as in earlier sessions
+the gates ran on stand-ins: pdfjs-dist 6.2.108 for unpdf (56/3, 56/0, clean
+and 4.124/0.944, as recorded), a throwaway PostgreSQL 16 cluster per test
+behind PGlite's API (every PGlite gate clean on it before the edit), the
+committed html5-qrcode in place of `build.sh`'s download, and Playwright
+1.56.0's Chromium. ALL GATES GREEN on `c337c70` before any edit, and after it
+with the new gate - 22 gates, `KAY-CAR-001` 4.124 and `KAY-PRR-001` 0.944.
+The new test passed on Node 20 as well. `parse-coa.js`, `coa-dates.js` and
+`extract-text.js` are untouched, so no reparse is due; no file in `js/`
+changed, so `build.sh` renamed nothing. Nothing ran against the network, the
+database or Netlify. The Codespace run on the real packages is the one that
+counts.
+
+**Run it on a real export, from the Codespace** (the catalog is the
+dispensary's file, and this repo is public: it lives in `b2b-out/`, which git
+ignores):
+
+1. `git pull`, then `bash scripts/gates.sh` - ALL GATES GREEN, `b2b coverage`
+   among them.
+2. `mkdir -p b2b-out/<store>`, then drag the CSV into that folder in the
+   Explorer. `head -1 b2b-out/<store>/<file>.csv` shows its header.
+3. A short trial: `node scripts/b2b-coverage.js b2b-out/<store>/<file>.csv
+   --out b2b-out/<store> --limit 5`. A refused file says why and writes
+   nothing: fix the export, never the rule.
+4. The whole catalog: the same without `--limit`. Roughly 1 to 3 seconds a
+   link.
+5. Open `report.md` (right-click, Open Preview) and `report.csv` in that
+   folder. Read the refusals and the flags before sending either: they are
+   about the catalog as much as about NOSE.
+6. When the report has gone, `rm -r b2b-out/<store>`: nothing else holds a
+   copy.
+
+### Still open
+
+- `scripts/download-twice.js` keeps its own looser fetch loop. Moving it onto
+  `lib/fetch-report.js` would change what it reports (redirects re-checked,
+  8 s for a link it waits 30 s for today), so it waits for its own prompt.
+- The guard checks host names, not the addresses they resolve to, as it
+  always has in coa.js: a public name pointing at a private address passes
+  `isBlockedHost`. In the Codespace the script runs by hand, on one
+  dispensary's file.
+- A lab NOSE does not know reads as refused or "(lab not recognised)". The
+  by-lab table is the list of labs a fixture would help most (§10). A
+  coverage figure is today's parser's, and moves when the parser does.
+- A batch sold as several products is listed once (above). If a pilot shows
+  dispensaries need one batch under several product IDs, that changes Prompt
+  2's key - before any table exists.

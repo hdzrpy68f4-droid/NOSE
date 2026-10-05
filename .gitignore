@@ -20,3 +20,8 @@ supabase/.temp/
 # this keeps `git add -A` from committing for it. PDFs already tracked are not
 # affected. `git add -f` is the deliberate override, once s9 says yes.
 test/fixtures/pdf/*.pdf
+
+# The dispensary coverage report writes here by default (scripts/b2b-coverage.js),
+# and a dispensary's catalog CSV belongs here too while it is read. Both are that
+# dispensary's own data, and this repo is public: never commit either.
+b2b-out/
