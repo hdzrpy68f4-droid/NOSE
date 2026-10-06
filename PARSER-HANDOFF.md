@@ -2523,6 +2523,9 @@ says production. No B2B record or log holds anything about a shopper. A batch
 without an accepted read shows no terpene panel: never a guess, never a
 strain-name lookup.
 
+Each prompt's record goes above "Still open". "Later", the wanted work not
+yet built, stays the last part of this section.
+
 ### The coverage report, 2026-10-05
 
 The first thing a dispensary sees: how many of its in-stock inhalables have a
@@ -2765,3 +2768,12 @@ ignores):
 - A batch sold as several products is listed once (above). If a pilot shows
   dispensaries need one batch under several product IDs, that changes Prompt
   2's key - before any table exists.
+
+### Later
+
+Wanted work, not yet built.
+
+- Campaign palates: an email or text to opted-in shoppers when a new batch
+  matches their palate. Wanted as an option after the pilot. Preferred build:
+  the dispensary's server runs the ranking engine on purchase history it
+  already holds, so NOSE never receives it.
