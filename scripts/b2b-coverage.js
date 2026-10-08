@@ -32,11 +32,21 @@
  * so no catalog's report reaches the lab-report archive. Needs no secrets;
  * needs the network and an `npm install`.
  *
+ *   node scripts/b2b-coverage.js --store <slug> [--out DIR]
+ *
+ * The same report from the database, since 2026-10-08: the batches the store
+ * uploaded (netlify/functions/b2b-catalog.js) and their current readings
+ * (scripts/b2b-read-catalog.js). It fetches nothing and reads schema b2b
+ * alone, as nose_b2b - NOSE_B2B_DB_URL, a Codespaces secret - and writes only
+ * the two files. Its lines about the file become lines about the store: the
+ * batches in its window, and that a row refused on upload is never kept.
+ *
  * A file whose header has a column that looks like it is about a person
  * (lib/store.js's PERSONAL_KEYS and seven more words) is refused before any
  * row is read, so a wrong export is never read; so is one with any column
- * outside the format, by name. A link is printed as its host only: an address
- * can carry a token.
+ * outside the format, by name. The reader lives in lib/b2b-catalog-format.js,
+ * shared with the upload. A link is printed as its host only: an address can
+ * carry a token.
  *
  * Aroma and flavour only. PARSER-HANDOFF s14.
  */
@@ -47,43 +57,18 @@ const path = require('path');
 const ROOT = path.resolve(__dirname, '..');
 const LIB = path.join(ROOT, 'netlify/functions/lib');
 const { validateUrl, fetchPdf } = require(path.join(LIB, 'fetch-report.js'));
-const { PERSONAL_KEYS } = require(path.join(LIB, 'store.js'));
+const format = require(path.join(LIB, 'b2b-catalog-format.js'));
+/* The format, docs/B2B-CATALOG-FORMAT.md: the columns, the three lists, the
+   personal rule and the reader, shared with the upload (2026-10-08). */
+const { COLUMNS, REQUIRED, CATEGORIES, PERSONAL_WORDS, looksPersonal, parseCsv, checkHeader, readCatalog, shown } = format;
 
-const USAGE = 'usage: node scripts/b2b-coverage.js <catalog.csv> [--out DIR] [--limit N]';
+const USAGE = 'usage: node scripts/b2b-coverage.js <catalog.csv> [--out DIR] [--limit N]\n' +
+              '       node scripts/b2b-coverage.js --store <slug> [--out DIR]';
 const DEFAULT_OUT = path.join(ROOT, 'b2b-out');
-const FORMAT_DOC = 'docs/B2B-CATALOG-FORMAT.md';
 
-/* The format, docs/B2B-CATALOG-FORMAT.md. Every column must be in the header;
-   the ones not in REQUIRED may be empty on a row. */
-const COLUMNS = Object.freeze(['product_id', 'batch_id', 'category', 'route', 'name', 'brand', 'coa_url',
-                               'in_stock', 'product_url', 'thc_percent', 'cbd_percent']);
-const REQUIRED = Object.freeze(['product_id', 'batch_id', 'category', 'route', 'name', 'in_stock']);
-const CATEGORIES = Object.freeze(['flower', 'pre-roll', 'vape', 'concentrate']);
-const ROUTES = Object.freeze(['smoking', 'inhalation']);
-const STOCK = Object.freeze(['yes', 'no']);
 /* The parser's productClass for each category. A pre-roll is flower to the
    parser: its "pre-roll" pattern is in the flower rule (parse-coa.js CLASSES). */
 const FAMILY = Object.freeze({ flower: 'flower', 'pre-roll': 'flower', vape: 'vape', concentrate: 'concentrate' });
-
-/* A column name that looks like it is about a person refuses the whole file.
-   The words longer than three letters count anywhere in the name, once case
-   and separators are gone ("Customer E-mail" holds "customer" and "email");
-   the short ones (ip, dob) only as a whole part of it, so "zip" or "shipping"
-   is not "ip". Every such column is outside the format anyway; this rule says
-   why, and stops before a row is read. */
-const PERSONAL_WORDS = Object.freeze([...PERSONAL_KEYS, 'customer', 'patient', 'card', 'license', 'licence', 'dob', 'address']);
-const squash = s => String(s).toLowerCase().replace(/[^a-z0-9]/g, '');
-const LONG_WORDS = [...new Set(PERSONAL_WORDS.map(squash))].filter(w => w.length > 3);
-const SHORT_WORDS = [...new Set(PERSONAL_WORDS.map(squash))].filter(w => w.length <= 3);
-
-function looksPersonal(name) {
-  const flat = squash(name);
-  if (LONG_WORDS.some(w => flat.includes(w))) return true;
-  const parts = String(name).replace(/([a-z0-9])([A-Z])/g, '$1 $2').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
-  return SHORT_WORDS.some(w => parts.includes(w) || flat === w);
-}
-
-const MAX_FILE_BYTES = 20 * 1024 * 1024;
 const PAUSE_MS = 1000;        // between one fetch and the next: a lab's portal is someone else's server
 const TOP = 3;
 
@@ -105,16 +90,21 @@ const NOVELTY_LINE = 'NOSE hasn\'t seen this lab\'s layout before — check the 
 
 const OUTCOMES = Object.freeze({
   accepted: 'accepted', refused: 'refused', noLink: 'no link', fetchFailed: 'fetch failed',
-  notFetched: 'not fetched', outOfStock: 'out of stock', rowRefused: 'row refused'
+  notFetched: 'not fetched', outOfStock: 'out of stock', rowRefused: format.ROW_REFUSED,
+  notRead: 'not read yet'
 });
-/* The four that an in-stock batch can end in, plus a --limit run's fifth. */
-const IN_STOCK_OUTCOMES = Object.freeze([OUTCOMES.accepted, OUTCOMES.refused, OUTCOMES.noLink, OUTCOMES.fetchFailed, OUTCOMES.notFetched]);
+/* The four that an in-stock batch can end in, plus a --limit run's fifth -
+   and, read from the database (--store), a batch scripts/b2b-read-catalog.js
+   has not read yet: no reading, or one of a link the store has since changed. */
+const IN_STOCK_OUTCOMES = Object.freeze([OUTCOMES.accepted, OUTCOMES.refused, OUTCOMES.noLink, OUTCOMES.fetchFailed,
+                                         OUTCOMES.notFetched, OUTCOMES.notRead]);
 const SAYS = Object.freeze({
   [OUTCOMES.accepted]: 'terpene panel NOSE can read',
   [OUTCOMES.refused]: 'report refused',
   [OUTCOMES.noLink]: 'no lab-report link in the catalog',
   [OUTCOMES.fetchFailed]: 'link could not be fetched',
-  [OUTCOMES.notFetched]: 'not fetched (--limit)'
+  [OUTCOMES.notFetched]: 'not fetched (--limit)',
+  [OUTCOMES.notRead]: 'not read yet'
 });
 const UNRECOGNISED = '(lab not recognised)';
 const NO_REPORT = '(no report read)';
@@ -124,10 +114,13 @@ class UsageError extends Error {}
 /* ------------------------------------------------------------ arguments */
 
 function parseArgs(argv) {
-  const opts = { catalog: null, out: null, limit: null };
+  const opts = { catalog: null, store: null, out: null, limit: null };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
-    if (a === '--out') {
+    if (a === '--store') {
+      if (!argv[i + 1] || argv[i + 1].startsWith('--')) throw new UsageError(`--store needs a store's slug\n${USAGE}`);
+      opts.store = argv[++i];
+    } else if (a === '--out') {
       if (!argv[i + 1] || argv[i + 1].startsWith('--')) throw new UsageError(`--out needs a folder\n${USAGE}`);
       opts.out = argv[++i];
     } else if (a === '--limit') {
@@ -141,139 +134,10 @@ function parseArgs(argv) {
       opts.catalog = a;
     }
   }
-  if (!opts.catalog) throw new UsageError(USAGE);
+  if (opts.store && opts.catalog) throw new UsageError(`a catalog file or --store, not both\n${USAGE}`);
+  if (opts.store && opts.limit != null) throw new UsageError(`--store reads the database and fetches nothing: --limit is for a file\n${USAGE}`);
+  if (!opts.catalog && !opts.store) throw new UsageError(USAGE);
   return opts;
-}
-
-/* ------------------------------------------------------------- the file */
-
-/* RFC 4180: commas, double quotes around a value that holds a comma, a quote
-   or a line break, "" for a quote inside one, CRLF or LF between records.
-   Returns { records } or { error }. A quote in the middle of an unquoted
-   value is kept as it is. */
-function parseCsv(text) {
-  const records = [];
-  let rec = [];
-  let field = '';
-  let quoted = false;
-  let fresh = true;            // nothing read yet in this field
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i];
-    if (quoted) {
-      if (c === '"') {
-        if (text[i + 1] === '"') { field += '"'; i++; }
-        else quoted = false;
-      } else field += c;
-      continue;
-    }
-    if (c === '"' && fresh) { quoted = true; fresh = false; continue; }
-    if (c === ',') { rec.push(field); field = ''; fresh = true; continue; }
-    if (c === '\n' || c === '\r') {
-      rec.push(field); records.push(rec);
-      rec = []; field = ''; fresh = true;
-      if (c === '\r' && text[i + 1] === '\n') i++;
-      continue;
-    }
-    field += c;
-    fresh = false;
-  }
-  if (quoted) return { error: 'the file ends inside a quoted value - a double quote is never closed' };
-  if (!fresh || field !== '' || rec.length) { rec.push(field); records.push(rec); }
-  return { records };
-}
-
-const refuse = why => ({ refusal: `refused: ${why}. Nothing in the file was used. The format is ${FORMAT_DOC}.` });
-const listed = list => list.map(n => (n === '' ? '(an empty name)' : `"${shown(n, 60)}"`)).join(', ');
-
-/* The header decides whether the file is read at all. Personal-looking
-   columns first, so the reason given is the one that matters. */
-function checkHeader(header) {
-  const raw = header.map((h, i) => (i === 0 ? h.replace(/^\uFEFF/, '') : h).trim());
-  const personal = raw.filter(looksPersonal);
-  if (personal.length) {
-    return refuse(`the header has ${personal.length === 1 ? 'a column' : 'columns'} that looks like it is about a person - ` +
-      `${listed(personal)} - so none of its rows was read. A catalog carries products and batches, never shoppers: ` +
-      'export the catalog columns only');
-  }
-  const names = raw.map(n => n.toLowerCase());
-  const unknown = raw.filter((n, i) => !COLUMNS.includes(names[i]));
-  if (unknown.length) return refuse(`${unknown.length === 1 ? 'a column' : 'columns'} outside the format: ${listed(unknown)}`);
-  const twice = COLUMNS.filter(c => names.filter(n => n === c).length > 1);
-  if (twice.length) return refuse(`${twice.length === 1 ? 'a column appears' : 'columns appear'} more than once: ${listed(twice)}`);
-  const missing = COLUMNS.filter(c => !names.includes(c));
-  if (missing.length) return refuse(`${missing.length === 1 ? 'a column is' : 'columns are'} missing: ${listed(missing)}`);
-  return { index: Object.fromEntries(COLUMNS.map(c => [c, names.indexOf(c)])) };
-}
-
-/* A value echoed back in a reason: one line, and short. */
-function shown(v, n = 40) {
-  const s = String(v).replace(/[\u0000-\u001f\u007f]+/g, ' ').trim();
-  return s.length > n ? `${s.slice(0, n - 1)}…` : s;
-}
-
-const PERCENT = /^(\d{1,3}(\.\d+)?|\.\d+)\s*%?$/;
-function percentProblem(col, v) {
-  if (v === '') return null;
-  if (!PERCENT.test(v) || Number(v.replace('%', '')) > 100) return `${col} "${shown(v)}" is not a number from 0 to 100`;
-  return null;
-}
-
-function httpsProblem(col, v) {
-  if (v === '') return null;
-  try { if (new URL(v).protocol === 'https:') return null; } catch {}
-  return `${col} is not an https address`;
-}
-
-/* Each data record into a row, or a refused row with every reason it fails.
-   Row numbers count the header as row 1, as a spreadsheet shows them. */
-function readRows(records, index) {
-  const rows = [];
-  let blank = 0;
-  const firstRowOf = new Map();
-  for (let k = 1; k < records.length; k++) {
-    const rec = records[k];
-    const row = k + 1;
-    if (rec.every(v => v.trim() === '')) { blank++; continue; }
-    if (rec.length !== COLUMNS.length) {
-      rows.push({ row, outcome: OUTCOMES.rowRefused, reasons: [`has ${rec.length} value${rec.length === 1 ? '' : 's'}; the header has ${COLUMNS.length}`] });
-      continue;
-    }
-    const r = { row };
-    for (const c of COLUMNS) r[c] = rec[index[c]].trim();
-    for (const c of ['category', 'route', 'in_stock']) r[c] = r[c].toLowerCase();
-    const problems = [];
-    for (const c of REQUIRED) if (r[c] === '') problems.push(`${c} is empty`);
-    if (r.category && !CATEGORIES.includes(r.category)) problems.push(`category "${shown(r.category)}" is not flower, pre-roll, vape or concentrate`);
-    if (r.route && !ROUTES.includes(r.route)) problems.push(`route "${shown(r.route)}" is not smoking or inhalation`);
-    if (r.in_stock && !STOCK.includes(r.in_stock)) problems.push(`in_stock "${shown(r.in_stock)}" is not yes or no`);
-    for (const p of [httpsProblem('product_url', r.product_url), percentProblem('thc_percent', r.thc_percent),
-                     percentProblem('cbd_percent', r.cbd_percent)]) if (p) problems.push(p);
-    if (r.batch_id) {
-      const key = r.batch_id.toLowerCase();
-      if (firstRowOf.has(key)) problems.push(`batch_id is already on row ${firstRowOf.get(key)} - one row per batch`);
-      else if (!problems.length) firstRowOf.set(key, row);
-    }
-    if (problems.length) rows.push({ row, product_id: r.product_id, batch_id: r.batch_id, outcome: OUTCOMES.rowRefused, reasons: problems });
-    else rows.push({ ...r, outcome: null, reasons: [], flags: [] });
-  }
-  return { rows, blank };
-}
-
-function readCatalog(buffer) {
-  if (!buffer || !buffer.length) return refuse('the file is empty');
-  if (buffer.length > MAX_FILE_BYTES) return refuse(`the file is larger than ${MAX_FILE_BYTES / 1024 / 1024} MB`);
-  let text;
-  try { text = new TextDecoder('utf-8', { fatal: true }).decode(buffer); }
-  catch { return refuse('the file is not UTF-8 text - save it as "CSV UTF-8"'); }
-  /* The header alone first: a file it refuses has none of its rows parsed. */
-  const end = text.search(/\r\n|\n|\r/);
-  const head = parseCsv(end < 0 ? text : text.slice(0, end));
-  if (head.error || !head.records.length || head.records[0].every(v => v.trim() === '')) return refuse('the first line is not a header row');
-  const checked = checkHeader(head.records[0]);
-  if (checked.refusal) return checked;
-  const all = parseCsv(text);
-  if (all.error) return refuse(all.error);
-  return readRows(all.records, checked.index);
 }
 
 /* -------------------------------------------------------------- reading */
@@ -359,6 +223,16 @@ function topShares(M, terps) {
 }
 const asPercent = share => `${(share * 100).toFixed(1)}%`;
 
+/* Numbers only for an accepted read: the total terpenes the lab printed, the
+   top three as share of total, and the notes NOSE's card shows, word for word. */
+function figures(r, match) {
+  if (r.outcome !== OUTCOMES.accepted) return;
+  r.top = topShares(match, r.output.terps);
+  r.total = r.output.totalTerpenes;
+  r.notes = [...(Array.isArray(r.output.novelty) && r.output.novelty.length ? [NOVELTY_LINE] : []),
+             ...(Array.isArray(r.output.warnings) ? r.output.warnings.map(String) : [])];
+}
+
 async function coverRows(rows, { limit = null, pauseMs = PAUSE_MS, wait = ms => new Promise(r => setTimeout(r, ms)),
                                  log = () => {}, extract, parse, match } = {}) {
   const linked = rows.filter(r => r.outcome === null && r.in_stock === 'yes' && r.coa_url);
@@ -381,12 +255,7 @@ async function coverRows(rows, { limit = null, pauseMs = PAUSE_MS, wait = ms => 
       Object.assign(r, await readFetched(checked.url, { extract, parse }));
     }
     flagReading(r);
-    if (r.outcome === OUTCOMES.accepted) {
-      r.top = topShares(match, r.output.terps);
-      r.total = r.output.totalTerpenes;
-      r.notes = [...(Array.isArray(r.output.novelty) && r.output.novelty.length ? [NOVELTY_LINE] : []),
-                 ...(Array.isArray(r.output.warnings) ? r.output.warnings.map(String) : [])];
-    }
+    figures(r, match);
     log(`  ${String(tried).padStart(String(toTry).length)} of ${toTry}   row ${r.row}   ${r.outcome}`);
   }
   return { tried, requested };
@@ -395,6 +264,11 @@ async function coverRows(rows, { limit = null, pauseMs = PAUSE_MS, wait = ms => 
 /* ------------------------------------------------------------ the count */
 
 const blankCounts = () => Object.fromEntries([['batches', 0], ...IN_STOCK_OUTCOMES.map(o => [o, 0])]);
+
+/* The outcomes a report shows: "not fetched" only on a --limit run, "not
+   read yet" only when a batch read from the database has no current reading. */
+const shownOutcomes = rep => IN_STOCK_OUTCOMES.filter(o => (o !== OUTCOMES.notFetched || rep.limit != null) &&
+                                                           (o !== OUTCOMES.notRead || rep.summary.total[OUTCOMES.notRead] > 0));
 
 function summarise(rows) {
   const inStock = rows.filter(r => IN_STOCK_OUTCOMES.includes(r.outcome));
@@ -454,14 +328,21 @@ function renderMarkdown(rep) {
     for (const r of body) L.push(`| ${r.join(' | ')} |`);
   };
   const counted = n => Array.from({ length: n }, (_, i) => i + 1);
-  const countRow = (label, t) => [md(label), String(t.batches), ...IN_STOCK_OUTCOMES.filter(o => o !== OUTCOMES.notFetched || rep.limit != null)
-    .map(o => share(t[o], t.batches))];
-  const cols = IN_STOCK_OUTCOMES.filter(o => o !== OUTCOMES.notFetched || rep.limit != null).map(o => SAYS[o]);
+  const countRow = (label, t) => [md(label), String(t.batches), ...shownOutcomes(rep).map(o => share(t[o], t.batches))];
+  const cols = shownOutcomes(rep).map(o => SAYS[o]);
+  const fromStore = rep.source === 'store';
 
   L.push(`# Terpene panel coverage: ${md(rep.file)}`, '');
-  L.push(`Read on ${rep.day} (UTC) by NOSE ${md(rep.version)}. Each in-stock batch's lab-report link was fetched once, ` +
-         'as NOSE\'s scanner fetches a link, and read by the same parser. A link can change or move: this is what each one ' +
-         'served that day.', '');
+  if (fromStore) {
+    L.push(`Read from the database on ${rep.day} (UTC): each batch's current reading, as \`scripts/b2b-read-catalog.js\` ` +
+           'read its lab-report link - fetched once, as NOSE\'s scanner fetches a link, and read by the same parser. A link ' +
+           'can change or move: a reading is what its link served the day it was read, and a link the store has changed since ' +
+           'counts as not read yet.', '');
+  } else {
+    L.push(`Read on ${rep.day} (UTC) by NOSE ${md(rep.version)}. Each in-stock batch's lab-report link was fetched once, ` +
+           'as NOSE\'s scanner fetches a link, and read by the same parser. A link can change or move: this is what each one ' +
+           'served that day.', '');
+  }
   L.push('This report is about the lab reports behind the catalog\'s links: whether NOSE can read the terpene panel on each. ' +
          'Aroma and flavor only. A batch without a panel NOSE can read shows no numbers.', '');
   if (rep.limit != null) {
@@ -472,11 +353,16 @@ function renderMarkdown(rep) {
 
   L.push('## Summary', '');
   L.push(`**${share(s.total[OUTCOMES.accepted], s.inStock)}** in-stock inhalables have a terpene panel NOSE can read.`, '');
-  L.push(`The file has ${plural(s.rows + rep.blank, 'row')} after its header: ${plural(s.inStock, 'in-stock batch', 'in-stock batches')}, ` +
-         `${s.outOfStock} out of stock (not fetched), ${plural(s.rowRefused.length, 'row')} refused (listed at the end)` +
-         `${rep.blank ? `, and ${plural(rep.blank, 'blank row')} skipped` : ''}.`, '');
-  table(['in-stock batches', 'how many'], IN_STOCK_OUTCOMES.filter(o => o !== OUTCOMES.notFetched || rep.limit != null)
-    .map(o => [SAYS[o], share(s.total[o], s.inStock)]), [1]);
+  if (fromStore) {
+    L.push(`The store lists ${plural(s.rows, 'batch', 'batches')} in its ${rep.store.windowMonths}-month window: ` +
+           `${plural(s.inStock, 'in-stock batch', 'in-stock batches')} and ${s.outOfStock} out of stock (kept for past purchases). ` +
+           'A row refused on upload is never kept: the upload\'s reply lists it.', '');
+  } else {
+    L.push(`The file has ${plural(s.rows + rep.blank, 'row')} after its header: ${plural(s.inStock, 'in-stock batch', 'in-stock batches')}, ` +
+           `${s.outOfStock} out of stock (not fetched), ${plural(s.rowRefused.length, 'row')} refused (listed at the end)` +
+           `${rep.blank ? `, and ${plural(rep.blank, 'blank row')} skipped` : ''}.`, '');
+  }
+  table(['in-stock batches', 'how many'], shownOutcomes(rep).map(o => [SAYS[o], share(s.total[o], s.inStock)]), [1]);
   L.push('');
 
   L.push('## By category', '');
@@ -546,9 +432,17 @@ function renderMarkdown(rep) {
   }
 
   L.push('## Rows not read', '');
-  L.push(`- Out of stock: ${s.outOfStock}. Not fetched; their links still count for "one link on more than one batch".`);
-  L.push(`- Refused rows: ${s.rowRefused.length}${s.rowRefused.length ? '. Each fails the format, and is not counted above:' : '.'}`);
-  for (const r of s.rowRefused) L.push(`  - row ${r.row}${r.batch_id ? ` (batch "${md(r.batch_id)}")` : ''}: ${md(r.reasons.join('; '))}`);
+  if (fromStore) {
+    const kept = rep.rows.filter(r => r.outcome === OUTCOMES.outOfStock);
+    L.push(`- Out of stock: ${s.outOfStock}. Kept so a shopper's past purchases are still found; ` +
+           `${share(kept.filter(r => r.readable).length, kept.length)} have a terpene panel NOSE can read. ` +
+           'Their links still count for "one link on more than one batch".');
+    L.push('- Refused rows: never kept. The upload\'s reply lists each, by row number and reason.');
+  } else {
+    L.push(`- Out of stock: ${s.outOfStock}. Not fetched; their links still count for "one link on more than one batch".`);
+    L.push(`- Refused rows: ${s.rowRefused.length}${s.rowRefused.length ? '. Each fails the format, and is not counted above:' : '.'}`);
+    for (const r of s.rowRefused) L.push(`  - row ${r.row}${r.batch_id ? ` (batch "${md(r.batch_id)}")` : ''}: ${md(r.reasons.join('; '))}`);
+  }
   L.push('');
   return L.join('\n');
 }
@@ -592,11 +486,12 @@ function summaryLines(rep, files) {
   const s = rep.summary;
   const L = [`b2b-coverage: ${rep.file}`, '',
     `${share(s.total[OUTCOMES.accepted], s.inStock)} in-stock inhalables have a terpene panel NOSE can read`];
-  for (const o of IN_STOCK_OUTCOMES) {
-    if (o === OUTCOMES.accepted || (o === OUTCOMES.notFetched && rep.limit == null)) continue;
+  for (const o of shownOutcomes(rep)) {
+    if (o === OUTCOMES.accepted) continue;
     L.push(`  ${SAYS[o].padEnd(34)} ${share(s.total[o], s.inStock)}`);
   }
-  L.push(`  ${'out of stock, not fetched'.padEnd(34)} ${s.outOfStock}`, `  ${'refused rows, not counted'.padEnd(34)} ${s.rowRefused.length}`);
+  if (rep.source === 'store') L.push(`  ${'out of stock, kept'.padEnd(34)} ${s.outOfStock}`);
+  else L.push(`  ${'out of stock, not fetched'.padEnd(34)} ${s.outOfStock}`, `  ${'refused rows, not counted'.padEnd(34)} ${s.rowRefused.length}`);
   L.push(`flagged: form not the category ${s.flagged('category').length}, batch not named ${s.flagged('batch').length}, ` +
          `one link on several batches ${rep.shared.length}`);
   if (rep.limit != null) L.push(`a partial run: --limit ${rep.limit}`);
@@ -625,6 +520,58 @@ async function coverCatalog({ buffer, name, limit = null, pauseMs = PAUSE_MS, wa
   return { report: rep };
 }
 
+/* --store: the same report, from the database. Each batch the store has
+   listed within its window, as lib/b2b-store.js's listedInWindow() reads it,
+   becomes the row the report would have made of it from the file: its row
+   number is list_position - the row of the last upload that listed it - and
+   its outcome comes from its current reading, as scripts/b2b-read-catalog.js
+   wrote it. The parser's output is what the reading keeps of it: lab, form,
+   the report's batch and lab ID, the terpenes and total of an accepted read,
+   its warnings, and whether its layout was new. A reading the parser never
+   made - the link gave no report, or the scanner could not read the PDF -
+   has no form, so it is flagged for nothing, as in the file's report. */
+const NEW_LAYOUT = Object.freeze(['(the reading kept only that its layout was new)']);
+
+function fromDatabase(b) {
+  const r = { row: b.listPosition, product_id: b.productId, batch_id: b.batchId, category: b.category, route: b.route,
+              name: b.name, brand: b.brand || '', coa_url: b.coaUrl || '', in_stock: b.inStock ? 'yes' : 'no',
+              product_url: b.productUrl || '', outcome: null, reasons: [], flags: [] };
+  const rd = b.reading;
+  if (!b.inStock) {
+    r.outcome = OUTCOMES.outOfStock;
+    r.readable = !!(rd && rd.current && rd.usable);
+    return r;
+  }
+  if (!b.coaUrl) { r.outcome = OUTCOMES.noLink; return r; }
+  if (!rd || !rd.sameLink) { r.outcome = OUTCOMES.notRead; return r; }
+  if (!rd.fetched) { Object.assign(r, { outcome: OUTCOMES.fetchFailed, reasons: [...rd.rejectReasons] }); return r; }
+  Object.assign(r, { outcome: rd.usable ? OUTCOMES.accepted : OUTCOMES.refused, reasons: rd.usable ? [] : [...rd.rejectReasons] });
+  if (rd.productClass != null) {
+    r.output = { usable: rd.usable, lab: rd.lab, productClass: rd.productClass, batch: rd.batch, labId: rd.labId,
+                 terps: rd.terps, totalTerpenes: rd.totalTerpenes, warnings: rd.warnings, novelty: rd.newLayout ? NEW_LAYOUT : [] };
+  }
+  return r;
+}
+
+async function coverStore({ slug, client, now } = {}) {
+  const b2b = require(path.join(LIB, 'b2b-store.js'));
+  const store = await b2b.storeBySlug(slug, { client });
+  if (!store) return { refusal: `no store called "${shown(slug, 40)}"` };
+  const listed = await b2b.listedInWindow(store.storeId, { client });
+  const match = require(path.join(__dirname, 'lib/match.js')).load();
+  /* In the file's order, as the file's report has them: by row. */
+  const rows = listed.map(fromDatabase).sort((x, y) => x.row - y.row || x.batch_id.localeCompare(y.batch_id));
+  const shared = flagSharedLinks(rows);
+  for (const r of rows) {
+    if (r.in_stock !== 'yes') continue;
+    flagReading(r);
+    figures(r, match);
+  }
+  const rep = { source: 'store', file: `store ${slug}`, store, day: utcDay(now), limit: null, blank: 0, rows, shared };
+  rep.summary = summarise(rows);
+  return { report: rep };
+}
+
 function writeReport(outDir, rep) {
   fs.mkdirSync(outDir, { recursive: true });
   const files = [path.join(outDir, 'report.md'), path.join(outDir, 'report.csv')];
@@ -633,7 +580,40 @@ function writeReport(outDir, rep) {
   return files;
 }
 
-async function main(argv = process.argv.slice(2), { log = console.log, error = console.error, wait } = {}) {
+/* The report from the database, as nose_b2b (NOSE_B2B_DB_URL, a Codespaces
+   secret): it reads schema b2b and writes report.md and report.csv, nothing
+   else. client exists for test/b2b-catalog-test.js. */
+async function mainStore(opts, { log, error, client, env }) {
+  let db = client || null;
+  let own = false;
+  try {
+    if (!db) {
+      if (!env.NOSE_B2B_DB_URL) {
+        error('b2b-coverage: NOSE_B2B_DB_URL is not set - it is a Codespaces secret; add it, then restart the Codespace');
+        return 1;
+      }
+      const { Client } = require('pg');
+      const { clientConfig } = require(path.join(LIB, 'store.js'));
+      db = new Client(clientConfig(env.NOSE_B2B_DB_URL, { name: 'NOSE_B2B_DB_URL', timeoutMs: 10000, queryTimeoutMs: 60000 }));
+      db.on('error', () => {});
+      own = true;
+      await db.connect();
+    }
+    const got = await coverStore({ slug: opts.store, client: db });
+    if (got.refusal) { error(`b2b-coverage: ${got.refusal}`); return 1; }
+    const files = writeReport(path.resolve(opts.out || DEFAULT_OUT), got.report);
+    log('');
+    for (const line of summaryLines(got.report, files)) log(line);
+    return 0;
+  } catch (e) {
+    error(`b2b-coverage: the database could not be read - ${require(path.join(LIB, 'b2b-store.js'))._scrub(e)}`);
+    return 1;
+  } finally {
+    if (own && db) await db.end().catch(() => {});
+  }
+}
+
+async function main(argv = process.argv.slice(2), { log = console.log, error = console.error, wait, client, env = process.env } = {}) {
   let opts;
   try { opts = parseArgs(argv); }
   catch (e) {
@@ -641,6 +621,7 @@ async function main(argv = process.argv.slice(2), { log = console.log, error = c
     error(e.message);
     return 2;
   }
+  if (opts.store) return mainStore(opts, { log, error, client, env });
   let buffer;
   try { buffer = fs.readFileSync(opts.catalog); }
   catch (e) {
@@ -659,8 +640,8 @@ async function main(argv = process.argv.slice(2), { log = console.log, error = c
 }
 
 module.exports = {
-  main, coverCatalog, readCatalog, parseCsv, checkHeader, looksPersonal, readFetched, writeReport, renderMarkdown, renderCsv,
-  parseArgs, UsageError, USAGE, COLUMNS, REQUIRED, CATEGORIES, FAMILY, PERSONAL_WORDS, PAUSE_MS, MIN_TEXT, SCANNER,
+  main, coverCatalog, coverStore, readCatalog, parseCsv, checkHeader, looksPersonal, readFetched, writeReport, renderMarkdown,
+  renderCsv, parseArgs, UsageError, USAGE, COLUMNS, REQUIRED, CATEGORIES, FAMILY, PERSONAL_WORDS, PAUSE_MS, MIN_TEXT, SCANNER,
   NOVELTY_LINE, OUTCOMES, DEFAULT_OUT
 };
 

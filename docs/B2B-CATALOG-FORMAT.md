@@ -6,10 +6,11 @@ report (certificate of analysis, COA) can be fetched. It never describes a
 shopper. A file that looks like it could is refused whole, before any of its
 rows is read.
 
-Read today by `scripts/b2b-coverage.js`, the coverage report
-(PARSER-HANDOFF.md §14). The rules below are that script's rules: when they
-change, both change in the same commit, and `test/b2b-coverage-test.js`
-checks them.
+Read by `scripts/b2b-coverage.js`, the coverage report, and by the upload,
+`netlify/functions/b2b-catalog.js` (PARSER-HANDOFF.md §14) - both through one
+reader, `netlify/functions/lib/b2b-catalog-format.js`. The rules below are that
+reader's rules: when they change, this file changes in the same commit, and
+`test/b2b-coverage-test.js` and `test/b2b-catalog-test.js` check them.
 
 ## The file
 
@@ -88,6 +89,61 @@ the header as row 1, as a spreadsheet shows them.
 `coa_url` is not checked here. A link that is not `https`, or that points at a
 private network, is fetched exactly as NOSE's scanner would fetch it, which
 refuses it, and the report gives the scanner's reason.
+
+## What the upload also refuses
+
+The upload keeps each row in NOSE's dispensary database, which holds only
+what it can check. So a row the coverage report reads is refused on upload,
+with its row number and every reason, when:
+
+- its `coa_url` is not an `https` link, is not a link at all, or carries a
+  user name or password;
+- its `product_url` has a space or a line break in it;
+- its `batch_id` or `product_id` is longer than 200 characters, its `name` or
+  `brand` longer than 300, or a link longer than 2048;
+- one of those values has a line break or another control character in it.
+
+The rest of the file is still kept.
+
+## Sending it to NOSE: the upload
+
+Not switched on yet: until the dispensary program is (PARSER-HANDOFF.md §14),
+the address answers 404.
+
+```http
+POST https://nose-app.com/.netlify/functions/b2b-catalog
+Authorization: Bearer nsk_...
+Content-Type: text/csv; charset=utf-8
+
+product_id,batch_id,category,route,name,brand,coa_url,in_stock,product_url,thc_percent,cbd_percent
+...
+```
+
+- **The key** is the store's secret key, `nsk_` and 64 characters, shown once
+  when NOSE makes it. It belongs on the store's own server, never in a page.
+  A public key (`npk_`), a revoked key, a mistyped key and no key at all get
+  the same refusal.
+- **At most 4 MB**, under what Netlify, which runs the upload, accepts in one
+  request.
+- **Each upload is the whole catalog.** Every batch in the file is added or
+  updated, and its row number becomes its place in the store's list. Every
+  batch the store listed before that is not in the file is kept, marked out
+  of stock: a shopper's past purchases are usually sold out, and NOSE still
+  needs to find them. A row refused for a mistake leaves its batch as it was.
+  A file with no row NOSE can keep changes nothing - an empty catalog would
+  mark every batch out of stock.
+- **The reply holds counts only**: `received` (the rows read, blank rows
+  aside), `upserted`, `markedOutOfStock`, and `refused` - each refused row by
+  its number, with every reason.
+- **The answers**: 200 with the counts; 401 without a working secret key;
+  413 over 4 MB; 422 when the file is refused, with the reason, or has no row
+  to keep; 503 when it could not be saved just then - send the whole file
+  again, which changes nothing more than sending it once.
+- **Then NOSE reads each listed batch's lab report once**, in stock or not,
+  through the same chain as the coverage report
+  (`scripts/b2b-read-catalog.js`). A batch whose `coa_url` changes is read
+  again; a link that gave no report is tried again later. The reports read
+  this way are not added to NOSE's lab-report archive.
 
 ## An example
 

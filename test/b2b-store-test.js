@@ -156,9 +156,13 @@ async function run(db, log = console.log) {
   check('batches: the catalog\'s columns, list_position and the two listing days', await columns('batches'),
     ['store_id', 'batch_id', 'product_id', 'list_position', 'category', 'route', 'name', 'brand', 'coa_url', 'product_url',
      'in_stock', 'thc_percent', 'cbd_percent', 'first_listed_on', 'last_listed_on']);
-  check('batch_reads: one current reading - what the parser read, and the day', await columns('batch_reads'),
+  /* The last five since 20261008150000_nose_b2b_read_source.sql (Prompt 3,
+     PARSER-HANDOFF s14): the link a reading came from, whether it gave a
+     report, the report's batch and lab ID, and whether its layout was new. */
+  check('batch_reads: one current reading - what the parser read, the day, and where it came from', await columns('batch_reads'),
     ['store_id', 'batch_id', 'read_on', 'lab', 'product_class', 'usable', 'reject_reasons', 'terps', 'total_terpenes',
-     'moisture', 'water_activity', 'harvest_on', 'report_on', 'read_by', 'warnings']);
+     'moisture', 'water_activity', 'harvest_on', 'report_on', 'read_by', 'warnings',
+     'read_url', 'fetched', 'report_batch', 'report_lab_id', 'new_layout']);
   const allColumns = (await rows(`select table_name || '.' || column_name as c, column_name as name, data_type as t
                                     from information_schema.columns where table_schema = 'b2b' order by 1`));
   check('no column for a person, a shopper, a purchase or an order, anywhere in b2b',

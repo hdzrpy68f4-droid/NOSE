@@ -281,6 +281,13 @@ async function b2bAdminChecks(a) {
                                   exists (select 1 from pg_roles where rolname = 'nose_b2b') as role`);
   check('the b2b migration is pushed: schema b2b and role nose_b2b', there.schema === true && there.role === true, B2B_PUSH);
   if (there.schema !== true || there.role !== true) return out;
+  /* 20261008150000_nose_b2b_read_source.sql (Prompt 3): five columns on
+     batch_reads, which the reader and the upload write. */
+  const source = await one(`select count(*)::int as n from information_schema.columns
+                             where table_schema = 'b2b' and table_name = 'batch_reads'
+                               and column_name in ('read_url', 'fetched', 'report_batch', 'report_lab_id', 'new_layout')`);
+  check('the reading-source migration is pushed: b2b.batch_reads keeps the link a reading came from, whether it gave a report, ' +
+        'the report\'s batch and lab ID, and whether its layout was new', source.n === 5, B2B_PUSH);
 
   const role = await one(`select rolsuper, rolbypassrls, rolcreaterole, rolcreatedb, rolreplication, rolcanlogin
                             from pg_roles where rolname = 'nose_b2b'`);

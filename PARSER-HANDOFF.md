@@ -153,7 +153,7 @@ Also run `node test/resolver-test.js` - expect `resolver clean`, and
 **Or all at once:** `bash scripts/gates.sh` runs these, the Kaycha anchors,
 `novelty-test`, `coa-dates-test`, `store-test`, `probe-test`, `archive-wiring-test`,
 `archive-scripts-test`, `rerun-test`, `review-queue-test`,
-`analysis-test`, `duplicates-test`, `remove-copies-test`, `remove-document-test`, `b2b-coverage-test`, `b2b-store-test`, `check-trust-test` and, after the build, `input-paths-test`.
+`analysis-test`, `duplicates-test`, `remove-copies-test`, `remove-document-test`, `b2b-coverage-test`, `b2b-store-test`, `b2b-catalog-test`, `check-trust-test` and, after the build, `input-paths-test`.
 It prints the line each gate produced and ends with `ALL GATES GREEN`. It passes
 a gate only on its exact expected line, so when a session legitimately changes
 a count, update the script in the same commit.
@@ -207,6 +207,7 @@ someone to look.
 | `remove-document-test.js` | `remove-document.js` and `keep-rule.js` (§13, "What gets kept, and taking it back out") on PGlite: the probe finds the one-sign files and nothing else; dry runs change nothing; a removal takes rows, PDF and every copy of the report, records the day and the word, and withholds file and text so `save_scan` refuses them after; PDFs with no row; a Blobs failure finished by a second run; a database refusal that changes nothing; nothing private printed; offline |
 | `b2b-coverage-test.js` | `scripts/b2b-coverage.js`, the dispensary coverage report (§14): the test catalog read end to end through the real chain, extractor and parser, only the network stood in for - every outcome, the three flags, the counts with their denominators, one link at a time with the pause, coa.js's own words and deadlines, a file refused for an unknown or a personal-looking column before any row is read, nothing reaching the archive, one copy of the fetch chain; offline |
 | `b2b-store-test.js` | the dispensary store (§14, "Schema, role, keys and the switch") on PGlite: schema `b2b` applied after every migration (those pinned byte for byte), its tables and columns, the person rule's three lists and two bodies identical, a personal key at any depth refused in both layers with the text asserted, `nose_b2b` upserting and refused DELETE, TRUNCATE, stores, keys and schema `nose`, `nose_writer`'s grants unchanged, `probe-db.js`'s b2b audit passing and failing on eight broken grants, every fixture's reading stored as read, keys hashed, `scripts/b2b-store.js`'s five commands, `lib/b2b-flag.js`, the `nsk_` build guard; offline |
+| `b2b-catalog-test.js` | the catalog upload, the batch reader and the report from the database (§14, "Catalog upload and the batch reader") on PGlite, the real function behind a stand-in `pg` that runs every statement as `nose_b2b`, the links served from fixture files: the switch, the key (one 401 for every wrong key, the hash compared in constant time), the 4 MB cap before and while reading, the coverage script's own reader and refusals, an upload as a whole snapshot (absent batches kept and marked out of stock, a refused row's batch untouched, nothing to keep changing nothing), counts-only replies, one fixed log line on failure; the reader's accepted, refused and unfetched readings, `--dry-run`, `--reread`, `--limit`, a corrected link read again, a fetch failure never replacing a reading, nothing from another batch or store; `--store` matching the CSV run row for row; schema `nose` and the archive untouched; offline |
 | `check-trust-test.js` | `scripts/check-trust.mjs` (§13, "The trust guard") on throwaway sites: every form of the old promise fails, true sentences pass; offline |
 | `input-paths-test.mjs` | the app's ways in, in headless Chromium: Scan QR (fake camera and QR image), COA link, Upload. The real `coa.js` and parser answer, with only the download and unpdf stood in for (§13, "The input paths"). Needs Playwright; a gate, run after the build |
 
@@ -2523,7 +2524,7 @@ Its core promise: **a shopper's purchase history never reaches NOSE.** The
 dispensary's page hands the shopper's batch IDs to the shopper's own browser,
 and the widget builds the palate and ranks there. B2B lives apart from
 everything consumer - its own schema (`b2b`) and role (`nose_b2b`), since
-2026-10-07, and its own Blobs stores and functions, none of which exists yet -
+2026-10-07, and its own Blobs stores (none yet) and functions (`b2b-catalog`, since 2026-10-08) -
 and whatever runs on Netlify stays off unless `B2B_ENABLED=1` in the
 Production context and `build-info.json` says production
 (`lib/b2b-flag.js`). No B2B record or log holds anything about a shopper. A batch
@@ -3011,6 +3012,290 @@ migration makes empty tables and a role):
 5. `node scripts/probe-db.js` - probe clean, nose_b2b's checks among them.
 6. `git push` - deploys; nothing B2B runs, because nothing calls it yet.
 
+### Catalog upload and the batch reader, 2026-10-08
+
+Prompt 3. A dispensary's server sends its catalog; NOSE keeps every batch the
+store lists and reads each batch's lab report once, in stock or not, so the
+widget will have values for every batch the store listed in its window - a
+shopper's past purchases, usually sold out, included. Nothing in it is live:
+the function answers 404 until Prompt 8's switch, and the reader and
+`--store` run from the Codespace, on PGlite or a local database, until the
+privacy page describes them.
+
+```
+netlify/functions/b2b-catalog.js                             the upload: POST, Bearer nsk_..., the CSV
+netlify/functions/lib/b2b-catalog-format.js                  the catalog format reader, moved out of b2b-coverage.js
+netlify/functions/lib/b2b-store.js                           the snapshot write, the secret key, readings with their link
+supabase/migrations/20261008150000_nose_b2b_read_source.sql  five columns on batch_reads
+scripts/b2b-read-catalog.js                                  the reader: --store <slug> [--limit N] [--dry-run] [--reread]
+scripts/b2b-coverage.js                                      --store <slug>: the same report, from the database
+scripts/probe-db.js                                          one check: the new migration is pushed
+docs/B2B-CATALOG-FORMAT.md                                   what the upload also refuses; how to send a catalog
+test/b2b-catalog-test.js                                     PGlite, offline, a gate: "b2b-catalog clean"
+test/b2b-store-test.js                                       batch_reads' column list, five longer
+scripts/gates.sh                                             the gate, after b2b store
+```
+
+**The probe, before any edit**, on `5968b6f` - ALL GATES GREEN, 23 gates:
+
+- `palate-sync.js` reads the whole body with `request.text()`, then answers
+  413 when `raw.length > 262144`: 256 KB, counted in characters, after the
+  body has been read. It keeps four declared fields per profile - `id`,
+  `name`, `subtitle`, `terps` - and silently drops anything else; a bad
+  profile is skipped, more than 500 refused. The upload caps BYTES before it
+  reads, and refuses rather than drops: the format refuses an unknown column.
+- `scripts/b2b-coverage.js` on the test catalog, its links answered from the
+  fixture files as `b2b-coverage-test` answers them: exactly the record above
+  - 12 of 19 (63%), 2 refused, 1 no link, 4 fetch failed, 2 out of stock, 3
+  rows refused, flagged 2 forms, 3 batches, 2 shared links; Kaycha 9 of 9,
+  ACS, Method and Modern Canna 1 of 1, TerpLife 0 of 1, 6 with no report read.
+
+Netlify's current docs changed one number: a function's buffered request
+body is capped at 6 MB, and at about 4.5 MB when Netlify base64-encodes it
+([Configuration for functions](https://docs.netlify.com/build/functions/configuration/),
+Default values, read 2026-10-08). So the upload takes 4 MB, not the coverage
+script's 20 MB. The same page: a function is at `/.netlify/functions/<name>`
+unless `config.path` says otherwise (Routing), and a `.js` entry file in a
+package without `"type": "module"` is executed as CommonJS, with no named
+imports from CommonJS in an ES module (Module format).
+
+**Two decisions the owner made, 2026-10-08**, where "Done when" - the report
+from the database matching the CSV run - asked for more than Prompt 2's
+`batch_reads` could hold:
+
+- **One additive migration**, `20261008150000_nose_b2b_read_source.sql`.
+  Without it a fetch failure's words, the report's batch and lab ID (the batch
+  flag) and the link a reading came from were nowhere: a store correcting a
+  `coa_url` would have kept the old report's numbers under the new link. The
+  owner approved four facts; this session added a fifth under the same
+  decision, `new_layout`, because the report's novelty line needs it on an
+  accepted read.
+- **A `coa_url` that is not https is refused on upload**: Prompt 2's
+  https-only rule stands. So the test catalog's row 24 is a refused row on
+  upload and a fetch failure in the CSV run, and the two reports differ by
+  that row (below).
+
+**The migration** adds to `b2b.batch_reads`, nothing else changing - no
+column, constraint, trigger or grant; `nose_b2b`'s table grants cover the new
+columns, and no name or day is about a person:
+
+- `read_url` - the link the reading came from, as the catalog listed it,
+  without `#`: the batch's `coa_url` CHECK. A reading is the batch's CURRENT
+  one only while `read_url` is still its `coa_url` and the link gave a report.
+- `fetched` (default true) - false when the link gave no report: refused
+  before any request, unreachable, timed out, not a PDF. `reject_reasons`
+  then holds the fetcher's own sentence, and `nothing_read_unless_fetched`
+  keeps the rest empty: no lab, form, reader, day, identifier, note, figure.
+- `report_batch`, `report_lab_id` - the parser's `batch` and `labId`, trimmed,
+  a control character a space, cut at 200: identifiers, never figures, kept on
+  refusals too.
+- `new_layout` (default false) - the parser's `novelty` was not empty. The
+  notes themselves never leave `lib/b2b-store.js`; they are for the review
+  queue.
+
+`lib/b2b-store.js`'s `READ_FIELDS` gains `batch`, `labId`, `novelty` (sent
+as a boolean), and `upsertRead(..., { readUrl })` keeps the link. New:
+
+- `batchesFromCatalog(rows)` - the format reader's rows as `BATCH_FIELDS`,
+  typed (`in_stock` a boolean, a percent a number, `list_position` the row's
+  number in the file, the header row 1), or refused by row and reason for
+  what the database cannot hold: a `coa_url` that is not https, not a link or
+  carries a password (`coaLink()`'s own words), a `product_url` with a space,
+  `batch_id` or `product_id` over 200 characters, `name` or `brand` over 300,
+  a link over 2048, a control character in any of them. It also returns
+  every `batch_id` named on a row, refused rows included.
+- `applyCatalog(storeId, batches, listed)` - ONE statement, so an upload
+  lands whole or not at all: the listed batches upserted as `upsertBatches`
+  does, and every other batch of the store still in stock marked out of
+  stock and KEPT, with its `list_position` and `last_listed_on` - the last
+  day a file listed it, which the window counts from. A batch named on a
+  refused row is never marked: a typo does not take a batch out of stock.
+  At least one batch, or nothing is sent.
+- `storeForSecretKey(key)` - a working `secret` key only. The database is
+  asked for the row of the key's SHA-256, and the hash that comes back is
+  compared with the key's own by `crypto.timingSafeEqual`: the comparison
+  that decides takes the same time whatever the bytes, and a lookup by hash
+  can reveal nothing about the key, only about the hash of a key the caller
+  already holds.
+- `upsertUnfetched(storeId, batchId, readUrl, reason)` - a link that gave no
+  report. It never replaces a reading the same link DID give: a `--reread` on
+  a day the lab's portal is down keeps the reading.
+- `storeBySlug(slug)`, `listedInWindow(storeId)` - what the reader and
+  `--store` read back. `IN_WINDOW_SQL` is the window as one condition -
+  `last_listed_on` no more than `window_months` ago, in UTC days - for
+  Prompt 4's feed to read the same way.
+
+**The upload** - `POST /.netlify/functions/b2b-catalog`, written as
+`palate-sync.js` is: one default export taking a Request, nothing else
+exported, the three `lib/` files imported whole. In order:
+
+1. `b2bEnabled()`: off, a plain `404 Not Found`, before the method, the key or
+   the body is looked at - so a dev run or a deploy preview never reaches the
+   production database.
+2. Not POST: 405, `Allow: POST`.
+3. `Authorization: Bearer <key>` (the scheme in any case, one key): anything
+   but a well-formed secret key is a 401 without a statement.
+4. `Content-Length` over 4 MB: 413, the body unread.
+5. No `NOSE_B2B_DB_URL`: 503. Then the key's store; none - a public, revoked,
+   mistyped or never-issued key - is the same 401, `WWW-Authenticate: Bearer`,
+   the body unread.
+6. The body, counted as it arrives: over 4 MB, 413, cancelled.
+7. `lib/b2b-catalog-format.js`'s `readCatalog()`: a refused file is 422 with
+   the reader's own sentence - a personal-looking column first, an unknown
+   one by name.
+8. `batchesFromCatalog()`; no row to keep is 422 and nothing changes (an
+   empty snapshot would mark every batch out of stock).
+9. `applyCatalog()`, given 8 seconds. 200 with `received` (the rows read,
+   blank rows aside), `upserted`, `markedOutOfStock`, and `refused`: each
+   refused row by its number, with every reason - the coverage script's own
+   words for a format refusal. Nothing else is in the reply.
+
+It reads nothing about the caller - no address, user agent, cookie,
+`context`, geography or time; the database keeps UTC days. It logs nothing
+on success, and one fixed line on a failure: `no database configured -
+nothing saved`, `key not checked - the database did not answer; nothing
+saved`, `upload not confirmed - the database did not answer`. A write that
+timed out may still have committed, so the 503 says to send the whole file
+again: a whole snapshot sent twice changes nothing more. Catalog reports are
+not fetched here.
+
+**The format reader moved.** `parseCsv`, `checkHeader`, `readRows`,
+`readCatalog`, `looksPersonal`, the columns, lists and personal words moved
+from `scripts/b2b-coverage.js` to `lib/b2b-catalog-format.js` so the function
+could read the format without loading a Codespace script. Of the 161 lines
+the script lost, 158 are in the lib byte for byte and in order; the other
+three are the `require` of `PERSONAL_KEYS` (now the lib's), the refused-row
+outcome's name (now the lib's `ROW_REFUSED`, the same words) and a banner.
+The script requires the reader back and exports the same names, and
+`b2b-coverage-test` passed unchanged after the move.
+
+**The reader** - `node scripts/b2b-read-catalog.js --store <slug> [--limit
+N] [--dry-run] [--reread]`, as `nose_b2b` (`NOSE_B2B_DB_URL`; any other
+role is refused before anything is read).
+
+- Due: every batch listed within the store's window that has a `coa_url` and
+  no current reading - out-of-stock batches too - in stock first, then the
+  store's order; with `--reread`, every one with a link; `--limit N`, the
+  first N due.
+- Each is read the coverage report's way: `validateUrl`, then
+  `scripts/b2b-coverage.js`'s `readFetched` (`fetchPdf`, `extract-text.js`,
+  `parseCoa`, the scanner's steps between), one link at a time with 1000 ms
+  before every request but the first; a link `validateUrl` refuses is never
+  requested.
+- Written: an accepted reading's terpenes as the parser read them and the
+  lab's printed total; a refusal's reasons and no figure (the parser's, or the
+  scanner's sentence - "could not be read reliably" for a refusal that came
+  with none, as the report shows it); a PDF the scanner could not read, its
+  sentence and nothing the parser would have said (no form, so the report
+  flags it for nothing, as from the file); a link that gave no report, the
+  fetcher's words with `fetched = false`, tried again on the next run.
+- Each batch from its own link into its own row: two batches on one link are
+  each fetched, a batch with no link is never read, no reading crosses to
+  another store, and the name is never read.
+- A run that writes refuses while `parse-coa.js`, `coa-dates.js` or
+  `extract-text.js` has uncommitted changes (`scripts/lib/rerun.js`'s
+  `stampsOrRefusal`): `batch_reads` keeps no parser version, so this is what
+  ties a stored reading to committed code. `--dry-run` fetches, reads and
+  writes nothing.
+- It never loads `coa.js`, `lib/archive.js` or `lib/pdf-store.js`, and writes
+  nothing to schema `nose` or the `coa-pdf` store. It prints a line per batch
+  (its row and outcome, a failed link's host) and a summary, never a link.
+
+**`--store <slug>`** - `scripts/b2b-coverage.js` reads `listedInWindow()` and
+makes of each batch the row the report would make of it from the file: its
+row is `list_position`, its outcome its current reading's, its parser output
+what the reading keeps. The report's own code renders it - the same counts,
+flags, figures through `normalize()` and notes - with four lines about the
+file turned into lines about the store: where it was read from, the batches
+in its window, out-of-stock batches kept (and how many have a panel NOSE can
+read), and that a row refused on upload is never kept. A batch whose reading
+is of another link, or that has none, is "not read yet", a column shown only
+when one is. `--limit` and a file are refused with it. In CSV mode not one
+line of the report changed.
+
+**The test catalog, both ways.** Uploaded to PGlite: 24 rows received, 20
+upserted, 4 refused - rows 19, 20 and 26 in the coverage report's own words,
+and row 24, `coa_url is not an https link`. Read by the reader: 19 readings,
+14 accepted (the 12 in stock and both sold-out batches), 2 refused, 3 links
+that gave no report. Then `--store test-shop` against the CSV run: every one
+of the 20 batches the upload kept reads identically in `report.csv` -
+outcome, reason, lab, form, report batch and lab ID, total, top three and
+their shares, notes, flags, host - and the only table lines that differ in
+`report.md` are the ones row 24 counted in:
+
+| | CSV run | from PGlite |
+|---|---|---|
+| terpene panel NOSE can read | 12 of 19 (63%) | 12 of 18 (67%) |
+| report refused | 2 of 19 (11%) | 2 of 18 (11%) |
+| no lab-report link | 1 of 19 (5%) | 1 of 18 (6%) |
+| link could not be fetched | 4 of 19 (21%) | 3 of 18 (17%) |
+| vape | 6: 3 / 1 / 0 / 2 | 5: 3 / 1 / 0 / 1 |
+| (no report read) | 6: 0 / 1 / 1 / 4 | 5: 0 / 1 / 1 / 3 |
+
+and row 24's line among the batches NOSE can't read. Every lab's row, every
+flag, every refusal and every figure is the same.
+
+**The test** - `test/b2b-catalog-test.js`, 81 checks, a gate after `b2b
+store`. The function is loaded as the ES module its syntax makes it -
+through a one-file `module.register` hook, on Node 20 and 22 - and driven
+through its default export, with a stand-in `pg` whose every statement runs
+on PGlite as `nose_b2b`. Stores and keys are made by `scripts/b2b-store.js`'s own
+commands; links are answered from fixture files. It checks the switch (off:
+404, no statement, nothing written or logged); every wrong key the same 401,
+the body unread; the two size caps; the snapshot (a batch dropped from the
+file kept and marked out of stock, the same file twice changing nothing, a
+typo's batch untouched, the file again restoring it, another store's upload
+touching only that store); the refused files, the reply's keys, the three
+log lines and silence on success; the database refusing a failed link that
+carries a lab, form, identifier or note; the reader's dry run, real run,
+second run, `--reread --limit 3` with a portal down, a corrected link read
+again, another store, the role and the command line; `--store` against the
+CSV run as above; schema `nose`'s tables, the archive's stand-ins, `coa.js`,
+`pg` and `@netlify/blobs` untouched. The migration is pinned to its first
+push. Against 24 deliberately broken copies - the switch moved, a public key
+accepted (in JS, or in SQL), no Content-Length check, no counted cap, the
+body read before the key, a line on success, detail in a failure line, more
+than counts in the reply, absent batches left in stock, a refused row not
+protecting its batch, `===` for the hash, a fetch failure replacing a
+reading, another link's reading current, an http link kept, `list_position`
+not the row, a dry run that writes, in-stock batches only, no pause, a
+reading without its link, `--store` without the report batch, in the
+database's order or showing an old link's reading, and the database letting
+a failed link carry a lab - each fails it.
+
+`b2b-store-test` changed in one check, `batch_reads`' column list, five
+names longer; its other 150 checks pass unchanged with the new migration
+applied. `probe-db.js`'s admin audit gains "the reading-source migration is
+pushed", which `b2b-store-test` runs and every broken-grant case leaves
+standing.
+
+**How it was verified, 2026-10-08, in the cloud workspace.** npm was blocked
+there (registry.npmjs.org answered 403), so as before the gates ran on
+stand-ins: pdfjs-dist 6.2.108 for unpdf (56/3, 56/0, clean, 4.124/0.944), a
+throwaway PostgreSQL 16 cluster per PGlite instance behind PGlite's API, the
+committed html5-qrcode in place of `build.sh`'s download, and Playwright
+1.56.0's Chromium. ALL GATES GREEN on `5968b6f` before any edit, 23 gates,
+and after it with the new gate - 24 gates, `KAY-CAR-001` 4.124 and
+`KAY-PRR-001` 0.944. The three B2B gates passed on Node 20.20 as well.
+`parse-coa.js`, `coa-dates.js` and `extract-text.js` are untouched, so no
+reparse is due; no file in `js/` changed, so `build.sh` renamed nothing.
+Nothing ran against a real database, Netlify or a lab's server. The Codespace
+run on the real packages is the one that counts.
+
+**In the Codespace, in this order** (the migration adds columns to empty
+tables; nothing here writes a row to production):
+
+1. `git pull --ff-only`, then `bash scripts/gates.sh` - ALL GATES GREEN,
+   `b2b catalog` among them.
+2. `node scripts/probe-db.js` - before the push it fails one check only: "the
+   reading-source migration is pushed".
+3. `npx supabase db push --db-url "$NOSE_DB_ADMIN_URL" --dry-run` - lists
+   `20261008150000_nose_b2b_read_source.sql` alone; then the same without
+   `--dry-run`.
+4. `node scripts/probe-db.js` - probe clean.
+5. `git push` - deploys `b2b-catalog`, which answers 404: `B2B_ENABLED` is not
+   set. Netlify → Logs → Functions lists it.
+
 ### Still open
 
 - `scripts/download-twice.js` keeps its own looser fetch loop. Moving it onto
@@ -3041,11 +3326,44 @@ migration makes empty tables and a role):
   key of each kind. A change of public key without a gap needs its own
   prompt.
 - `batch_reads` keeps no parser version, so a stored reading does not say
-  which parser read it; Prompt 3's `--reread` reads everything again. A
-  column for it is a new migration.
+  which parser read it; `--reread` reads everything again. The reading-source
+  migration (2026-10-08) added the link a reading came from, not the parser;
+  instead the reader refuses to write while the parser's files have
+  uncommitted changes. A column for the version is a new migration.
 - `coa_url` keeps its query, so a presigned link in a catalog (`X-Amz-*`,
   `Signature`, `Expires`) would be kept with its temporary credential to the
-  store's own storage. Prompt 3 may refuse or flag such links on upload.
+  store's own storage. Prompt 3 neither refuses nor flags one: it waits for
+  its own prompt.
+- **The upload's module form is palate-sync.js's, unproven for this file on
+  Netlify.** Netlify's docs say a `.js` entry file in a package without
+  `"type": "module"` runs as CommonJS; this one, like `palate-sync.js`, is ES
+  module syntax that the esbuild bundler compiles. After the first deploy:
+  Netlify → Logs → Functions lists `b2b-catalog`, and `curl -i -X POST
+  https://nose-app.com/.netlify/functions/b2b-catalog` answers `404` with
+  `Not Found` - the switch is off.
+- **A row refused on upload is kept nowhere**: the reply is its only record,
+  and `--store` says so rather than listing it.
+- **Batch IDs are matched exactly from one upload to the next**, while a
+  repeat within one file is found ignoring letter case. A `batch_id` whose
+  case changes between two exports becomes a new batch, and the old one is
+  marked out of stock (kept, with its reading).
+- **`list_position` is the row in the latest file**: removing a line moves
+  every row after it up one. Only the order is used (Prompt 5's ties).
+- **A link that never answers is fetched on every run**, one second after the
+  last request, until the store changes it; `--limit` bounds a run.
+- The upload takes 4 MB, under Netlify's buffered limit; the coverage script
+  reads files of up to 20 MB from disk. A catalog between the two can be
+  reported on but not uploaded.
+- **Prompt 4's feed must take a batch's figures only from its CURRENT
+  reading** - the link gave a report (`fetched`), and `read_url` is still the
+  batch's `coa_url`. Any other reading is of a link the store has since
+  corrected, or one that gave no report, and showing its numbers would fill
+  the batch from another report. `listedInWindow()`'s `current`, and
+  `IN_WINDOW_SQL` for the window, are that rule in one place each.
+- **The reading-source migration is not pushed until its walk-through
+  runs** (above): until then `probe-db.js` fails "the reading-source
+  migration is pushed", and the upload and the reader would fail on the
+  missing columns against production - where nothing runs before Prompt 8.
 - The secret key reaches the dispensary however the owner hands it over:
   NOSE prints it once and has no channel of its own for it.
 - `NOSE_B2B_DB_URL` is a Codespaces secret only. It goes into Netlify's
