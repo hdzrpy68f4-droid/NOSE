@@ -7,8 +7,10 @@
  * The probe is the only thing that checks the real project, so a check in it
  * that passes without testing anything is worse than no check at all. These
  * cases pin down what may count as a pass: a Data API refusal only when it is
- * PostgREST's own "schema not exposed", and Enforce SSL only when the pooler
- * says SSL is required. Every other answer must fail.
+ * PostgREST's own "schema not exposed" - for schema nose and, since
+ * 2026-10-07, schema b2b (PARSER-HANDOFF s14) - and Enforce SSL only when the
+ * pooler says SSL is required. Every other answer must fail. The b2b grant
+ * audit itself runs against a migrated database in test/b2b-store-test.js.
  */
 
 /* If the require.main guard in probe-db.js were ever lost, requiring it would
@@ -192,6 +194,63 @@ async function main() {
   await test('the key never appears in the output, even when a server echoes it', async () => {
     const { out } = await run(() => json(401, { message: `bad key ${KEY}` }));
     assert.ok(!JSON.stringify(out).includes(KEY));
+  });
+
+  /* --- Data API: schema b2b, the dispensary schema (PARSER-HANDOFF s14) --- */
+
+  await test('b2b: PGRST106 on both requests passes both checks', async () => {
+    const { checks } = await run(notExposed, KEY, { schema: 'b2b' });
+    assert.strictEqual(checks.length, 2);
+    for (const c of checks) assert.strictEqual(c.pass, true, c.label);
+  });
+
+  await test('b2b: a read and a call the API roles cannot make, under the b2b profile, apikey header only', async () => {
+    const { calls } = await run(notExposed, KEY, { schema: 'b2b' });
+    assert.strictEqual(calls.length, 2);
+    const [get, post] = calls;
+    assert.strictEqual(get.url, `https://${REF}.supabase.co/rest/v1/store_keys`);
+    assert.ok(!get.init.method || get.init.method === 'GET', 'first request is a GET');
+    assert.strictEqual(get.init.headers['Accept-Profile'], 'b2b');
+    assert.strictEqual(post.url, `https://${REF}.supabase.co/rest/v1/rpc/holds_no_person`);
+    assert.strictEqual(post.init.method, 'POST');
+    assert.strictEqual(post.init.headers['Content-Profile'], 'b2b');
+    assert.strictEqual(post.init.body, '{"doc":{}}');
+    for (const c of calls) {
+      assert.strictEqual(c.init.headers.apikey, KEY);
+      assert.ok(!Object.keys(c.init.headers).map(h => h.toLowerCase()).includes('authorization'));
+      assert.ok(c.init.signal instanceof AbortSignal, 'every request has a timeout');
+    }
+  });
+
+  await test('b2b: an answer (200), or exposed but stopped by the grants (42501), fails naming b2b', async () => {
+    const answered = (await run(() => new Response('[]', { status: 200 }), KEY, { schema: 'b2b' })).checks;
+    allFail(answered);
+    assert.match(answered[0].detail, /schema b2b ANSWERED/);
+    const granted = (await run(() => json(401, { code: '42501', message: 'permission denied for schema b2b' }), KEY, { schema: 'b2b' })).checks;
+    allFail(granted);
+    assert.match(granted[0].detail, /schema b2b is exposed/);
+  });
+
+  await test('the nose requests are what they were: the default schema, unchanged', async () => {
+    const plain = await run(notExposed);
+    const named = await run(notExposed, KEY, { schema: 'nose' });
+    assert.deepStrictEqual(named.calls.map(c => [c.url, c.init.method, c.init.body, c.init.headers]),
+                           plain.calls.map(c => [c.url, c.init.method, c.init.body, c.init.headers]));
+  });
+
+  await test('a schema the probe has no requests for is refused, nothing sent', async () => {
+    const m = mockFetch(notExposed);
+    await assert.rejects(probe.dataApiChecks({ ref: REF, key: KEY, schema: 'public', fetchImpl: m.fetchImpl }), /no requests for schema public/);
+    assert.strictEqual(m.calls.length, 0);
+  });
+
+  await test('the dispensary role\'s address: the ref comes from a nose_b2b user name only', async () => {
+    const u = new URL('postgresql://aws-0-us-east-1.pooler.supabase.com');
+    u.username = `nose_b2b.${REF}`;
+    u.port = '6543';
+    assert.strictEqual(probe.b2bTarget(u.toString()).ref, REF);
+    u.username = `nose_writer.${REF}`;
+    assert.strictEqual(probe.b2bTarget(u.toString()).ref, null);
   });
 
   /* --- Enforce SSL ------------------------------------------------------- */

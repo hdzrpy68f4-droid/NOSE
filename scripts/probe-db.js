@@ -5,10 +5,14 @@
  *   node scripts/probe-db.js
  *   NOSE_PUBLISHABLE_KEY=sb_publishable_... node scripts/probe-db.js
  *
- * Needs NOSE_DB_URL (the writer). NOSE_DB_ADMIN_URL adds the grant audit;
+ * Needs NOSE_DB_URL (the writer). NOSE_DB_ADMIN_URL adds the grant audit -
+ * schema nose and, since 2026-10-07, schema b2b (PARSER-HANDOFF s14);
+ * NOSE_B2B_DB_URL adds the checks made as nose_b2b, the dispensary role;
  * NOSE_PUBLISHABLE_KEY (public by design - Project Settings -> API Keys) adds
- * the Data API checks. Writes nothing that survives: the one save it makes is
- * inside a transaction that is rolled back.
+ * the Data API checks, for both schemas. Writes nothing that survives: the one
+ * save it makes is inside a transaction that is rolled back, and nothing is
+ * written to schema b2b at all - every statement it tries there is one the
+ * role must be refused, inside a transaction that is rolled back as well.
  *
  * Exit 0 and "probe clean" only when every check that could run passed. A check
  * that cannot tell - a timeout, an answer from the wrong layer - fails; it is
@@ -31,6 +35,16 @@ function writerTarget(raw) {
   const u = new URL(raw);
   const user = decodeURIComponent(u.username);
   const m = /^nose_writer\.([a-z0-9]+)$/.exec(user);
+  return { u, user, ref: m && m[1] };
+}
+
+/* Supabase's shared pooler names a custom role "[ROLE].[PROJECT-REF]" (docs:
+ * Connect to your database), so the dispensary role's address is read the
+ * same way. */
+function b2bTarget(raw) {
+  const u = new URL(raw);
+  const user = decodeURIComponent(u.username);
+  const m = /^nose_b2b\.([a-z0-9]+)$/.exec(user);
   return { u, user, ref: m && m[1] };
 }
 
@@ -82,10 +96,38 @@ function isSecretKey(key) {
  *
  * The key travels in the apikey header only, as Supabase documents for
  * publishable keys. Returns [{ label, pass, detail }] and [{ info }] records;
- * main() prints them. */
+ * main() prints them.
+ *
+ * One schema per call: nose, the archive, or b2b, the dispensary schema
+ * (PARSER-HANDOFF s14) - Supabase exposes only public unless a schema is
+ * added to "Exposed schemas" (docs: Using Custom Schemas), and neither may
+ * ever be. Each request is harmless even if the schema were exposed: a read,
+ * and a call the API roles cannot make. */
 const SCHEMA_NOT_EXPOSED = 'PGRST106';
 
-async function dataApiChecks({ ref, key, fetchImpl = globalThis.fetch, timeoutMs = 10000 }) {
+const DATA_API_REQUESTS = Object.freeze({
+  nose: [
+    ['GET documents with Accept-Profile: nose is refused as "schema not exposed"', '/documents',
+      { headers: { 'Accept-Profile': 'nose' } }],
+    ['POST rpc/save_scan with Content-Profile: nose is refused as "schema not exposed"', '/rpc/save_scan',
+      { method: 'POST',
+        headers: { 'Content-Profile': 'nose', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payload: {} }) }]
+  ],
+  b2b: [
+    ['GET store_keys with Accept-Profile: b2b is refused as "schema not exposed"', '/store_keys',
+      { headers: { 'Accept-Profile': 'b2b' } }],
+    ['POST rpc/holds_no_person with Content-Profile: b2b is refused as "schema not exposed"', '/rpc/holds_no_person',
+      { method: 'POST',
+        headers: { 'Content-Profile': 'b2b', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ doc: {} }) }]
+  ]
+});
+
+async function dataApiChecks({ ref, key, schema = 'nose', fetchImpl = globalThis.fetch, timeoutMs = 10000 }) {
+  if (!Object.prototype.hasOwnProperty.call(DATA_API_REQUESTS, schema)) {
+    throw new TypeError(`dataApiChecks: no requests for schema ${schema}`);
+  }
   const out = [];
   const check = (label, pass, detail = '') => out.push({ label, pass, detail });
   const note = text => out.push({ info: text });
@@ -116,26 +158,20 @@ async function dataApiChecks({ ref, key, fetchImpl = globalThis.fetch, timeoutMs
     return { status: res.status, ok: res.ok, code, said };
   };
 
-  const requests = [
-    ['GET documents with Accept-Profile: nose is refused as "schema not exposed"', '/documents',
-      { headers: { apikey: key, 'Accept-Profile': 'nose' } }],
-    ['POST rpc/save_scan with Content-Profile: nose is refused as "schema not exposed"', '/rpc/save_scan',
-      { method: 'POST',
-        headers: { apikey: key, 'Content-Profile': 'nose', 'Content-Type': 'application/json' },
-        body: JSON.stringify({ payload: {} }) }]
-  ];
+  const requests = DATA_API_REQUESTS[schema].map(([label, pathname, init]) =>
+    [label, pathname, { ...init, headers: { apikey: key, ...init.headers } }]);
 
   for (const [label, pathname, init] of requests) {
     const r = await call(pathname, init);
     if (r.failed) {
       check(label, false, `${r.failed} - inconclusive; run the probe again`);
     } else if (r.ok) {
-      check(label, false, `HTTP ${r.status} - schema nose ANSWERED through the Data API. Remove nose from Exposed schemas (Project Settings -> Data API) now`);
+      check(label, false, `HTTP ${r.status} - schema ${schema} ANSWERED through the Data API. Remove ${schema} from Exposed schemas (Project Settings -> Data API) now`);
     } else if (r.code === SCHEMA_NOT_EXPOSED) {
       check(label, true);
       note(`Data API: HTTP ${r.status} ${r.code} for ${pathname}`);
     } else if (r.code === '42501') {
-      check(label, false, `HTTP ${r.status} 42501 - schema nose is exposed to the Data API; the grants refused this, but nose must not be exposed at all. Remove it from Exposed schemas (Project Settings -> Data API)`);
+      check(label, false, `HTTP ${r.status} 42501 - schema ${schema} is exposed to the Data API; the grants refused this, but ${schema} must not be exposed at all. Remove it from Exposed schemas (Project Settings -> Data API)`);
     } else if (r.status === 401 || r.status === 403) {
       check(label, false, `HTTP ${r.status} ${r.code || ''} ${r.said} - refused before the schema was even considered, so this proves nothing. Copy the publishable key again`.replace(/ +/g, ' '));
     } else {
@@ -158,6 +194,167 @@ function classifyPlaintext(message) {
   if (/SSL connection is required/i.test(m)) return 'enforced';
   if (/password authentication failed/i.test(m)) return 'off';
   return 'unknown';
+}
+
+/* --- schema b2b and nose_b2b (PARSER-HANDOFF s14) ----------------------------
+ *
+ * Exactly what nose_b2b holds, and nothing else: it reads the stores and their
+ * keys, reads, adds and updates batches and readings, and executes the two
+ * checks on the tables it writes. Never DELETE or TRUNCATE, never anything in
+ * schema nose. A migration that changes what it holds changes these lists in
+ * the same commit, so the probe fails loudly rather than drifting quietly.
+ *
+ * Both functions return [{ label, pass, detail }] records for main() to
+ * print, and test/b2b-store-test.js runs them against a migrated database. */
+const B2B_TABLES = Object.freeze(['stores', 'store_keys', 'batches', 'batch_reads']);
+const B2B_GRANTS = Object.freeze({
+  stores: ['SELECT'], store_keys: ['SELECT'],
+  batches: ['INSERT', 'SELECT', 'UPDATE'], batch_reads: ['INSERT', 'SELECT', 'UPDATE']
+});
+const B2B_EXECUTE = Object.freeze(['b2b.holds_no_person(jsonb)', 'b2b.terps_ok(jsonb)']);
+const B2B_NOT_EXECUTE = Object.freeze(['b2b.https_origins(text[])', 'b2b.refuse_personal_fields()']);
+const TABLE_PRIVILEGES = Object.freeze(['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'TRUNCATE', 'REFERENCES', 'TRIGGER']);
+const B2B_PUSH = 'push the migration: npx supabase db push --db-url "$NOSE_DB_ADMIN_URL"';
+
+/* Checks made AS nose_b2b. Every statement it tries is one it must be
+ * refused, and each runs inside a transaction that is rolled back: even a
+ * grant that should not be there changes nothing - a TRUNCATE included. A
+ * refusal counts only when it names the object the privilege is on: refused
+ * for some other reason - a CHECK's function, a sequence - it proves nothing
+ * (PARSER-HANDOFF s13, "Assert the error text"). */
+async function b2bRoleChecks(c) {
+  const out = [];
+  const check = (label, pass, detail = '') => out.push({ label, pass, detail });
+  const denied = async (label, sql, object) => {
+    try {
+      await c.query('begin');
+      await c.query(sql);
+      check(label, false, 'the statement was allowed (rolled back)');
+    } catch (e) {
+      check(label, e.code === '42501' && String(e.message).endsWith(`permission denied for ${object}`), `${e.code} ${e.message}`);
+    } finally {
+      await c.query('rollback').catch(() => {});
+    }
+  };
+
+  const who = (await c.query('select current_user as u')).rows[0].u;
+  check('connected as nose_b2b', who === 'nose_b2b', `connected as ${who}`);
+  if (who !== 'nose_b2b') return out;
+
+  const there = (await c.query(`select ${B2B_TABLES.map(t => `to_regclass('b2b.${t}') is not null`).join(' and ')} as present`)).rows[0];
+  check('the b2b migration is pushed: b2b.stores, store_keys, batches, batch_reads', there.present === true, B2B_PUSH);
+  if (there.present !== true) return out;
+
+  for (const t of B2B_TABLES) {
+    const has = (await c.query(`select ${TABLE_PRIVILEGES.map((p, i) => `has_table_privilege('b2b.${t}', '${p}') as p${i}`).join(', ')}`)).rows[0];
+    const held = TABLE_PRIVILEGES.filter((p, i) => has[`p${i}`] === true);
+    check(`nose_b2b holds exactly ${B2B_GRANTS[t].join(', ')} on b2b.${t}`,
+      JSON.stringify([...held].sort()) === JSON.stringify(B2B_GRANTS[t]), `holds ${held.join(', ') || 'nothing'}`);
+  }
+  for (const t of B2B_TABLES) {
+    await denied(`nose_b2b cannot DELETE from b2b.${t}`, `delete from b2b.${t} where false`, `table ${t}`);
+    await denied(`nose_b2b cannot TRUNCATE b2b.${t}`, `truncate b2b.${t}`, `table ${t}`);
+  }
+  await denied('nose_b2b cannot add a store', `insert into b2b.stores (slug, display_name) select 'probe', 'probe' where false`, 'table stores');
+  await denied('nose_b2b cannot change a store', 'update b2b.stores set display_name = display_name where false', 'table stores');
+  await denied('nose_b2b cannot add a key', `insert into b2b.store_keys (store_id, kind, key_sha256) select 1, 'secret', '${'0'.repeat(64)}' where false`, 'table store_keys');
+  await denied('nose_b2b cannot change a key (un-revoke one, say)', 'update b2b.store_keys set revoked_on = null where false', 'table store_keys');
+  await denied('nose_b2b cannot read schema nose', 'select 1 from nose.parses limit 1', 'schema nose');
+  await denied('nose_b2b cannot call nose.save_scan', `select nose.save_scan('{}'::jsonb)`, 'schema nose');
+
+  const fns = [...B2B_EXECUTE, ...B2B_NOT_EXECUTE];
+  const can = (await c.query(`select ${fns.map((f, i) => `has_function_privilege('${f}', 'EXECUTE') as f${i}`).join(', ')}`)).rows[0];
+  const executes = fns.filter((f, i) => can[`f${i}`] === true);
+  check(`nose_b2b executes ${B2B_EXECUTE.join(' and ')}, and not ${B2B_NOT_EXECUTE.join(' or ')}`,
+    JSON.stringify(executes) === JSON.stringify(B2B_EXECUTE), `executes ${executes.join(', ') || 'none of them'}`);
+  return out;
+}
+
+/* Checks made AS THE ADMIN, from the catalog: who holds what in schema b2b,
+ * and that neither application role reaches the other's schema. */
+async function b2bAdminChecks(a) {
+  const out = [];
+  const check = (label, pass, detail = '') => out.push({ label, pass, detail });
+  const one = async sql => (await a.query(sql)).rows[0];
+
+  const there = await one(`select to_regnamespace('b2b') is not null as schema,
+                                  exists (select 1 from pg_roles where rolname = 'nose_b2b') as role`);
+  check('the b2b migration is pushed: schema b2b and role nose_b2b', there.schema === true && there.role === true, B2B_PUSH);
+  if (there.schema !== true || there.role !== true) return out;
+
+  const role = await one(`select rolsuper, rolbypassrls, rolcreaterole, rolcreatedb, rolreplication, rolcanlogin
+                            from pg_roles where rolname = 'nose_b2b'`);
+  check('nose_b2b has no superuser, bypassrls, createrole, createdb or replication',
+    !role.rolsuper && !role.rolbypassrls && !role.rolcreaterole && !role.rolcreatedb && !role.rolreplication, JSON.stringify(role));
+  check('nose_b2b can log in', role.rolcanlogin === true, JSON.stringify(role));
+  const member = await one(`select count(*)::int as n from pg_auth_members m where m.member = 'nose_b2b'::regrole`);
+  check('nose_b2b is a member of no role, so it inherits nothing', member.n === 0, `member of ${member.n}`);
+
+  const grantees = (await a.query(`
+    select distinct coalesce(nullif(g.grantee::regrole::text, '-'), 'PUBLIC') as who
+      from pg_class c join pg_namespace n on n.oid = c.relnamespace, aclexplode(c.relacl) g where n.nspname = 'b2b'
+    union
+    select distinct coalesce(nullif(g.grantee::regrole::text, '-'), 'PUBLIC')
+      from pg_proc p join pg_namespace n on n.oid = p.pronamespace, aclexplode(p.proacl) g where n.nspname = 'b2b'
+    union
+    select distinct coalesce(nullif(g.grantee::regrole::text, '-'), 'PUBLIC')
+      from pg_namespace n, aclexplode(n.nspacl) g where n.nspname = 'b2b'`)).rows.map(r => r.who);
+  const stray = grantees.filter(g => g !== 'postgres' && g !== 'nose_b2b');
+  check('only postgres and nose_b2b hold any grant in schema b2b', stray.length === 0, `also: ${stray.join(', ')}`);
+
+  const publicExec = await one(`
+    select count(*)::int as n from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+     where n.nspname = 'b2b'
+       and (p.proacl is null or exists (select 1 from aclexplode(p.proacl) g where g.grantee = 0))`);
+  check('PUBLIC cannot execute any b2b function', publicExec.n === 0, `${publicExec.n} function(s)`);
+
+  /* Granted directly, relation by relation - sequences included, which must
+     hold nothing - and function by function. */
+  const rels = (await a.query(`
+    select c.relname,
+           coalesce((select string_agg(distinct g.privilege_type, ',' order by g.privilege_type)
+                       from aclexplode(c.relacl) g where g.grantee = 'nose_b2b'::regrole), '') as privs
+      from pg_class c join pg_namespace n on n.oid = c.relnamespace
+     where n.nspname = 'b2b' and c.relkind in ('r', 'p', 'v', 'm', 'f', 'S')
+     order by c.relname`)).rows;
+  const wrong = rels.filter(r => r.privs !== (B2B_GRANTS[r.relname] || []).join(','))
+                    .map(r => `${r.relname}: ${r.privs || 'nothing'}`);
+  const missing = B2B_TABLES.filter(t => !rels.some(r => r.relname === t));
+  check('nose_b2b holds exactly SELECT on stores and store_keys, SELECT, INSERT and UPDATE on batches and batch_reads, and nothing else in b2b',
+    wrong.length === 0 && missing.length === 0, [...wrong, ...missing.map(t => `${t} missing`)].join('; '));
+  const executes = (await a.query(`
+    select p.oid::regprocedure::text as f
+      from pg_proc p join pg_namespace n on n.oid = p.pronamespace, aclexplode(p.proacl) g
+     where n.nspname = 'b2b' and g.grantee = 'nose_b2b'::regrole and g.privilege_type = 'EXECUTE'
+     order by 1`)).rows.map(r => r.f);
+  check(`nose_b2b executes exactly ${B2B_EXECUTE.join(' and ')}`,
+    JSON.stringify(executes) === JSON.stringify([...B2B_EXECUTE].sort()), `executes ${executes.join(', ') || 'nothing'}`);
+  const defaults = await one(`select count(*)::int as n from pg_default_acl d join pg_namespace n on n.oid = d.defaclnamespace
+                               where n.nspname = 'b2b'`);
+  check('schema b2b has no default privileges: a new table there is granted nothing until its migration says so',
+    defaults.n === 0, `${defaults.n} default ACL row(s)`);
+
+  /* Apart: neither role holds anything in the other's schema - no grant, and
+     no USAGE through anything it belongs to. */
+  const apart = await one(`
+    select has_schema_privilege('nose_b2b', 'nose', 'USAGE') as b2b_in_nose,
+           exists (select 1 from pg_class c join pg_namespace n on n.oid = c.relnamespace, aclexplode(c.relacl) g
+                    where n.nspname = 'nose' and g.grantee = 'nose_b2b'::regrole)
+        or exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace, aclexplode(p.proacl) g
+                    where n.nspname = 'nose' and g.grantee = 'nose_b2b'::regrole) as b2b_grant_in_nose,
+           (select has_schema_privilege(r.oid, 'b2b', 'USAGE') from pg_roles r where r.rolname = 'nose_writer') as writer_in_b2b`);
+  check('nose_b2b holds nothing in schema nose', apart.b2b_in_nose === false && apart.b2b_grant_in_nose === false, JSON.stringify(apart));
+  check('nose_writer holds nothing in schema b2b', apart.writer_in_b2b !== true, JSON.stringify(apart));
+
+  const api = (await a.query(`
+    select r.rolname,
+           has_schema_privilege(r.rolname, 'b2b', 'USAGE') as schema_usage,
+           has_table_privilege(r.rolname, 'b2b.store_keys', 'SELECT') as can_select
+      from pg_roles r where r.rolname in ('anon', 'authenticated', 'service_role')`)).rows;
+  for (const r of api) {
+    check(`${r.rolname} cannot reach schema b2b`, !r.schema_usage && !r.can_select, JSON.stringify(r));
+  }
+  return out;
 }
 
 async function main() {
@@ -307,6 +504,38 @@ async function main() {
     await w.end().catch(() => {});
   }
 
+  /* --- nose_b2b, the dispensary role (PARSER-HANDOFF s14) ------------------ */
+  const b2bUrl = process.env.NOSE_B2B_DB_URL;
+  if (!b2bUrl) {
+    skip('nose_b2b checks - NOSE_B2B_DB_URL is not set (scripts/set-b2b-password.js prints it)');
+  } else {
+    const bt = b2bTarget(b2bUrl);
+    ok('NOSE_B2B_DB_URL user is nose_b2b.<project-ref>', !!bt.ref, `got "${bt.user}"`);
+    ok('NOSE_B2B_DB_URL host is the shared pooler', bt.u.hostname.endsWith('.pooler.supabase.com'), bt.u.hostname);
+    ok('NOSE_B2B_DB_URL port is 6543 (transaction mode)', bt.u.port === '6543', `got ${bt.u.port}`);
+    ok('NOSE_B2B_DB_URL names the same project as NOSE_DB_URL', !!bt.ref && bt.ref === t.ref, `${bt.ref} and ${t.ref}`);
+    let b = null;
+    try {
+      b = await connect(b2bUrl, { name: 'NOSE_B2B_DB_URL' });
+      ok('connected as nose_b2b with TLS verified against the embedded Supabase root CA', true);
+    } catch (e) {
+      ok('connected as nose_b2b with TLS verified against the embedded Supabase root CA', false, e.message);
+      if (/certificate|self.signed|unable to verify|altnames/i.test(e.message)) {
+        console.log('\n      TLS verification failed. Do NOT switch verification off. Stop here and report this message.');
+      }
+      if (/tenant or user not found/i.test(e.message)) {
+        console.log('\n      "Tenant or user not found" means the host or username is wrong, not the password.');
+      }
+    }
+    if (b) {
+      try {
+        for (const r of await b2bRoleChecks(b)) ok(r.label, r.pass, r.detail);
+      } finally {
+        await b.end().catch(() => {});
+      }
+    }
+  }
+
   /* --- grant audit, as admin ---------------------------------------------- */
   const adminUrl = process.env.NOSE_DB_ADMIN_URL;
   if (!adminUrl) {
@@ -355,6 +584,9 @@ async function main() {
         select count(*)::int as n from information_schema.tables
          where table_schema = 'public' and table_name in ('documents', 'parses', 'terpene_values')`)).rows[0].n;
       ok('the old public-schema tables are gone', old === 0, `${old} still present`);
+
+      /* Schema b2b and nose_b2b (PARSER-HANDOFF s14). */
+      for (const r of await b2bAdminChecks(a)) ok(r.label, r.pass, r.detail);
     } finally {
       await a.end().catch(() => {});
     }
@@ -367,9 +599,11 @@ async function main() {
   } else if (!t.ref) {
     skip('Data API checks - no project ref in NOSE_DB_URL');
   } else {
-    for (const r of await dataApiChecks({ ref: t.ref, key })) {
-      if ('info' in r) info(r.info);
-      else ok(r.label, r.pass, r.detail);
+    for (const schema of ['nose', 'b2b']) {
+      for (const r of await dataApiChecks({ ref: t.ref, key, schema })) {
+        if ('info' in r) info(r.info);
+        else ok(r.label, r.pass, r.detail);
+      }
     }
   }
 
@@ -404,7 +638,10 @@ async function main() {
   process.exit(failures ? 1 : 0);
 }
 
-module.exports = { writerTarget, isSecretKey, dataApiChecks, classifyPlaintext, SCHEMA_NOT_EXPOSED };
+module.exports = {
+  writerTarget, isSecretKey, dataApiChecks, classifyPlaintext, SCHEMA_NOT_EXPOSED,
+  b2bTarget, b2bRoleChecks, b2bAdminChecks, B2B_TABLES, B2B_GRANTS, B2B_EXECUTE, DATA_API_REQUESTS
+};
 if (require.main === module) {
   main().catch(e => { console.error('probe threw:', e && e.message); process.exit(1); });
 }

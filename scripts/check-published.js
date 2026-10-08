@@ -8,11 +8,13 @@
  *
  *  1. PUBLISHED files must not name the database at all: no postgres:// or
  *     postgresql:// URL, no pooler.supabase.com, no <ref>.supabase.co host, no
- *     sb_secret_, no Netlify token. A link to supabase.com - on the privacy
- *     page, say - is fine; the .supabase.co match is exact for that reason.
+ *     sb_secret_, no Netlify token, no dispensary secret key (nsk_). A link to
+ *     supabase.com - on the privacy page, say - is fine; the .supabase.co
+ *     match is exact for that reason.
  *
  *  2. EVERY file in git must not hold a credential: no URL with a password in
- *     it, no Supabase secret key, no Netlify token. The repo is public.
+ *     it, no Supabase secret key, no Netlify token, no dispensary secret key.
+ *     The repo is public.
  *
  * "Published" is computed, not listed: everything in the publish directory
  * except .git, node_modules and whatever _redirects blocks with a FORCED 404.
@@ -35,17 +37,27 @@ const ROOT = path.resolve(__dirname, '..');
    use, is a personal access token and lives only in Codespaces secrets. */
 const NETLIFY_TOKEN = [/\bnf[pcoub]_[A-Za-z0-9]{20,}/, 'a Netlify access token'];
 
+/* A dispensary store's secret key (PARSER-HANDOFF s14): nsk_ and 64 hex
+   characters, made by scripts/b2b-store.js and printed once, never stored.
+   Any nsk_ followed by eight or more key-like characters counts - a whole
+   key, part of one, or one in another encoding - wherever it sits in a line.
+   Writing about the prefix ("nsk_ for secret", "nsk_…") is not a key. The
+   public npk_ key is not a secret: a store's page names it. */
+const NOSE_SECRET_KEY = [/nsk_[A-Za-z0-9_-]{8,}/, 'a NOSE dispensary secret key (nsk_)'];
+
 const PUBLISHED_PATTERNS = [
   [/postgres(?:ql)?:\/\//i, 'a postgres:// URL'],
   [/pooler\.supabase\.com/i, 'the Supabase pooler host'],
   [/\b[a-z0-9-]+\.supabase\.co(?![a-z0-9-])/i, 'a <project>.supabase.co host'],
   [/sb_secret_/, 'a Supabase secret key prefix'],
-  NETLIFY_TOKEN
+  NETLIFY_TOKEN,
+  NOSE_SECRET_KEY
 ];
 const CREDENTIAL_PATTERNS = [
   [/postgres(?:ql)?:\/\/[^\s:@/'"`<>]+:[^\s@/'"`<>]+@/i, 'a database URL with a password in it'],
   [/sb_secret_[A-Za-z0-9_-]{8,}/, 'a Supabase secret key'],
-  NETLIFY_TOKEN
+  NETLIFY_TOKEN,
+  NOSE_SECRET_KEY
 ];
 
 const BINARY = /\.(pdf|png|jpe?g|gif|webp|avif|ico|woff2?|ttf|otf|zip|tar|gz|br)$/i;

@@ -86,6 +86,8 @@ gate 'remove document' 'remove-document clean'  '^remove-document clean$' \
   node test/remove-document-test.js
 gate 'b2b coverage'   'b2b-coverage clean'       '^b2b-coverage clean$' \
   node test/b2b-coverage-test.js
+gate 'b2b store'      'b2b-store clean'          '^b2b-store clean$' \
+  node test/b2b-store-test.js
 gate 'trust guard'    'check-trust clean'        '^check-trust clean$' \
   node test/check-trust-test.js
 gate 'build'          'OK — ready to deploy'     '^OK — ready to deploy$' \

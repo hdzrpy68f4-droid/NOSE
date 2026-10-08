@@ -153,7 +153,7 @@ Also run `node test/resolver-test.js` - expect `resolver clean`, and
 **Or all at once:** `bash scripts/gates.sh` runs these, the Kaycha anchors,
 `novelty-test`, `coa-dates-test`, `store-test`, `probe-test`, `archive-wiring-test`,
 `archive-scripts-test`, `rerun-test`, `review-queue-test`,
-`analysis-test`, `duplicates-test`, `remove-copies-test`, `remove-document-test`, `b2b-coverage-test`, `check-trust-test` and, after the build, `input-paths-test`.
+`analysis-test`, `duplicates-test`, `remove-copies-test`, `remove-document-test`, `b2b-coverage-test`, `b2b-store-test`, `check-trust-test` and, after the build, `input-paths-test`.
 It prints the line each gate produced and ends with `ALL GATES GREEN`. It passes
 a gate only on its exact expected line, so when a session legitimately changes
 a count, update the script in the same commit.
@@ -206,6 +206,7 @@ someone to look.
 | `remove-copies-test.js` | `remove-copies.js` (§13, "One report, many documents - the cleanup") on PGlite: copies made by the old `save_scan`, the copies it keeps and why, a Blobs failure, a second run, no text lost, nose_writer refused; and that only it, `remove-document.js` and the probe's refusals name a DELETE; offline |
 | `remove-document-test.js` | `remove-document.js` and `keep-rule.js` (§13, "What gets kept, and taking it back out") on PGlite: the probe finds the one-sign files and nothing else; dry runs change nothing; a removal takes rows, PDF and every copy of the report, records the day and the word, and withholds file and text so `save_scan` refuses them after; PDFs with no row; a Blobs failure finished by a second run; a database refusal that changes nothing; nothing private printed; offline |
 | `b2b-coverage-test.js` | `scripts/b2b-coverage.js`, the dispensary coverage report (§14): the test catalog read end to end through the real chain, extractor and parser, only the network stood in for - every outcome, the three flags, the counts with their denominators, one link at a time with the pause, coa.js's own words and deadlines, a file refused for an unknown or a personal-looking column before any row is read, nothing reaching the archive, one copy of the fetch chain; offline |
+| `b2b-store-test.js` | the dispensary store (§14, "Schema, role, keys and the switch") on PGlite: schema `b2b` applied after every migration (those pinned byte for byte), its tables and columns, the person rule's three lists and two bodies identical, a personal key at any depth refused in both layers with the text asserted, `nose_b2b` upserting and refused DELETE, TRUNCATE, stores, keys and schema `nose`, `nose_writer`'s grants unchanged, `probe-db.js`'s b2b audit passing and failing on eight broken grants, every fixture's reading stored as read, keys hashed, `scripts/b2b-store.js`'s five commands, `lib/b2b-flag.js`, the `nsk_` build guard; offline |
 | `check-trust-test.js` | `scripts/check-trust.mjs` (§13, "The trust guard") on throwaway sites: every form of the old promise fails, true sentences pass; offline |
 | `input-paths-test.mjs` | the app's ways in, in headless Chromium: Scan QR (fake camera and QR image), COA link, Upload. The real `coa.js` and parser answer, with only the download and unpdf stood in for (§13, "The input paths"). Needs Playwright; a gate, run after the build |
 
@@ -976,6 +977,9 @@ account can, so it gets an expiry date and is replaced when it lapses; Netlify
 answers an expired one with 401, which the health script reports as such.
 `check-published.js` fails the build on any `nfp_` / `nfc_` / `nfo_` / `nfu_` /
 `nfb_` token in a published or tracked file.
+- `NOSE_B2B_DB_URL` — `nose_b2b.<ref>` through the **transaction** pooler, the
+dispensary role (§14): a Codespaces secret since 2026-10-07, and Netlify's
+Production context only once the privacy page describes the program (Prompt 8).
 
 ### How it is tested
 
@@ -995,7 +999,8 @@ append-only as `nose_writer`, a save rolled back so nothing survives, a grant
 audit (only `postgres` and `nose_writer` hold anything; the API roles reach
 nothing; PUBLIC executes nothing), the Data API refusing schema `nose`, and
 whether Enforce SSL is on — tested with a deliberately wrong password, so no
-working credential ever travels unencrypted.
+working credential ever travels unencrypted. Since 2026-10-07 it checks schema
+`b2b` and `nose_b2b` the same way (§14), every existing check unchanged.
 
 **A refusal is evidence only when you know who refused.** The first Data API
 check passed on any non-2xx answer. A mistyped key gets 401 "Invalid API key"
@@ -1012,7 +1017,8 @@ against each of eight deliberately broken copies of the probe.
 `build.sh` runs `scripts/check-published.js`. Published files may not contain a
 postgres URL, the pooler host, a `<ref>.supabase.co` host or `sb_secret_`; no
 tracked file may contain a URL with a password in it; a `.env` holding a
-database URL fails the build.
+database URL fails the build. Since 2026-10-07 a dispensary secret key
+(`nsk_`, §14) fails it too, tracked or published.
 
 "Published" is computed as the publish directory minus `.git`, `node_modules`
 and paths blocked by a **forced** 404 in `_redirects`. Forced matters: without
@@ -2516,10 +2522,11 @@ The dispensary (B2B) plan, built prompt by prompt; each records itself here.
 Its core promise: **a shopper's purchase history never reaches NOSE.** The
 dispensary's page hands the shopper's batch IDs to the shopper's own browser,
 and the widget builds the palate and ranks there. B2B lives apart from
-everything consumer - its own schema (`b2b`), role (`nose_b2b`), Blobs stores
-and functions, none of which exists yet - and whatever runs on Netlify stays
-off unless `B2B_ENABLED=1` in the Production context and `build-info.json`
-says production. No B2B record or log holds anything about a shopper. A batch
+everything consumer - its own schema (`b2b`) and role (`nose_b2b`), since
+2026-10-07, and its own Blobs stores and functions, none of which exists yet -
+and whatever runs on Netlify stays off unless `B2B_ENABLED=1` in the
+Production context and `build-info.json` says production
+(`lib/b2b-flag.js`). No B2B record or log holds anything about a shopper. A batch
 without an accepted read shows no terpene panel: never a guess, never a
 strain-name lookup.
 
@@ -2753,6 +2760,257 @@ ignores):
 6. When the report has gone, `rm -r b2b-out/<store>`: nothing else holds a
    copy.
 
+### Schema, role, keys and the switch, 2026-10-07
+
+A home for dispensary data that cannot mix with the archive or hold anything
+about a person, and one switch that keeps every B2B function off. Nothing in
+it is live: the migration is pushed by hand (below), no function uses the
+store or the switch yet, and no store exists.
+
+```
+supabase/migrations/20261008020000_nose_b2b.sql   schema b2b, its four tables, role nose_b2b and its grants
+netlify/functions/lib/b2b-store.js                upsertBatches, upsertRead, storeForKey; the keys; coaLink
+netlify/functions/lib/b2b-flag.js                 b2bEnabled(): the one switch
+scripts/b2b-store.js                              admin: create, add-origin, rotate-keys, revoke, delete-store
+scripts/set-b2b-password.js                       nose_b2b's password by SCRAM verifier; prints NOSE_B2B_DB_URL once
+scripts/check-published.js                        an nsk_ key fails the build, tracked or published
+scripts/probe-db.js                               the b2b audit, as admin and as nose_b2b; the Data API refuses b2b
+test/b2b-store-test.js                            PGlite, offline, a gate: "b2b-store clean"
+test/probe-test.js                                the b2b Data API requests, offline: 26 checks (was 20)
+scripts/gates.sh                                  the gate, after b2b coverage
+```
+
+**The probe, before any edit**, on `fe8d8ff`:
+
+- `nose.holds_no_person()` and `PERSONAL_KEYS` held the same 18 keys in the
+  same order. Two things kept them so: a "keep identical" comment in each,
+  and one `store-test` check sending each JS key, uppercased and two deep,
+  straight to `save_scan`. That proves one direction only - a key added to
+  the SQL list alone passed it. B2B adds a third copy, so `b2b-store-test`
+  compares all three lists as each function's own source states them, and
+  the two bodies byte for byte.
+- `store-test` reads every `.sql` in `supabase/migrations`, sorts by
+  filename and runs each whole file through `db.exec` on one fresh PGlite,
+  then drives `store.js` through the `{ client: db }` seam. Six other PGlite
+  tests do the same (three in two halves around `20261002180000`), so the
+  new migration runs in all seven and must run on plain PGlite.
+- `nose_writer`: LOGIN, no password in any migration, no superuser,
+  createrole, createdb, replication or bypassrls, a member of no role. USAGE
+  on schema nose; SELECT and INSERT on documents, extractions, parses and
+  reparse_runs; SELECT alone on withheld and the three views; nothing on
+  removals; EXECUTE on seven functions, not the trigger's. PUBLIC: no USAGE,
+  no EXECUTE. One default privilege - the admin's new tables in schema
+  **nose** give nose_writer SELECT and INSERT - scoped to nose, so b2b tables
+  never inherit it. All of it is unchanged, which the test proves.
+- `probe-db.js` audits, as admin: the role's flags; every grantee on schema
+  nose, its relations and functions must be postgres or nose_writer; PUBLIC
+  executes no nose function; anon, authenticated and service_role reach
+  nothing. As nose_writer it tries UPDATE, DELETE and TRUNCATE and expects
+  42501, and asks `has_table_privilege` for the views.
+- Tested here on PostgreSQL 16: a CHECK's function runs with the writing
+  role's privileges and needs its EXECUTE (its schema's USAGE is not
+  needed). So a b2b CHECK could not call `nose.holds_no_person()` without
+  giving nose_b2b a grant in schema nose: b2b has its own copy.
+
+**Two decisions the owner made, 2026-10-07**, where the prompt and the
+prompts after it pulled apart:
+
+- **`coa_url` is the whole link without its `#` part**, not origin and path
+  only. Real catalog links name the report in the query - Kaycha's viewer
+  `?sample=`, Method's portal `?search=`, both in the test catalog - so a
+  stripped link could not be fetched by Prompt 3's reader. A catalog link is
+  the store's product data, the same for every shopper; the archive strips a
+  *scanned* link because its query can carry a token tied to whoever
+  received it. A fragment never reaches a server, so dropping it loses
+  nothing. A link with a user name or password is refused.
+- **nose_b2b reads stores and store_keys and cannot write them.** Only the
+  admin script makes stores and keys, so a tricked function cannot add a
+  key, un-revoke one or add itself an origin. On batches and batch_reads it
+  has SELECT, INSERT and UPDATE, as the prompt said.
+
+**The schema** - `b2b`, commented column by column in the migration:
+
+- `stores`: id, slug (`^[a-z0-9]+(-[a-z0-9]+)*$`; it will name the store in a
+  vote's Blobs key, Prompt 4), display_name, allowed_origins (https origins
+  as a browser sends them - scheme, lowercase host, optional port; distinct;
+  at most 20: `b2b.https_origins()`), window_months (default 12, 1 to 36),
+  the guardrail as `guardrail_thc_points` and `guardrail_cbd_points`
+  (percentage points around the basis batches' median, Prompt 5; NULL is
+  off), created_on.
+- `store_keys`: store_id, kind (secret | public), key_sha256 (64 hex, the
+  primary key), created_on, revoked_on. At most one working key of each kind
+  per store, by a partial unique index. The key itself is nowhere in the
+  database: not in a row, not in a statement.
+- `batches`: the catalog's columns, list_position, first_listed_on and
+  last_listed_on; primary key (store_id, batch_id). Text bounded, trimmed
+  and free of control characters; NULL is "not given", never an empty string.
+- `batch_reads`: one current reading per batch, its foreign key the batch -
+  read_on, lab, product_class, usable, reject_reasons and warnings (text
+  arrays), terps (jsonb), total_terpenes, moisture, water_activity,
+  harvest_on and report_on (dates), read_by. `values_only_when_usable`: an
+  accepted reading carries its terpenes and the lab's total, a refused one
+  neither, nor moisture or water activity. `terps_are_terpenes`: an object of
+  1 to 100 terpene keys and non-negative numbers - no sentence or name fits.
+- **Nothing about a person.** No column is for a shopper, a purchase or an
+  order, and every day is a `date`. `b2b.holds_no_person()` - the archive's
+  function, its body and key list identical - is a CHECK on the one jsonb
+  column (`terps_hold_no_person`), and a trigger,
+  `b2b.refuse_personal_fields()`, runs the same check over every row of every
+  table first (BEFORE INSERT OR UPDATE): a CHECK violation echoes the failing
+  row into the Postgres log, while the trigger's refusal carries no data -
+  `b2b: a field that identifies a person - refused, nothing written`.
+- **Apart.** No foreign key or function crosses between b2b and nose.
+  nose_b2b holds nothing in nose and nose_writer nothing in b2b; neither is a
+  member of any role; PUBLIC executes nothing in b2b; the API roles are
+  revoked from all of it; b2b has no default privileges, so a later table is
+  granted nothing until its own migration says so.
+- Supabase exposes only `public` to the Data API unless a schema is added to
+  "Exposed schemas" ([Using Custom Schemas](https://supabase.com/docs/guides/api/using-custom-schemas));
+  a custom role on the shared pooler signs in as `[ROLE].[PROJECT-REF]`, and
+  transaction mode (6543) runs no prepared statements
+  ([Connect to your database](https://supabase.com/docs/guides/database/connecting-to-postgres)).
+  Both read 2026-10-07.
+
+**`lib/b2b-store.js`** mirrors `store.js`. `upsertBatches(storeId, rows)` is
+one statement and answers counts; `upsertRead(storeId, batchId, output)`;
+`storeForKey(key)`. Only `BATCH_FIELDS` and `READ_FIELDS` ever leave it. A
+personal key anywhere in what a caller hands in is refused before anything
+is sent, naming the key and never its value - by `store.js`'s own
+`PERSONAL_KEYS` and finder, not copies. A refused reading is sent with its
+reasons and no figure; an empty optional value goes as NULL; `coa_url` goes
+through `coaLink()`. A fresh pg Client per call, bounded as `store.js`
+bounds it, configured by `store.js`'s own `clientConfig()`: the transaction
+pooler, the embedded CA, no sslmode. Without `NOSE_B2B_DB_URL` a write
+answers `not configured` and `storeForKey` null, and pg is never loaded. A
+database error comes back as one short message with no key, fingerprint,
+address, host, IP or quoted value, with its code and constraint name -
+never its detail, where Postgres puts the failing row. Nothing in it logs.
+
+**Keys**: 32 random bytes as hex behind `nsk_` (secret: the store's server,
+uploading its catalog) or `npk_` (public: named in the store's page, opening
+its feed; not a secret). `keyHash()` is the SHA-256 of the whole key as
+written; it is all `store_keys` holds.
+
+**`lib/b2b-flag.js`**: `b2bEnabled()` is true only when `B2B_ENABLED` is
+exactly `1` and `build-info.json` says `production`, read through
+`lib/version.js` as the archive's switch reads it. A variable set in the
+Netlify UI reaches functions at runtime and one in `netlify.toml` never does;
+each deploy keeps the values set when it was made, so switching on or off
+takes a new deploy ([Environment variables and functions](https://docs.netlify.com/build/functions/environment-variables/),
+read 2026-10-07). A preview or branch deploy reads its own context from that
+file, so it stays off even if the variable reached it. No function asks it
+yet.
+
+**`scripts/b2b-store.js`**, admin, with `NOSE_DB_ADMIN_URL`; it refuses to
+run as nose_b2b or nose_writer.
+
+- `create <slug> --name "…" --origin https://… [--origin …] [--window-months N] [--guardrail-thc N] [--guardrail-cbd N]`:
+  the store, and its first secret and public key.
+- `add-origin <slug> https://…`.
+- `rotate-keys <slug> [--secret | --public]`: new keys, and the old ones stop
+  working at once, in the same transaction.
+- `revoke <slug> [--secret | --public]`: the working key or keys stop, with
+  none to replace them.
+- `delete-store <slug> [--yes]`: the end of a license - readings, batches,
+  keys and the store, in one transaction; a dry run without `--yes`. The only
+  code that deletes from b2b.
+- A new key is printed once, after the change commits, and written nowhere
+  else; the database gets its hash alone. No command shows a key again or
+  prints a full fingerprint.
+
+**`scripts/set-b2b-password.js`**: `set-writer-password.js`'s own
+`scramVerifier()` and `parseAdminUrl()`, not copies. A random 64-hex
+password, only its SCRAM-SHA-256 verifier sent, and a TLS-verified login as
+nose_b2b through the transaction pooler before it prints `NOSE_B2B_DB_URL`
+once, with where to save it: Codespaces secrets only, for now.
+
+**`check-published.js`**: `nsk_` followed by eight or more key characters
+fails the build in a tracked or a published file - a whole key, part of one,
+or one glued to other text. Writing about the prefix (`nsk_ for secret`,
+`nsk_…`) passes, and so does a public `npk_` key, which a store's page
+carries.
+
+**`probe-db.js`**: with `NOSE_B2B_DB_URL`, as nose_b2b - the address
+(`nose_b2b.<ref>`, the pooler, 6543, the same project as `NOSE_DB_URL`),
+TLS, exactly the privileges above on each table, DELETE and TRUNCATE refused
+on all four, writes to stores and keys refused, schema nose refused, EXECUTE
+on exactly the two checks. Every statement it tries there is one nose_b2b
+must be refused, inside a transaction rolled back - so even a wrongly granted
+TRUNCATE loses nothing - and a refusal counts only when it names the object
+the privilege is on (`permission denied for table store_keys`). As admin:
+the migration pushed, the role's flags, no membership, only postgres and
+nose_b2b holding grants in b2b, PUBLIC executing nothing there, the exact
+grants, no default privileges, each role out of the other's schema, the API
+roles out. With the publishable key the Data API must refuse schema b2b as
+`PGRST106` too. Nothing it does writes to b2b; every nose check is
+unchanged.
+
+**The test** - `test/b2b-store-test.js`, 151 checks, a gate after `b2b
+coverage`. The applied migrations pinned byte for byte, and nose_writer's
+grants and every grant in schema nose identical before and after the b2b
+migration; the four tables and their columns, no personal column, no time
+of day, the CHECK on every jsonb column and the trigger on every table,
+nothing joining the schemas; the three lists and two bodies; JS and the
+database agreeing on 57 keys both ways; each of the 18 keys refused by JS in
+a row, deep in one, in terps, four deep and in a refusal (nothing sent), and
+by the database at depth with JS bypassed, by the trigger's words with no
+row in the error, and by the CHECK alone with the trigger off; nose_b2b's
+upserts and the days they keep; each refusal asserted by the object it
+names; `probe-db.js`'s b2b audit passing here and failing on eight broken
+grants; every fixture's reading stored as the parser gave it (56 accepted,
+3 refused, `KAY-CAR-001` 4.124 with 15 values); the test catalog's links
+whole but for `#`; keys; all five admin commands, the dry run changing no
+row of any table; the store layer's no-op, bounds, TLS config, scrubbing and
+field list; the switch, pinned and read from a real `build-info.json`; the
+`nsk_` guard on throwaway sites; one place deletes from b2b, and no
+consumer function loads the B2B files. Against 32 deliberately broken
+copies - among them the trigger or the person CHECK dropped, a 19th key in
+b2b alone, DELETE granted, stores and keys writable, nose_b2b given USAGE on
+nose, an applied migration edited by one space, the JS person check off,
+figures kept on a refusal, detail passed on, keys left unscrubbed, the flag
+on for any value or any context, check-published without its rule, a dry
+run that deletes, a key stored as itself, the probe without its rollback -
+each fails it.
+
+**Rehearsed** on a local PostgreSQL 16 set up as Supabase is: a
+non-superuser `postgres` with CREATEROLE ran every migration, with anon,
+authenticated and service_role present and a global default privilege
+handing anon SELECT on new tables, which the migration revoked. `postgres`
+became a member of nose_b2b (PostgreSQL 16 gives a role's creator ADMIN on
+it); nose_b2b is a member of nothing. `ALTER ROLE nose_b2b PASSWORD` with a
+SCRAM verifier, as that admin, stored SCRAM; a wrong password was refused
+and the right one signed in. `probe-db.js` with all three addresses passed
+every check except the eight a local database cannot meet (the two roles'
+`<role>.<ref>` names, the pooler host and port of each, their shared ref,
+Enforce SSL), and each `b2b-store.js` command ran from the command line.
+
+**How it was verified, 2026-10-07, in the cloud workspace.** npm was blocked
+there (registry.npmjs.org answered 403), so as in earlier sessions the gates
+ran on stand-ins: pdfjs-dist 6.2.108 for unpdf, a throwaway PostgreSQL 16
+cluster per test behind PGlite's API, a `pg` over the same wire protocol
+without TLS, the committed html5-qrcode in place of `build.sh`'s download,
+and Playwright 1.56's Chromium. ALL GATES GREEN on `fe8d8ff` before any
+edit, 22 gates, and after it with the new gate - 23 gates, `KAY-CAR-001`
+4.124 and `KAY-PRR-001` 0.944. `parse-coa.js`, `coa-dates.js` and
+`extract-text.js` are untouched, so no reparse is due; no file in `js/`
+changed, so `build.sh` renamed nothing. Nothing ran against the real
+database or Netlify. The Codespace run on the real packages is the one that
+counts.
+
+**In the Codespace, in this order** (nothing here writes to schema b2b: the
+migration makes empty tables and a role):
+
+1. `git pull --ff-only`, then `bash scripts/gates.sh` - ALL GATES GREEN,
+   `b2b store` among them.
+2. `node scripts/probe-db.js` - before the migration it fails one check
+   only: "the b2b migration is pushed".
+3. `npx supabase db push --db-url "$NOSE_DB_ADMIN_URL" --dry-run` - lists
+   `20261008020000_nose_b2b.sql` alone; then the same without `--dry-run`.
+4. `node scripts/set-b2b-password.js` - save the `NOSE_B2B_DB_URL` it prints
+   as a Codespaces secret, then restart the Codespace.
+5. `node scripts/probe-db.js` - probe clean, nose_b2b's checks among them.
+6. `git push` - deploys; nothing B2B runs, because nothing calls it yet.
+
 ### Still open
 
 - `scripts/download-twice.js` keeps its own looser fetch loop. Moving it onto
@@ -2765,9 +3023,33 @@ ignores):
 - A lab NOSE does not know reads as refused or "(lab not recognised)". The
   by-lab table is the list of labs a fixture would help most (§10). A
   coverage figure is today's parser's, and moves when the parser does.
-- A batch sold as several products is listed once (above). If a pilot shows
-  dispensaries need one batch under several product IDs, that changes Prompt
-  2's key - before any table exists.
+- A batch sold as several products is listed once (above). Prompt 2 kept the
+  key (store_id, batch_id) as asked. If a pilot shows dispensaries need one
+  batch under several product IDs, the key changes in a new migration -
+  cheapest while the tables hold no data, before Prompt 8 switches anything
+  on.
+- **Not pushed until the walk-through above runs**: until `db push`,
+  `probe-db.js` fails "the b2b migration is pushed".
+- **`delete-store` removes the database half only.** When Prompt 4 adds the
+  `b2b-votes` Blobs store, the same prompt must make `delete-store` remove a
+  store's votes too, or Prompt 8's sentence on deleting a dispensary's data
+  would not be true.
+- No command changes a store's window or guardrail after `create`, or removes
+  an origin. A later prompt adds one if the pilot needs it.
+- `rotate-keys --public` breaks the store's page until the page carries the
+  new key: there is no overlap, because the partial index allows one working
+  key of each kind. A change of public key without a gap needs its own
+  prompt.
+- `batch_reads` keeps no parser version, so a stored reading does not say
+  which parser read it; Prompt 3's `--reread` reads everything again. A
+  column for it is a new migration.
+- `coa_url` keeps its query, so a presigned link in a catalog (`X-Amz-*`,
+  `Signature`, `Expires`) would be kept with its temporary credential to the
+  store's own storage. Prompt 3 may refuse or flag such links on upload.
+- The secret key reaches the dispensary however the owner hands it over:
+  NOSE prints it once and has no channel of its own for it.
+- `NOSE_B2B_DB_URL` is a Codespaces secret only. It goes into Netlify's
+  Production context with Prompt 8, not before.
 
 ### Later
 
