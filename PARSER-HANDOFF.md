@@ -153,7 +153,7 @@ Also run `node test/resolver-test.js` - expect `resolver clean`, and
 **Or all at once:** `bash scripts/gates.sh` runs these, the Kaycha anchors,
 `novelty-test`, `coa-dates-test`, `store-test`, `probe-test`, `archive-wiring-test`,
 `archive-scripts-test`, `rerun-test`, `review-queue-test`,
-`analysis-test`, `duplicates-test`, `remove-copies-test`, `remove-document-test`, `b2b-coverage-test`, `b2b-store-test`, `b2b-catalog-test`, `check-trust-test` and, after the build, `input-paths-test`.
+`analysis-test`, `duplicates-test`, `remove-copies-test`, `remove-document-test`, `b2b-coverage-test`, `b2b-store-test`, `b2b-catalog-test`, `b2b-endpoints-test`, `check-trust-test` and, after the build, `input-paths-test`.
 It prints the line each gate produced and ends with `ALL GATES GREEN`. It passes
 a gate only on its exact expected line, so when a session legitimately changes
 a count, update the script in the same commit.
@@ -208,6 +208,7 @@ someone to look.
 | `b2b-coverage-test.js` | `scripts/b2b-coverage.js`, the dispensary coverage report (§14): the test catalog read end to end through the real chain, extractor and parser, only the network stood in for - every outcome, the three flags, the counts with their denominators, one link at a time with the pause, coa.js's own words and deadlines, a file refused for an unknown or a personal-looking column before any row is read, nothing reaching the archive, one copy of the fetch chain; offline |
 | `b2b-store-test.js` | the dispensary store (§14, "Schema, role, keys and the switch") on PGlite: schema `b2b` applied after every migration (those pinned byte for byte), its tables and columns, the person rule's three lists and two bodies identical, a personal key at any depth refused in both layers with the text asserted, `nose_b2b` upserting and refused DELETE, TRUNCATE, stores, keys and schema `nose`, `nose_writer`'s grants unchanged, `probe-db.js`'s b2b audit passing and failing on eight broken grants, every fixture's reading stored as read, keys hashed, `scripts/b2b-store.js`'s five commands, `lib/b2b-flag.js`, the `nsk_` build guard; offline |
 | `b2b-catalog-test.js` | the catalog upload, the batch reader and the report from the database (§14, "Catalog upload and the batch reader") on PGlite, the real function behind a stand-in `pg` that runs every statement as `nose_b2b`, the links served from fixture files: the switch, the key (one 401 for every wrong key, the hash compared in constant time), the 4 MB cap before and while reading, the coverage script's own reader and refusals, an upload as a whole snapshot (absent batches kept and marked out of stock, a refused row's batch untouched, nothing to keep changing nothing), counts-only replies, one fixed log line on failure; the reader's accepted, refused and unfetched readings, `--dry-run`, `--reread`, `--limit`, a corrected link read again, a fetch failure never replacing a reading, nothing from another batch or store; `--store` matching the CSV run row for row; schema `nose` and the archive untouched; offline |
+| `b2b-endpoints-test.js` | the widget's two calls (§14, "Feed and votes") on PGlite, both functions behind a stand-in `pg` that runs every statement as `nose_b2b` and a stand-in `@netlify/blobs`: the switch; the feed byte-identical for two visitors, every batch in the window in stock or not, the prompt's fields alone, a reading's figures only when it is the current one and accepted, no lab-report link; the origin rule (a foreign, missing, `null` or other store's origin gets no CORS header and no data), a revoked key, `public, max-age=60`; a vote's six fields and nothing else, matchBand()'s four bands all stored, no time of day in key or value, keys in no arrival order, the per-store daily cap with the same reply; one fixed log line on failure; `delete-store` removing a store's votes and only its own; schema `nose`, the archive and the consumer's store untouched; offline |
 | `check-trust-test.js` | `scripts/check-trust.mjs` (§13, "The trust guard") on throwaway sites: every form of the old promise fails, true sentences pass; offline |
 | `input-paths-test.mjs` | the app's ways in, in headless Chromium: Scan QR (fake camera and QR image), COA link, Upload. The real `coa.js` and parser answer, with only the download and unpdf stood in for (§13, "The input paths"). Needs Playwright; a gate, run after the build |
 
@@ -2434,7 +2435,9 @@ regenerated `match-golden.json` in the same commit.
   running the handler with a stand-in store: Strong and Good stored, Moderate
   and Low refused. It predates the shown score. A fix changes which votes are
   stored and the band slugs in their keys - map the names in the client, or
-  accept both on the server - so it waits for its own prompt.
+  accept both on the server - so it waits for its own prompt. The
+  dispensary's votes do not repeat it: they take matchBand()'s four names,
+  read back from the maths file by their test (§14, "Feed and votes").
 - **The static preview keeps its own copy of the maths** (it is not in this
   repo, §13 above). `match-test.js` cannot see it; a preview built after
   today should load `js/match-math.<hash>.js` rather than carry a copy. Its
@@ -2524,7 +2527,7 @@ Its core promise: **a shopper's purchase history never reaches NOSE.** The
 dispensary's page hands the shopper's batch IDs to the shopper's own browser,
 and the widget builds the palate and ranks there. B2B lives apart from
 everything consumer - its own schema (`b2b`) and role (`nose_b2b`), since
-2026-10-07, and its own Blobs stores (none yet) and functions (`b2b-catalog`, since 2026-10-08) -
+2026-10-07, and its own Blobs store (`b2b-votes`) and functions (`b2b-catalog`, `b2b-feed` and `b2b-vote`), all since 2026-10-08 -
 and whatever runs on Netlify stays off unless `B2B_ENABLED=1` in the
 Production context and `build-info.json` says production
 (`lib/b2b-flag.js`). No B2B record or log holds anything about a shopper. A batch
@@ -3296,6 +3299,250 @@ tables; nothing here writes a row to production):
 5. `git push` - deploys `b2b-catalog`, which answers 404: `B2B_ENABLED` is not
    set. Netlify → Logs → Functions lists it.
 
+### Feed and votes, 2026-10-08
+
+Prompt 4. The widget's only two calls to NOSE: the feed, the same for every
+visitor of a store, and the vote, which carries nothing about who voted.
+Nothing in it is live: both functions answer 404 until Prompt 8's switch, and
+the vote store holds nothing.
+
+```
+netlify/functions/b2b-feed.js       GET ?key=npk_...: every batch in the store's window, for the store's own origins
+netlify/functions/b2b-vote.js       POST, text/plain JSON: six fields, one blob per vote
+netlify/functions/lib/b2b-votes.js  the "b2b-votes" Blobs store: the key, the daily cap, record, delete
+netlify/functions/lib/b2b-store.js  feedFor, voteTarget; the current-reading rule, now one fragment both read
+scripts/b2b-store.js                delete-store deletes the store's votes too
+test/b2b-endpoints-test.js          PGlite, offline, a gate: "b2b-endpoints clean"
+test/b2b-store-test.js              its admin helper hands delete-store an empty vote store
+scripts/gates.sh                    the gate, after b2b catalog
+```
+
+**The probe, before any edit**, on `47b7509` - ALL GATES GREEN, 24 gates:
+
+- `match-feedback.js` takes `Strong`, `Good`, `Partial` and `Weak` (line
+  26), so the app's `Moderate` and `Low` get 400 `bad-band` (§13, "Still
+  open"). Its key is `votes/<band slug>/<vote>/<YYYY-MM-DD>/<HHMMSSmmm>-<rand>`
+  - a time of day in the key - and its value keeps the server's `ts`, the
+  client's `clientTs` and the palate list; an extra field is ignored, not
+  refused; a failed write logs its band, vote and the error's message. B2B
+  repeats none of it. `netlify/lib/beacon.js`'s helpers are used as they are -
+  `readJsonBody`, `isInt`, `noContent`, `rejected` - and not `keySuffix`,
+  `safeClientTs` or `contextHash`, which carry a time or group votes. Neither
+  file changed.
+- Netlify ([Caching overview](https://docs.netlify.com/build/caching/caching-overview),
+  updated 2026-08-11, read 2026-10-08): a function's response is not cached
+  unless it says so; for a serverless function the query string is part of
+  the cache key, and so is every header a standard `Vary` names; each deploy
+  clears the cache of its context. `_headers` does not apply to a function's
+  response ([Custom headers](https://docs.netlify.com/manage/routing/headers/),
+  Limitations). Blobs ([Netlify Blobs](https://docs.netlify.com/build/data-and-storage/netlify-blobs),
+  updated 2026-09-30): an added blob is available everywhere at once, updates
+  and deletions within 60 seconds; strong consistency is a store option;
+  `list()` gives keys and ETags only, following its pages of up to 1,000
+  itself; a key may be 600 bytes; a site-wide store is shared by every deploy
+  context, deploy previews included.
+- Browsers: a cross-origin GET with no custom headers is a simple request -
+  no preflight, `Origin` always sent, no credentials unless asked - and an
+  echoed origin goes with `Vary: Origin` ([MDN, CORS](https://developer.mozilla.org/en-us/docs/web/http/access_control_cors),
+  modified 2026-09-04). `sendBeacon` starts in no-cors mode and stays in it
+  for a CORS-safelisted Content-Type such as `text/plain`, with credentials
+  `include` ([W3C Beacon](https://www.w3.org/TR/beacon), §3.2, CRD
+  2022-08-03). A no-cors POST carries `Origin: null` from a page whose
+  referrer policy is `no-referrer`, or `same-origin` going cross-origin
+  ([MDN, Referrer-Policy](https://developer.mozilla.org/docs/Web/HTTP/Headers/Referrer-Policy),
+  "Effect on the Origin header"). An explicit `SameSite=Lax` cookie is not
+  sent on a cross-site `fetch()` or POST ([MDN, Set-Cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Set-Cookie)),
+  and NOSE's one cookie, `nose_session`, is `SameSite=Lax`
+  (`netlify/lib/auth.js`).
+- Watched in Chromium 141 (Playwright 1.56), two local servers on two sites,
+  a scratch probe not committed: the feed's GET carried the page's `Origin`
+  and no cookie, was read with that origin echoed and refused (`TypeError`)
+  with another; a string beacon was a POST of `text/plain;charset=UTF-8` with
+  the page's `Origin`, carrying the test's `SameSite=None` cookie and not its
+  `Lax` one; a JSON-typed beacon sent an `OPTIONS` preflight and, refused,
+  never posted. From a page served with `Referrer-Policy: no-referrer`,
+  Chromium 141 still sent the page's origin on the beacon, where MDN says the
+  standard makes it `null`; a `fetch()` in cors mode with `keepalive` sent the
+  origin either way, and no cookie.
+
+**Decided here, where the prompt was silent:**
+
+- **The feed adds the store's `window_months`** beside its guardrail: Prompt
+  5's `palateFrom` skips a purchase "outside the window", which needs it.
+- **`usable` is `true`, `false` or `null`.** `null` is "no reading NOSE
+  stands by" - not read yet, a link that gave no report, a link since
+  corrected - so Prompt 5 can tell "no read" from "refused". `lab`,
+  `harvest_on` and `report_on` come from that reading whatever its verdict;
+  `terps` and `total_terpenes` only when it was accepted. Every field is on
+  every batch, `null` when not given.
+- **The voted product must be one the store listed within its window**: a
+  batch the feed holds.
+- **`palateSize` is 1 to 1000**: a palate made of other purchases holds at
+  least one.
+- **The vote's day is the database's UTC day** (`voteTarget`): B2B keeps one
+  clock, the database's.
+- **The cap is 100 votes per store per UTC day** unless `B2B_VOTE_DAILY_CAP`
+  is a whole number up to 100000; `0` keeps none; anything else, 100. A pilot
+  store's votes are a small share of its orders, so 100 bounds a script, not
+  a store's shoppers. It is counted by listing that day's eight prefixes, so
+  votes arriving together can pass it by their number.
+- **The band is not checked against the score**, as `match-feedback.js` does
+  not: a score within 1e-11 below an edge shows as the edge while
+  `matchBand()` gives the band below (§13, "The shown score"), and the
+  function holds none of the maths.
+
+**The feed** - `GET /.netlify/functions/b2b-feed?key=npk_...`, written as
+`b2b-catalog.js` is: one default export taking a Request.
+
+1. `b2bEnabled()`: off, a plain `404 Not Found`, before the method or query.
+2. Not GET: 405, `Allow: GET` - an `OPTIONS` preflight too, so a widget that
+   adds a header fails closed. No `Access-Control-Allow-Credentials` is ever
+   sent, so one that asks for credentials fails closed as well.
+3. Exactly one query parameter, `key`, a well-formed public key; else 400,
+   nothing looked up. A secret key in the address is refused there.
+4. No `NOSE_B2B_DB_URL`: 503 and one fixed line.
+5. `feedFor(key, origin)`, one connection, two statements. `FEED_STORE_SQL`
+   finds the store of a working public key - none (unknown, revoked) is 403 -
+   with its origins and settings. The request's `Origin` must be one of its
+   `allowed_origins`, exactly: else 403, no `Access-Control-Allow-Origin`, no
+   data, and no batch read. Then `FEED_SQL`: every batch the store listed
+   within its window (`IN_WINDOW_SQL`), in stock or not, in `list_position`
+   order, ties by `batch_id` in byte order (`collate "C"`, the same on any
+   collation). Of a batch's reading, only the current one
+   (`CURRENT_READ_SQL`): its `case` expressions select nothing else, so a
+   corrected link's figures never leave the database.
+6. 200: `{"store":{window_months, guardrail_thc_points, guardrail_cbd_points},
+   "batches":[...]}`, each batch `batch_id, product_id, list_position,
+   category, route, name, brand, product_url, in_stock, thc_percent,
+   cbd_percent, lab, harvest_on, report_on, usable, total_terpenes, terps`.
+   No `coa_url` (a catalog link can carry a credential in its query, "Still
+   open"), no sales, no quantities. Headers: `Access-Control-Allow-Origin` the
+   request's origin, `Vary: Origin`, `Cache-Control: public, max-age=60`,
+   `Content-Type: application/json; charset=utf-8`, `X-Content-Type-Options:
+   nosniff`, and nothing else. Every other reply is `no-store`.
+
+`CURRENT_READ_SQL` is the condition `LISTED_SQL` held inline. `LISTED_SQL`
+reads it from there now and is byte-identical (SHA-256 `0f012867…` before and
+after), so the rule exists once.
+
+**The vote** - `POST /.netlify/functions/b2b-vote`, `text/plain` JSON.
+
+1. The switch, then POST, then a `text/plain` Content-Type, parameters and
+   letter case aside (anything else 415). A body over 2048 characters is
+   refused, by Content-Length before reading and by `readJsonBody`'s own
+   count, and `readJsonBody`'s reasons refuse an empty, broken or non-object
+   body.
+2. Exactly `key, candidate, score, band, palateSize, vote`: an extra field is
+   400 `unknown-field`, a missing one `missing-field`; then `bad-key`,
+   `bad-candidate` (as `b2b.batches` holds a product_id), `bad-score` (a whole
+   number 0 to 100), `bad-band` (`Strong`, `Good`, `Moderate`, `Low` -
+   `lib/b2b-votes.js`'s `BANDS`, which the test reads back from `matchBand()`
+   itself), `bad-palate-size`, `bad-vote` (`up`, `down`). All before the
+   database.
+3. `voteTarget(key, origin, candidate)`, one statement: the store of a
+   working public key (else 403), the request's `Origin` among its origins
+   (else 403, nothing kept), the product among its batches in the window
+   (else 400 `bad-candidate`), and today.
+4. `lib/b2b-votes.js`'s `record()`: the store's count for the day - eight
+   `list()` calls, a band and a vote each - against the cap, then one
+   `setJSON` with `onlyIfNew`, counted only with an ETag, as `pdf-store.put()`
+   counts one. Within 4 seconds, or 503.
+5. 204 with the origin echoed and `Vary: Origin`, kept or dropped at the cap
+   alike. 503 and one fixed line when nothing is configured, or the database
+   or the vote store does not answer.
+
+**`lib/b2b-votes.js`** - the store `b2b-votes`, site-wide, strong consistency.
+Inside the function Netlify hands a Request function its Blobs context; from
+the Codespace it takes `NETLIFY_SITE_ID` and `NETLIFY_AUTH_TOKEN`. One blob
+per vote, at `votes/<store slug>/<band>/<vote>/<UTC day>/<32 hex>`, the suffix
+16 random bytes - no time, no counter - holding `{"candidate", "score",
+"palateSize"}` and no metadata. A pilot's question, the share of up votes in
+each band, is a listing of keys. Only `delete-store` deletes a vote.
+
+**Logs.** Nothing on success. One fixed line on failure, never naming a
+store: `b2b-feed: no database configured - no feed served`, `b2b-feed: the
+database did not answer - no feed served`, `b2b-vote: no database configured -
+vote not kept`, `b2b-vote: the database did not answer - vote not kept`,
+`b2b-vote: the vote store did not answer - vote not kept`, and for each vote
+over the cap `b2b-vote: a store reached its daily cap - vote dropped, reply
+unaffected`. Netlify timestamps each line, so one naming the store would say
+which dispensary the address in the matching request log shops at.
+
+**`delete-store` deletes the votes too**, as "Still open" asked, so that
+Prompt 8's sentence on deleting a dispensary's data is true. It needs
+`NETLIFY_SITE_ID` and `NETLIFY_AUTH_TOKEN`, and without them refuses, changing
+nothing. The dry run counts the store's votes beside its rows. `--yes` deletes
+the database half first, in one transaction - so the key has stopped working
+before the votes are listed - then every blob under `votes/<slug>/` (the slash
+keeps `rose` from reaching `rose-city`). If Blobs stops answering part way, it
+says how many went and to run the same command again; with no store row left,
+that run finds the votes under the slug and deletes them. `b2b-store-test`'s
+helper now hands it an empty vote store; its other checks are unchanged.
+
+**The test** - `test/b2b-endpoints-test.js`, 91 checks, a gate after `b2b
+catalog`. PGlite with every migration; stores and keys made by
+`scripts/b2b-store.js`'s own commands; batches and readings written as
+`nose_b2b` from the parser's own output on fixture reports - accepted, accepted
+and out of stock, refused, a link that gave no report, a corrected link whose
+old reading is accepted, no link, a batch last listed 400 days ago, another
+store's. Both functions are loaded as the ES modules their syntax makes them
+and driven through their default exports, `pg` stood in for by PGlite as
+`nose_b2b` and `@netlify/blobs` by an in-memory store answering as 10.x does.
+It checks the switch; the feed's request rules, nine refused origins, two
+visitors byte-identical headers included, the fields and their order, each
+kind of reading, no link, sale or person anywhere, a revoked and a rotated
+key, the failure lines; the vote's 415s and body refusals, 32 extra fields and
+every missing one, each bad value, products outside the window or another
+store's, the origin rule, all four bands up and down, the key's shape and day,
+the value's three fields, twenty identical votes listing in no arrival order,
+the cap with its identical reply, `0`, per store, the failure lines;
+`delete-store` with and without the vote store, dry run, `--yes`, a Blobs
+failure part way and the second run, the command line's refusal; and that
+schema `nose`, the archive, `coa.js`, `match-feedback.js` and the consumer's
+store are never touched.
+
+- **Against broken copies**: 44 deliberate faults, one at a time - `*` for the
+  origin, no `Vary`, no origin check, origins compared ignoring case, a revoked
+  key working, a corrected link's total or terpenes shown, a link that gave no
+  report shown as refused, the window ignored, in stock first, the lab-report
+  link included, a field that moves per request, a day's caching, the switch
+  after the method, a line on success, detail in a failure line, the
+  consumer's band names, extra fields ignored, a time of day in the key or the
+  value, a counter for the suffix, the cap ignored or answered differently, a
+  write without an ETag counted, any product or one outside the window taken,
+  any Content-Type, a score not checked whole, a palate size of 0, a padded
+  product id, a deploy store, eventual consistency, `*` on the vote, the store
+  named in the cap line, votes left behind by `delete-store`, no vote store
+  needed, the prefix without its slash, no second run, the command line
+  without its check - each fails it. A scratch harness, not committed.
+
+**How it was verified, 2026-10-08, in the cloud workspace.** npm was blocked
+there (registry.npmjs.org answered 403), so as before the gates ran on
+stand-ins: pdfjs-dist 6.2.108 for unpdf (56/3, 56/0, clean, 4.124/0.944), a
+throwaway PostgreSQL 16 cluster per PGlite instance behind PGlite's API, the
+committed html5-qrcode in place of `build.sh`'s download, and Playwright
+1.56.0's Chromium 141. ALL GATES GREEN on `47b7509` before any edit, 24 gates,
+and after it with the new gate - 25 gates, `KAY-CAR-001` 4.124 and
+`KAY-PRR-001` 0.944. The three B2B PGlite gates, the new one among them, passed on Node 20.20 as well.
+esbuild 0.28.2 bundled both functions as CommonJS with the packages left out:
+each bundle's default export is the handler and answers the switch's 404, and
+neither takes in `coa.js` or the archive. `parse-coa.js`, `coa-dates.js` and
+`extract-text.js` are untouched, so no reparse is due; no file in `js/`
+changed, so `build.sh` renamed nothing; no migration was added. Nothing ran
+against a real database, Netlify or a lab's server. The Codespace run on the
+real packages is the one that counts.
+
+**In the Codespace, in this order** (nothing here writes anywhere: both
+functions answer 404 until Prompt 8):
+
+1. `git pull --ff-only`, then `bash scripts/gates.sh` - ALL GATES GREEN, `b2b
+   endpoints` among them.
+2. `git push` - deploys `b2b-feed` and `b2b-vote`. Netlify → Logs → Functions
+   lists both.
+3. `curl -i https://nose-app.com/.netlify/functions/b2b-feed` and `curl -i -X
+   POST https://nose-app.com/.netlify/functions/b2b-vote` each answer `404`
+   with `Not Found`: the switch is off.
+
 ### Still open
 
 - `scripts/download-twice.js` keeps its own looser fetch loop. Moving it onto
@@ -3315,10 +3562,6 @@ tables; nothing here writes a row to production):
   on.
 - **Not pushed until the walk-through above runs**: until `db push`,
   `probe-db.js` fails "the b2b migration is pushed".
-- **`delete-store` removes the database half only.** When Prompt 4 adds the
-  `b2b-votes` Blobs store, the same prompt must make `delete-store` remove a
-  store's votes too, or Prompt 8's sentence on deleting a dispensary's data
-  would not be true.
 - No command changes a store's window or guardrail after `create`, or removes
   an origin. A later prompt adds one if the pilot needs it.
 - `rotate-keys --public` breaks the store's page until the page carries the
@@ -3354,12 +3597,6 @@ tables; nothing here writes a row to production):
 - The upload takes 4 MB, under Netlify's buffered limit; the coverage script
   reads files of up to 20 MB from disk. A catalog between the two can be
   reported on but not uploaded.
-- **Prompt 4's feed must take a batch's figures only from its CURRENT
-  reading** - the link gave a report (`fetched`), and `read_url` is still the
-  batch's `coa_url`. Any other reading is of a link the store has since
-  corrected, or one that gave no report, and showing its numbers would fill
-  the batch from another report. `listedInWindow()`'s `current`, and
-  `IN_WINDOW_SQL` for the window, are that rule in one place each.
 - **The reading-source migration is not pushed until its walk-through
   runs** (above): until then `probe-db.js` fails "the reading-source
   migration is pushed", and the upload and the reader would fail on the
@@ -3368,6 +3605,44 @@ tables; nothing here writes a row to production):
   NOSE prints it once and has no channel of its own for it.
 - `NOSE_B2B_DB_URL` is a Codespaces secret only. It goes into Netlify's
   Production context with Prompt 8, not before.
+- **A vote sent by `sendBeacon` from a page served with `Referrer-Policy:
+  no-referrer`** (or `same-origin`) carries `Origin: null` where a browser
+  follows the standard (MDN, above), and the origin rule refuses it; Chromium
+  141 sent the page's origin anyway (the probe, "Feed and votes"). Prompt 6 or
+  7 decides: the widget can send the vote with `fetch(url, { method: 'POST',
+  mode: 'cors', keepalive: true, body })` - a string body, so still a simple
+  request with no preflight, the page's origin always sent, no cookies - which
+  `b2b-vote` already answers with that origin echoed; or the integration
+  guide tells the store not to serve the page with those policies.
+- **A beacon carries this site's cookies** (credentials `include`). NOSE's one
+  cookie, `nose_session`, is `SameSite=Lax`, so it never rides along from a
+  store's page, and the vote reads no cookie. A NOSE cookie ever marked
+  `SameSite=None` would ride along with every vote; the `fetch` route above
+  sends none.
+- **The feed is cached up to 60 seconds**, by browsers and by Netlify, apart
+  for each origin: a catalog upload, a revoked key or a deleted store shows
+  within the minute, a deploy at once. Nothing purges it by hand.
+- **The cap is counted, not locked** - eight listings a vote - so votes
+  arriving together can pass it by their number. Which store reached it is not
+  logged ("Logs", above). `B2B_VOTE_DAILY_CAP`, like every variable, changes
+  only with a new deploy.
+- **Netlify's request logs record the address and time of every feed and vote
+  request**, and the feed's address names the store's public key. NOSE copies
+  nothing from them. A vote's key ends in random bytes, so the store's listing
+  gives no order to set against those logs; Blobs may keep its own write
+  times, which nothing of ours reads (§13, "The PDF half"). Prompt 8's page
+  says all of it.
+- **The live vote store is unproven.** Strong consistency (which
+  `match-feedback.js` uses the same way) and the conditional write have
+  answered only the stand-in here; Prompt 8's first test vote is their proof,
+  and `b2b-vote: the vote store did not answer` in the function's log is how a
+  fault shows.
+- **Both functions take `b2b-catalog.js`'s module form**, still unproven on
+  Netlify (above): esbuild bundled them here, and Netlify → Logs → Functions
+  listing `b2b-feed` and `b2b-vote` after the push is the first live proof.
+- **A batch in the feed carries its catalog `name` and `brand`**, for the
+  widget to show; Prompt 5's ranking reads neither. A product voted on is
+  named by its `product_id` alone.
 
 ### Later
 

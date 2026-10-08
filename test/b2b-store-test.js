@@ -525,8 +525,12 @@ async function run(db, log = console.log) {
   /* ============================================ scripts/b2b-store.js, admin */
 
   const say = () => { const lines = []; return { lines, log: l => lines.push(String(l)) }; };
+  /* delete-store deletes a store's votes from Netlify Blobs too (since
+     2026-10-08): an empty vote store here, as @netlify/blobs answers list()
+     and delete(). test/b2b-endpoints-test.js drives it on real votes. */
+  const noVotes = { list: async () => ({ blobs: [], directories: [] }), delete: async () => {} };
   const cmd = async (argv, out = say()) => {
-    const r = await admin.runCommand(admin.parseArgs(argv), { db: client, log: out.log });
+    const r = await admin.runCommand(admin.parseArgs(argv), { db: client, votes: noVotes, log: out.log });
     return { r, lines: out.lines, text: out.lines.join('\n') };
   };
   const keysIn2 = text => [...text.matchAll(/n[sp]k_[0-9a-f]{64}/g)].map(m => m[0]);

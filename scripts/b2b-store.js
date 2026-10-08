@@ -25,7 +25,16 @@
  *               working, with none to replace it: the store is cut off until
  *               rotate-keys gives it new ones.
  * delete-store  the end of a license: the store, its keys, its batches and
- *               their readings. A dry run unless --yes.
+ *               their readings - and, since 2026-10-08, its votes in Netlify
+ *               Blobs (the "b2b-votes" store, everything under
+ *               votes/<slug>/). A dry run unless --yes. The database half
+ *               goes first, in one transaction, so the store's key has
+ *               stopped working by the time its votes are listed and
+ *               deleted. If Blobs stops answering part way - or a vote sent
+ *               in that same second lands after the listing - the same
+ *               command run again deletes the votes left, store row or not.
+ *               Needs NETLIFY_SITE_ID and NETLIFY_AUTH_TOKEN as well, the
+ *               Codespaces secrets the archive scripts use.
  *
  * KEYS ARE SHOWN ONCE AND KEPT NOWHERE. A new key is printed to this
  * terminal once, after the change has committed, and never written anywhere
@@ -43,6 +52,7 @@ const path = require('path');
 const ROOT = path.resolve(__dirname, '..');
 const LIB = path.join(ROOT, 'netlify/functions/lib');
 const b2b = require(path.join(LIB, 'b2b-store.js'));
+const b2bVotes = require(path.join(LIB, 'b2b-votes.js'));
 
 const USAGE = `usage:
   node scripts/b2b-store.js create <slug> --name "<display name>" --origin https://<host> [--origin ...]
@@ -227,12 +237,67 @@ function showKeys(keys, log) {
 
 /* ------------------------------------------------------------ the command */
 
-async function runCommand(opts, { db, log = console.log }) {
+/* delete-store: the database half, then the votes. votes is the "b2b-votes"
+   Blobs store (lib/b2b-votes.js, open); without it nothing is changed, since
+   a license ended with its votes left behind would not be ended. A slug with
+   no store row but votes still under its name is what an earlier run left
+   when Blobs stopped answering: those votes are deleted the same way. */
+async function deleteStore(opts, { db, votes, log }) {
+  const { command, slug } = opts;
+  if (!votes) {
+    throw new Refusal('delete-store also deletes the store\'s votes from Netlify Blobs, and no vote store was given - nothing was changed');
+  }
+  const s = await store(db, slug);
+  let held;
+  try { held = (await b2bVotes.storeVoteKeys(votes, slug)).length; }
+  catch (e) { throw new Refusal(`Netlify Blobs did not answer (${b2b._scrub(e)}) - nothing was changed`); }
+  if (!s && !held) throw new Refusal(`no store called "${slug}" - nothing was changed`);
+
+  if (s) {
+    log(`delete-store${opts.yes ? ' --yes' : ' (dry run)'}: store "${s.slug}" (#${s.id}), created ${s.created_on}`);
+    describeStore(s, log);
+    log(`  ${plural(s.keys_working + s.keys_revoked, 'key')} (${s.keys_working} working, ${s.keys_revoked} revoked), ` +
+        `${plural(s.batches, 'listed batch', 'listed batches')}, ${plural(s.reads, 'reading')}`);
+  } else {
+    log(`delete-store${opts.yes ? ' --yes' : ' (dry run)'}: no store called "${slug}" is left in the database - ` +
+        'only votes under its name, which an earlier delete-store did not finish deleting');
+  }
+  log(`  ${plural(held, 'vote')} in Netlify Blobs (store ${b2bVotes.STORE_NAME}, under ${b2bVotes.storePrefix(slug)})`);
+  if (!opts.yes) {
+    log('dry run - nothing was changed; --yes deletes all of it');
+    return { command, deleted: false, votes: held };
+  }
+
+  let counts = null;
+  if (s) {
+    counts = await transaction(db, async () => {
+      const n = [];
+      for (const sql of DELETE_SQL) {
+        const r = await db.query(sql, [s.id]);
+        n.push(r.rowCount ?? r.affectedRows ?? null);
+      }
+      return n;
+    });
+    log(`deleted store "${slug}": its ${plural(s.reads, 'reading')}, ${plural(s.batches, 'listed batch', 'listed batches')}, ` +
+        `${plural(s.keys_working + s.keys_revoked, 'key')} and the store itself`);
+  }
+  let gone;
+  try { gone = await b2bVotes.removeStoreVotes(votes, slug); }
+  catch (e) {
+    throw new Refusal(`${s ? 'the database half is deleted, but ' : ''}Netlify Blobs stopped answering after ` +
+                      `${plural(Number(e && e.deleted) || 0, 'vote')} - run the same command again: it deletes the votes left`);
+  }
+  log(`deleted ${plural(gone.deleted, 'vote')} from Netlify Blobs`);
+  return { command, deleted: true, counts, votes: gone.deleted };
+}
+
+async function runCommand(opts, { db, votes = null, log = console.log }) {
   const who = (await db.query('select current_user as u')).rows[0].u;
   if (who === 'nose_b2b' || who === 'nose_writer') {
     throw new Refusal(`connected as ${who}, which cannot make, key or delete stores - this needs NOSE_DB_ADMIN_URL, the admin connection`);
   }
   const { command, slug } = opts;
+  if (command === 'delete-store') return deleteStore(opts, { db, votes, log });
 
   if (command === 'create') {
     const keys = opts.kinds.map(kind => ({ kind, key: b2b.newKey(kind) }));
@@ -298,28 +363,6 @@ async function runCommand(opts, { db, log = console.log }) {
     return { command, revoked: gone.length };
   }
 
-  if (command === 'delete-store') {
-    log(`delete-store${opts.yes ? ' --yes' : ' (dry run)'}: store "${s.slug}" (#${s.id}), created ${s.created_on}`);
-    describeStore(s, log);
-    log(`  ${plural(s.keys_working + s.keys_revoked, 'key')} (${s.keys_working} working, ${s.keys_revoked} revoked), ` +
-        `${plural(s.batches, 'listed batch', 'listed batches')}, ${plural(s.reads, 'reading')}`);
-    if (!opts.yes) {
-      log('dry run - nothing was changed; --yes deletes all of it');
-      return { command, deleted: false };
-    }
-    const counts = await transaction(db, async () => {
-      const n = [];
-      for (const sql of DELETE_SQL) {
-        const r = await db.query(sql, [s.id]);
-        n.push(r.rowCount ?? r.affectedRows ?? null);
-      }
-      return n;
-    });
-    log(`deleted store "${slug}": its ${plural(s.reads, 'reading')}, ${plural(s.batches, 'listed batch', 'listed batches')}, ` +
-        `${plural(s.keys_working + s.keys_revoked, 'key')} and the store itself`);
-    return { command, deleted: true, counts };
-  }
-
   throw new UsageError(USAGE);
 }
 
@@ -338,6 +381,18 @@ async function main(argv = process.argv.slice(2), env = process.env) {
     process.exitCode = 1;
     return;
   }
+  /* delete-store deletes the store's votes too, so it needs the vote store
+     from outside Netlify: the site's ID and a personal access token. */
+  let votes = null;
+  if (opts.command === 'delete-store') {
+    if (!env.NETLIFY_SITE_ID || !env.NETLIFY_AUTH_TOKEN) {
+      console.error('REFUSED: delete-store also deletes the store\'s votes from Netlify Blobs - it needs NETLIFY_SITE_ID ' +
+                    'and NETLIFY_AUTH_TOKEN, the Codespaces secrets the archive scripts use; nothing was changed');
+      process.exitCode = 1;
+      return;
+    }
+    votes = b2bVotes.open({ siteID: env.NETLIFY_SITE_ID, token: env.NETLIFY_AUTH_TOKEN });
+  }
   const { Client } = require('pg');
   const { clientConfig } = require(path.join(LIB, 'store.js'));
   let db = null;
@@ -345,7 +400,7 @@ async function main(argv = process.argv.slice(2), env = process.env) {
     db = new Client(clientConfig(env.NOSE_DB_ADMIN_URL, { name: 'NOSE_DB_ADMIN_URL', timeoutMs: 10000, queryTimeoutMs: 60000 }));
     db.on('error', () => {});
     await db.connect();
-    await runCommand(opts, { db });
+    await runCommand(opts, { db, votes });
   } catch (e) {
     if (e instanceof UsageError) { console.error(e.message); process.exitCode = 2; }
     else if (e instanceof Refusal) { console.error(`REFUSED: ${e.message}`); process.exitCode = 1; }

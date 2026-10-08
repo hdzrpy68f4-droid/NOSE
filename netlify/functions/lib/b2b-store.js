@@ -31,6 +31,16 @@
  *                                         what the reader and the coverage
  *                                         report read back
  *
+ * and, since 2026-10-08 (Prompt 4, the feed and votes):
+ *
+ *   feedFor(key, origin)                  the widget's feed: a working PUBLIC
+ *                                         key's store, for an origin it
+ *                                         allows - every batch it listed in
+ *                                         its window, with only the reading
+ *                                         NOSE stands by
+ *   voteTarget(key, origin, productId)    where a vote goes: the store's slug
+ *                                         and today, the database's UTC day
+ *
  * - A FIXED FIELD LIST PER WRITE. Only BATCH_FIELDS and READ_FIELDS ever
  *   leave this module; anything else a caller attaches is dropped here.
  * - PERSON KEYS REFUSED BEFORE ANYTHING IS SENT, at any depth of what the
@@ -319,6 +329,12 @@ const STORE_BY_SLUG_SQL = `
    (Prompt 4) reads the same condition. */
 const IN_WINDOW_SQL = `b.last_listed_on >= ((now() at time zone 'UTC')::date - make_interval(months => s.window_months))::date`;
 
+/* Whether a batch's reading is the one NOSE stands by, as one SQL condition
+   on b2b.batches b left-joined to b2b.batch_reads r: a reading of the batch's
+   own coa_url that the link gave. Since 2026-10-08 (Prompt 4) LISTED_SQL and
+   the feed (FEED_SQL) read it from here, so the rule exists once. */
+const CURRENT_READ_SQL = 'coalesce(r.fetched and r.read_url = b.coa_url, false)';
+
 /* Every batch the store listed within its window, with its reading if it has
    one. "current": a reading of the batch's own coa_url that the link gave -
    the one reading of this batch NOSE stands by. A reading of another link (one
@@ -330,7 +346,7 @@ const LISTED_SQL = `
          b.product_url, b.in_stock, b.last_listed_on::text as last_listed_on,
          (r.batch_id is not null) as has_read, r.read_on::text as read_on,
          (r.read_url is not distinct from b.coa_url and b.coa_url is not null) as same_link,
-         coalesce(r.fetched and r.read_url = b.coa_url, false) as current,
+         ${CURRENT_READ_SQL} as current,
          r.fetched, r.usable, r.lab, r.product_class, to_json(r.reject_reasons) as reject_reasons, r.terps,
          r.total_terpenes::text as total_terpenes, to_json(r.warnings) as warnings, r.report_batch,
          r.report_lab_id, r.new_layout
@@ -339,6 +355,51 @@ const LISTED_SQL = `
     left join b2b.batch_reads r on r.store_id = b.store_id and r.batch_id = b.batch_id
    where b.store_id = $1::bigint and ${IN_WINDOW_SQL}
    order by b.in_stock desc, b.list_position, b.batch_id`;
+
+/* ------------------------------------------- the feed and the vote (Prompt 4)
+
+   A working PUBLIC key's store, with the origins its page may load the
+   widget from and the settings every visitor's widget reads. Only the key's
+   hash is sent. */
+const FEED_STORE_SQL = `
+  select s.id::text as store_id, to_json(s.allowed_origins) as allowed_origins, s.window_months,
+         s.guardrail_thc_points::text as guardrail_thc_points, s.guardrail_cbd_points::text as guardrail_cbd_points
+    from b2b.store_keys k join b2b.stores s on s.id = k.store_id
+   where k.key_sha256 = $1 and k.kind = 'public' and k.revoked_on is null`;
+
+/* The feed: every batch the store listed within its window (IN_WINDOW_SQL),
+   in stock or not, and of its reading only what NOSE stands by
+   (CURRENT_READ_SQL) - so a link the store has corrected, or one that gave no
+   report, shows no lab, date, verdict or figure at all. Terpenes and the
+   lab's total only for an accepted reading. Nothing about sales or
+   quantities exists to select. In the store's order; ties by batch_id in
+   byte order, the same on any database collation, so every visitor gets the
+   same bytes. */
+const FEED_SQL = `
+  select b.batch_id, b.product_id, b.list_position, b.category, b.route, b.name, b.brand, b.product_url, b.in_stock,
+         b.thc_percent::text as thc_percent, b.cbd_percent::text as cbd_percent,
+         case when cur.current then r.lab end as lab,
+         case when cur.current then r.harvest_on::text end as harvest_on,
+         case when cur.current then r.report_on::text end as report_on,
+         case when cur.current then r.usable end as usable,
+         case when cur.current and r.usable then r.total_terpenes::text end as total_terpenes,
+         case when cur.current and r.usable then r.terps end as terps
+    from b2b.batches b
+    join b2b.stores s on s.id = b.store_id
+    left join b2b.batch_reads r on r.store_id = b.store_id and r.batch_id = b.batch_id
+    cross join lateral (select ${CURRENT_READ_SQL} as current) as cur
+   where b.store_id = $1::bigint and ${IN_WINDOW_SQL}
+   order by b.list_position, b.batch_id collate "C"`;
+
+/* A vote's store: its slug (the vote's Blobs key names it), its origins,
+   whether the voted product is one it listed within its window - the feed's
+   batches - and today as the database's UTC day, the day the vote is kept
+   under. */
+const VOTE_TARGET_SQL = `
+  select s.slug, to_json(s.allowed_origins) as allowed_origins, (now() at time zone 'UTC')::date::text as today,
+         exists (select 1 from b2b.batches b where b.store_id = s.id and b.product_id = $2 and ${IN_WINDOW_SQL}) as listed
+    from b2b.store_keys k join b2b.stores s on s.id = k.store_id
+   where k.key_sha256 = $1 and k.kind = 'public' and k.revoked_on is null`;
 
 /* ------------------------------------------------------------ connection */
 
@@ -398,6 +459,17 @@ async function run(sql, params, { client, timeoutMs, _Client } = {}) {
   try {
     if (client) return await client.query(sql, params);
     return await withClient(c => c.query(sql, params), { timeoutMs, _Client });
+  } catch (e) {
+    throw scrubbed(e);
+  }
+}
+
+/* As run(), for a call that reads twice: fn(client) runs its statements on
+   one connection, the whole exchange inside timeoutMs. */
+async function runEach(fn, { client, timeoutMs, _Client } = {}) {
+  try {
+    if (client) return await fn(client);
+    return await withClient(fn, { timeoutMs, _Client });
   } catch (e) {
     throw scrubbed(e);
   }
@@ -577,13 +649,84 @@ async function listedInWindow(storeId, opts = {}) {
   }));
 }
 
+/* ---------------------------------------------- the feed and the vote (Prompt 4) */
+
+/* Exactly as a browser sends it in an Origin header, and as the store holds
+   it: no case folding, no trailing slash, no "null". */
+const originAllowed = (allowed, origin) =>
+  typeof origin === 'string' && Array.isArray(allowed) && allowed.includes(origin);
+
+/* The fields of one batch in the feed, in this order, and no other. */
+const FEED_FIELDS = Object.freeze(['batch_id', 'product_id', 'list_position', 'category', 'route', 'name', 'brand',
+                                   'product_url', 'in_stock', 'thc_percent', 'cbd_percent', 'lab', 'harvest_on',
+                                   'report_on', 'usable', 'total_terpenes', 'terps']);
+/* And of the store: what every visitor's widget reads - the window (how far
+   back a purchase can count) and the guardrail (Prompt 5). */
+const FEED_STORE_FIELDS = Object.freeze(['window_months', 'guardrail_thc_points', 'guardrail_cbd_points']);
+
+/* usable: true or false for the reading NOSE stands by; null when there is
+   none - not read yet, a link that gave no report, a link since corrected.
+   lab and the two days likewise come only from that reading, and terps and
+   total_terpenes only from an accepted one: FEED_SQL selects nothing else. */
+function feedBatch(r) {
+  return {
+    batch_id: r.batch_id, product_id: r.product_id, list_position: Number(r.list_position), category: r.category,
+    route: r.route, name: r.name, brand: r.brand ?? null, product_url: r.product_url ?? null,
+    in_stock: r.in_stock === true, thc_percent: numberOrNullText(r.thc_percent),
+    cbd_percent: numberOrNullText(r.cbd_percent), lab: r.lab ?? null, harvest_on: r.harvest_on ?? null,
+    report_on: r.report_on ?? null, usable: typeof r.usable === 'boolean' ? r.usable : null,
+    total_terpenes: numberOrNullText(r.total_terpenes), terps: r.terps ?? null
+  };
+}
+
+/* The feed for a key and the Origin a request came with: { feed } - the same
+   for every visitor of the store - or { refused: 'key' } for a key that is
+   not a working public key, { refused: 'origin' } for an origin the store
+   does not allow, before a batch is read. One connection, two statements. */
+async function feedFor(key, origin, opts = {}) {
+  if (keyKind(key) !== 'public') return { refused: 'key' };
+  if (!opts.client && !configured()) return NOT_CONFIGURED;
+  return runEach(async c => {
+    const s = (await c.query(FEED_STORE_SQL, [keyHash(key)])).rows[0];
+    if (!s) return { refused: 'key' };
+    if (!originAllowed(s.allowed_origins, origin)) return { refused: 'origin' };
+    const rows = (await c.query(FEED_SQL, [storeIdOf(s.store_id)])).rows;
+    return {
+      feed: {
+        store: {
+          window_months: Number(s.window_months),
+          guardrail_thc_points: numberOrNullText(s.guardrail_thc_points),
+          guardrail_cbd_points: numberOrNullText(s.guardrail_cbd_points)
+        },
+        batches: rows.map(feedBatch)
+      }
+    };
+  }, opts);
+}
+
+/* Where a vote goes: { slug, day } - the store's slug and today's UTC day by
+   the database's clock - or { refused } with 'key', 'origin' or 'candidate'
+   (a product the store did not list within its window). */
+async function voteTarget(key, origin, productId, opts = {}) {
+  if (keyKind(key) !== 'public') return { refused: 'key' };
+  if (typeof productId !== 'string' || productId === '') return { refused: 'candidate' };
+  if (!opts.client && !configured()) return NOT_CONFIGURED;
+  const r = (await run(VOTE_TARGET_SQL, [keyHash(key), productId], opts)).rows[0];
+  if (!r) return { refused: 'key' };
+  if (!originAllowed(r.allowed_origins, origin)) return { refused: 'origin' };
+  if (r.listed !== true) return { refused: 'candidate' };
+  return { slug: r.slug, day: r.today };
+}
+
 module.exports = {
   upsertBatches, upsertRead, storeForKey,
   batchesFromCatalog, applyCatalog, storeForSecretKey, upsertUnfetched, storeBySlug, listedInWindow,
+  feedFor, voteTarget,
   newKey, keyHash, keyKind, coaLink, configured,
   BATCH_FIELDS, OPTIONAL_BATCH_FIELDS, READ_FIELDS, KEY_PREFIX, PERSONAL_KEYS, NOT_CONFIGURED, DEFAULT_TIMEOUT_MS,
-  TEXT_LIMITS, URL_LIMIT,
+  TEXT_LIMITS, URL_LIMIT, FEED_FIELDS, FEED_STORE_FIELDS,
   _buildBatchRows: buildBatchRows, _buildRead: buildRead, _scrub: scrub, _withClient: withClient,
   UPSERT_BATCHES_SQL, UPSERT_READ_SQL, STORE_FOR_KEY_SQL,
-  UPSERT_UNFETCHED_SQL, APPLY_CATALOG_SQL, SECRET_KEY_SQL, STORE_BY_SLUG_SQL, IN_WINDOW_SQL, LISTED_SQL
+  UPSERT_UNFETCHED_SQL, APPLY_CATALOG_SQL, SECRET_KEY_SQL, STORE_BY_SLUG_SQL, IN_WINDOW_SQL, LISTED_SQL,
+  CURRENT_READ_SQL, FEED_STORE_SQL, FEED_SQL, VOTE_TARGET_SQL
 };
