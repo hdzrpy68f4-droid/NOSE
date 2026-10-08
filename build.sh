@@ -30,6 +30,11 @@
 #   [NEW]  scripts/check-trust.mjs fails the build if the About page's old
 #          promise - that NOSE keeps nothing - comes back anywhere a visitor
 #          can read it. Lab reports are kept (PARSER-HANDOFF.md s13).
+#   [NEW]  js/b2b-rank.js - the dispensary ranking engine, which takes all of
+#          its maths from window.NoseMatch - is syntax-checked and
+#          fingerprinted like the other bundles, and a page that loads it
+#          without js/match-math BEFORE it fails the build (PARSER-HANDOFF.md
+#          s14). test/b2b-rank-test.js runs that rule's own lines.
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -108,12 +113,13 @@ fingerprint() {
   fi
   echo "==> $new"
 }
-for f in js/nose*.js js/match-math*.js js/hero*.js js/agegate*.js js/account*.js; do
+for f in js/nose*.js js/match-math*.js js/b2b-rank*.js js/hero*.js js/agegate*.js js/account*.js; do
   [ -f "$f" ] || continue
   node --check "$f" || { echo "FAIL: $f has a syntax error"; exit 1; }
 done
 fingerprint js  nose    js
 fingerprint js  match-math js
+fingerprint js  b2b-rank js
 fingerprint css shell   css
 fingerprint css hero    css
 fingerprint js  hero    js
@@ -168,6 +174,18 @@ for f in "${HTML[@]}"; do
   m=$(grep -n -m1 '/js/match-math\.[0-9a-f]*\.js' "$f" | cut -d: -f1 || true)
   if [ -z "$m" ] || [ "$m" -ge "$n" ]; then
     echo "FAIL: $f loads js/nose without js/match-math before it"; exit 1
+  fi
+done
+
+# The dispensary ranking engine (js/b2b-rank) reads its maths from
+# window.NoseMatch too, so the same rule holds for it. No page loads it yet.
+# test/b2b-rank-test.js runs these lines, from this comment to the "done".
+for f in "${HTML[@]}"; do
+  n=$(grep -n -m1 '/js/b2b-rank\.[0-9a-f]*\.js' "$f" | cut -d: -f1 || true)
+  [ -n "$n" ] || continue
+  m=$(grep -n -m1 '/js/match-math\.[0-9a-f]*\.js' "$f" | cut -d: -f1 || true)
+  if [ -z "$m" ] || [ "$m" -ge "$n" ]; then
+    echo "FAIL: $f loads js/b2b-rank without js/match-math before it"; exit 1
   fi
 done
 

@@ -153,7 +153,7 @@ Also run `node test/resolver-test.js` - expect `resolver clean`, and
 **Or all at once:** `bash scripts/gates.sh` runs these, the Kaycha anchors,
 `novelty-test`, `coa-dates-test`, `store-test`, `probe-test`, `archive-wiring-test`,
 `archive-scripts-test`, `rerun-test`, `review-queue-test`,
-`analysis-test`, `duplicates-test`, `remove-copies-test`, `remove-document-test`, `b2b-coverage-test`, `b2b-store-test`, `b2b-catalog-test`, `b2b-endpoints-test`, `check-trust-test` and, after the build, `input-paths-test`.
+`analysis-test`, `duplicates-test`, `remove-copies-test`, `remove-document-test`, `b2b-coverage-test`, `b2b-store-test`, `b2b-catalog-test`, `b2b-endpoints-test`, `b2b-rank-test`, `check-trust-test` and, after the build, `input-paths-test`.
 It prints the line each gate produced and ends with `ALL GATES GREEN`. It passes
 a gate only on its exact expected line, so when a session legitimately changes
 a count, update the script in the same commit.
@@ -209,6 +209,7 @@ someone to look.
 | `b2b-store-test.js` | the dispensary store (§14, "Schema, role, keys and the switch") on PGlite: schema `b2b` applied after every migration (those pinned byte for byte), its tables and columns, the person rule's three lists and two bodies identical, a personal key at any depth refused in both layers with the text asserted, `nose_b2b` upserting and refused DELETE, TRUNCATE, stores, keys and schema `nose`, `nose_writer`'s grants unchanged, `probe-db.js`'s b2b audit passing and failing on eight broken grants, every fixture's reading stored as read, keys hashed, `scripts/b2b-store.js`'s five commands, `lib/b2b-flag.js`, the `nsk_` build guard; offline |
 | `b2b-catalog-test.js` | the catalog upload, the batch reader and the report from the database (§14, "Catalog upload and the batch reader") on PGlite, the real function behind a stand-in `pg` that runs every statement as `nose_b2b`, the links served from fixture files: the switch, the key (one 401 for every wrong key, the hash compared in constant time), the 4 MB cap before and while reading, the coverage script's own reader and refusals, an upload as a whole snapshot (absent batches kept and marked out of stock, a refused row's batch untouched, nothing to keep changing nothing), counts-only replies, one fixed log line on failure; the reader's accepted, refused and unfetched readings, `--dry-run`, `--reread`, `--limit`, a corrected link read again, a fetch failure never replacing a reading, nothing from another batch or store; `--store` matching the CSV run row for row; schema `nose` and the archive untouched; offline |
 | `b2b-endpoints-test.js` | the widget's two calls (§14, "Feed and votes") on PGlite, both functions behind a stand-in `pg` that runs every statement as `nose_b2b` and a stand-in `@netlify/blobs`: the switch; the feed byte-identical for two visitors, every batch in the window in stock or not, the prompt's fields alone, a reading's figures only when it is the current one and accepted, no lab-report link; the origin rule (a foreign, missing, `null` or other store's origin gets no CORS header and no data), a revoked key, `public, max-age=60`; a vote's six fields and nothing else, matchBand()'s four bands all stored, no time of day in key or value, keys in no arrival order, the per-store daily cap with the same reply; one fixed log line on failure; `delete-store` removing a store's votes and only its own; schema `nose`, the archive and the consumer's store untouched; offline |
+| `b2b-rank-test.js` | `js/b2b-rank.<hash>.js`, the dispensary ranking engine (§14, "The ranking engine"): one file, loaded as a page loads it and in Node; no maths of its own, every number traced to NoseMatch; the 1830 golden pairs, 61 self-scores and 65 palates through `rank()` and `palateFrom()` to the last bit; 3x the intensity the same; unread batches last, with no number; routes, category, stock and the guardrail leaving batches out and never reordering; ties by `list_position`; each skip reason, a removed batch, one count per batch, the window as PostgreSQL counts it; `soldOut()` and `voteScore()`; no name or brand read; `build.sh`'s load-order rule, its own lines, on throwaway pages; offline |
 | `check-trust-test.js` | `scripts/check-trust.mjs` (§13, "The trust guard") on throwaway sites: every form of the old promise fails, true sentences pass; offline |
 | `input-paths-test.mjs` | the app's ways in, in headless Chromium: Scan QR (fake camera and QR image), COA link, Upload. The real `coa.js` and parser answer, with only the download and unpdf stood in for (§13, "The input paths"). Needs Playwright; a gate, run after the build |
 
@@ -2527,7 +2528,7 @@ Its core promise: **a shopper's purchase history never reaches NOSE.** The
 dispensary's page hands the shopper's batch IDs to the shopper's own browser,
 and the widget builds the palate and ranks there. B2B lives apart from
 everything consumer - its own schema (`b2b`) and role (`nose_b2b`), since
-2026-10-07, and its own Blobs store (`b2b-votes`) and functions (`b2b-catalog`, `b2b-feed` and `b2b-vote`), all since 2026-10-08 -
+2026-10-07, and its own Blobs store (`b2b-votes`), functions (`b2b-catalog`, `b2b-feed` and `b2b-vote`) and ranking engine (`js/b2b-rank.<hash>.js`, which no consumer page loads), all since 2026-10-08 -
 and whatever runs on Netlify stays off unless `B2B_ENABLED=1` in the
 Production context and `build-info.json` says production
 (`lib/b2b-flag.js`). No B2B record or log holds anything about a shopper. A batch
@@ -3543,6 +3544,202 @@ functions answer 404 until Prompt 8):
    POST https://nose-app.com/.netlify/functions/b2b-vote` each answer `404`
    with `Not Found`: the switch is off.
 
+### The ranking engine, 2026-10-08
+
+Prompt 5. Every decision the widget makes, as plain functions over the feed:
+no page, no network, no clock but the day each call is handed. It makes no
+request and writes nowhere, so what a store's page hands it - a shopper's
+purchases - stays in the shopper's browser. Nothing in it is live: no page
+loads it yet (Prompt 6's widget will). Campaign palates ("Later") would run
+these same functions in Node on a dispensary's server.
+
+```
+js/b2b-rank.<hash>.js      palateFrom, rank, soldOut, voteScore: window.NoseRank in a page, module.exports in Node
+build.sh                   syntax-checks and fingerprints it; fails a page that loads it without js/match-math before it
+test/b2b-rank-test.js      offline, a gate: "b2b-rank clean"
+scripts/gates.sh           the gate, after b2b endpoints
+```
+
+**The probe, before any edit**, on `0f3252c` - ALL GATES GREEN, 25 gates:
+
+- `js/match-math.cd934bdd.js` is a classic script: `module.exports` when
+  `module` exists, else `self.NoseMatch` - ten exports, frozen.
+- `test/match-test.js` finds a copy by scanning every `.js`, `.cjs` and `.mjs`
+  outside `node_modules`, `.git` and `vendor` - tests included - for
+  `function (cosine|normalize|matchBand|averageProfiles)` taking `(a, b)`,
+  `(values)`, `(score)` or `(list)`; only `wip/nose-farnesene-wip.js` may
+  match. It also wants exactly one `match-math(.<hash>).js`, and no
+  `Math.round(score * 100)` in `js/` or `scripts/`.
+- The app scores a candidate against a palate as `cosine(palateVec,
+  normalize(b.terps))`, `palateVec = averageProfiles(palateProfiles())`,
+  shown with `shownScore()` and `matchBand()` (`js/nose.593b2c1b.js`, line
+  276). The palate goes first, and it matters: with the two swapped, 897 of
+  the 1830 golden pairs change in the last bit.
+- The feed, from `test/b2b-endpoints-test.js`: `{ store: { window_months,
+  guardrail_thc_points, guardrail_cbd_points }, batches: [...] }`, each batch
+  the 17 fields of "Feed and votes", in `list_position` order; `usable`
+  `true`, `false` or `null`, `terps` only when `true`.
+
+**Decided here, where the prompt was silent** (the plan, "NOSE for
+Dispensaries - B2B Integration Plan", settled three of them):
+
+- **Each call takes one options argument more, last**:
+  `palateFrom(feed, purchases, removed, { today })`, `soldOut(feed,
+  purchases, { removed, routes, guardrail, today })` and `voteScore(feed,
+  purchases, productId, { removed, today })`. The window needs a day and the
+  feed carries none; the sold-out panel ranks, which needs the shopper's
+  routes; and a batch the shopper took out of the palate should define
+  neither the usual nor a vote's palate. `today` is a UTC day - by the
+  device's clock when left out - and purchase days are UTC days,
+  `YYYY-MM-DD`.
+- **Reasons are codes, never words** - the widget's strings say them (Prompt
+  6) - and there are six: the prompt's five and `not inhalable`. The upload
+  refuses any category or route but the four and two, so the sixth cannot
+  happen through NOSE; a feed made elsewhere could. The first that holds is
+  the one given, in the prompt's own order: not listed, not inhalable, no
+  read, refused, outside the window, removed.
+- **Each batch counts once**, however often it was bought: the plan's
+  "Weighting: none", the published method. The window applies to each
+  purchase, so a batch bought last month and two years ago is used once, for
+  last month, and the old purchase is skipped as outside the window.
+- **The palate is made in the feed's order**, not the page's: the same
+  purchases make the same palate to the last bit however the page lists
+  them. 32 of the 64 golden palates of two or more members change in the
+  last bit when averaged in reverse.
+- **The window is `IN_WINDOW_SQL`'s**: today less `window_months` as
+  PostgreSQL's `date - make_interval(months => n)` counts it, a day the month
+  lacks moved to its last (2026-03-31 less one month is 2026-02-28). Checked
+  while building: every day of 2023 to 2029 against every window of 1 to 36
+  months - 92,052 cases - through `palateFrom()` and through PostgreSQL 16,
+  all agreeing. The first day is inside; a day after today is inside (two
+  clocks can disagree); a day that is not a real `YYYY-MM-DD`, or a window or
+  today that cannot be read, puts the purchase outside: nothing counts that
+  cannot be checked.
+- **No usable read**: `usable` `null` is `no read`, `false` is `refused`. An
+  accepted reading with no terpene the maths models is `no read` too - never
+  a score of 0, which would claim a difference nobody measured. It cannot
+  come from the parser, whose terpene keys are all TERPENES' (§8), and
+  golden's "only cannabinoids", "all zero" and "empty" edges show it.
+- **`rank()`**: the in-stock batches of the category asked for, inside the
+  routes given (a list; without one nothing is inside it), inhalable, inside
+  the guardrail. Each scored by the app's own call. The largest score first -
+  the score itself, not the number shown, so two batches that both show 85
+  keep their scores' order; an exact tie (one report linked from two batches,
+  which the coverage report flags) in `list_position` order, then the
+  feed's. Then every batch with no usable read, unscored, in `list_position`
+  order. A palate made of nothing ranks nothing - no history yet, so the menu
+  keeps its own order (the plan) - rather than labelling every batch as having
+  no panel. Each entry is `{ batch, score, shown, band, label, unscored }`:
+  `batch` the feed's own object, `band` matchBand()[1] (the name a vote
+  carries), `label` [0]; unscored, all four numbers are null and `unscored`
+  says `no read` or `refused`.
+- **The guardrail**, as the migration's comment defines it: within the store's
+  points of the median of the basis batches - the batches the palate uses -
+  both edges in; an even count takes the middle two's mean. It filters and
+  never reorders, unscored batches included. Compared in whole millionths of
+  a percentage point, so an edge holds as written: 16.1 is 5 points from
+  11.1, where floating point says 5.000000000000002. It fails closed: a batch
+  with no figure is out, a basis with no figure keeps everything out of that
+  half, and a setting that is not a band (above 0, at most 100) keeps
+  everything out. `rank()`'s `guardrail` option is `{ guardrail_thc_points,
+  guardrail_cbd_points }`; left out, the store's own (`feed.store`), so the
+  widget gets it without asking.
+- **`soldOut()`**: the most-bought product counts purchases, not batches, of a
+  listed, inhalable batch inside the window and not removed - read or not,
+  since a usual is what is bought; a tie goes to the product bought most
+  lately, then the store's order. null while that product has any batch in
+  stock. Otherwise its latest purchased batch (on one day, a batch NOSE can
+  compare first) becomes a palate of its own through `palateFrom()`, and
+  `rank()` runs over that batch's category with the shopper's routes and the
+  store's guardrail, centred on that batch alone. A latest batch with no
+  usable read ranks nothing, and its palate's basis says why. Returns
+  `{ productId, batch, palate, ranked }`.
+- **`voteScore()`**: the latest purchased batch of `productId`, scored by the
+  same call against `palateFrom()` of every other purchase - every purchase of
+  that batch left out, another batch of the same product kept in, as it was
+  in the palate before. Returns `{ batch, score, shown, band, label, palate,
+  payload }`; `payload` is exactly b2b-vote's `candidate`, `score`
+  (shownScore()), `band` (matchBand()[1]) and `palateSize` (batches, not
+  purchases), and the widget adds `key` and `vote`. null with no usable read
+  or an empty palate, so no vote can carry a `palateSize` of 0.
+- **No name is read.** Of a batch the engine reads `batch_id`, `product_id`,
+  `list_position`, `category`, `route`, `in_stock`, `thc_percent`,
+  `cbd_percent`, `usable` and `terps` - never `name` or `brand`, nor `lab`,
+  the days, the product link or the printed total - and never lists its
+  fields. The test watches every read through a Proxy.
+- **Loading.** A classic script, after js/match-math in a page:
+  `window.NoseRank`, frozen; it refuses to load without the five functions it
+  calls. In Node `require()` returns the same functions, their maths through
+  `scripts/lib/match.js` - so in Node it runs from this repo's layout.
+  `build.sh` syntax-checks and fingerprints it and fails a page that loads it
+  without js/match-math before it: the js/nose rule, written again for it,
+  which `test/b2b-rank-test.js` runs from `build.sh`'s own lines. It is
+  published at `/js/b2b-rank.<hash>.js` and loaded by nothing yet.
+
+**The test** - `test/b2b-rank-test.js`, 90 checks, a gate after `b2b
+endpoints`. Every feed is built from `lib/b2b-store.js`'s own `FEED_FIELDS`
+and `FEED_STORE_FIELDS`. It checks the file both ways (in Node, and in a
+`vm` context as a page runs it, after js/match-math - and refused without
+it); no maths defined, nothing multiplied by 100, no band named; with every
+NoseMatch function wrapped and watched, that each palate is one
+`averageProfiles()` returned and each score one `cosine()` returned for that
+palate and `normalize()` of that batch's own terps, palate first, shown and
+banded by `shownScore()` and `matchBand()`; all 1830 golden pairs and 61
+self-scores through `rank()`, and the 65 golden palates through
+`palateFrom()` (vectors, key order included) and `rank()`, to the last bit,
+and the hero pair at 74, Partial overlap; 7442 candidates against palates
+scaled 3x and not, the same number in the same band, under 1e-15 apart;
+unread batches after scored ones, labelled, with no number; routes,
+category, stock and the guardrail leaving batches out with the rest in the
+same order and the same numbers - the guardrail on 30 palates and bands,
+handed to `rank()` and set by the store, against a band computed apart, in
+tenths; ties; each skip reason and its order, a removed batch's palate
+equal to never buying it, one count per batch, the feed's order, the
+window's edges and its unreadable cases, today by the clock; `soldOut()`'s
+choices and its palate of one batch; `voteScore()` leaving out exactly the
+voted batch, equal to `rank()`'s number, and its payload; the fields read;
+`build.sh`'s rule on five throwaway pages; and no effect wording in the
+engine, comments included.
+
+- **Against broken copies**: 64 deliberate faults, one at a time - among them
+  the cosine's arguments swapped, a rounded number, a sort by the number
+  shown, ties in the array's order, unscored first or scored 0, a reading
+  with nothing modelled scored, each filter dropped, the guardrail reordering,
+  open on a missing figure, in floating point, by the mean or with its edges
+  out, removed purchases counted, each purchase weighted, the page's order,
+  the window ignored, unclamped or exclusive, the window before the read,
+  case-blind batch IDs, the sold-out panel against the whole palate, on the
+  earliest batch or in the page's category, the vote with its own batch in
+  it or its whole product out, a palate size of purchases, a band given as a
+  label, a tie broken by name, a lab name read, a copied batch, a copy of
+  the maths, a band named in the code, an effect word, and six broken lines
+  of `build.sh` - each fails it. A scratch harness, not committed. Its
+  first run missed three (the guardrail reordering only when the store set
+  it, a palate size counting purchases, a tie broken by name); the test
+  gained the checks that catch them.
+
+**How it was verified, 2026-10-08, in the cloud workspace.** npm was blocked
+there (registry.npmjs.org answered 403) and so was cdn.jsdelivr.net, so as
+before the gates ran on stand-ins: pdfjs-dist 6.2.108 for unpdf (56/3, 56/0,
+clean, 4.124/0.944), a throwaway PostgreSQL 16 cluster per PGlite instance
+behind PGlite's API, the committed html5-qrcode in place of `build.sh`'s
+download, and Playwright 1.56.0's Chromium. ALL GATES GREEN on `0f3252c`
+before any edit, 25 gates, and after it with the new gate - 26 gates,
+`KAY-CAR-001` 4.124 and `KAY-PRR-001` 0.944. `js/match-math.cd934bdd.js` is
+byte for byte as it was, and `match-test` passes with the engine beside it.
+`parse-coa.js`, `coa-dates.js` and `extract-text.js` are untouched, so no
+reparse is due. `build.sh` named the new file `js/b2b-rank.580a8c1b.js` and
+renamed nothing else. The test ran on Node 22.22 only; the Codespace's
+Node 20 (`.nvmrc`) runs it first. Nothing ran against a real database,
+Netlify or a lab's server. The Codespace run on the real packages is the one
+that counts.
+
+**In the Codespace, in this order** (nothing here writes anywhere):
+
+1. `git pull --ff-only`, then `bash scripts/gates.sh` - ALL GATES GREEN,
+   `b2b rank` among them.
+2. `git push` - deploys `/js/b2b-rank.<hash>.js`, which no page loads yet.
+
 ### Still open
 
 - `scripts/download-twice.js` keeps its own looser fetch loop. Moving it onto
@@ -3643,6 +3840,32 @@ functions answer 404 until Prompt 8):
 - **A batch in the feed carries its catalog `name` and `brand`**, for the
   widget to show; Prompt 5's ranking reads neither. A product voted on is
   named by its `product_id` alone.
+- **Suggestions across forms.** The plan keeps them labelled and off by
+  default until the pilot ("vapes for a flower palate"). Prompt 5's
+  `palateFrom()` takes no category, so `rank()` for vapes scores them against
+  a palate of every inhalable purchase. The basis lists each batch, category
+  and all, and the widget can build a palate from one category's purchases
+  by looking each `batchId` up in the feed first. Prompt 6 decides, and its
+  strings say which.
+- **Purchase days are UTC days.** A page that hands local days moves a
+  purchase near midnight by one day - one day at the window's edge. Prompt
+  7's integration guide says which. `today` comes from the device's clock
+  when a call is handed none, and a clock that is wrong moves the window by
+  its error: the feed carries no date.
+- **A guardrail half with figures missing keeps batches out.** A store that
+  sets CBD's half while leaving `cbd_percent` empty on some batches sees those
+  batches left out of every list, and a shopper whose basis has no CBD figure
+  gets an empty list. That is the fail-closed reading of "within
+  this many points of the median"; the coverage report does not yet count
+  missing THC or CBD figures, which would show a store the cost before it sets
+  one.
+- **In Node the engine needs this repo's layout**: `js/b2b-rank.<hash>.js` takes
+  its maths through `../scripts/lib/match.js`. Campaign palates on a
+  dispensary's server would carry those files, or Prompt 7's release; decided
+  with that prompt.
+- **The load-order rules compare line numbers.** For js/nose and now
+  js/b2b-rank, two scripts on one line fail the build, and an `async` script
+  would pass it and still run out of order. No page does either today.
 
 ### Later
 

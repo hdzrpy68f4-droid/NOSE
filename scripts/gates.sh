@@ -92,6 +92,8 @@ gate 'b2b catalog'    'b2b-catalog clean'        '^b2b-catalog clean$' \
   node test/b2b-catalog-test.js
 gate 'b2b endpoints'  'b2b-endpoints clean'      '^b2b-endpoints clean$' \
   node test/b2b-endpoints-test.js
+gate 'b2b rank'       'b2b-rank clean'           '^b2b-rank clean$' \
+  node test/b2b-rank-test.js
 gate 'trust guard'    'check-trust clean'        '^check-trust clean$' \
   node test/check-trust-test.js
 gate 'build'          'OK — ready to deploy'     '^OK — ready to deploy$' \
