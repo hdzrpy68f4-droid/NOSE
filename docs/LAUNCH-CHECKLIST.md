@@ -25,9 +25,10 @@ The privacy page documents exactly this, including the error beacon.
 1. **Run `./build.sh`** — vendors the QR library (deliberately uncommitted so it
    cannot go stale) and re-fingerprints bundles. The scanner is inert until then;
    it degrades to a message rather than breaking.
-2. **Replace `curious-crumble-352160.netlify.app`** — 60+ occurrences across canonicals, Open Graph,
-   JSON-LD, `robots.txt` and `sitemap.xml`.
-   `grep -rl 'curious-crumble-352160.netlify.app' . | xargs sed -i 's/nose\.example/YOURDOMAIN/g'`
+2. ~~**Replace the placeholder domain**~~ — done 2026-10-08. Every canonical, Open Graph and
+   JSON-LD URL, `robots.txt` and `sitemap.xml` name `https://nose-app.com`: 142 URLs in 22
+   files, which had named the site's first address, `curious-crumble-352160.netlify.app`.
+   `bash verify-manifest.sh` reports any that comes back.
 3. **Wire `persist()`** in `netlify/functions/match-feedback.js` to real storage.
    Until then the validation loop thanks people and discards their vote.
 4. **Contact address** on `/privacy/` (deletion requests) and `/terms/`.

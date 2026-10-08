@@ -76,9 +76,14 @@ section "Vendored (build.sh fetches the .js — absent is fine pre-build)"
 soft vendor/README.md
 
 section "Pre-launch"
-n=$(grep -rl 'nose\.example' . 2>/dev/null | wc -l | tr -d ' ')
-[ "$n" -gt 0 ] && echo "  TODO  curious-crumble-352160.netlify.app in $n file(s) — swap for the real domain" \
-               || echo "  ok    no curious-crumble-352160.netlify.app placeholders"
+# Every page names the site as https://nose-app.com. Either earlier address -
+# the nose.example placeholder or the Netlify subdomain the site began on - in
+# a page, the sitemap or robots.txt means a canonical or share link points
+# somewhere else.
+n=$(grep -rlE 'nose\.example|curious-crumble-352160\.netlify\.app' --include='*.html' --include='sitemap.xml' \
+      --include='robots.txt' --exclude-dir=node_modules --exclude-dir=.git . 2>/dev/null | wc -l | tr -d ' ')
+[ "$n" -gt 0 ] && echo "  TODO  an earlier domain in $n site file(s) - swap it for https://nose-app.com" \
+               || echo "  ok    every page, the sitemap and robots.txt name https://nose-app.com"
 grep -rq 'font-src' _headers 2>/dev/null \
   && echo "  ok    CSP has font-src" \
   || echo "  note  no font-src in CSP — self-hosted webfonts would be blocked"
