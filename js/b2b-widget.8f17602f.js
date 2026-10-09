@@ -53,7 +53,12 @@
  * them). No inline script or style and no eval: it runs under a store's CSP
  * of script-src, style-src and connect-src naming NOSE's origin. Its
  * stylesheet, css/b2b-widget.<hash>.css, is linked inside its shadow root;
- * build.sh writes that name into this file before fingerprinting it.
+ * build.sh writes that name into this file before fingerprinting it. A
+ * pinned release (scripts/b2b-release.js) writes its own stylesheet's name
+ * and that file's sha384 into STYLESHEET and STYLESHEET_INTEGRITY, so the
+ * browser checks the stylesheet as the store's page checks this script.
+ * Nothing it asks for carries the page's address, and the feed, the vote
+ * and a release's stylesheet carry no cookie either.
  * Aroma and flavour only.
  */
 (function () {
@@ -69,6 +74,8 @@
   const SCRIPT = document.currentScript && document.currentScript.src;
   const ORIGIN = SCRIPT ? new URL(SCRIPT).origin : null;
   const STYLESHEET = '/css/b2b-widget.25464277.css';
+  /* null on NOSE's own site; a pinned release names its stylesheet's sha384 here. */
+  const STYLESHEET_INTEGRITY = null;
   const FEED_PATH = '/.netlify/functions/b2b-feed';
   const VOTE_PATH = '/.netlify/functions/b2b-vote';
   const PUBLIC_KEY = /^npk_[0-9a-f]{64}$/;
@@ -339,10 +346,17 @@
       button.dataset.vote = vote;
       button.setAttribute('aria-pressed', 'false');
       button.addEventListener('click', () => {
-        /* b2b-vote's six fields, named one by one: nothing else rides along. */
+        /* b2b-vote's six fields, named one by one: nothing else rides along.
+           A string body, so text/plain and no preflight; cors, so the
+           store's Origin always goes; no cookie and no referrer, so neither
+           the shopper's cookies nor the order page's address go with it; and
+           kept alive if the shopper leaves the page at once. */
         const body = JSON.stringify({ key, candidate: v.payload.candidate, score: v.payload.score,
                                       band: v.payload.band, palateSize: v.payload.palateSize, vote });
-        try { if (navigator.sendBeacon) navigator.sendBeacon(ORIGIN + VOTE_PATH, body); } catch (e) {}
+        try {
+          fetch(ORIGIN + VOTE_PATH, { method: 'POST', mode: 'cors', credentials: 'omit', referrerPolicy: 'no-referrer', keepalive: true, body })
+            .catch(() => {});
+        } catch (e) {}
         writeList(VOTED_KEY, readList(VOTED_KEY).concat([product]));
         buttons.forEach(b => { b.disabled = true; b.setAttribute('aria-pressed', String(b === button)); });
         thanks.textContent = S.voteThanks;
@@ -390,6 +404,10 @@
            unstyled - and shows anyway if the stylesheet cannot load. */
         const link = document.createElement('link');
         link.rel = 'stylesheet';
+        link.referrerPolicy = 'no-referrer';
+        /* A release's stylesheet is checked by its hash, which only a CORS
+           request can be: the release's reply allows any origin. */
+        if (STYLESHEET_INTEGRITY) { link.integrity = STYLESHEET_INTEGRITY; link.crossOrigin = 'anonymous'; }
         link.href = new URL(STYLESHEET, ORIGIN).href;
         const ready = () => { this._view.hidden = false; };
         link.addEventListener('load', ready, { once: true });

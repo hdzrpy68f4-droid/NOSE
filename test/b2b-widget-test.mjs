@@ -15,11 +15,20 @@
  * widget"):
  *   - only two kinds of request leave the page from the widget: the feed (the
  *     store's public key and nothing else - no cookie, no referrer) and the
- *     vote (six fields, text/plain, no preflight). Besides them only the
- *     page's own script tags and the widget's stylesheet reach NOSE. No
+ *     vote (six fields, text/plain, by fetch in cors mode: no preflight, no
+ *     cookie, no referrer). Besides them only the page's own script tags and
+ *     the widget's stylesheet reach NOSE, the stylesheet with no referrer. No
  *     request anywhere carries a purchased batch ID, a purchase day or the
  *     purchases attribute; a secret key is never sent; nothing goes to any
  *     other origin
+ *   - a pinned release (scripts/b2b-release.js, built from these files): one
+ *     tag with its integrity hash, crossorigin and no referrer, under the
+ *     integration guide's own CSP lines, read out of docs/B2B-INTEGRATION.md
+ *     - the same rail and vote as the five files, its stylesheet checked by
+ *     the hash the release names, and no request carrying the page's address
+ *     though the page's policy is unsafe-url. An altered stylesheet is
+ *     refused and the widget shows unstyled; an altered script, or the tag
+ *     without crossorigin, runs nothing and asks for nothing
  *   - consent: unknown shows one button and one sentence and never reads the
  *     purchases (getAttribute is watched); its button fires nose:consent and
  *     the page's answer brings the rail. Denied and the control group show
@@ -118,6 +127,33 @@ const demoFeed = require(path.join(ROOT, 'scripts/b2b-demo-feed.js'));
    the API's own names (a button's focus(), CSS's :focus-visible) aside. */
 const prose = src => [...src.matchAll(/\/\*[\s\S]*?\*\/|\/\/[^\n]*|'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\]|\\.)*`/g)].map(m => m[0]).join('\n');
 const { FEED_FIELDS } = require(path.join(ROOT, 'netlify/functions/lib/b2b-store.js'));
+const rel = require(path.join(ROOT, 'scripts/b2b-release.js'));
+const releases = require(path.join(ROOT, 'netlify/functions/lib/b2b-releases.js'));
+
+/* --- a pinned release, as scripts/b2b-release.js builds it from these files --- */
+
+/* Release 1 as built; 2 with one byte added to its stylesheet as served; 3
+   with one byte of its script changed as served. The store's page names each
+   one's true hash, as a page names a release's. */
+const RELEASE = rel.build({ version: 1, source: rel.treeSource(ROOT) });
+const ALTERED_CSS = rel.build({ version: 2, source: rel.treeSource(ROOT) });
+const ALTERED_JS = rel.build({ version: 3, source: rel.treeSource(ROOT) });
+const SERVED = {
+  '1/nose-matches.js': RELEASE.js, '1/nose-matches.css': RELEASE.css,
+  '2/nose-matches.js': ALTERED_CSS.js, '2/nose-matches.css': Buffer.concat([ALTERED_CSS.css, Buffer.from(' ')]),
+  '3/nose-matches.js': Buffer.from(ALTERED_JS.js.toString('utf8').replace('Aroma and flavour only.', 'Aroma and flavour ONLY.')),
+  '3/nose-matches.css': ALTERED_JS.css
+};
+const PINNED = { 1: RELEASE.sri.js, 2: ALTERED_CSS.sri.js, 3: ALTERED_JS.sri.js };
+check('the altered releases differ from what their pages pin by the one change each, and release 1 is served as built',
+  releases.sri(SERVED['2/nose-matches.css']) !== ALTERED_CSS.sri.css && releases.sri(SERVED['3/nose-matches.js']) !== PINNED[3]
+    && SERVED['3/nose-matches.js'].length === ALTERED_JS.js.length && releases.sri(SERVED['1/nose-matches.js']) === PINNED[1]);
+
+/* The CSP lines docs/B2B-INTEGRATION.md tells a store to add, read out of the
+   guide itself, so the policy tested is the one it gives - with the store's
+   own 'self' beside them, as a store's policy has it. */
+const GUIDE = fs.readFileSync(path.join(ROOT, 'docs/B2B-INTEGRATION.md'), 'utf8');
+const GUIDE_CSP_LINES = [...GUIDE.matchAll(/^(script-src|style-src|connect-src) +(.+)$/gm)].map(m => [m[1], m[2].trim().split(/ +/)]);
 
 /* --- the stand-in feeds ---------------------------------------------------- */
 
@@ -206,6 +242,7 @@ const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; ch
 const SOURCE_ONLY = /^\/(netlify|node_modules|docs|test|scripts|supabase|wip)\//;
 const FEED_PATH = '/.netlify/functions/b2b-feed';
 const VOTE_PATH = '/.netlify/functions/b2b-vote';
+const RELEASE_HEADERS = file => releases.headers(file);
 
 const received = [];            // every request either origin receives
 let STORE = null, NOSE = null;
@@ -242,6 +279,16 @@ const noseServer = await listen(function nose(req, res, r) {
     res.end();
     return;
   }
+  /* A release, as netlify/functions/b2b-release.js serves one: its bytes and
+     lib/b2b-releases.js's headers, or a plain 404. */
+  const wanted = releases.parsePath(u.pathname);
+  if (wanted) {
+    const bytes = !u.search && (req.method === 'GET' || req.method === 'HEAD') ? SERVED[`${wanted.version}/${wanted.file}`] : null;
+    if (!bytes) { res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' }); res.end('Not Found'); return; }
+    res.writeHead(200, RELEASE_HEADERS(wanted.file));
+    res.end(req.method === 'HEAD' ? undefined : bytes);
+    return;
+  }
   let p = decodeURIComponent(u.pathname);
   if (p.endsWith('/')) p += 'index.html';
   const file = path.normalize(path.join(ROOT, p));
@@ -257,8 +304,11 @@ NOSE = `http://127.0.0.1:${noseServer.address().port}`;
    attributes are in the page as it is served, as a store's server writes
    them, so the widget sees them from its first moment. */
 const CASES = {};
+const PAGES = {};               // a case's page: { release, crossorigin, policy }
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 const CSP = () => `script-src 'self' ${NOSE}; style-src 'self' ${NOSE}; connect-src ${NOSE}`;
+const GUIDE_CSP = () => GUIDE_CSP_LINES.map(([d, sources]) =>
+  [d, ...(d === 'connect-src' ? [] : ["'self'"]), ...sources.map(x => x.replace('https://nose-app.com', NOSE))].join(' ')).join('; ');
 const SHOP_JS = `(function () {
   window.__events = [];
   var w = document.getElementById('w');
@@ -279,8 +329,12 @@ const storeServer = await listen(function store(req, res) {
   if (u.pathname === '/shop.js') { res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8' }); res.end(SHOP_JS); return; }
   if (u.pathname !== '/shop.html' || !CASES[u.searchParams.get('case')]) { res.writeHead(404); res.end(); return; }
   const attrs = Object.entries(CASES[u.searchParams.get('case')]).map(([k, v]) => ` ${k}="${esc(v)}"`).join('');
-  const scripts = [F.math, F.bar, F.rank, F.strings, F.widget].map(f => `<script src="${NOSE}/js/${f}" defer></script>`).join('\n');
-  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Security-Policy': CSP() });
+  const pg = PAGES[u.searchParams.get('case')] || {};
+  const scripts = pg.release
+    ? `<script src="${NOSE}${releases.releasePath(pg.release, releases.JS)}" integrity="${PINNED[pg.release]}"${pg.crossorigin === false ? '' : ' crossorigin="anonymous"'} referrerpolicy="no-referrer" defer></script>`
+    : [F.math, F.bar, F.rank, F.strings, F.widget].map(f => `<script src="${NOSE}/js/${f}" defer></script>`).join('\n');
+  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Security-Policy': pg.release ? GUIDE_CSP() : CSP(),
+                       ...(pg.policy ? { 'Referrer-Policy': pg.policy } : {}) });
   res.end(`<!doctype html>\n<html lang="en"><head><meta charset="utf-8"><title>A test store</title></head>\n<body>\n<h1>A test store</h1>\n<nose-matches id="w"${attrs}></nose-matches>\n<button id="probe" type="button" hidden>probe</button>\n<script src="/shop.js" defer></script>\n${scripts}\n</body></html>\n`);
 });
 STORE = `http://localhost:${storeServer.address().port}`;
@@ -297,8 +351,9 @@ const shadowState = page => page.evaluate(() => {
   return { text: r ? r.textContent.trim() : '', links: r ? r.querySelectorAll('link').length : 0 };
 });
 
-async function open(name, attrs, { origin = 'store', path: at } = {}) {
+async function open(name, attrs, { origin = 'store', path: at, page: pg } = {}) {
   CASES[name] = attrs;
+  if (pg) PAGES[name] = pg;
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   await context.addCookies([{ name: 'nose_session', value: 'widget-test-session', url: NOSE, sameSite: 'Lax', httpOnly: true }]);
   await context.addInitScript(() => {
@@ -329,6 +384,8 @@ function kind(r) {
   if (r.origin === 'store') return ['/shop.js', '/favicon.ico'].includes(u.pathname) || u.pathname === '/shop.html' ? 'store page' : 'other';
   if (r.method === 'GET' && SCRIPTS.has(u.pathname) && !u.search) return 'script';
   if (r.method === 'GET' && u.pathname === `/css/${F.css}` && !u.search) return 'stylesheet';
+  const rp = releases.parsePath(u.pathname);
+  if (r.method === 'GET' && rp && !u.search) return rp.file === releases.JS ? 'script' : 'stylesheet';
   if (r.method === 'GET' && u.pathname === FEED_PATH && /^\?key=npk_[0-9a-f]{64}$/.test(u.search)) return 'feed';
   if (r.method === 'POST' && u.pathname === VOTE_PATH && !u.search) return 'vote';
   return 'other';
@@ -336,7 +393,7 @@ function kind(r) {
 const kinds = c => since(c).map(kind).filter(k => k !== 'script' && k !== 'store page');
 
 /* After each case: nothing carried, nothing elsewhere, no violation, no error. */
-async function close(c, { quietWarnings = false } = {}) {
+async function close(c, { quietWarnings = false, allowErrors = null } = {}) {
   const reqs = since(c);
   const leaks = reqs.filter(r => NEEDLES.some(n => `${r.method} ${r.url} ${JSON.stringify(r.headers)} ${r.body}`.includes(n)));
   check(`${c.name}: no request carries a purchased batch ID, a purchase day or the purchases attribute (${reqs.length} requests)`,
@@ -348,8 +405,9 @@ async function close(c, { quietWarnings = false } = {}) {
     reqs.filter(r => r.origin === 'nose').every(r => !r.headers.cookie && (!r.headers.referer || r.headers.referer === `${STORE}/`)),
     JSON.stringify(reqs.filter(r => r.origin === 'nose').map(r => [r.url, r.headers.cookie, r.headers.referer])));
   const violations = await c.page.evaluate(() => window.__violations.slice());
-  check(`${c.name}: no CSP violation, no page error${quietWarnings ? '' : ', no console warning'}`,
-    !violations.length && !c.errors.length && (quietWarnings || !c.warnings.length),
+  const errors = allowErrors ? c.errors.filter(e => !allowErrors.test(e)) : c.errors;
+  check(`${c.name}: no CSP violation, no page error${allowErrors ? ' but the one expected' : ''}${quietWarnings ? '' : ', no console warning'}`,
+    !violations.length && !errors.length && (quietWarnings || !c.warnings.length),
     JSON.stringify({ violations, errors: c.errors, warnings: c.warnings }));
   await c.context.close();
 }
@@ -679,9 +737,9 @@ try {
     const votes = since(c).filter(r => kind(r) === 'vote');
     const body = votes.length === 1 ? JSON.parse(votes[0].body) : null;
     const BANDS = [1, 0.8, 0.6, 0].map(s => M.matchBand(s)[1]);
-    check('vote: Space on up sends one vote by sendBeacon: text/plain, the store\'s Origin, no cookie, no preflight',
+    check('vote: Space on up sends one vote by fetch: text/plain, the store\'s Origin, no cookie, no referrer, no preflight',
       votes.length === 1 && /^text\/plain;charset=utf-8$/i.test(votes[0].headers['content-type']) && votes[0].headers.origin === STORE
-        && !votes[0].headers.cookie && !since(c).some(r => r.method === 'OPTIONS'),
+        && !votes[0].headers.cookie && !votes[0].headers.referer && !since(c).some(r => r.method === 'OPTIONS'),
       JSON.stringify(votes.map(r => r.headers)));
     check('vote: exactly b2b-vote\'s six fields - key, candidate, score, band, palateSize, vote - and js/b2b-rank\'s values in them',
       body && same(Object.keys(body).sort(), ['band', 'candidate', 'key', 'palateSize', 'score', 'vote'])
@@ -719,6 +777,84 @@ try {
     check('vote: nothing at all for a product whose batch has no terpene panel available',
       (await c.page.evaluate(() => document.querySelector('nose-matches').shadowRoot.textContent.trim())) === '' && !kinds(c).includes('vote'));
     await close(c);
+  }
+
+  /* ===================================================== a pinned release */
+  check('the integration guide gives three CSP lines - script-src and style-src under /b2b/releases/, connect-src the feed and the vote alone',
+    same(GUIDE_CSP_LINES, [['script-src', ['https://nose-app.com/b2b/releases/']], ['style-src', ['https://nose-app.com/b2b/releases/']],
+      ['connect-src', [`https://nose-app.com${FEED_PATH}`, `https://nose-app.com${VOTE_PATH}`]]]), JSON.stringify(GUIDE_CSP_LINES));
+  {
+    const c = await open('release, rail', { key: KEY, mode: 'rail', category: 'flower', routes: JSON.stringify(ROUTES), purchases: PURCHASES_JSON, consent: 'granted' },
+      { page: { release: 1, policy: 'unsafe-url' } });
+    const { page } = c;
+    await page.waitForFunction(() => document.querySelector('nose-matches').shadowRoot.querySelectorAll('.nm-card').length);
+    const want = expectRail(FEED, PURCHASES, [], 'flower');
+    const cards = await readCards(page);
+    check('release, rail: one tag, its integrity and crossorigin, under the guide\'s CSP - the same cards as the five files give, js/b2b-rank\'s',
+      same(cards.map(({ bar, ...k }) => k), want.ranked.map(e => expectCard(S.default, e))), differs(cards.map(({ bar, ...k }) => k), want.ranked.map(e => expectCard(S.default, e))));
+    check('release, rail: every bar renderBar()\'s - the release\'s own copy, from js/aroma-bar verbatim',
+      same(cards.map(k => k.bar), await drawBars(page, want.ranked.map(e => (e.unscored ? null : e.batch.terps)))));
+    const styled = await page.evaluate(() => {
+      const r = document.querySelector('nose-matches').shadowRoot;
+      const link = r.querySelector('link[rel="stylesheet"]');
+      return [link.getAttribute('href'), link.integrity, link.crossOrigin, link.referrerPolicy,
+              getComputedStyle(r.querySelector('.nm-card')).borderTopLeftRadius, getComputedStyle(r.querySelector('.profile-bar')).height];
+    });
+    check('release, rail: its stylesheet is the release\'s own, checked by the sha384 the release names, with no referrer - and applied',
+      same(styled, [`${NOSE}${releases.releasePath(1, releases.CSS)}`, RELEASE.sri.css, 'anonymous', 'no-referrer', '12px', '22px']), JSON.stringify(styled));
+    const toNose = since(c).filter(r => r.origin === 'nose');
+    check('release, rail: NOSE is asked for the release\'s two files and the feed alone - nothing from /js/ or /css/',
+      same(toNose.map(r => new URL(r.url, 'http://x').pathname).sort(),
+        [FEED_PATH, releases.releasePath(1, releases.CSS), releases.releasePath(1, releases.JS)].sort()), JSON.stringify(toNose.map(r => r.url)));
+    check('release, rail: none of them carries a cookie or any referrer, though the page\'s policy is unsafe-url; each carries the store\'s Origin',
+      toNose.every(r => !r.headers.cookie && !r.headers.referer && r.headers.origin === STORE), JSON.stringify(toNose.map(r => [r.url, r.headers.origin, r.headers.referer, r.headers.cookie])));
+    await close(c);
+  }
+  {
+    const c = await open('release, vote', { key: KEY, mode: 'vote', product: 'D-103', purchases: PURCHASES_JSON, consent: 'granted' },
+      { page: { release: 1, policy: 'unsafe-url' } });
+    const { page } = c;
+    await page.waitForFunction(() => document.querySelector('nose-matches').shadowRoot.querySelector('.nm-vote'));
+    await page.locator('nose-matches').locator('button[data-vote="up"]').click();
+    await page.waitForTimeout(300);
+    const votes = since(c).filter(r => kind(r) === 'vote');
+    const { mine } = split(FEED, PURCHASES, 'flower');
+    const v = R.voteScore(FEED, mine, 'D-103', { removed: [] });
+    check('release, vote: one vote by fetch - text/plain, the store\'s Origin, no cookie, no referrer though the page\'s policy is unsafe-url, no preflight',
+      votes.length === 1 && /^text\/plain;charset=utf-8$/i.test(votes[0].headers['content-type']) && votes[0].headers.origin === STORE
+        && !votes[0].headers.cookie && !votes[0].headers.referer && !since(c).some(r => r.method === 'OPTIONS'),
+      JSON.stringify(votes.map(r => r.headers)));
+    check('release, vote: b2b-vote\'s six fields and js/b2b-rank\'s values in them',
+      votes.length === 1 && same(JSON.parse(votes[0].body), { key: KEY, candidate: 'D-103', score: v.payload.score, band: v.payload.band, palateSize: v.payload.palateSize, vote: 'up' }),
+      votes.length ? votes[0].body : 'no vote');
+    await close(c);
+  }
+  {
+    const c = await open('release, stylesheet altered', { key: KEY, mode: 'rail', category: 'flower', routes: JSON.stringify(ROUTES), purchases: PURCHASES_JSON, consent: 'granted' },
+      { page: { release: 2 } });
+    const { page } = c;
+    await page.waitForFunction(() => document.querySelector('nose-matches').shadowRoot.querySelectorAll('.nm-card').length);
+    await page.waitForTimeout(200);
+    const shown = await page.evaluate(() => {
+      const r = document.querySelector('nose-matches').shadowRoot;
+      return [r.querySelector('.nm').hidden, getComputedStyle(r.querySelector('.nm-card')).borderTopLeftRadius, r.querySelectorAll('.nm-card').length];
+    });
+    check('release, stylesheet altered: the browser refuses the stylesheet by the hash the release names - the cards show, unstyled',
+      shown[0] === false && shown[1] !== '12px' && shown[2] === 12 && c.errors.some(e => /integrity/i.test(e) && e.includes(releases.releasePath(2, releases.CSS))),
+      JSON.stringify({ shown, errors: c.errors }));
+    await close(c, { allowErrors: /integrity/i });
+  }
+  for (const [name, pg, needle] of [
+    ['release, script altered', { release: 3 }, /integrity/i],
+    ['release, no crossorigin', { release: 1, crossorigin: false }, /CORS enabled|integrity/i]]) {
+    const c = await open(name, { key: KEY, mode: 'rail', category: 'flower', routes: JSON.stringify(ROUTES), purchases: PURCHASES_JSON, consent: 'granted' }, { page: pg });
+    await c.page.waitForTimeout(400);
+    const defined = await c.page.evaluate(() => !!window.customElements.get('nose-matches'));
+    check(`${name}: the browser runs none of it - no element defined, nothing shown, no feed asked for`,
+      !defined && !(await c.page.evaluate(() => !!document.querySelector('nose-matches').shadowRoot)) && !kinds(c).includes('feed')
+        && c.errors.some(e => needle.test(e)),
+      JSON.stringify({ defined, kinds: kinds(c), errors: c.errors }));
+    await close(c, { allowErrors: needle });
   }
 
   /* ============================================== the CSP is in force */
@@ -844,10 +980,17 @@ for (const p of ['app.html', 'index.html']) {
 check('the widget holds no maths, no rounding, no band and no label of its own',
   !/\bfunction\s+(cosine|normalize|matchBand|shownScore|averageProfiles)\s*\(|Math\.(round|floor|ceil)|\*\s*100\b|'(Strong|Good|Moderate|Low)'/.test(SRC.widget)
     && !S.SHOWN_FROM_OTHER_FILES.matchLabels.some(l => SRC.widget.includes(l)));
-check('...asks for nothing but the feed and the vote: one fetch(), one sendBeacon(), no other way out',
-  (SRC.widget.match(/\bfetch\(/g) || []).length === 1 && (SRC.widget.match(/\bsendBeacon\(/g) || []).length === 1
+check('...asks for nothing but the feed and the vote: two fetch() - the feed\'s and the vote\'s - no sendBeacon(), no other way out',
+  (SRC.widget.match(/\bfetch\(/g) || []).length === 2 && !/\bsendBeacon\b/.test(SRC.widget)
     && !/XMLHttpRequest|WebSocket|EventSource|new Image|import\(|\beval\(|new Function|innerHTML|document\.cookie|\.style\.|setAttribute\('style'/.test(SRC.widget),
-  JSON.stringify([(SRC.widget.match(/\bfetch\(/g) || []).length, (SRC.widget.match(/\bsendBeacon\(/g) || []).length]));
+  JSON.stringify([(SRC.widget.match(/\bfetch\(/g) || []).length, (SRC.widget.match(/\bsendBeacon\b/g) || []).length]));
+check('...each in cors mode, with no cookie and no referrer; the vote kept alive',
+  /fetch\(url, \{ method: 'GET', mode: 'cors', credentials: 'omit', referrerPolicy: 'no-referrer', signal: ctl\.signal \}\)/.test(SRC.widget)
+    && /fetch\(ORIGIN \+ VOTE_PATH, \{ method: 'POST', mode: 'cors', credentials: 'omit', referrerPolicy: 'no-referrer', keepalive: true, body \}\)/.test(SRC.widget));
+check('...its stylesheet asked for with no referrer, and by its hash only when a release names one - null as built, so the site\'s own stylesheet needs no CORS',
+  /link\.referrerPolicy = 'no-referrer';/.test(SRC.widget) && /^ {2}const STYLESHEET_INTEGRITY = null;$/m.test(SRC.widget)
+    && /if \(STYLESHEET_INTEGRITY\) \{ link\.integrity = STYLESHEET_INTEGRITY; link\.crossOrigin = 'anonymous'; \}/.test(SRC.widget)
+    && SRC.widget.indexOf('link.referrerPolicy') < SRC.widget.indexOf('link.href ='));
 check('...and reads the purchases only after consent is granted',
   SRC.widget.indexOf("getAttribute('purchases')") > SRC.widget.indexOf("if (consent !== 'granted')") && SRC.widget.indexOf("if (consent !== 'granted')") > 0);
 check('no effect wording in the widget\'s comments and text, nor anywhere in the strings or the bar; the stylesheet shows no words',

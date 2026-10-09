@@ -153,7 +153,7 @@ Also run `node test/resolver-test.js` - expect `resolver clean`, and
 **Or all at once:** `bash scripts/gates.sh` runs these, the Kaycha anchors,
 `novelty-test`, `coa-dates-test`, `store-test`, `probe-test`, `archive-wiring-test`,
 `archive-scripts-test`, `rerun-test`, `review-queue-test`,
-`analysis-test`, `duplicates-test`, `remove-copies-test`, `remove-document-test`, `b2b-coverage-test`, `b2b-store-test`, `b2b-catalog-test`, `b2b-endpoints-test`, `b2b-rank-test`, `b2b-strings-test`, `check-trust-test` and, after the build, `input-paths-test` and `b2b-widget-test`.
+`analysis-test`, `duplicates-test`, `remove-copies-test`, `remove-document-test`, `b2b-coverage-test`, `b2b-store-test`, `b2b-catalog-test`, `b2b-endpoints-test`, `b2b-rank-test`, `b2b-strings-test`, `check-trust-test` and, after the build, `b2b-release-test`, `input-paths-test` and `b2b-widget-test`.
 It prints the line each gate produced and ends with `ALL GATES GREEN`. It passes
 a gate only on its exact expected line, so when a session legitimately changes
 a count, update the script in the same commit.
@@ -212,7 +212,8 @@ someone to look.
 | `b2b-rank-test.js` | `js/b2b-rank.<hash>.js`, the dispensary ranking engine (§14, "The ranking engine"): one file, loaded as a page loads it and in Node; no maths of its own, every number traced to NoseMatch; the 1830 golden pairs, 61 self-scores and 65 palates through `rank()` and `palateFrom()` to the last bit; 3x the intensity the same; unread batches last, with no number; routes, category, stock and the guardrail leaving batches out and never reordering; ties by `list_position`; each skip reason, a removed batch, one count per batch, the window as PostgreSQL counts it; `soldOut()` and `voteScore()`; no name or brand read; `build.sh`'s load-order rule, its own lines, on throwaway pages; offline |
 | `b2b-strings-test.js` | `js/b2b-strings.<hash>.js`, every word the dispensary widget shows (§14, "The widget"): two variants, default and florida, with the same keys and placeholders; no effect or recreational word - the prompt's list and their forms - in any string or anywhere in the file; Florida's says aroma and orders; the words shown from other files true to `matchBand()` and `renderBar()`; every key read by the widget and none written out in it; offline |
 | `check-trust-test.js` | `scripts/check-trust.mjs` (§13, "The trust guard") on throwaway sites: every form of the old promise fails, true sentences pass; offline |
-| `b2b-widget-test.mjs` | `<nose-matches>` in headless Chromium (§14, "The widget"): the built files on a store's page from another origin, under the prompt's CSP, against a stand-in feed and vote; only the feed and the vote leave the page, and no request carries a purchase; consent, denied, control; each mode equal to `js/b2b-rank`'s answers; every bar `renderBar()`'s; keyboard reach; the demo page; one copy of the bar; `build.sh`'s load-order lines. Needs Playwright; a gate, run after the build |
+| `b2b-release-test.js` | pinned widget releases (§14, "Pinned releases"): `scripts/b2b-release.js`'s build - the same bytes from one commit and version, every time, anywhere; the five files verbatim and in order but for the widget's two stylesheet lines; the stylesheet verbatim; the bundle running as a page runs it - its refusals, its publishing to a stand-in Blobs (never overwriting, going on after a stop, an ETag or a failure, the row last), `netlify/functions/b2b-release.js` (the switch, GET and HEAD, one path shape, the bytes with exactly their five headers, a 404 nothing caches, 503 and one line), `scripts/b2b-release-check.js` against each kind of mismatch, nothing built left in the repo, no effect wording, the integration guide's names; offline, in throwaway git repos; a gate, run after the build |
+| `b2b-widget-test.mjs` | `<nose-matches>` in headless Chromium (§14, "The widget"): the built files on a store's page from another origin, under the prompt's CSP, against a stand-in feed and vote; only the feed and the vote leave the page, and no request carries a purchase; consent, denied, control; each mode equal to `js/b2b-rank`'s answers; every bar `renderBar()`'s; keyboard reach; the demo page; one copy of the bar; `build.sh`'s load-order lines; since 2026-10-09 the vote by `fetch` with no cookie or referrer, and a pinned release - one tag with its hash under the integration guide's own CSP lines, the same rail and vote, its stylesheet checked by its hash, an altered file or a missing `crossorigin` refused. Needs Playwright; a gate, run after the build |
 | `input-paths-test.mjs` | the app's ways in, in headless Chromium: Scan QR (fake camera and QR image), COA link, Upload. The real `coa.js` and parser answer, with only the download and unpdf stood in for (§13, "The input paths"). Needs Playwright; a gate, run after the build |
 
 The counts in section 2 are checked by `fixture-lint.js` against the corpus, so
@@ -2530,7 +2531,9 @@ Its core promise: **a shopper's purchase history never reaches NOSE.** The
 dispensary's page hands the shopper's batch IDs to the shopper's own browser,
 and the widget builds the palate and ranks there. B2B lives apart from
 everything consumer - its own schema (`b2b`) and role (`nose_b2b`), since
-2026-10-07, and its own Blobs store (`b2b-votes`), functions (`b2b-catalog`, `b2b-feed` and `b2b-vote`), ranking engine (`js/b2b-rank.<hash>.js`) and widget (`js/b2b-widget.<hash>.js`, with `js/b2b-strings` and `css/b2b-widget`), which no consumer page loads, all since 2026-10-08 -
+2026-10-07, and its own Blobs store (`b2b-votes`), functions (`b2b-catalog`, `b2b-feed` and `b2b-vote`), ranking engine (`js/b2b-rank.<hash>.js`) and widget (`js/b2b-widget.<hash>.js`, with `js/b2b-strings` and `css/b2b-widget`), which no consumer page loads, all since 2026-10-08,
+and pinned releases of the widget - a second Blobs store (`b2b-releases`) and
+function (`b2b-release`), since 2026-10-09 -
 and whatever runs on Netlify stays off unless `B2B_ENABLED=1` in the
 Production context and `build-info.json` says production
 (`lib/b2b-flag.js`). No B2B record or log holds anything about a shopper. A batch
@@ -3990,6 +3993,259 @@ page and the widget's files go live, and the widget's two calls answer 404):
    `js/aroma-bar`. Then `https://nose-app.com/b2b/demo/`: press the green
    button, and the rail shows.
 
+### Pinned releases, 2026-10-09
+
+Prompt 7. A dispensary pins one exact widget version with an integrity hash,
+so no NOSE deploy changes its page unannounced, and git still holds one copy
+of the maths. Nothing in it is live: the function answers 404 until Prompt
+8's switch, and the store holds no release until the first is published from
+the Codespace (below).
+
+```
+netlify/functions/lib/b2b-releases.js  the "b2b-releases" store: keys, the five headers, read, put (onlyIfNew, ETag), inventory
+netlify/functions/b2b-release.js       GET /b2b/releases/<version>/nose-matches.{js,css} (config.path): the bytes, immutable, any origin
+scripts/b2b-release.js                 builds a release from origin/main's newest commit and publishes it; --dry-run
+scripts/b2b-release-check.js           every recorded release against git, the store and, with --site, the live site
+docs/B2B-RELEASES.md                   the record: version, commit, two sha384 values - rows written by the script alone
+docs/B2B-INTEGRATION.md                for a dispensary's developer
+js/b2b-widget.<hash>.js                STYLESHEET_INTEGRITY; its stylesheet with no referrer; the vote by fetch (63200a61 -> 8f17602f)
+test/b2b-release-test.js               offline, a gate: "b2b-release clean"
+test/b2b-widget-test.mjs               the vote by fetch; a pinned release in Chromium
+scripts/gates.sh                       the gate, after the build
+```
+
+**The probe, before any edit**, on `a0d433a` - ALL GATES GREEN, 28 gates:
+
+- **Old bundles kept in `js/`**: `build.sh`'s `fingerprint()` keeps the first
+  file a name matches and deletes the rest. With an older widget kept beside
+  today's (`RAIL_MAX 8`, `js/b2b-widget.152014e3.js`), the build said `OK -
+  ready to deploy`, deleted today's widget and rewrote the demo page to load
+  the old one: whichever hash sorts first wins. Its stylesheet `sed` also
+  rewrites every `js/b2b-widget.*.js`, so a kept file's bytes - and its hash
+  - change. With the kept file sorting second, it was deleted instead.
+- **A second `js/match-math` file**: `scripts/lib/match.js` throws
+  `expected exactly one js/match-math.<hash>.js, found 2`, `match-test`
+  fails `exactly one`, and `b2b-rank-test` stops on load.
+- **A built release committed anywhere as `.js`**
+  (`b2b/releases/1.0.0/nose-matches.js`): `match-test`'s copy scan lists it
+  beside `wip/`, and so does `b2b-widget-test`'s one-copy-of-the-bar scan.
+  So git cannot hold a built release.
+- **Integrity across origins**, in Chromium 141 with two local origins (a
+  scratch probe, not committed): integrity without `crossorigin` - blocked,
+  "requires the request to be CORS enabled"; `crossorigin` without
+  `Access-Control-Allow-Origin` - blocked; both with the right hash - runs,
+  and `document.currentScript` still names NOSE's origin; a wrong hash -
+  blocked. A CSP source with a path allows the release path and refuses
+  `/js/`. A stylesheet linked inside a shadow root with integrity and
+  `crossOrigin` behaves the same: applied, or refused for a wrong hash or no
+  CORS header. MDN ([Subresource Integrity](https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity),
+  modified 2026-04-14): integrity on a cross-origin resource needs CORS, a
+  `no-cors` request with integrity always fails, and `<script>` and `<link
+  rel="stylesheet">` take it.
+- **The vote**, the same way: from an order page
+  (`/account/orders/1234?order=1234`) served with `Referrer-Policy:
+  unsafe-url` or `no-referrer-when-downgrade`, the beacon carried that whole
+  address as `Referer` to NOSE. A `fetch` in cors mode with keepalive,
+  credentials `omit` and no referrer carried the store's origin alone, under
+  every policy tried (default, `no-referrer`, `same-origin`, those two), with
+  no preflight.
+- **Netlify's docs**, read 2026-10-09: [Netlify Blobs](https://docs.netlify.com/build/data-and-storage/netlify-blobs/)
+  (updated 2026-09-30) - `onlyIfNew` writes only when the key is new; an
+  added blob is available everywhere at once; `getStore` stores are shared by
+  every deploy, previews included; 5 GB an object, 600-byte keys. The
+  `@netlify/blobs` 10.7.11 source (`blobs-v10.7.11`): a conditional write
+  answers `{ modified: true }` on any status but 412, so a write counts only
+  with an ETag. [Functions configuration](https://docs.netlify.com/build/functions/configuration/)
+  (updated 2026-09-17) - `config.path` takes URLPattern paths, and with one
+  set the function is not at `/.netlify/functions/<name>`.
+  [Caching overview](https://docs.netlify.com/build/caching/caching-overview/)
+  (updated 2026-08-11) - a function's reply is cached only when it says so,
+  every deploy invalidates its context's cache, the query is in a
+  function's cache key. [Custom headers](https://docs.netlify.com/manage/routing/headers/)
+  (updated 2025-12-01) - `_headers` does not apply to a function's reply, so
+  `_headers` needs no change.
+- **Simpler ways, rejected**: pinning today's `/js/<hash>` files (deleted on
+  the next change, first bullet); rebuilding releases at deploy time (build
+  output in the tree fails the one-copy scans unless a path is exempted, and
+  it would make every deploy depend on every old commit building the same);
+  a public CDN (the widget reads its origin from its own script, so its feed
+  and vote would go to the CDN).
+
+**The owner's decisions, 2026-10-09**, asked after the probe:
+
+- **The widget checks its stylesheet's hash.** `js/b2b-widget` gains
+  `STYLESHEET_INTEGRITY`, `null` as built: on NOSE's own site its stylesheet
+  is asked for as before, with no CORS. A release writes the stylesheet's
+  sha384 there, and the widget then sets `integrity` and `crossOrigin =
+  'anonymous'` on its link. So the one hash on the store's tag pins both
+  files.
+- **The vote goes by `fetch`**: cors, keepalive, credentials `omit`,
+  referrer policy `no-referrer`, a string body. The store's origin always
+  goes, so `b2b-vote`'s origin rule holds in every browser; no cookie and no
+  page address ever do. The stylesheet is asked for with no referrer too.
+- **The release function obeys the switch**: 404 until Prompt 8, like every
+  B2B function. So the check reads git and the store now, and the live site
+  after Prompt 8.
+
+**Decided here, where the prompt was silent:**
+
+- **`js/b2b-strings` is in the bundle** - the prompt's list left it out, and
+  the widget refuses to run without it. The order is build.sh's load order:
+  match-math, b2b-rank, aroma-bar, b2b-strings, b2b-widget.
+- **The widget names the release's own stylesheet**,
+  `/b2b/releases/<version>/nose-matches.css`: the `/css/b2b-widget.<hash>.css`
+  it names on the site is deleted by the build after the next CSS change.
+- **Versions are whole numbers from 1**, one more than the record's last.
+  Only origin/main's newest commit is released, so the row always goes on
+  the newest record; a checkout behind it is told to pull. A commit whose six
+  files are the last release's, byte for byte, is refused - nothing new.
+- **The record holds the version, the commit (all 40 characters) and the two
+  sha384 values**, and nothing else - no date.
+- **One address per file**: `/b2b/releases/<n>/nose-matches.js` and `.css`,
+  no query, not even an empty `?`. Exactly five headers on a 200; every other
+  reply `no-store`, so a request made before a release exists is never cached
+  as missing. No `durable` directive: each deploy clears the cache anyway.
+- **Strong consistency for the scripts**, which read back what they wrote; the
+  function reads as Netlify hands it, the default: a release is written once
+  and is available everywhere as soon as it is added.
+- **A release is a browser file** (s14, "Still open": the engine in Node).
+- **`docs/` is forced 404 on the site**, so the integration guide reaches a
+  dispensary from the public repository, or from the owner.
+
+**The build** - `scripts/b2b-release.js`, reading the commit from git's
+objects, never the working tree:
+
+- `nose-matches.js`: a header naming the release, the commit and the five
+  files; then each file after a `/* ---- js/<name>.<hash>.js ---- */` line,
+  verbatim, but for the widget's `STYLESHEET` and `STYLESHEET_INTEGRITY`
+  lines. `nose-matches.css`: `css/b2b-widget`, verbatim. Nothing else goes in
+  - no time, no machine - so a commit and version always give the same bytes.
+- It refuses a commit whose files are not as `build.sh` leaves them: one
+  hashed file each and no unbuilt one, each named by its own SHA-256, the
+  widget naming the stylesheet beside it, each file ending its last statement
+  (`;` and a newline), UTF-8.
+- It refuses, before building: any change in the tree, staged, unstaged or
+  untracked; a fetch of origin main that fails; a HEAD that is not origin/main;
+  a record it cannot read (a gap, a row out of shape, no table, no file).
+- Publishing, with `NETLIFY_SITE_ID` and `NETLIFY_AUTH_TOKEN`: the stylesheet
+  first (so a script on the store never names a stylesheet that is not
+  there), then the script, each `onlyIfNew` and counted only with an ETag.
+  A key already there with these bytes is a run that stopped part way: it
+  goes on. With other bytes it stops, overwriting nothing. Both are read back
+  and compared, and only then is the row written. It prints the tag a
+  store's page carries, and never a secret.
+
+**The function** - `netlify/functions/b2b-release.js`, a default export
+taking a Request, with `export const config = { path:
+'/b2b/releases/:version/:file' }`: the switch first; GET and HEAD, else 405
+`Allow: GET, HEAD`; the path exactly, else a plain 404; the store's bytes
+with `Content-Type`, `Cache-Control: public, max-age=31536000, immutable`,
+`Access-Control-Allow-Origin: *`, `Cross-Origin-Resource-Policy:
+cross-origin` and `X-Content-Type-Options: nosniff`, and nothing else; 503 and
+`b2b-release: the release store did not answer - nothing served` when the
+store fails or takes 4 seconds. It reads the method and the address, nothing
+else of the request; it never writes, lists or deletes. esbuild 0.28.2
+bundled it as CommonJS with `@netlify/blobs` left out: `config` and `default`
+exported, the switch's 404, and neither `coa.js` nor the archive in it.
+
+**The check** - `scripts/b2b-release-check.js [--site <origin>]`: for each
+row, git (the commit still on origin/main, built again, both hashes the
+record's), the store (both files downloaded and hashed; any release or key
+the record does not name), and with `--site` the site (200, the bytes, the
+five headers; a 404 said as "not served yet"). One line a release, then
+`every file of N releases matches the record` or the count of problems.
+Reads only.
+
+**The guide** - `docs/B2B-INTEGRATION.md`: what NOSE receives with each
+request and what it never does; the tag (`integrity` from the record,
+`crossorigin="anonymous"`, `referrerpolicy="no-referrer"`, `defer`, never a
+module); the three CSP lines, path-limited, and the `default-src` trap; every
+attribute; purchases only after consent, with the event and a few lines of
+page code; the three events and the two lists the browser keeps; the A/B
+group; routes; purchase days in UTC; the catalog and the upload call; what to
+check when nothing shows.
+
+**The tests:**
+
+- `test/b2b-release-test.js`, 75 checks, a gate after the build, in throwaway
+  git worlds with Blobs stood in for as 10.7.11 answers: the same bytes
+  three ways (twice, from two clones, from a process with another zone and
+  locale); the parts verbatim and in order but for the widget's two lines;
+  the bundle run as a page runs it (NoseMatch, NoseRank, NoseBar,
+  NoseStrings, `<nose-matches>` defined); every refusal; publishing, the
+  clash, the resume, no ETag, a bad read-back, a refused token; the
+  function's switch, methods, 13 wrong paths (and one the URL parser folds
+  into the right one), headers, HEAD, 404, 503, a hang,
+  and what it reads; the check against each kind of mismatch; nothing left
+  in the repo; no effect wording; the guide's names, read from the widget,
+  the strings and the catalog format.
+- `test/b2b-widget-test.mjs`, 181 checks (was 147): the vote by `fetch` with
+  no referrer; two `fetch()` calls and no `sendBeacon`; and a pinned release
+  built from the tree - one tag under the CSP lines read out of the guide,
+  the page's policy `unsafe-url`: the same rail and vote as the five files,
+  its stylesheet checked by the release's hash and applied, no request with
+  a referrer or a cookie; an altered stylesheet refused (cards unstyled), an
+  altered script or a tag without `crossorigin` running nothing.
+- **Against broken copies**: 52 deliberate faults, one at a time, in a copy
+  of the tree (a scratch harness, not committed) - among them the parts out
+  of order, the strings left out, a build time in the header, the widget's
+  two lines left alone, the wrong hash for the stylesheet, a name not checked
+  against its hash, untracked files ignored, no dirty check, no fetch, a
+  checkout behind or ahead accepted, no `onlyIfNew`, a key already there
+  taken unread, no ETag needed, the row first, no read-back, the script
+  first, a version reused, an unchanged widget released, the token printed,
+  a gap in the record; the switch after the method or gone, each of the five
+  headers wrong or missing, a 404 cached, a query served, a header read, a
+  line on success, version 0, no timeout, a deploy store; the check skipping
+  the store, unrecorded releases, headers, a 404 or git; the guide's tag
+  without `crossorigin`, an attribute or the consent words missing, its
+  `connect-src` the whole origin; the vote by `sendBeacon`, with credentials
+  or the page's referrer; the stylesheet with the page's referrer,
+  `crossOrigin` always set, its hash never applied - each fails a test.
+
+**Rehearsed end to end** on a throwaway clone of this tree with a bare
+origin and a folder standing in for Blobs: `--dry-run` named release 1 and
+its two hashes and wrote nothing; the real run wrote the stylesheet, then the
+script, read both back and added the row; with the row committed and pushed,
+`b2b-release-check.js` said `every file of 1 release matches the record, in
+git and in the store`; a second `--dry-run` was refused - the widget's files
+unchanged since release 1.
+
+**How it was verified, 2026-10-09, in the cloud workspace.** npm was blocked
+(registry.npmjs.org answered 403), so the gates ran on stand-ins, as before,
+with one change: `pg` was the real 8.23.0, assembled from its git tags (the
+node-postgres monorepo and its seven dependencies, each at the lockfile's
+version). PGlite was a throwaway PostgreSQL 16 cluster per instance behind
+PGlite's API, with its parse and serialize rules; unpdf its 1.8.0 source
+over pdfjs-dist 6.2.108 (56/3, 56/0, clean, 4.124/0.944); the committed
+html5-qrcode in place of `build.sh`'s download; Playwright 1.56.0's Chromium
+141. ALL GATES GREEN on `a0d433a` before any edit, 28 gates, and after it
+with the new gate, 29 - `KAY-CAR-001` 4.124 and `KAY-PRR-001` 0.944. The
+release and widget gates passed on Node 20.20 as well (`.nvmrc`).
+`parse-coa.js`, `coa-dates.js` and `extract-text.js` are untouched, so no
+reparse is due. `build.sh` renamed `js/b2b-widget.63200a61.js` to
+`js/b2b-widget.8f17602f.js`, and the demo page with it; `js/match-math`,
+`js/b2b-rank`, `js/aroma-bar`, `js/b2b-strings` and `css/b2b-widget` are byte
+for byte as they were. Nothing ran against Netlify, the database or a lab's
+server. The Codespace run on the real packages is the one that counts.
+
+**In the Codespace, in this order** (the first release goes to the store;
+nothing reaches a store's page until Prompt 8 and a store's tag):
+
+1. Bring the commit in, then `bash scripts/gates.sh` - ALL GATES GREEN, 29
+   gates, `b2b release` among them.
+2. `git push` - deploys `b2b-release` and the renamed widget. `curl -s -o
+   /dev/null -w '%{http_code} %{content_type}\n'
+   https://nose-app.com/b2b/releases/1/nose-matches.js` answers `404
+   text/plain; charset=utf-8`: the function's own 404, switched off. `404
+   text/html` would be the site's 404 page - the route not registered.
+3. `node scripts/b2b-release.js --dry-run`, then `node scripts/b2b-release.js`.
+4. `git add docs/B2B-RELEASES.md && git commit -m "b2b: release 1" && git push`.
+5. `node scripts/b2b-release-check.js` - `every file of 1 release matches the
+   record, in git and in the store`.
+6. After Prompt 8 switches B2B on: `node scripts/b2b-release-check.js --site
+   https://nose-app.com` - `in git, in the store and on the site`.
+
 ### Still open
 
 - `scripts/download-twice.js` keeps its own looser fetch loop. Moving it onto
@@ -4052,23 +4308,16 @@ page and the widget's files go live, and the widget's two calls answer 404):
   NOSE prints it once and has no channel of its own for it.
 - `NOSE_B2B_DB_URL` is a Codespaces secret only. It goes into Netlify's
   Production context with Prompt 8, not before.
-- **A vote sent by `sendBeacon` from a page served with `Referrer-Policy:
-  no-referrer`** (or `same-origin`) carries `Origin: null` where a browser
-  follows the standard (MDN, above), and the origin rule refuses it; Chromium
-  141 sent the page's origin anyway (the probe, "Feed and votes"). Prompt 6
-  sends the vote by `sendBeacon`, as it asked, so Prompt 7 decides between
-  the integration guide telling the store not to serve the widget's pages
-  with those policies, and moving the vote to `fetch(url, { method: 'POST',
-  mode: 'cors', keepalive: true, credentials: 'omit', body })` - a string
-  body, so still a simple request with no preflight, the page's origin always
-  sent, no cookies - which `b2b-vote` already answers with that origin
-  echoed. The feed is a cors `fetch` already, with no referrer (s14, "The
-  widget").
-- **A beacon carries this site's cookies** (credentials `include`). NOSE's one
-  cookie, `nose_session`, is `SameSite=Lax`, so it never rides along from a
-  store's page, and the vote reads no cookie. A NOSE cookie ever marked
-  `SameSite=None` would ride along with every vote; the `fetch` route above
-  sends none.
+- **Settled 2026-10-09: the vote goes by `fetch`, not `sendBeacon`**
+  (above, "Pinned releases"). A beacon from a page served with
+  `Referrer-Policy: no-referrer` or `same-origin` carries `Origin: null`
+  where a browser follows the standard, which the origin rule refuses; it
+  carries the site's cookies (credentials `include`); and from an order page
+  served with `unsafe-url` or `no-referrer-when-downgrade` it carried the
+  page's whole address to NOSE. The vote is now `fetch(..., { method: 'POST',
+  mode: 'cors', credentials: 'omit', referrerPolicy: 'no-referrer',
+  keepalive: true, body })`: a string body, so still a simple request with no
+  preflight, the store's origin always sent, no cookie, no referrer.
 - **The feed is cached up to 60 seconds**, by browsers and by Netlify, apart
   for each origin: a catalog upload, a revoked key or a deleted store shows
   within the minute, a deploy at once. Nothing purges it by hand.
@@ -4103,11 +4352,11 @@ page and the widget's files go live, and the widget's two calls answer 404):
   category, so a rail across forms ("vapes for a flower palate", labelled, as
   the plan keeps it for after the pilot) is the widget's choice of purchases
   and one more string, and needs its own prompt.
-- **Purchase days are UTC days.** A page that hands local days moves a
-  purchase near midnight by one day - one day at the window's edge. Prompt
-  7's integration guide says which. `today` comes from the device's clock
-  when a call is handed none, and a clock that is wrong moves the window by
-  its error: the feed carries no date.
+- **Purchase days are UTC days**, as `docs/B2B-INTEGRATION.md` tells a
+  store's developer since 2026-10-09. A page that hands local days anyway
+  moves a purchase near midnight by one day - one day at the window's edge.
+  `today` comes from the device's clock when a call is handed none, and a
+  clock that is wrong moves the window by its error: the feed carries no date.
 - **A guardrail half with figures missing keeps batches out.** A store that
   sets CBD's half while leaving `cbd_percent` empty on some batches sees those
   batches left out of every list, and a shopper whose basis has no CBD figure
@@ -4116,9 +4365,11 @@ page and the widget's files go live, and the widget's two calls answer 404):
   missing THC or CBD figures, which would show a store the cost before it sets
   one.
 - **In Node the engine needs this repo's layout**: `js/b2b-rank.<hash>.js` takes
-  its maths through `../scripts/lib/match.js`. Campaign palates on a
-  dispensary's server would carry those files, or Prompt 7's release; decided
-  with that prompt.
+  its maths through `../scripts/lib/match.js`. Decided with Prompt 7
+  (2026-10-09): a release is a browser file - in Node its maths file takes
+  `module.exports` and the engine then asks for `../scripts/lib/match.js` - so
+  campaign palates on a dispensary's server ("Later") carry this repo's files,
+  at a pinned commit, until their own prompt says otherwise.
 - **The load-order rules compare line numbers.** For js/nose, js/b2b-rank,
   and since Prompt 6 js/aroma-bar and js/b2b-widget, two scripts on one line
   fail the build, and an `async` script would pass it and still run out of
@@ -4137,8 +4388,8 @@ page and the widget's files go live, and the widget's two calls answer 404):
   Florida cannabis-regulatory attorney the plan books; Prompt 10's kit
   renders the variant for the Department.
 - **Two attributes and one event more than the prompt named**: `strings`
-  and `feed`, and `nose:palate-restored`. Prompt 7's integration guide
-  documents them with the rest.
+  and `feed`, and `nose:palate-restored`, documented with the rest in
+  `docs/B2B-INTEGRATION.md` since 2026-10-09.
 - **The widget keeps two lists in the shopper's browser**, in storage on the
   store's own origin: the batches taken out of the palate
   (`nose-matches-removed`) and the products voted on (`nose-matches-voted`).
@@ -4146,9 +4397,10 @@ page and the widget's files go live, and the widget's two calls answer 404):
   site's data in the browser clears them. The vote is once per product per
   browser, so one shopper on two devices can vote twice.
 - **The widget names its stylesheet's built file**, written in by `build.sh`,
-  and reads NOSE's origin from `document.currentScript`. Prompt 7's pinned
-  release must carry a stylesheet under the name its widget carries, and stay
-  a classic script.
+  and reads NOSE's origin from `document.currentScript`. A pinned release
+  carries its own stylesheet and names it, with its hash, and stays a
+  classic script (above, "Pinned releases"); the integration guide says not
+  to load it as a module.
 - **The demo page goes live with the next deploy**, at `/b2b/demo/`: static,
   noindex, linked from nowhere, its feed a file. Its votes reach the
   production b2b-vote, which answers 404 until Prompt 8 and then refuses the
@@ -4162,6 +4414,35 @@ page and the widget's files go live, and the widget's two calls answer 404):
 - **`wip/nose-farnesene-wip.js` still holds an old copy of the bar**, as it
   does of the maths: an unfinished draft of the whole old bundle, loaded by
   nothing. The widget test lists it, as `match-test` does.
+- **The release route is unproven on Netlify.** `config.path` is read from
+  the function's source as `config.schedule` is for `keep-awake.js`, which
+  runs; but no function here has used a path yet. After the deploy, the
+  function's own `404 text/plain` at `/b2b/releases/1/nose-matches.js` is the
+  proof; the site's `404 text/html` page would mean the route is not there.
+- **No release is published yet**: until the walk-through above runs, the
+  record has no row and the store holds nothing.
+- **The live URLs are checked only after Prompt 8**: Prompt 8's first checks
+  should include `node scripts/b2b-release-check.js --site
+  https://nose-app.com`.
+- **The feed and the vote are not versioned.** A release pins the widget's
+  code, not what it reads: a change to `b2b-feed`'s fields or to what
+  `b2b-vote` accepts changes every pinned page. `b2b-endpoints-test` pins
+  both shapes; a change a released widget would not understand needs its own
+  prompt - fields added, never renamed or removed, or a new endpoint.
+- **Nothing withdraws a release.** Deleting its two blobs by hand would make
+  every page pinning it show nothing - the fail-closed outcome - and needs
+  its own prompt and a note in the record. `delete-store` deletes a store's
+  data, not code it loaded.
+- **Each deploy clears the CDN's copy of every release**, after which the
+  function reads Blobs once per edge; browsers keep theirs a year.
+- **Only Chromium has run a release** (141, Playwright 1.56). Integrity on
+  `<script>` and on a shadow root's `<link>`, and CORS with `crossorigin`, are
+  standard (MDN, above); `fetch` with `keepalive` has been Baseline since
+  November 2024 ([MDN, Request.keepalive](https://developer.mozilla.org/en-US/docs/Web/API/Request/keepalive),
+  modified 2025-03-13). Firefox and Safari wait for the pilot store's own
+  check, or Prompt 10's kit.
+- **A release request is in Netlify's request logs**, with its address, time
+  and the store's `Origin`, like the feed's. Prompt 8's page says so.
 
 ### Later
 

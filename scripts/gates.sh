@@ -100,6 +100,10 @@ gate 'trust guard'    'check-trust clean'        '^check-trust clean$' \
   node test/check-trust-test.js
 gate 'build'          'OK — ready to deploy'     '^OK — ready to deploy$' \
   bash build.sh
+# Pinned widget releases (scripts/b2b-release.js), built from the files the
+# build has just left - offline, in throwaway git repos, Blobs stood in for.
+gate 'b2b release'    'b2b-release clean'        '^b2b-release clean$' \
+  node test/b2b-release-test.js
 # After the build, so the app is tested as it deploys: renamed bundles, the
 # rewritten pages, the vendored QR library. Headless Chromium; see the header.
 gate 'input paths'    'input-paths clean'        '^input-paths clean$' \
