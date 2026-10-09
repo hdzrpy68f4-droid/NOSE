@@ -4460,6 +4460,33 @@ switched it on - and changes the two docs' lines with it. It is pushed after
 step 4, so the deploy it makes is the first with the two variables: the page
 says "Switched on" in the same deploy that turns the functions on.
 
+**Live, 2026-10-09 (US Eastern)**, from the Codespace, every step as written:
+
+- `893aa6d` deployed: the live page carried the three markers, b2b-feed
+  `404`. `probe-db.js`: probe clean. Then `NOSE_B2B_DB_URL` (secret) and
+  `B2B_ENABLED=1`, Production only; `3a463ca` deployed: no marker, "Switched
+  on October 9, 2026", b2b-feed `400`.
+- `test-shop` made (store #1, origin `https://test-shop.example`). The test
+  catalog through b2b-catalog: `received 24, upserted 20, markedOutOfStock 0`,
+  rows 19, 20, 24 and 26 refused, each in the format's own words - **the
+  upload's module form works on Netlify**.
+- b2b-feed: `200`, `access-control-allow-origin: https://test-shop.example`,
+  20 batches; another origin `403` with no such header; no origin `403`.
+  b2b-vote: `204`, and `delete-store` (dry run) counted `1 vote` under
+  `votes/test-shop/` - **both functions' module form, strong consistency and
+  the conditional write work on the live vote store**.
+- `archive-status.js`: `documents 67 extractions 67 parses 194` - the
+  archive as last recorded (§13): nothing reached schema nose.
+- `b2b-release-check.js --site` first failed on `cache-control` alone (above,
+  "Found in the first checks"); after `134d7ea`, `every file of 1 release
+  matches the record, in git, in the store and on the site`.
+- `delete-store test-shop --yes`: `its 0 readings, 20 listed batches, 2 keys
+  and the store itself`, then `deleted 1 vote from Netlify Blobs` - **its
+  first live run**. The feed with the old key then answered `403`.
+- The test store's keys were pasted into the chat with the output; they died
+  with the store. Keys of a real store go only to that store, never into a
+  chat or a file.
+
 **Found in the first checks, 2026-10-09**: `b2b-release-check.js --site`
 failed on both files with `cache-control is "public,max-age=31536000,immutable"`
 - git ok, store ok, the bytes right. Netlify's CDN serves the function's
@@ -4504,13 +4531,6 @@ fails against the old script. The function is unchanged.
   `Signature`, `Expires`) would be kept with its temporary credential to the
   store's own storage. Prompt 3 neither refuses nor flags one: it waits for
   its own prompt.
-- **The upload's module form is palate-sync.js's, unproven for this file on
-  Netlify.** Netlify's docs say a `.js` entry file in a package without
-  `"type": "module"` runs as CommonJS; this one, like `palate-sync.js`, is ES
-  module syntax that the esbuild bundler compiles. After the first deploy:
-  Netlify → Logs → Functions lists `b2b-catalog`, and `curl -i -X POST
-  https://nose-app.com/.netlify/functions/b2b-catalog` answers `404` with
-  `Not Found` - the switch is off.
 - **A row refused on upload is kept nowhere**: the reply is its only record,
   and `--store` says so rather than listing it.
 - **Batch IDs are matched exactly from one upload to the next**, while a
@@ -4559,14 +4579,6 @@ fails against the old script. The function is unchanged.
   a day with very few votes a vote can still be matched with its request, and
   a feed request - made only after a yes - shows that someone at that address
   said yes on that store's site (above, "Privacy page, then switch on").
-- **The live vote store is unproven.** Strong consistency (which
-  `match-feedback.js` uses the same way) and the conditional write have
-  answered only the stand-in here; Prompt 8's first test vote is their proof,
-  and `b2b-vote: the vote store did not answer` in the function's log is how a
-  fault shows.
-- **Both functions take `b2b-catalog.js`'s module form**, still unproven on
-  Netlify (above): esbuild bundled them here, and Netlify → Logs → Functions
-  listing `b2b-feed` and `b2b-vote` after the push is the first live proof.
 - **A batch in the feed carries its catalog `name` and `brand`**, and the
   widget shows them as the store wrote them; Prompt 5's ranking reads
   neither. A product voted on is named by its `product_id` alone. A store's
@@ -4642,9 +4654,6 @@ fails against the old script. The function is unchanged.
 - **`wip/nose-farnesene-wip.js` still holds an old copy of the bar**, as it
   does of the maths: an unfinished draft of the whole old bundle, loaded by
   nothing. The widget test lists it, as `match-test` does.
-- **The live URLs are checked only after Prompt 8**: Prompt 8's first checks
-  include `node scripts/b2b-release-check.js --site https://nose-app.com`
-  (above, "Privacy page, then switch on", step 9).
 - **The feed and the vote are not versioned.** A release pins the widget's
   code, not what it reads: a change to `b2b-feed`'s fields or to what
   `b2b-vote` accepts changes every pinned page. `b2b-endpoints-test` pins
@@ -4679,11 +4688,6 @@ fails against the old script. The function is unchanged.
   deleted account's or removed report's alike. The privacy page says nothing
   about backups yet, and has to before the plan changes - the move the plan
   asks for before a licensee depends on NOSE.
-- **The first checks on the live site** (above, "Privacy page, then switch
-  on", steps 6 to 10) are the proof of the upload, the feed, the vote and
-  delete-store on Netlify. Until they run, the items above on the module
-  form and the live vote store stay open; the release route is proven
-  (above, "Pinned releases", Live).
 
 ### Later
 
