@@ -4268,6 +4268,190 @@ caller used one - the release script and the check pass the full hash - so
 release 1 is unaffected. Since `86cc68a`'s follow-up it resolves the full
 hash first, and `b2b-release-test` checks a short name builds the same bytes.
 
+### Privacy page, then switch on, 2026-10-09
+
+Prompt 8. The privacy page describes the dispensary program in full, marked
+"not switched on yet", before any of it is switched on - as it did for the
+archive (§13) - and a second push switches it on: `NOSE_B2B_DB_URL` and
+`B2B_ENABLED=1` in Netlify's Production context first, then a deploy whose
+page drops the markers and carries the day. No code changed.
+
+```
+privacy/index.html          "Dispensaries that use NOSE" (#dispensaries); a fifth "What changed" paragraph;
+                            one line under "What an account stores"; the lab-report sentence scoped to a
+                            scan or a link; a line in "How long we keep things"
+docs/B2B-INTEGRATION.md     the switch-on push: "Not switched on yet ... answers 404" gives the day instead
+docs/B2B-CATALOG-FORMAT.md  the same
+PARSER-HANDOFF.md           this record; Still open
+```
+
+**The probe, before any edit**, on `86cc68a` - ALL GATES GREEN, 29 gates:
+
+- **Sentences the program makes untrue or incomplete**, on the four pages the
+  prompt names. Privacy: the title, both descriptions and "This page lists
+  everything that leaves your device" - incomplete, since a shopper's browser
+  on a dispensary's page asks NOSE for code, a feed and a vote, and
+  dispensaries send catalogs; "What changed", four changes; "We do not ask
+  for ... anything about what you buy or consume" - true for accounts, and
+  given the dispensary line the prompt asked for; "When a report is fetched,
+  we keep a copy of the PDF file itself" - untrue, since a catalog's report
+  is fetched and read but not kept there; the paragraph on Netlify's logs -
+  incomplete, since a shopper's browser reaches nose-app.com without visiting
+  it, and the feed's address names the store; "No third-party scripts running
+  in your browser ... no outside code loads on this site" - true of this
+  site, while on a dispensary's site NOSE's code is the outside code; "How
+  long we keep things" - no line. Terms, home and app: none. Outside the four:
+  the "Not switched on yet" lines of the two docs above.
+- **What each B2B store holds**, read from the two migrations and the
+  functions, not the plan:
+
+| Store | Holds | Written by | Kept until |
+|---|---|---|---|
+| `b2b.stores` | slug, display name, up to 20 https origins, window (12 months unless set), THC and CBD guardrail, created day | `scripts/b2b-store.js` only | delete-store |
+| `b2b.store_keys` | store, secret or public, the key's SHA-256 only, created and revoked days | `scripts/b2b-store.js` only | delete-store |
+| `b2b.batches` | the catalog's eleven columns (`coa_url` whole but for `#`), list position, first and last listed days | the upload, as `nose_b2b`; a batch left out of an upload is kept, marked out of stock | delete-store - no expiry; the feed shows the window |
+| `b2b.batch_reads` | one current reading per batch: read day, lab, form, verdict, reasons, terpenes and the lab's total and moisture and water activity only when accepted, harvest and report days, reader, warnings, the link read, whether it gave a report, the batch and lab ID printed, the new-layout flag. No PDF, no text, no strain, no client | `scripts/b2b-read-catalog.js`, as `nose_b2b`; replaced by a reread | delete-store |
+| Blobs `b2b-votes` | one blob per vote: `votes/<slug>/<band>/<up\|down>/<UTC day>/<16 random bytes>`, value `{candidate, score, palateSize}`, no metadata; at most 100 per store per UTC day | `b2b-vote` | delete-store |
+| Blobs `b2b-releases` | `<version>/nose-matches.js` and `.css`: code and words, the same for everyone | `scripts/b2b-release.js`, write-once | never deleted |
+| the shopper's browser, on the store's origin | `nose-matches-removed` (batch IDs), `nose-matches-voted` (product IDs) | the widget | until the site's data is cleared; never sent |
+
+- Found on the way, all left as they are: a vote's `palateSize` counts
+  batches (`palate.basis.used.length`, `js/b2b-rank`'s `voteScore`), where
+  `b2b-vote.js`'s header comment says purchases, and still describes
+  `sendBeacon`; no code deletes a batch that has left the window; Netlify's
+  documented traffic-log fields - client IP, URL, user agent, country,
+  referrer, time and the request's own details - include no `Origin`
+  ([Log Drains](https://docs.netlify.com/monitor-sites/log-drains), updated
+  2026-09-25).
+
+**Where each claim on the page lives.** No test reads the section - Prompt 8
+adds no gate - so this table is how it stays true: change a row's code, and
+the page changes in the same commit.
+
+| The page says | From |
+|---|---|
+| a catalog line's eleven columns; any other column, or one that looks personal, refuses the whole file before a line is read | `lib/b2b-catalog-format.js` (`checkHeader`, `looksPersonal`), `docs/B2B-CATALOG-FORMAT.md` |
+| two keys, and only a fingerprint of each kept | `scripts/b2b-store.js` create, `lib/b2b-store.js` `keyHash`, `b2b.store_keys` |
+| its name, origins, window (twelve months unless agreed) and THC and CBD limit | `b2b.stores` |
+| a catalog read once before signing up, writing a report and nothing else, deleted once sent | `scripts/b2b-coverage.js`; "The coverage report", step 6 |
+| batches kept after they sell out or leave the catalog | `APPLY_CATALOG_SQL` |
+| one reading per batch and its fields; figures only when trusted; the reason when a link gives none; replaced on a reread; no file, no text | `READ_FIELDS`, `b2b.batch_reads`, `values_only_when_usable`, `nothing_read_unless_fetched`, `scripts/b2b-read-catalog.js` |
+| catalog reports never enter the lab-report store | `b2b-read-catalog.js` loads no `coa.js`, `archive.js` or `pdf-store.js` (`b2b-catalog-test`) |
+| one fixed version, checked byte for byte by the browser | "Pinned releases"; `docs/B2B-INTEGRATION.md` step 1 |
+| nothing but code and styles until a yes; the list after | `js/b2b-widget`'s `_render()` and `_show()` |
+| the list's fields, the same for every visitor, only to the store's origins | `FEED_FIELDS`, `FEED_SQL`, `feedFor` |
+| no cookie, no referrer | the widget's two `fetch()` calls and its stylesheet link |
+| a vote's seven parts; the bought product and a count of batches, never which; 100 a day | `b2b-vote.js` `FIELDS`, `lib/b2b-votes.js` key and value, `voteScore`, `DEFAULT_DAILY_CAP` |
+| a day and a random code, never a time | `voteKey()` |
+| the browser's two lists | the widget's `REMOVED_KEY` and `VOTED_KEY` |
+| the same Postgres at Supabase, a login of its own; votes and code in Netlify's file storage | `probe-db.js` (one project ref, the grants each way); `b2b-votes`, `b2b-releases` |
+| kept until the license ends; the list shows the window | no B2B delete but delete-store; `IN_WINDOW_SQL` |
+| deleted by hand with one command, the database first, then the votes; running it again finishes it; up to a minute in caches | delete-store (`DELETE_SQL`, then `removeStoreVotes`); b2b-feed's `public, max-age=60` |
+| what Netlify's logs hold | [Log Drains](https://docs.netlify.com/monitor-sites/log-drains) |
+
+**Decided here, where the prompt was silent:**
+
+- **A vote's two facts about buying are said.** The question is asked only
+  about a product the shopper bought, and its palate size is a count of
+  their other batches: two facts about what they bought, never the list.
+  "Purchases never reach NOSE" is said of the list, and the vote paragraph
+  says what a vote does carry.
+- **What Netlify's logs can show is said.** The feed's address names the
+  store's public key, and the widget asks for it only after a yes, so a line
+  there can show that someone at an IP address said yes on that store's site,
+  and when. A vote keeps a day and a random code, never a time, and on a day
+  with very few votes it can still be matched with its request - the
+  archive's own caveat about order (§13, "Three privacy sentences"). Blobs may
+  note write times; nothing of ours reads them.
+- **Backups are not on the page.** Supabase's free plan has no daily backups
+  ([Backups](https://supabase.com/docs/guides/platform/backups), modified
+  2026-10-09: Pro keeps 7 days), and the page says nothing about backups for
+  accounts or the archive either (below, Still open).
+- **The coverage report is named**: a catalog read once, before signing up,
+  in the Codespace, writing nothing but a report, the folder deleted once the
+  report has gone.
+- **The section is full width.** `.page-grid` stretches each row to its
+  taller card: in a cell, the section (4659 px tall at 1280 px wide) would
+  have stretched "Deleting your account" beside it to the same height. The
+  first grid now closes after the lab-report card, the section follows in its
+  own `.wrap` with its text in two columns of an inner `.page-grid` (one below
+  760 px), and the rest is a second grid. Existing classes only (`wrap`,
+  `page-grid`, `u-pt-20`): no stylesheet changed, so nothing was renamed.
+- **Three markers**, "not switched on yet": the fifth "What changed"
+  paragraph, the section's first line, its line in "How long". The switch-on
+  commit removes all three and dates the first two, and changes the two docs'
+  lines in the same push.
+- **The terms are unchanged**: no sentence there becomes untrue. "NOSE is
+  intended for people aged 21 or over" is true of nose-app.com; whether it
+  fits a widget a medical dispensary shows to whoever it serves is for the
+  counsel the plan books.
+- **The test store of the first checks** is `test-shop`, origin
+  `https://test-shop.example` - a name reserved for examples (RFC 2606), so no
+  real page is served from it and only a request that sets the header by hand
+  gets its feed. It is made after the switch-on deploy, so the page's
+  "Nothing in this section was collected before that day" holds; filled with
+  `test/fixtures/b2b/catalog.csv`; and removed by `delete-store` at the end,
+  which is that command's first live run and the proof of the page's deletion
+  paragraph.
+
+**How it was verified, 2026-10-09, in the cloud workspace.** npm was blocked
+(registry.npmjs.org answered 403), so the gates ran on stand-ins, as before:
+unpdf's own 1.8.0 source, built with esbuild over pdfjs-dist 6.2.108 with
+unpdf's own PDF.js patches (every anchor matched); a throwaway PostgreSQL 16
+cluster per PGlite instance behind PGlite 0.5.8's API, its type and result
+rules ported from its source at that tag; the real pg 8.23.0 assembled from
+its git tags, pg-protocol compiled with tsc; the committed html5-qrcode in
+place of `build.sh`'s download; Playwright 1.56.0's Chromium 141. ALL GATES
+GREEN on `86cc68a` before any edit, 29 gates, and after it - `KAY-CAR-001`
+4.124 and `KAY-PRR-001` 0.944. Main had moved on meanwhile (`f925099`, another
+session's record of release 1 and its fix to `b2b-release.js`'s commit
+names), so both commits were rebased onto it - the handoff the only file in
+both - and the gates ran again on each: ALL GATES GREEN. `check-trust`
+clean on the tree and on the page by name, its patterns untouched. The page rendered in Chromium at 1280
+and 390 px: no horizontal scroll, no page error, the section in the cards' own
+type. No file in `js/` or `css/` changed, so `build.sh` renamed nothing;
+`parse-coa.js`, `coa-dates.js` and `extract-text.js` are untouched, so no
+reparse is due. Nothing ran against the real database, Netlify or a lab's
+server. The Codespace run on the real packages is the one that counts.
+
+**In the Codespace, in this order** (part 1 deploys the page with everything
+B2B still off; part 2 switches it on; part 3 is the first checks):
+
+1. Bring both commits in, the page's first, then `bash scripts/gates.sh` -
+   ALL GATES GREEN, 29 gates.
+2. Push the page's commit alone. On the live site `curl -s
+   https://nose-app.com/privacy/ | grep -ci "not switched on yet"` answers
+   `3`, and `curl -s -o /dev/null -w '%{http_code}\n'
+   https://nose-app.com/.netlify/functions/b2b-feed` still `404`.
+3. `node scripts/probe-db.js` - probe clean, both B2B migrations among its
+   checks; `node scripts/archive-status.js | head -1` - the archive's three
+   counts, kept for step 9.
+4. Netlify → Project configuration → Environment variables:
+   `NOSE_B2B_DB_URL`, its value marked secret, Production only;
+   `B2B_ENABLED` = `1`, Production only. A deploy uses the values set when it
+   was made, so nothing changes until the next one
+   ([Environment variables and functions](https://docs.netlify.com/build/functions/environment-variables),
+   updated 2026-10-03).
+5. Push the switch-on commit. Then `grep -ci` answers `0`, the page gives the
+   day, and b2b-feed answers `400` - switched on, asked without a key.
+6. `node scripts/b2b-store.js create test-shop --name "NOSE test store"
+   --origin https://test-shop.example`; its two keys into the terminal with
+   `read -rs`, never into a file.
+7. The test catalog uploaded through b2b-catalog: `received` 24, `upserted`
+   20, `markedOutOfStock` 0, rows 19, 20, 24 and 26 refused.
+8. The feed: `200` with `access-control-allow-origin:
+   https://test-shop.example` for that origin, 20 batches; `403` and no such
+   header for another origin or none. A vote: `204`; `delete-store test-shop`,
+   a dry run, then counts `1 vote`.
+9. `node scripts/archive-status.js | head -1` - the counts of step 3.
+   `node scripts/b2b-release-check.js --site https://nose-app.com` - in git,
+   in the store and on the site.
+10. `node scripts/b2b-store.js delete-store test-shop --yes`; a minute later
+    the feed answers `403`.
+
+The results go here in a handoff commit, and the items below that wait on a
+live run close with them.
+
 ### Still open
 
 - `scripts/download-twice.js` keeps its own looser fetch loop. Moving it onto
@@ -4329,7 +4513,8 @@ hash first, and `b2b-release-test` checks a short name builds the same bytes.
 - The secret key reaches the dispensary however the owner hands it over:
   NOSE prints it once and has no channel of its own for it.
 - `NOSE_B2B_DB_URL` is a Codespaces secret only. It goes into Netlify's
-  Production context with Prompt 8, not before.
+  Production context in Prompt 8's walk-through, step 4 (above, "Privacy
+  page, then switch on"), not before.
 - **Settled 2026-10-09: the vote goes by `fetch`, not `sendBeacon`**
   (above, "Pinned releases"). A beacon from a page served with
   `Referrer-Policy: no-referrer` or `same-origin` carries `Origin: null`
@@ -4351,8 +4536,11 @@ hash first, and `b2b-release-test` checks a short name builds the same bytes.
   request**, and the feed's address names the store's public key. NOSE copies
   nothing from them. A vote's key ends in random bytes, so the store's listing
   gives no order to set against those logs; Blobs may keep its own write
-  times, which nothing of ours reads (§13, "The PDF half"). Prompt 8's page
-  says all of it.
+  times, which nothing of ours reads (§13, "The PDF half"). The privacy page
+  says all of it since 2026-10-09 (`#dispensaries`), and two things more: on
+  a day with very few votes a vote can still be matched with its request, and
+  a feed request - made only after a yes - shows that someone at that address
+  said yes on that store's site (above, "Privacy page, then switch on").
 - **The live vote store is unproven.** Strong consistency (which
   `match-feedback.js` uses the same way) and the conditional write have
   answered only the stand-in here; Prompt 8's first test vote is their proof,
@@ -4415,8 +4603,8 @@ hash first, and `b2b-release-test` checks a short name builds the same bytes.
 - **The widget keeps two lists in the shopper's browser**, in storage on the
   store's own origin: the batches taken out of the palate
   (`nose-matches-removed`) and the products voted on (`nose-matches-voted`).
-  Neither reaches NOSE; Prompt 8's page says they exist, and that clearing the
-  site's data in the browser clears them. The vote is once per product per
+  Neither reaches NOSE; the privacy page says they exist, and that clearing the
+  site's data in the browser clears them (since 2026-10-09). The vote is once per product per
   browser, so one shopper on two devices can vote twice.
 - **The widget names its stylesheet's built file**, written in by `build.sh`,
   and reads NOSE's origin from `document.currentScript`. A pinned release
@@ -4437,8 +4625,8 @@ hash first, and `b2b-release-test` checks a short name builds the same bytes.
   does of the maths: an unfinished draft of the whole old bundle, loaded by
   nothing. The widget test lists it, as `match-test` does.
 - **The live URLs are checked only after Prompt 8**: Prompt 8's first checks
-  should include `node scripts/b2b-release-check.js --site
-  https://nose-app.com`.
+  include `node scripts/b2b-release-check.js --site https://nose-app.com`
+  (above, "Privacy page, then switch on", step 9).
 - **The feed and the vote are not versioned.** A release pins the widget's
   code, not what it reads: a change to `b2b-feed`'s fields or to what
   `b2b-vote` accepts changes every pinned page. `b2b-endpoints-test` pins
@@ -4456,8 +4644,28 @@ hash first, and `b2b-release-test` checks a short name builds the same bytes.
   November 2024 ([MDN, Request.keepalive](https://developer.mozilla.org/en-US/docs/Web/API/Request/keepalive),
   modified 2025-03-13). Firefox and Safari wait for the pilot store's own
   check, or Prompt 10's kit.
-- **A release request is in Netlify's request logs**, with its address, time
-  and the store's `Origin`, like the feed's. Prompt 8's page says so.
+- **A release request is in Netlify's request logs**, with its address and
+  time, like the feed's. Netlify's documented log fields hold no `Origin`
+  ([Log Drains](https://docs.netlify.com/monitor-sites/log-drains)), and a
+  release's address names no store; its referrer is the store's page only
+  where a store's tag leaves out `referrerpolicy="no-referrer"`, which the
+  guide asks for. The privacy page says what the logs hold.
+- **The privacy page and the B2B code move together.** No test reads the
+  page's dispensary section (Prompt 8 adds no gate); the table in "Privacy
+  page, then switch on" says where each of its claims lives. A change to what
+  B2B keeps or sends - a field, a store, the default window, the vote cap
+  (`B2B_VOTE_DAILY_CAP` is unset, and the page says 100) - changes that
+  section in the same commit.
+- **Backups.** Supabase's free plan keeps none; a paid plan's daily backups
+  would keep a deleted dispensary's rows for days afterwards (7 on Pro), and a
+  deleted account's or removed report's alike. The privacy page says nothing
+  about backups yet, and has to before the plan changes - the move the plan
+  asks for before a licensee depends on NOSE.
+- **The first checks on the live site** (above, "Privacy page, then switch
+  on", steps 6 to 10) are the proof of the upload, the feed, the vote and
+  delete-store on Netlify. Until they run, the items above on the module
+  form and the live vote store stay open; the release route is proven
+  (above, "Pinned releases", Live).
 
 ### Later
 
