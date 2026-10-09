@@ -984,8 +984,9 @@ answers an expired one with 401, which the health script reports as such.
 `check-published.js` fails the build on any `nfp_` / `nfc_` / `nfo_` / `nfu_` /
 `nfb_` token in a published or tracked file.
 - `NOSE_B2B_DB_URL` — `nose_b2b.<ref>` through the **transaction** pooler, the
-dispensary role (§14): a Codespaces secret since 2026-10-07, and Netlify's
-Production context only once the privacy page describes the program (Prompt 8).
+dispensary role (§14): a Codespaces secret since 2026-10-07, and in Netlify's
+Production context since 2026-10-09, with `B2B_ENABLED=1` (§14, "Privacy page,
+then switch on").
 
 ### How it is tested
 
@@ -2536,7 +2537,8 @@ and pinned releases of the widget - a second Blobs store (`b2b-releases`) and
 function (`b2b-release`), since 2026-10-09 -
 and whatever runs on Netlify stays off unless `B2B_ENABLED=1` in the
 Production context and `build-info.json` says production
-(`lib/b2b-flag.js`). No B2B record or log holds anything about a shopper. A batch
+(`lib/b2b-flag.js`) - on since 2026-10-09, after the privacy page described
+it ("Privacy page, then switch on"). No B2B record or log holds anything about a shopper. A batch
 without an accepted read shows no terpene panel: never a guess, never a
 strain-name lookup.
 
@@ -4452,6 +4454,12 @@ B2B still off; part 2 switches it on; part 3 is the first checks):
 The results go here in a handoff commit, and the items below that wait on a
 live run close with them.
 
+**Switched on, 2026-10-09 (US Eastern).** The commit after the page's takes
+out its three markers and gives the day - October 9, 2026, the day the owner
+switched it on - and changes the two docs' lines with it. It is pushed after
+step 4, so the deploy it makes is the first with the two variables: the page
+says "Switched on" in the same deploy that turns the functions on.
+
 ### Still open
 
 - `scripts/download-twice.js` keeps its own looser fetch loop. Moving it onto
@@ -4512,9 +4520,9 @@ live run close with them.
   missing columns against production - where nothing runs before Prompt 8.
 - The secret key reaches the dispensary however the owner hands it over:
   NOSE prints it once and has no channel of its own for it.
-- `NOSE_B2B_DB_URL` is a Codespaces secret only. It goes into Netlify's
-  Production context in Prompt 8's walk-through, step 4 (above, "Privacy
-  page, then switch on"), not before.
+- `NOSE_B2B_DB_URL` and `B2B_ENABLED=1` are in Netlify's Production context
+  since 2026-10-09 (above, "Privacy page, then switch on", step 4);
+  `NOSE_B2B_DB_URL` is a Codespaces secret as well.
 - **Settled 2026-10-09: the vote goes by `fetch`, not `sendBeacon`**
   (above, "Pinned releases"). A beacon from a page served with
   `Referrer-Policy: no-referrer` or `same-origin` carries `Origin: null`

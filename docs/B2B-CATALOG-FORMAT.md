@@ -107,8 +107,8 @@ The rest of the file is still kept.
 
 ## Sending it to NOSE: the upload
 
-Not switched on yet: until the dispensary program is (PARSER-HANDOFF.md §14),
-the address answers 404.
+Switched on October 9, 2026. What NOSE keeps from an upload is set out on its
+privacy page: https://nose-app.com/privacy/#dispensaries.
 
 ```http
 POST https://nose-app.com/.netlify/functions/b2b-catalog

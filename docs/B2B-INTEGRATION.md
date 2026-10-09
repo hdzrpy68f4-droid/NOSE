@@ -12,8 +12,8 @@ widget builds their palate and ranks your menu there. NOSE serves the code,
 one feed of your catalog that is the same for every visitor, and takes a vote
 that carries nothing about who voted.
 
-Not switched on yet: until NOSE's dispensary program is (PARSER-HANDOFF.md §14),
-every address below answers 404.
+Switched on October 9, 2026. Everything NOSE receives and keeps from the
+program is set out on its privacy page: https://nose-app.com/privacy/#dispensaries.
 
 ## What NOSE receives, and what it never does
 
