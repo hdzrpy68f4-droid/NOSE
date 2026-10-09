@@ -21,3 +21,4 @@ this table. PARSER-HANDOFF.md §14, "Pinned releases".
 
 | version | commit | nose-matches.js | nose-matches.css |
 |---|---|---|---|
+| 1 | 77f96a89aa35c3e8cf393c368555b44ebcd05f43 | sha384-suJ0VaeiOSOCl4dkl3RGcgkgkgx2Q/x2l7JZZlO6ecVdOS6DS70MTdcMolJWRW2l | sha384-+XwTP39J7VPdIIBaJs/ypa2cFnJ3Y048Vp1faabsNCwHMkduDlB/PnOa6cD9HZhn |
