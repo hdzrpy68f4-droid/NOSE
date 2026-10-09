@@ -4246,6 +4246,28 @@ nothing reaches a store's page until Prompt 8 and a store's tag):
 6. After Prompt 8 switches B2B on: `node scripts/b2b-release-check.js --site
    https://nose-app.com` - `in git, in the store and on the site`.
 
+**Live, 2026-10-09 (US Eastern)**, from the Codespace on `77f96a8`, pulled
+from a git bundle: `bash scripts/gates.sh` ALL GATES GREEN, 29 gates - the
+first run of `b2b-release-test` on the real packages. `git push` deployed
+it. `node scripts/b2b-release.js` published **release 1** from `77f96a8`:
+`nose-matches.js` 63,244 bytes, `sha384-suJ0VaeiOSOCl4dkl3RGcgkgkgx2Q/x2l7JZZlO6ecVdOS6DS70MTdcMolJWRW2l`;
+`nose-matches.css` 5,720 bytes, `sha384-+XwTP39J7VPdIIBaJs/ypa2cFnJ3Y048Vp1faabsNCwHMkduDlB/PnOa6cD9HZhn`
+- stylesheet first, both read back, the row recorded and pushed as
+`86cc68a`. `node scripts/b2b-release-check.js`: `every file of 1 release
+matches the record, in git and in the store`. The cloud workspace then built
+release 1 again from `77f96a8` (Node 22, another machine) and got the same
+63,244 bytes and the same hash. **The route is proven**: once the deploy was
+published, `/b2b/releases/1/nose-matches.js` answered `404 text/plain;
+charset=utf-8` - the function's own reply while switched off, so
+`config.path` was read. (A first `curl` straight after the push answered
+`404 text/html`: the old deploy, before the new one was published.)
+
+**Found on the way**: `commitSource()` named a commit as it was asked for,
+so a short hash put the short form in the header and built other bytes. No
+caller used one - the release script and the check pass the full hash - so
+release 1 is unaffected. Since `86cc68a`'s follow-up it resolves the full
+hash first, and `b2b-release-test` checks a short name builds the same bytes.
+
 ### Still open
 
 - `scripts/download-twice.js` keeps its own looser fetch loop. Moving it onto
@@ -4414,13 +4436,6 @@ nothing reaches a store's page until Prompt 8 and a store's tag):
 - **`wip/nose-farnesene-wip.js` still holds an old copy of the bar**, as it
   does of the maths: an unfinished draft of the whole old bundle, loaded by
   nothing. The widget test lists it, as `match-test` does.
-- **The release route is unproven on Netlify.** `config.path` is read from
-  the function's source as `config.schedule` is for `keep-awake.js`, which
-  runs; but no function here has used a path yet. After the deploy, the
-  function's own `404 text/plain` at `/b2b/releases/1/nose-matches.js` is the
-  proof; the site's `404 text/html` page would mean the route is not there.
-- **No release is published yet**: until the walk-through above runs, the
-  record has no row and the store holds nothing.
 - **The live URLs are checked only after Prompt 8**: Prompt 8's first checks
   should include `node scripts/b2b-release-check.js --site
   https://nose-app.com`.

@@ -90,8 +90,11 @@ function gitOk(args, root) {
   try { git(args, root); return true; } catch { return false; }
 }
 
-/* The files of one commit, read from git's objects. */
-function commitSource(commit, root = ROOT) {
+/* The files of one commit, read from git's objects. The commit is named by
+   its full hash whatever it was asked for by, so a short name builds the very
+   same bytes - the header names the commit. */
+function commitSource(name, root = ROOT) {
+  const commit = git(['rev-parse', '--verify', '--quiet', `${name}^{commit}`], root).trim();
   const names = git(['ls-tree', '-r', '--name-only', commit, '--', 'js', 'css'], root).split('\n').filter(Boolean);
   return { commit, names, read: p => git(['show', `${commit}:${p}`], root, { encoding: null }) };
 }

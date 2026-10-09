@@ -246,6 +246,9 @@ async function main() {
   const r1b = rel.build({ version: '1', source: rel.commitSource(C1, A.work) });
   sh(A.dir, 'clone', '-q', 'origin.git', 'other');
   const r1c = rel.build({ version: 1, source: rel.commitSource(C1, path.join(A.dir, 'other')) });
+  const r1s = rel.build({ version: 1, source: rel.commitSource(C1.slice(0, 7), A.work) });
+  check('...and a commit named by its short hash builds the same bytes, its header naming the full one',
+    [r1s.js.equals(r1.js), r1s.commit], [true, C1]);
   const elsewhere = spawnSync(process.execPath, ['-e', `
     const rel = require(${JSON.stringify(path.join(ROOT, 'scripts/b2b-release.js'))});
     const r = rel.build({ version: 1, source: rel.commitSource(${JSON.stringify(C1)}, ${JSON.stringify(A.work)}) });
