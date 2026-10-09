@@ -107,11 +107,20 @@ async function fromSite(row, site, fetchImpl) {
     if (res.status !== 200) { problems.push(`${file}: the site answers ${res.status}`); continue; }
     for (const [name, value] of Object.entries(releases.headers(file))) {
       const got = res.headers.get(name);
-      if (got === null || got.toLowerCase() !== value.toLowerCase()) problems.push(`${file}: ${name} is ${got === null ? 'missing' : `"${got}"`}, not "${value}"`);
+      if (got === null || sameHeader(got) !== sameHeader(value)) problems.push(`${file}: ${name} is ${got === null ? 'missing' : `"${got}"`}, not "${value}"`);
     }
     if (releases.sri(body) !== want) problems.push(`${file}: the site serves other bytes (they hash to ${releases.sri(body)})`);
   }
   return problems;
+}
+
+/* A header's value as its meaning: case aside, and the spaces around "," and
+   ";" aside. Netlify's CDN serves the function's
+   "public, max-age=31536000, immutable" as "public,max-age=31536000,immutable"
+   (seen live, 2026-10-09) - the same directives, which RFC 9111 lists with
+   optional whitespace around each comma. */
+function sameHeader(v) {
+  return String(v).toLowerCase().trim().replace(/\s*([,;])\s*/g, '$1');
 }
 
 function explain(err) {

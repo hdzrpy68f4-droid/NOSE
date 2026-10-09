@@ -592,6 +592,10 @@ async function main() {
     const badHeaders = await checkRun(['--site', 'https://nose-app.com'], { root: W.work, env: SECRETS, fetchImpl: lying });
     check('--site, a reply without Access-Control-Allow-Origin or with a short cache: each named',
       [badHeaders.code, badHeaders.out.filter(l => /access-control-allow-origin is missing|cache-control is "public, max-age=60"/.test(l)).length], [1, 4]);
+    const compacted = async url => { const r = await handler(new Request(url)); const h = new Headers(r.headers); h.set('cache-control', h.get('cache-control').replace(/, /g, ',')); return new Response(await r.arrayBuffer(), { status: r.status, headers: h }); };
+    const cdn = await checkRun(['--site', 'https://nose-app.com'], { root: W.work, env: SECRETS, fetchImpl: compacted });
+    check('--site, the cache directives as Netlify\'s CDN serves them, "public,max-age=31536000,immutable": the same header, and clean',
+      [cdn.code, cdn.out[cdn.out.length - 1]], [0, 'b2b-release-check: every file of 1 release matches the record, in git, in the store and on the site']);
     const usage = [await checkRun(['--site'], { root: W.work, env: SECRETS }), await checkRun(['--site', 'nose-app.com'], { root: W.work, env: SECRETS }),
       await checkRun(['--site', 'https://nose-app.com/path'], { root: W.work, env: SECRETS }), await checkRun(['--verbose'], { root: W.work, env: SECRETS })];
     check('usage errors: --site with no origin, a bare host, a path; an unknown argument', usage.map(u => u.code), [2, 2, 2, 2]);

@@ -4460,6 +4460,16 @@ switched it on - and changes the two docs' lines with it. It is pushed after
 step 4, so the deploy it makes is the first with the two variables: the page
 says "Switched on" in the same deploy that turns the functions on.
 
+**Found in the first checks, 2026-10-09**: `b2b-release-check.js --site`
+failed on both files with `cache-control is "public,max-age=31536000,immutable"`
+- git ok, store ok, the bytes right. Netlify's CDN serves the function's
+`public, max-age=31536000, immutable` with the spaces after the commas
+dropped: the same directives (RFC 9111 allows optional whitespace around
+each comma). The check now compares a header's meaning - case and the spaces
+around `,` and `;` aside - not its spelling; `b2b-release-test` checks that a
+compacted reply passes and still that a short cache fails, and the new check
+fails against the old script. The function is unchanged.
+
 ### Still open
 
 - `scripts/download-twice.js` keeps its own looser fetch loop. Moving it onto
