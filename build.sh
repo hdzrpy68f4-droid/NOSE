@@ -35,6 +35,18 @@
 #          fingerprinted like the other bundles, and a page that loads it
 #          without js/match-math BEFORE it fails the build (PARSER-HANDOFF.md
 #          s14). test/b2b-rank-test.js runs that rule's own lines.
+#   [NEW]  js/aroma-bar.js - the aroma bar (FAMILIES, FAMILY_ORDER,
+#          familyShares, renderBar), moved out of js/nose so the app and the
+#          dispensary widget draw one bar - js/b2b-strings.js, js/b2b-widget.js
+#          with css/b2b-widget.css, and the demo page's js/b2b-demo.js and
+#          css/b2b-demo.css are syntax-checked and fingerprinted. The widget's
+#          stylesheet name is written into the widget before the widget is
+#          fingerprinted. A page that loads one of the shared files before a
+#          file it reads fails the build: js/aroma-bar after js/match-math,
+#          js/nose and js/b2b-widget after js/aroma-bar, js/b2b-widget after
+#          js/b2b-rank and js/b2b-strings. test/b2b-widget-test.mjs runs those
+#          lines. The family-image check reads js/aroma-bar, where FAMILIES
+#          lives now, and fails unless it finds the six (PARSER-HANDOFF.md s14).
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -113,13 +125,34 @@ fingerprint() {
   fi
   echo "==> $new"
 }
-for f in js/nose*.js js/match-math*.js js/b2b-rank*.js js/hero*.js js/agegate*.js js/account*.js; do
+for f in js/nose*.js js/match-math*.js js/aroma-bar*.js js/b2b-rank*.js js/b2b-strings*.js js/b2b-widget*.js js/b2b-demo*.js js/hero*.js js/agegate*.js js/account*.js; do
   [ -f "$f" ] || continue
   node --check "$f" || { echo "FAIL: $f has a syntax error"; exit 1; }
 done
 fingerprint js  nose    js
 fingerprint js  match-math js
+fingerprint js  aroma-bar js
 fingerprint js  b2b-rank js
+fingerprint js  b2b-strings js
+# The dispensary widget links its own stylesheet inside its shadow root, by
+# the name its source carries ('/css/b2b-widget.css', STYLESHEET), which no
+# page names. So the name fingerprint() gives the stylesheet is written into
+# the widget's source here, BEFORE the widget is fingerprinted, so the
+# widget's hash covers the name it carries (PARSER-HANDOFF s14, "The widget").
+fingerprint css b2b-widget css
+shopt -s nullglob
+widget_css=(css/b2b-widget.*.css)
+shopt -u nullglob
+[ ${#widget_css[@]} -eq 1 ] || { echo "FAIL: expected one css/b2b-widget.<hash>.css, found ${#widget_css[@]}"; exit 1; }
+for f in js/b2b-widget.js js/b2b-widget.*.js; do
+  [ -f "$f" ] || continue
+  sed -i -E "s#'/css/b2b-widget(\\.[0-9a-f]+)?\\.css'#'/${widget_css[0]}'#g" "$f"
+done
+grep -q "'/${widget_css[0]}'" js/b2b-widget*.js \
+  || { echo "FAIL: js/b2b-widget does not name its stylesheet, /${widget_css[0]}"; exit 1; }
+fingerprint js  b2b-widget js
+fingerprint js  b2b-demo js
+fingerprint css b2b-demo css
 fingerprint css shell   css
 fingerprint css hero    css
 fingerprint js  hero    js
@@ -189,6 +222,29 @@ for f in "${HTML[@]}"; do
   fi
 done
 
+# The shared files, in the order they read each other: each reads the window
+# global of the one it names when it runs, so on every page that loads it
+# that one must load first, on an earlier line - deferred scripts run in
+# document order (PARSER-HANDOFF s14, "The widget").
+#   js/aroma-bar   after js/match-math    normalize() and TERPENES, NoseMatch
+#   js/nose        after js/aroma-bar     FAMILIES and renderBar(), NoseBar
+#   js/b2b-widget  after js/aroma-bar     renderBar(), NoseBar
+#                  after js/b2b-rank      palateFrom(), rank() and the rest, NoseRank
+#                  after js/b2b-strings   every word it shows, NoseStrings
+# (js/b2b-rank after js/match-math is the rule above.)
+# test/b2b-widget-test.mjs runs these lines, from this comment to the "done".
+for f in "${HTML[@]}"; do
+  for pair in aroma-bar:match-math nose:aroma-bar b2b-widget:aroma-bar b2b-widget:b2b-rank b2b-widget:b2b-strings; do
+    later=${pair%%:*} earlier=${pair##*:}
+    n=$(grep -n -m1 "/js/${later}\\.[0-9a-f]*\\.js" "$f" | cut -d: -f1 || true)
+    [ -n "$n" ] || continue
+    m=$(grep -n -m1 "/js/${earlier}\\.[0-9a-f]*\\.js" "$f" | cut -d: -f1 || true)
+    if [ -z "$m" ] || [ "$m" -ge "$n" ]; then
+      echo "FAIL: $f loads js/${later} without js/${earlier} before it"; exit 1
+    fi
+  done
+done
+
 # Nothing published may name the database, and nothing in git may hold a
 # credential. The repo is public; connection strings live only in Netlify
 # environment variables and Codespaces secrets.
@@ -203,15 +259,21 @@ echo "==> asset checks"
 
 # The engine builds <picture> as AVIF -> WebP -> JPEG, at 1x and 2x. A missing
 # file here produces a build that passes and a page with holes in it.
+# The six family images are named in FAMILIES, which lives in js/aroma-bar
+# since 2026-10-08 (js/nose until then). A check that finds no image passes on
+# nothing, so finding other than six fails the build.
 fail=0
-while read -r ref; do
+mapfile -t FAMILY_IMAGES < <(grep -ohE '/images/families/[a-z]+\.jpg' js/aroma-bar.*.js | sort -u)
+[ ${#FAMILY_IMAGES[@]} -eq 6 ] \
+  || { echo "FAIL: expected the six family images in js/aroma-bar, found ${#FAMILY_IMAGES[@]}"; exit 1; }
+for ref in "${FAMILY_IMAGES[@]}"; do
   stem="${ref%.jpg}"
   for ext in jpg webp avif; do
     [ -f ".${stem}.${ext}" ] || { echo "FAIL: missing ${stem}.${ext}"; fail=1; }
     [ -f ".${stem}@2x.${ext}" ] \
       || echo "warn: missing ${stem}@2x.${ext} (retina will fall back to 1x)"
   done
-done < <(grep -ohE '/images/families/[a-z]+\.jpg' js/nose.*.js | sort -u)
+done
 
 # Referenced by every page's <link rel="icon">.
 [ -f "./favicon.svg" ] || { echo "FAIL: missing /favicon.svg"; fail=1; }

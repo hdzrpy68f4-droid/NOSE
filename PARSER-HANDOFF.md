@@ -153,12 +153,12 @@ Also run `node test/resolver-test.js` - expect `resolver clean`, and
 **Or all at once:** `bash scripts/gates.sh` runs these, the Kaycha anchors,
 `novelty-test`, `coa-dates-test`, `store-test`, `probe-test`, `archive-wiring-test`,
 `archive-scripts-test`, `rerun-test`, `review-queue-test`,
-`analysis-test`, `duplicates-test`, `remove-copies-test`, `remove-document-test`, `b2b-coverage-test`, `b2b-store-test`, `b2b-catalog-test`, `b2b-endpoints-test`, `b2b-rank-test`, `check-trust-test` and, after the build, `input-paths-test`.
+`analysis-test`, `duplicates-test`, `remove-copies-test`, `remove-document-test`, `b2b-coverage-test`, `b2b-store-test`, `b2b-catalog-test`, `b2b-endpoints-test`, `b2b-rank-test`, `b2b-strings-test`, `check-trust-test` and, after the build, `input-paths-test` and `b2b-widget-test`.
 It prints the line each gate produced and ends with `ALL GATES GREEN`. It passes
 a gate only on its exact expected line, so when a session legitimately changes
 a count, update the script in the same commit.
 
-**The input-paths gate needs Playwright and its Chromium**, which are not
+**The input-paths and b2b-widget gates need Playwright and its Chromium**, which are not
 project dependencies. Install them once per Codespace, and again after any
 `npm ci`, which removes Playwright: `npm install --no-save playwright`, then
 `npx playwright install --with-deps chromium`. Without them the gate fails and
@@ -210,7 +210,9 @@ someone to look.
 | `b2b-catalog-test.js` | the catalog upload, the batch reader and the report from the database (§14, "Catalog upload and the batch reader") on PGlite, the real function behind a stand-in `pg` that runs every statement as `nose_b2b`, the links served from fixture files: the switch, the key (one 401 for every wrong key, the hash compared in constant time), the 4 MB cap before and while reading, the coverage script's own reader and refusals, an upload as a whole snapshot (absent batches kept and marked out of stock, a refused row's batch untouched, nothing to keep changing nothing), counts-only replies, one fixed log line on failure; the reader's accepted, refused and unfetched readings, `--dry-run`, `--reread`, `--limit`, a corrected link read again, a fetch failure never replacing a reading, nothing from another batch or store; `--store` matching the CSV run row for row; schema `nose` and the archive untouched; offline |
 | `b2b-endpoints-test.js` | the widget's two calls (§14, "Feed and votes") on PGlite, both functions behind a stand-in `pg` that runs every statement as `nose_b2b` and a stand-in `@netlify/blobs`: the switch; the feed byte-identical for two visitors, every batch in the window in stock or not, the prompt's fields alone, a reading's figures only when it is the current one and accepted, no lab-report link; the origin rule (a foreign, missing, `null` or other store's origin gets no CORS header and no data), a revoked key, `public, max-age=60`; a vote's six fields and nothing else, matchBand()'s four bands all stored, no time of day in key or value, keys in no arrival order, the per-store daily cap with the same reply; one fixed log line on failure; `delete-store` removing a store's votes and only its own; schema `nose`, the archive and the consumer's store untouched; offline |
 | `b2b-rank-test.js` | `js/b2b-rank.<hash>.js`, the dispensary ranking engine (§14, "The ranking engine"): one file, loaded as a page loads it and in Node; no maths of its own, every number traced to NoseMatch; the 1830 golden pairs, 61 self-scores and 65 palates through `rank()` and `palateFrom()` to the last bit; 3x the intensity the same; unread batches last, with no number; routes, category, stock and the guardrail leaving batches out and never reordering; ties by `list_position`; each skip reason, a removed batch, one count per batch, the window as PostgreSQL counts it; `soldOut()` and `voteScore()`; no name or brand read; `build.sh`'s load-order rule, its own lines, on throwaway pages; offline |
+| `b2b-strings-test.js` | `js/b2b-strings.<hash>.js`, every word the dispensary widget shows (§14, "The widget"): two variants, default and florida, with the same keys and placeholders; no effect or recreational word - the prompt's list and their forms - in any string or anywhere in the file; Florida's says aroma and orders; the words shown from other files true to `matchBand()` and `renderBar()`; every key read by the widget and none written out in it; offline |
 | `check-trust-test.js` | `scripts/check-trust.mjs` (§13, "The trust guard") on throwaway sites: every form of the old promise fails, true sentences pass; offline |
+| `b2b-widget-test.mjs` | `<nose-matches>` in headless Chromium (§14, "The widget"): the built files on a store's page from another origin, under the prompt's CSP, against a stand-in feed and vote; only the feed and the vote leave the page, and no request carries a purchase; consent, denied, control; each mode equal to `js/b2b-rank`'s answers; every bar `renderBar()`'s; keyboard reach; the demo page; one copy of the bar; `build.sh`'s load-order lines. Needs Playwright; a gate, run after the build |
 | `input-paths-test.mjs` | the app's ways in, in headless Chromium: Scan QR (fake camera and QR image), COA link, Upload. The real `coa.js` and parser answer, with only the download and unpdf stood in for (§13, "The input paths"). Needs Playwright; a gate, run after the build |
 
 The counts in section 2 are checked by `fixture-lint.js` against the corpus, so
@@ -2528,7 +2530,7 @@ Its core promise: **a shopper's purchase history never reaches NOSE.** The
 dispensary's page hands the shopper's batch IDs to the shopper's own browser,
 and the widget builds the palate and ranks there. B2B lives apart from
 everything consumer - its own schema (`b2b`) and role (`nose_b2b`), since
-2026-10-07, and its own Blobs store (`b2b-votes`), functions (`b2b-catalog`, `b2b-feed` and `b2b-vote`) and ranking engine (`js/b2b-rank.<hash>.js`, which no consumer page loads), all since 2026-10-08 -
+2026-10-07, and its own Blobs store (`b2b-votes`), functions (`b2b-catalog`, `b2b-feed` and `b2b-vote`), ranking engine (`js/b2b-rank.<hash>.js`) and widget (`js/b2b-widget.<hash>.js`, with `js/b2b-strings` and `css/b2b-widget`), which no consumer page loads, all since 2026-10-08 -
 and whatever runs on Netlify stays off unless `B2B_ENABLED=1` in the
 Production context and `build-info.json` says production
 (`lib/b2b-flag.js`). No B2B record or log holds anything about a shopper. A batch
@@ -3740,6 +3742,254 @@ that counts.
    `b2b rank` among them.
 2. `git push` - deploys `/js/b2b-rank.<hash>.js`, which no page loads yet.
 
+### The widget, 2026-10-08
+
+Prompt 6. `<nose-matches>`, the element a dispensary places on its page: the
+opt-in, the "closest to your usual" rail, the sold-out panel, the basis list
+and the post-purchase vote, in factual, lab-data words. It builds the palate
+and ranks in the shopper's browser with the ranking engine; only the feed
+and a vote leave the page. Nothing in it is live: the feed and the vote
+answer 404 until Prompt 8, and only the demo page loads it.
+
+```
+js/aroma-bar.<hash>.js        FAMILIES, FAMILY_ORDER, familyShares, renderBar - moved verbatim out of js/nose; window.NoseBar
+js/nose.<hash>.js             reads those four from window.NoseBar; no other line changed
+app.html, index.html          load js/aroma-bar between js/match-math and js/nose
+js/b2b-strings.<hash>.js      every word the widget shows, default and florida; window.NoseStrings
+js/b2b-widget.<hash>.js       <nose-matches>
+css/b2b-widget.<hash>.css     its stylesheet, linked inside its shadow root
+b2b/demo/index.html           the demo: a test store, a made-up purchase list typed in; noindex, linked from nowhere
+b2b/demo/test-store.json      the test store's feed, written by scripts/b2b-demo-feed.js
+js/b2b-demo.<hash>.js         the demo page's controls; css/b2b-demo.<hash>.css its layout
+scripts/b2b-demo-feed.js      writes the test store from the fixtures' readings; --check
+build.sh                      checks and fingerprints the six; the widget's stylesheet name; load order; family images
+test/b2b-strings-test.js      offline, a gate: "b2b-strings clean"
+test/b2b-widget-test.mjs      Playwright, after the build, a gate: "b2b-widget clean"
+scripts/gates.sh              the two gates, after b2b rank and after input paths
+```
+
+**The probe, before any edit**, on `93a07b5` - ALL GATES GREEN, 26 gates:
+
+- **Probe 1.** In `js/nose.593b2c1b.js`: `FAMILIES` (lines 53-60) - for each
+  of the six families its label, colour and ink, and the app's family-card
+  copy, image and alt text; `FAMILY_ORDER` (61), its keys; `familyShares()`
+  (84), which needs `normalize()` and `TERPENES` from window.NoseMatch;
+  `renderBar()` (91-111), which needs the three and `document`, and is
+  called five times - the hero's two bars, the result's two, the COA card's.
+  It sets each segment's width, colour and label colour through the
+  element's `style` properties, and its frame comes from `shell.css`
+  (`.profile-bar`, `.profile-segment`), which a shadow root cannot see.
+- **Probe 2, the move.** The four moved into `js/aroma-bar.js`, a classic
+  script like `js/match-math` (window.NoseBar in a page, module.exports in
+  Node): 31 lines, byte for byte (SHA-256 `9b31dc3b...`, which the widget
+  test pins). `js/nose` reads them back in one line where `FAMILIES` stood.
+  A scratch harness, not committed, captured the whole document in headless
+  Chromium, served with `_headers`, before and after: 25 hero pairs on `/`;
+  on `/app`, with the 56 accepted fixtures saved as jars, palates of 1 to 6
+  jars against each of 61 candidates (366 states); and 3 COA link cards from
+  the real handler. Run twice on the old tree first, to show the capture
+  repeats itself: 397 of 397 identical before and after, on the move and
+  again on the finished tree, and each page's document differs by one line,
+  the added `<script>`. No page error, no CSP message. `input-paths`,
+  `match` and `b2b-rank` clean. So the move was clean, and the build went
+  on.
+- **Found on the way.** `build.sh`'s family-image check read
+  `js/nose.*.js` for `/images/families/...`, and `FAMILIES` no longer lives
+  there: the check would have found nothing and passed. It reads
+  `js/aroma-bar.*.js` now and fails unless it finds the six.
+
+**Decided here, where the prompt was silent:**
+
+- **Two attributes more.** `strings` (`default` | `florida`) picks the
+  variant. `feed` names a file on NOSE's own origin to read in place of
+  b2b-feed - the demo's test store; a file on any other origin and the widget
+  shows nothing, so the feed and the vote still go to NOSE alone.
+- **Suggestions across forms stay off** (the plan; "Still open" asked Prompt
+  6 to decide). The rail's palate is made of the shopper's purchases in the
+  rail's own category, each batch looked up in the feed, and the basis line
+  says so: "Based on 3 flower products you've bought since May 2026". The
+  vote's palate is the voted product's category, so the vote's number is
+  the one its card showed. The sold-out panel was one category already.
+- **"since <month>"** is the month of the earliest purchase the palate uses,
+  read from its UTC day; the twelve month names are in the strings file.
+- **At most 12 cards** on the rail and the sold-out panel, in the engine's
+  order: scored first, then those with no usable read.
+- **The basis also says what it does not use**: each batch of the category
+  with no terpene panel, by name, and every other purchase as one count -
+  another category, not listed, bought before the window.
+- **Removing**: kept in this browser's storage on the store's own origin
+  (`nose-matches-removed`) and fired as `nose:palate-removed`; a "Put back in
+  my palate" button undoes it, fired as `nose:palate-restored`. Each event
+  carries `{ batchId, removed }`, the whole list. The basis stays open when
+  it is drawn again, and the button that undoes the change takes the
+  keyboard, so a keyboard user keeps their place.
+- **The vote**: once per product in a browser (`nose-matches-voted`), its six
+  fields named one by one, sent by `sendBeacon` as the prompt says.
+- **The feed**: one request per page however many widgets it holds; cors
+  mode, no cookies, no referrer, given up after 8 seconds. Nothing is
+  fetched until consent is granted; denied and the control group show
+  nothing, load nothing - not even the stylesheet - and send nothing.
+- **A key that is not a public key** - a secret `nsk_` one above all - and
+  nothing is sent or shown. A wrong attribute or a feed that did not come
+  shows nothing, with one console line, once, without detail.
+- **The no-panel sentence is "No terpene panel available for this batch"**,
+  not the prompt's "No terpene panel on this batch's report". A batch NOSE
+  has not read yet, or whose link gave no report, may well have a panel on
+  its report, so the prompt's sentence would state something NOSE does not
+  know. One line in `js/b2b-strings` changes it back.
+- **The card's number** is shown with its label, "Related profile · 82", and
+  read aloud as "Related profile, 82 out of 100".
+- **The Florida variant** says aroma rather than flavor or taste, orders
+  rather than purchases, and "dispensary" rather than store: Florida's
+  advertising rule, 64ER25-6, bars marketing that depicts consumption or
+  implies recreational use, must not be false or misleading, and makes a
+  dispensary answer for its vendors ([state-rules.com, 64ER25-6](https://state-rules.com/florida/fac/64ER25-6/);
+  [Fox Rothschild](https://www.foxrothschild.com/cannabis-law/publications/florida-severely-restricts-medical-marijuana-treatment-center-advertising-and-marketing);
+  both read 2026-10-08). "Treatment center" is not used: the effect list
+  catches "treat" and its forms, and the rule is to reword. Counsel reviews
+  the variant before a Florida store uses it.
+
+**What the design rests on in browsers**, read 2026-10-08:
+
+- A style set property by property through an element's `style` is not
+  blocked by a `style-src` without `'unsafe-inline'`; `setAttribute('style')`
+  and `style.cssText` are ([MDN, style-src](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy/style-src),
+  modified 2025-12-15). The shared bar sets its widths and colours that way,
+  so it draws under a store's CSP unchanged; the widget sets no style of its
+  own, and a broken copy that calls `setAttribute('style')` is refused by the
+  store page's CSP in the test.
+- `document.currentScript` is the running classic script's element while it
+  first runs, not in callbacks and not for modules ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/Document/currentScript),
+  modified 2024-07-25): the widget reads NOSE's origin from it once, so a
+  release (Prompt 7) must stay a classic script.
+- Referrer policy nulls `Origin` only on requests that are neither GET nor
+  HEAD and not in cors mode ([MDN, Origin](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Origin),
+  modified 2026-08-07): the feed is fetched in cors mode with
+  `referrerPolicy: 'no-referrer'`, and Chromium 141 sent it with the store's
+  `Origin` and no `Referer`, which b2b-feed's origin rule needs.
+- A stylesheet linked inside a shadow root is scoped to it ([web.dev, Shadow
+  DOM v1](https://web.dev/articles/shadowdom-v1)), and page styles do not
+  reach in ([MDN, Using shadow DOM](https://developer.mozilla.org/en-US/docs/Web/API/Web_components/Using_shadow_DOM),
+  modified 2026-09-08). The test checks the card's computed radius and the
+  bar's height, from `css/b2b-widget`, under the store's `style-src`.
+- `noindex` works only on a page robots.txt does not block ([Google Search
+  Central](https://developers.google.com/search/docs/crawling-indexing/block-indexing),
+  updated 2025-12-10): the demo page carries `<meta name="robots"
+  content="noindex, nofollow">`, and robots.txt is unchanged.
+
+**`build.sh`**: syntax-checks and fingerprints `js/aroma-bar`,
+`js/b2b-strings`, `js/b2b-widget`, `js/b2b-demo`, `css/b2b-widget` and
+`css/b2b-demo`. The widget links its stylesheet by the name its source
+carries (`STYLESHEET`), which no page names, so `build.sh` fingerprints the
+stylesheet first, writes its name into the widget, then fingerprints the
+widget, whose hash then covers the name; a second build changes nothing. One
+block of load-order rules, which the widget test runs from its comment to
+its `done`: `js/aroma-bar` after `js/match-math`; `js/nose` after
+`js/aroma-bar`; `js/b2b-widget` after `js/aroma-bar`, `js/b2b-rank` and
+`js/b2b-strings`. The family-image check reads `js/aroma-bar`.
+
+**The demo page**, `/b2b/demo/`: the store's page, played by `js/b2b-demo`.
+The presenter sets the mode, consent, group, words, category, product and
+routes, and types the purchases - one a line, a batch ID and a day; the box
+opens with a made-up list dated back from today. The widget reads the test
+store, `b2b/demo/test-store.json`: 30 batches with made-up products, brands,
+links, stock and THC and CBD figures, each terpene panel a real fixture's
+reading by today's parser (two flower batches and one pre-roll with none:
+not read, and refused). The page lists the store's batches, the events the
+widget fires, and why nothing shows when nothing does. Noindex, in no
+sitemap, linked from nowhere, the site's own CSP; its votes go to b2b-vote
+with a made-up key - 404 until Prompt 8, then refused as no store's.
+
+**The tests**:
+
+- **`test/b2b-strings-test.js`**, 26 checks, a gate after `b2b rank`: the
+  file both ways (Node, and as a page loads it), frozen; the two variants'
+  keys, placeholders, categories and months; no effect or recreational word
+  in either variant or anywhere in the file - the prompt's eighteen words
+  and their forms (`EFFECT`, checked against 64 forms that must trip it and
+  18 words of the store's that must not); the Florida variant's aroma and
+  orders; the words shown from other files against `matchBand()` and a
+  `renderBar()` run in Node; every key the widget reads, none unread, none
+  written out in the widget.
+- **`test/b2b-widget-test.mjs`**, 147 checks, a gate after `input paths`.
+  Two local origins: NOSE, the built site with `_headers`, b2b-feed and
+  b2b-vote stood in for (a feed from the test store with two pre-rolls more,
+  and once with the store's guardrail set), and a store whose page loads the
+  built files from NOSE under exactly `script-src 'self' <NOSE>; style-src
+  'self' <NOSE>; connect-src <NOSE>`. Every request either origin receives
+  is recorded, every request the browser makes watched, `getAttribute` on the
+  element watched for `purchases`, and NOSE given a `SameSite=Lax` session
+  cookie. It checks: no request carries a purchased batch ID, a purchase day
+  or the attribute, none goes elsewhere, none to NOSE carries a cookie or
+  more than the store's origin as referrer, and the secret key is sent
+  nowhere; consent unknown - one button and one sentence, no feed, the
+  purchases never read, Tab and Enter, `nose:consent`, the page's answer
+  bringing the rail; denied and both control cases showing and loading
+  nothing; eight wrong attributes; the rail, the pre-roll rail (unread and
+  refused batches last, their sentence, no number, no bar; a `javascript:`
+  link not linked; missing figures said), the guardrail, Florida, the sold
+  out panel and its in-stock case, the vote up by Space and down by click,
+  once per product, and a product with no panel - each against the engine's
+  own answer for the same feed and purchases; every bar against
+  `renderBar()` run in the same page; the shadow root's stylesheet applied;
+  keyboard reach in each mode; every word shown traced to the strings, the
+  match labels, the bar or the catalog, and none about effects; the store
+  page's CSP shown in force by its own breaches while the widget caused
+  none; the demo page; one copy of the bar in the repo and the moved lines'
+  hash; the widget's source (no maths, rounding, band or label; one
+  `fetch()`, one `sendBeacon()`, no other way out; the purchases read after
+  the consent check); and `build.sh` - its lines, the order of its
+  fingerprints, and its load-order rule on ten throwaway pages.
+- **Against broken copies**: 38 deliberate faults, one at a time, in a copy
+  of the repo - among them the purchases in the feed's address, the
+  purchases read before consent, control or denied shown, the vote carrying
+  the palate, the vote as JSON by `fetch` (a preflight), a rounded number, the
+  feed's order, a batch with no panel scored 0, a bar of the widget's own, a
+  removal not told or not kept, an inline style, a feed on any origin,
+  Florida ignored, every purchase in the palate, a vote allowed twice, a
+  secret key accepted, any link, twenty cards, a guess for a batch with no
+  panel, the feed with credentials, the guardrail dropped, the basis
+  closing, an effect word in a string, a Florida key missing, Florida saying
+  flavor, the match labels listed wrongly, a word written into the widget, an
+  unread string, a band missing from the stylesheet, the demo page indexed
+  or linked from the home page, the test store edited by hand, `build.sh`
+  without a load rule, fingerprinting the widget before its stylesheet or
+  reading images from `js/nose`, and a second `renderBar` - each fails a
+  test. A scratch harness, not committed. Its first run let one through, a
+  Florida key missing, which only the strings test caught; the widget test
+  now checks the Florida vote's thanks, and a case that stops part way is a
+  failure said plainly, after which every later check still runs.
+
+**How it was verified, 2026-10-08, in the cloud workspace.** npm was blocked
+there (registry.npmjs.org answered 403) and so was cdn.jsdelivr.net, so as
+before the gates ran on stand-ins: pdfjs-dist 6.2.108 for unpdf (56/3, 56/0,
+clean, 4.124/0.944), a throwaway PostgreSQL 16 cluster per PGlite instance
+behind PGlite's API, the committed html5-qrcode in place of `build.sh`'s
+download, and Playwright 1.56.0's Chromium 141. ALL GATES GREEN on `93a07b5`
+before any edit, 26 gates, and after, 28 gates, `KAY-CAR-001` 4.124 and
+`KAY-PRR-001` 0.944. Both new tests passed on Node 22.22 and 20.20.
+`js/match-math.cd934bdd.js` and `js/b2b-rank.580a8c1b.js` are byte for byte
+as they were; `parse-coa.js`, `coa-dates.js` and `extract-text.js` are
+untouched, so no reparse is due. `build.sh` renamed `js/nose.593b2c1b.js` to
+`js/nose.bab857ad.js` - the four moved out - and `_redirects`' `/js/nose.js`
+alias with it, and named the new files. Nothing ran against a real
+database, Netlify or a lab's server. The Codespace run on the real packages
+is the one that counts.
+
+**In the Codespace, in this order** (nothing here writes anywhere; the demo
+page and the widget's files go live, and the widget's two calls answer 404):
+
+1. Bring the commit in - `git pull --ff-only`, or from the bundle - then
+   `bash scripts/gates.sh`: ALL GATES GREEN, 28 gates, `b2b strings` and
+   `b2b widget` among them. If `b2b widget` says Playwright is not
+   installed: `npm install --no-save playwright`, then `npx playwright
+   install --with-deps chromium`.
+2. `git push` - deploys.
+3. On the live site: the home page and `/app` read 74 · Partial overlap, and
+   their bars draw (§13, "After a deploy", step 6) - the bar now comes from
+   `js/aroma-bar`. Then `https://nose-app.com/b2b/demo/`: press the green
+   button, and the rail shows.
+
 ### Still open
 
 - `scripts/download-twice.js` keeps its own looser fetch loop. Moving it onto
@@ -3805,12 +4055,15 @@ that counts.
 - **A vote sent by `sendBeacon` from a page served with `Referrer-Policy:
   no-referrer`** (or `same-origin`) carries `Origin: null` where a browser
   follows the standard (MDN, above), and the origin rule refuses it; Chromium
-  141 sent the page's origin anyway (the probe, "Feed and votes"). Prompt 6 or
-  7 decides: the widget can send the vote with `fetch(url, { method: 'POST',
-  mode: 'cors', keepalive: true, body })` - a string body, so still a simple
-  request with no preflight, the page's origin always sent, no cookies - which
-  `b2b-vote` already answers with that origin echoed; or the integration
-  guide tells the store not to serve the page with those policies.
+  141 sent the page's origin anyway (the probe, "Feed and votes"). Prompt 6
+  sends the vote by `sendBeacon`, as it asked, so Prompt 7 decides between
+  the integration guide telling the store not to serve the widget's pages
+  with those policies, and moving the vote to `fetch(url, { method: 'POST',
+  mode: 'cors', keepalive: true, credentials: 'omit', body })` - a string
+  body, so still a simple request with no preflight, the page's origin always
+  sent, no cookies - which `b2b-vote` already answers with that origin
+  echoed. The feed is a cors `fetch` already, with no referrer (s14, "The
+  widget").
 - **A beacon carries this site's cookies** (credentials `include`). NOSE's one
   cookie, `nose_session`, is `SameSite=Lax`, so it never rides along from a
   store's page, and the vote reads no cookie. A NOSE cookie ever marked
@@ -3837,16 +4090,19 @@ that counts.
 - **Both functions take `b2b-catalog.js`'s module form**, still unproven on
   Netlify (above): esbuild bundled them here, and Netlify → Logs → Functions
   listing `b2b-feed` and `b2b-vote` after the push is the first live proof.
-- **A batch in the feed carries its catalog `name` and `brand`**, for the
-  widget to show; Prompt 5's ranking reads neither. A product voted on is
-  named by its `product_id` alone.
-- **Suggestions across forms.** The plan keeps them labelled and off by
-  default until the pilot ("vapes for a flower palate"). Prompt 5's
-  `palateFrom()` takes no category, so `rank()` for vapes scores them against
-  a palate of every inhalable purchase. The basis lists each batch, category
-  and all, and the widget can build a palate from one category's purchases
-  by looking each `batchId` up in the feed first. Prompt 6 decides, and its
-  strings say which.
+- **A batch in the feed carries its catalog `name` and `brand`**, and the
+  widget shows them as the store wrote them; Prompt 5's ranking reads
+  neither. A product voted on is named by its `product_id` alone. A store's
+  own product names can hold words NOSE's strings never would - a "Cured
+  Resin" - and `b2b-strings-test` reads NOSE's words,
+  not a catalog's: the store's names are the store's to clear (Prompt 10's
+  kit shows them as they render).
+- **Suggestions across forms stay off** (Prompt 6, "The widget"): the rail's
+  palate is made of the purchases in its own category, looked up in the feed,
+  and its basis line names the category. Prompt 5's `palateFrom()` takes no
+  category, so a rail across forms ("vapes for a flower palate", labelled, as
+  the plan keeps it for after the pilot) is the widget's choice of purchases
+  and one more string, and needs its own prompt.
 - **Purchase days are UTC days.** A page that hands local days moves a
   purchase near midnight by one day - one day at the window's edge. Prompt
   7's integration guide says which. `today` comes from the device's clock
@@ -3863,9 +4119,49 @@ that counts.
   its maths through `../scripts/lib/match.js`. Campaign palates on a
   dispensary's server would carry those files, or Prompt 7's release; decided
   with that prompt.
-- **The load-order rules compare line numbers.** For js/nose and now
-  js/b2b-rank, two scripts on one line fail the build, and an `async` script
-  would pass it and still run out of order. No page does either today.
+- **The load-order rules compare line numbers.** For js/nose, js/b2b-rank,
+  and since Prompt 6 js/aroma-bar and js/b2b-widget, two scripts on one line
+  fail the build, and an `async` script would pass it and still run out of
+  order. No page does either today.
+- **The no-panel sentence is not the prompt's** (s14, "The widget"): "No
+  terpene panel available for this batch", because "No terpene panel on this
+  batch's report" would be untrue of a batch whose report NOSE has not read
+  or could not fetch. The owner decides; one line in `js/b2b-strings` changes
+  it.
+- **No attribution line yet.** "Flavor match by NOSE" waits on the owner's
+  choice; it goes into `js/b2b-strings`, both variants, and the strings test
+  then reads it.
+- **The Florida variant is NOSE's reading of 64ER25-6**, not counsel's.
+  Whether the rule reaches a vendor's widget, and whether words like
+  "palate" or a store's flavor-named products count, is for the
+  Florida cannabis-regulatory attorney the plan books; Prompt 10's kit
+  renders the variant for the Department.
+- **Two attributes and one event more than the prompt named**: `strings`
+  and `feed`, and `nose:palate-restored`. Prompt 7's integration guide
+  documents them with the rest.
+- **The widget keeps two lists in the shopper's browser**, in storage on the
+  store's own origin: the batches taken out of the palate
+  (`nose-matches-removed`) and the products voted on (`nose-matches-voted`).
+  Neither reaches NOSE; Prompt 8's page says they exist, and that clearing the
+  site's data in the browser clears them. The vote is once per product per
+  browser, so one shopper on two devices can vote twice.
+- **The widget names its stylesheet's built file**, written in by `build.sh`,
+  and reads NOSE's origin from `document.currentScript`. Prompt 7's pinned
+  release must carry a stylesheet under the name its widget carries, and stay
+  a classic script.
+- **The demo page goes live with the next deploy**, at `/b2b/demo/`: static,
+  noindex, linked from nowhere, its feed a file. Its votes reach the
+  production b2b-vote, which answers 404 until Prompt 8 and then refuses the
+  made-up key as no store's. Its test store is rewritten by
+  `node scripts/b2b-demo-feed.js` after a parser change moves a fixture's
+  reading - the widget test fails until it is.
+- **At most 12 cards** on the rail and the sold-out panel, a constant in the
+  widget; the rest of the menu is the store's page. The basis counts every
+  purchase it does not use and names only those of the category with no
+  panel.
+- **`wip/nose-farnesene-wip.js` still holds an old copy of the bar**, as it
+  does of the maths: an unfinished draft of the whole old bundle, loaded by
+  nothing. The widget test lists it, as `match-test` does.
 
 ### Later
 

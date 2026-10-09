@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#F3F3EE">
+<meta name="robots" content="noindex, nofollow">
+<title>Dispensary widget demo — NOSE</title>
+<meta name="description" content="A demo of NOSE's dispensary widget on a made-up test store. Not linked from the site.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/css/shell.918a3d5e.css">
+<link rel="stylesheet" href="/css/agegate.451aca9a.css">
+<link rel="stylesheet" href="/css/b2b-demo.2eb88178.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<main id="main" class="wrap demo" tabindex="-1">
+  <header class="demo-head">
+    <p class="eyebrow">For dispensaries · demo</p>
+    <h1>The aroma widget, on a test store</h1>
+    <p class="demo-lead">The store, its products, brands, links, stock and THC and CBD figures are made up. Every terpene panel is a real lab report's, from NOSE's test reports. The purchases are made up too: type your own. They stay in this page - the widget ranks in this browser, and only its feed and a vote ever leave it.</p>
+  </header>
+
+  <div class="demo-grid">
+    <form id="demoForm" class="demo-form card" aria-labelledby="demoFormTitle">
+      <h2 id="demoFormTitle" class="demo-h2">What the store's page hands the widget</h2>
+
+      <label class="demo-field">
+        <span>Mode</span>
+        <select id="demoMode" name="mode">
+          <option value="rail">Rail</option>
+          <option value="sold-out">Sold-out panel</option>
+          <option value="vote">Vote</option>
+        </select>
+      </label>
+
+      <label class="demo-field">
+        <span>Consent</span>
+        <select id="demoConsent" name="consent">
+          <option value="unknown">Not asked yet</option>
+          <option value="granted">Granted</option>
+          <option value="denied">Denied</option>
+        </select>
+      </label>
+
+      <label class="demo-field">
+        <span>Group</span>
+        <select id="demoGroup" name="group">
+          <option value="test">Test</option>
+          <option value="control">Control</option>
+        </select>
+      </label>
+
+      <label class="demo-field">
+        <span>Words</span>
+        <select id="demoStrings" name="strings">
+          <option value="default">Default</option>
+          <option value="florida">Florida</option>
+        </select>
+      </label>
+
+      <label class="demo-field">
+        <span>Category, for the rail</span>
+        <select id="demoCategory" name="category">
+          <option value="flower">Flower</option>
+          <option value="pre-roll">Pre-roll</option>
+          <option value="vape">Vape</option>
+          <option value="concentrate">Concentrate</option>
+        </select>
+      </label>
+
+      <label class="demo-field">
+        <span>Product, for the vote</span>
+        <select id="demoProduct" name="product"></select>
+      </label>
+
+      <fieldset class="demo-field demo-routes demo-wide">
+        <legend>The shopper's routes</legend>
+        <label><input type="checkbox" id="demoRouteSmoking" value="smoking" checked> Smoking</label>
+        <label><input type="checkbox" id="demoRouteInhalation" value="inhalation" checked> Inhalation</label>
+      </fieldset>
+
+      <label class="demo-field demo-wide">
+        <span>Purchases: one a line, the batch ID and then the day bought (YYYY-MM-DD)</span>
+        <textarea id="demoPurchases" name="purchases" rows="10" spellcheck="false" autocomplete="off"></textarea>
+      </label>
+
+      <div class="button-row demo-wide">
+        <button class="button button-primary" type="submit">Show</button>
+        <button class="button button-secondary" type="button" id="demoReset">Start again</button>
+      </div>
+      <p class="demo-note demo-wide">"Start again" forgets what this browser kept for the widget - the batches taken out of the palate and the products voted on - and reloads the page.</p>
+    </form>
+
+    <section class="demo-stage" aria-labelledby="demoStageTitle">
+      <h2 id="demoStageTitle" class="demo-h2">The widget</h2>
+      <div class="demo-shop">
+        <nose-matches id="demoWidget" feed="/b2b/demo/test-store.json" key="npk_0000000000000000000000000000000000000000000000000000000000000000" mode="rail" category="flower" routes='["smoking","inhalation"]' consent="unknown" group="test" strings="default"></nose-matches>
+        <p id="demoQuiet" class="demo-note" hidden></p>
+      </div>
+      <h3 class="demo-h3">What the page was told</h3>
+      <ul id="demoEvents" class="demo-events" aria-live="polite"></ul>
+      <p id="demoNoEvents" class="demo-note">Nothing yet. The widget tells the page when the shopper says yes, and when a batch leaves or rejoins the palate.</p>
+    </section>
+  </div>
+
+  <section class="demo-menu" aria-labelledby="demoMenuTitle">
+    <h2 id="demoMenuTitle" class="demo-h2">The test store's batches</h2>
+    <p class="demo-note">Every batch the feed lists, in the store's order. A batch with no terpene panel shows none in the widget: nothing is estimated.</p>
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead><tr><th scope="col">Batch ID</th><th scope="col">Product</th><th scope="col">Category</th><th scope="col">In stock</th><th scope="col">Terpene panel</th></tr></thead>
+        <tbody id="demoMenu"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+<script src="/js/match-math.cd934bdd.js" defer></script>
+<script src="/js/aroma-bar.94a27874.js" defer></script>
+<script src="/js/b2b-rank.580a8c1b.js" defer></script>
+<script src="/js/b2b-strings.7315b626.js" defer></script>
+<script src="/js/b2b-widget.63200a61.js" defer></script>
+<script src="/js/b2b-demo.5199a765.js" defer></script>
+<script src="/js/agegate.86760e1d.js" defer></script>
+</body>
+</html>

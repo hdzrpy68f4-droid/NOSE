@@ -1,0 +1,158 @@
+/* NOSE - the dispensary widget's stylesheet. Linked inside <nose-matches>'s
+ * shadow root, so nothing here reaches the store's page and nothing of the
+ * page's reaches in, but its font and text colour, which the widget inherits.
+ * Cards keep their own light surface, so they read on any page.
+ *
+ * The bar (.profile-bar, .profile-segment) is js/aroma-bar's: its widths,
+ * family colours and label colours come from that file, set on each element
+ * as the app's bar sets them; only its frame is drawn here, smaller than the
+ * app's. Status colours mark the match band and are never an aroma colour.
+ * PARSER-HANDOFF s14, "The widget".
+ */
+:host { display: block; }
+:host([hidden]) { display: none; }
+[hidden] { display: none !important; }
+* { box-sizing: border-box; }
+
+.nm {
+  --nm-ink: #1A241E;
+  --nm-muted: #53605A;
+  --nm-surface: #FFFFFF;
+  --nm-sunk: #E9ECE6;
+  --nm-line: rgba(26, 36, 30, .14);
+  --nm-green: #2F6144;
+  --nm-focus: rgba(47, 97, 68, .55);
+  line-height: 1.4;
+}
+
+.nm-title { margin: 0 0 10px; font-size: 1.125em; font-weight: 700; letter-spacing: -.01em; }
+.nm-lead, .nm-empty, .nm-note, .nm-method { margin: 0 0 10px; }
+.nm-method { margin-top: 10px; font-size: .8125em; opacity: .8; max-width: 60ch; }
+.nm-note { margin-top: 8px; font-size: .875em; }
+
+/* --- buttons --------------------------------------------------------- */
+.nm-button {
+  font: inherit;
+  font-size: .9375em;
+  font-weight: 600;
+  min-height: 40px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--nm-line);
+  background: var(--nm-surface);
+  color: var(--nm-ink);
+  cursor: pointer;
+}
+.nm-button:hover { border-color: var(--nm-green); }
+.nm-button:disabled { cursor: default; opacity: .7; }
+.nm-button[aria-pressed="true"] { border-color: var(--nm-green); box-shadow: inset 0 0 0 1px var(--nm-green); }
+.nm-primary { background: var(--nm-green); border-color: var(--nm-green); color: #FFFFFF; }
+.nm-primary:hover { background: #214A33; }
+.nm-quiet { min-height: 32px; padding: 4px 12px; font-size: .8125em; font-weight: 500; }
+:focus-visible { outline: 3px solid var(--nm-focus); outline-offset: 2px; }
+
+/* --- cards ------------------------------------------------------------ */
+.nm-cards {
+  list-style: none;
+  margin: 0;
+  padding: 2px 2px 12px;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(200px, 236px);
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+}
+.nm-card {
+  position: relative;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--nm-line);
+  border-radius: 12px;
+  background: var(--nm-surface);
+  color: var(--nm-ink);
+}
+.nm-card:hover { border-color: var(--nm-green); }
+.nm-name { margin: 0; font-size: 1em; font-weight: 700; line-height: 1.25; }
+.nm-name a { color: inherit; text-decoration: none; }
+/* The whole card is its link's target; the focus ring goes round the card. */
+.nm-name a::after { content: ""; position: absolute; inset: 0; border-radius: 12px; }
+.nm-name a:focus-visible { outline: none; }
+.nm-name a:focus-visible::after { outline: 3px solid var(--nm-focus); outline-offset: 2px; }
+.nm-brand { margin: 0; font-size: .8125em; color: var(--nm-muted); }
+.nm-match { margin: 2px 0 0; display: flex; align-items: center; gap: 6px; font-size: .875em; font-weight: 600; }
+.nm-match::before {
+  content: "";
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #6E655C;
+}
+/* matchBand()'s own names, as the card carries them in data-band. */
+.nm-match[data-band="Strong"]::before { background: #2F6144; }
+.nm-match[data-band="Good"]::before { background: #587F6B; }
+.nm-match[data-band="Moderate"]::before { background: #8A8377; }
+.nm-match[data-band="Low"]::before { background: #6E655C; }
+.nm-nopanel { margin: 2px 0 0; font-size: .8125em; color: var(--nm-muted); }
+.nm-facts {
+  margin: auto 0 0;
+  padding-top: 4px;
+  font: .75em/1.35 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: .02em;
+  color: var(--nm-muted);
+}
+.nm-facts span { display: block; }
+
+/* --- the bar, js/aroma-bar's ------------------------------------------- */
+.profile-bar {
+  display: flex;
+  height: 22px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--nm-sunk);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .04);
+}
+.profile-segment {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  min-width: 0;
+}
+.profile-segment span { padding-inline: 5px; font: 700 10px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: nowrap; }
+
+/* --- the basis --------------------------------------------------------- */
+.nm-basis { margin-top: 4px; font-size: .875em; }
+.nm-basis summary { cursor: pointer; padding: 6px 0; font-weight: 600; }
+.nm-basis-title { margin: 10px 0 4px; font-weight: 600; }
+.nm-basis-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.nm-basis-item { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.nm-basis-name { min-width: 0; }
+
+/* --- the vote ---------------------------------------------------------- */
+.nm-question { margin: 0 0 4px; font-weight: 700; }
+.nm-vote .nm-lead { font-size: .875em; }
+.nm-vote-buttons { display: flex; gap: 8px; }
+.nm-thanks { margin: 8px 0 0; font-size: .875em; }
+.nm-thanks:empty { display: none; }
+
+/* Visually hidden, read aloud: the card's score in words. */
+.nm-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nm-cards { scroll-behavior: auto; }
+}
