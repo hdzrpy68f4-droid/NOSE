@@ -153,7 +153,7 @@ Also run `node test/resolver-test.js` - expect `resolver clean`, and
 **Or all at once:** `bash scripts/gates.sh` runs these, the Kaycha anchors,
 `novelty-test`, `coa-dates-test`, `store-test`, `probe-test`, `archive-wiring-test`,
 `archive-scripts-test`, `rerun-test`, `review-queue-test`,
-`analysis-test`, `duplicates-test`, `remove-copies-test`, `remove-document-test`, `b2b-coverage-test`, `b2b-store-test`, `b2b-catalog-test`, `b2b-endpoints-test`, `b2b-rank-test`, `b2b-strings-test`, `check-trust-test` and, after the build, `b2b-release-test`, `input-paths-test` and `b2b-widget-test`.
+`analysis-test`, `duplicates-test`, `remove-copies-test`, `remove-document-test`, `b2b-coverage-test`, `b2b-store-test`, `b2b-catalog-test`, `b2b-endpoints-test`, `b2b-rank-test`, `b2b-strings-test`, `b2b-pilot-test`, `check-trust-test` and, after the build, `b2b-release-test`, `input-paths-test` and `b2b-widget-test`.
 It prints the line each gate produced and ends with `ALL GATES GREEN`. It passes
 a gate only on its exact expected line, so when a session legitimately changes
 a count, update the script in the same commit.
@@ -211,6 +211,7 @@ someone to look.
 | `b2b-endpoints-test.js` | the widget's two calls (§14, "Feed and votes") on PGlite, both functions behind a stand-in `pg` that runs every statement as `nose_b2b` and a stand-in `@netlify/blobs`: the switch; the feed byte-identical for two visitors, every batch in the window in stock or not, the prompt's fields alone, a reading's figures only when it is the current one and accepted, no lab-report link; the origin rule (a foreign, missing, `null` or other store's origin gets no CORS header and no data), a revoked key, `public, max-age=60`; a vote's six fields and nothing else, matchBand()'s four bands all stored, no time of day in key or value, keys in no arrival order, the per-store daily cap with the same reply; one fixed log line on failure; `delete-store` removing a store's votes and only its own; schema `nose`, the archive and the consumer's store untouched; offline |
 | `b2b-rank-test.js` | `js/b2b-rank.<hash>.js`, the dispensary ranking engine (§14, "The ranking engine"): one file, loaded as a page loads it and in Node; no maths of its own, every number traced to NoseMatch; the 1830 golden pairs, 61 self-scores and 65 palates through `rank()` and `palateFrom()` to the last bit; 3x the intensity the same; unread batches last, with no number; routes, category, stock and the guardrail leaving batches out and never reordering; ties by `list_position`; each skip reason, a removed batch, one count per batch, the window as PostgreSQL counts it; `soldOut()` and `voteScore()`; no name or brand read; `build.sh`'s load-order rule, its own lines, on throwaway pages; offline |
 | `b2b-strings-test.js` | `js/b2b-strings.<hash>.js`, every word the dispensary widget shows (§14, "The widget"): two variants, default and florida, with the same keys and placeholders; no effect or recreational word - the prompt's list and their forms - in any string or anywhere in the file; Florida's says aroma and orders; the words shown from other files true to `matchBand()` and `renderBar()`; every key read by the widget and none written out in it; offline |
+| `b2b-pilot-test.js` | the pilot's plan, sample size and report (§14, "Pilot plan and report"): `scripts/b2b-sample-size.js` against the worked examples in R's `power.prop.test` documentation, never its own output; Wilson's interval against NIST's example, Newcombe's against his Table II, the split check against a published example, the delta method against the mean it must equal; synthetic exports - a known difference found, a null read as null, the mirror read as the mirror, a short run and a run still going showing only how far short, a personal column refused before any row, an unreadable row refusing the file without its value; the plan's block and its pre-registration by git in throwaway repositories; the votes by band; the vote store only listed, no file written, the command line end to end; offline |
 | `check-trust-test.js` | `scripts/check-trust.mjs` (§13, "The trust guard") on throwaway sites: every form of the old promise fails, true sentences pass; offline |
 | `b2b-release-test.js` | pinned widget releases (§14, "Pinned releases"): `scripts/b2b-release.js`'s build - the same bytes from one commit and version, every time, anywhere; the five files verbatim and in order but for the widget's two stylesheet lines; the stylesheet verbatim; the bundle running as a page runs it - its refusals, its publishing to a stand-in Blobs (never overwriting, going on after a stop, an ETag or a failure, the row last), `netlify/functions/b2b-release.js` (the switch, GET and HEAD, one path shape, the bytes with exactly their five headers, a 404 nothing caches, 503 and one line), `scripts/b2b-release-check.js` against each kind of mismatch, nothing built left in the repo, no effect wording, the integration guide's names; offline, in throwaway git repos; a gate, run after the build |
 | `b2b-widget-test.mjs` | `<nose-matches>` in headless Chromium (§14, "The widget"): the built files on a store's page from another origin, under the prompt's CSP, against a stand-in feed and vote; only the feed and the vote leave the page, and no request carries a purchase; consent, denied, control; each mode equal to `js/b2b-rank`'s answers; every bar `renderBar()`'s; keyboard reach; the demo page; one copy of the bar; `build.sh`'s load-order lines; since 2026-10-09 the vote by `fetch` with no cookie or referrer, and a pinned release - one tag with its hash under the integration guide's own CSP lines, the same rail and vote, its stylesheet checked by its hash, an altered file or a missing `crossorigin` refused. Needs Playwright; a gate, run after the build |
@@ -2534,7 +2535,10 @@ and the widget builds the palate and ranks there. B2B lives apart from
 everything consumer - its own schema (`b2b`) and role (`nose_b2b`), since
 2026-10-07, and its own Blobs store (`b2b-votes`), functions (`b2b-catalog`, `b2b-feed` and `b2b-vote`), ranking engine (`js/b2b-rank.<hash>.js`) and widget (`js/b2b-widget.<hash>.js`, with `js/b2b-strings` and `css/b2b-widget`), which no consumer page loads, all since 2026-10-08,
 and pinned releases of the widget - a second Blobs store (`b2b-releases`) and
-function (`b2b-release`), since 2026-10-09 -
+function (`b2b-release`), since 2026-10-09 - and the pilot's plan and report
+(`docs/B2B-PILOT-PLAN.md`, `docs/B2B-PILOT-EXPORT.md`,
+`scripts/b2b-sample-size.js`, `scripts/b2b-pilot-report.js`), which read and
+write nothing in production, since 2026-10-13 -
 and whatever runs on Netlify stays off unless `B2B_ENABLED=1` in the
 Production context and `build-info.json` says production
 (`lib/b2b-flag.js`) - on since 2026-10-09, after the privacy page described
@@ -4497,6 +4501,219 @@ around `,` and `;` aside - not its spelling; `b2b-release-test` checks that a
 compacted reply passes and still that a short cache fails, and the new check
 fails against the old script. The function is unchanged.
 
+### Pilot plan and report, 2026-10-13
+
+Prompt 9. The pilot's test is written down before day one, and its result is
+computed the same way whether the module helps or not. Nothing in it writes
+anywhere: a template, a format, a sample-size calculator, and a report that
+reads a plan, an export and the store's vote keys, and prints.
+
+```
+docs/B2B-PILOT-PLAN.md       the plan, a fill-in template: copied to docs/pilots/<slug>.md, committed before the first day
+docs/B2B-PILOT-EXPORT.md     the CSV a store sends at the end: one row per assigned shopper, counts only
+scripts/b2b-sample-size.js   --baseline <rate> --lift <relative> [--alpha] [--power]: shoppers per group, two proportions
+scripts/b2b-pilot-report.js  <export.csv> --store <slug>: the plan, the export and the votes, read; the report, printed
+test/b2b-pilot-test.js       offline, a gate: "b2b-pilot clean"
+scripts/gates.sh             the gate, after b2b strings
+```
+
+**The probe, before any edit**, on `cbce6e0` - ALL GATES GREEN, 29 gates:
+
+- `scripts/lab-stats.js` only reads: one `select` from `nose.latest_parses`
+  as `nose_writer`, counts printed, nothing written; `REFUSED:` without
+  `NOSE_DB_URL`, its usage for an argument. A denominator sits beside every
+  share - `accepted 4 of 5 (80%)`, `most common warning 3 of 5: ...`,
+  `median coverage 99.0% (5 readings carry one)` - a reading without a figure
+  is left out, never counted as zero, and a share of nothing is `-`.
+- `test/analysis-test.js` pins those lines exactly, with no effect wording,
+  report text, address or fingerprint in any output or source file, and the
+  command lines refusing with no secrets.
+- The plan's "Proving it works" section (the Claude Docs page "NOSE for
+  Dispensaries - B2B Integration Plan", read 2026-10-13): signed-in shoppers
+  assigned at random, half and half, before any prompt; whole groups
+  compared, test shoppers who never opt in included; the page assigns, so
+  NOSE never learns who is in which; the sample size and stopping rule fixed
+  before day one. Its metrics: primary "Orders containing an inhalable, per
+  assigned shopper, over the test window"; sold-out recovery, a matched
+  product bought again within 60 days (test shoppers), opt-in rate; the
+  votes, which "should fall from Strong to Weak"; average order value and
+  copy and route incidents as guardrails; the store "exports totals per
+  group, or rows with a group label and no identity"; published: "every
+  metric above including the ones that did not move, and the band-by-band
+  vote table". The template follows it, in `matchBand()`'s names: the plan's
+  Weak is Low.
+
+**Decided here, where the prompt was silent or pulled two ways:**
+
+- **The pre-registered test is a share of shoppers.** The plan's primary
+  metric is a count per shopper; the prompt sizes the test as a difference
+  in two proportions. So the result rests on the share of assigned shoppers
+  with at least one order containing an inhalable - what the sample size
+  sizes - and inhalable orders per assigned shopper is reported beside it,
+  deciding nothing. The owner confirms (below, "Still open").
+- **The plan's numbers are one block the report reads**, ```` ```pilot ````,
+  in `docs/pilots/<slug>.md`, committed to this public repository before the
+  first day: that commit is the pre-registration. The report takes the first
+  commit holding exactly those numbers (`git log --reverse`, each version's
+  block compared value by value, so prose changed later - an incident logged
+  - does not move it), and gives no result when that commit's day, UTC, by
+  committer date, is on or after the first day, when the file has changes
+  not committed, when the clone is shallow, or when git cannot be read. It
+  runs git with `--no-optional-locks`, so not even git's index refresh is
+  written.
+- **No peeking.** Until the last day has passed (today, UTC, after
+  `last_day`) and both groups hold `shoppers_per_group`, the report prints its
+  checks, how far short each group is, and the votes by count - no rate, no
+  interval, no result. After the last day a short run shows every figure and
+  no result: published as short.
+- **What withholds a result**, with every figure still shown: the plan not
+  pre-registered; the split failing a chi-squared goodness-of-fit test
+  against half and half, p below 0.001 (a sample ratio mismatch, detected as
+  [Wikipedia, "Sample ratio mismatch"](https://en.wikipedia.org/wiki/Sample_ratio_mismatch)
+  describes, read 2026-10-13); any control shopper with `yes` in `opted_in`,
+  `bought_matched` or `bought_matched_again` - control saw nothing of the
+  widget, so the groups leaked; `shoppers_per_group` below what the plan's
+  own baseline, lift, alpha and power give.
+- **The plan's alpha decides**: every figure is shown with a 95% interval,
+  and the result line names the interval it used.
+- **Methods.** A share: Wilson's score interval. A difference of two shares:
+  Newcombe's hybrid score interval, his method 10. A ratio of sums over
+  shoppers (sold-out visits; revenue per order): the delta method, each
+  shopper one unit, since shoppers are what the page randomised. The count
+  per shopper: the normal interval of a mean. The sample size is the normal
+  approximation R's `power.prop.test` solves - pooled variance with no
+  difference, unpooled under the lift, no continuity correction. The pooled
+  variance is the larger of the two, so at the sizes a pilot needs, the
+  Newcombe interval the result is read with - close to the unpooled one - has
+  about the planned power, if anything a little more. Simulated while
+  building (not committed): at 437 a group, .30 against .39, the rule found
+  the difference in 80.2% of 20,000 runs, and a difference that was not
+  there in 5.0%; at 3,763 a group, .30 against .33, 80.2% and 5.0% of 6,000.
+- **The band check**: the up share in each of Strong, Good, Moderate and Low,
+  from the store's vote keys dated on the pilot's days, first to last -
+  listed through `lib/b2b-votes.js`'s own `open()` and `storeVoteKeys()`,
+  never read. The result is Strong minus Low by the same method at the plan's
+  alpha, once each holds `votes_per_band` (the template sizes it with the
+  same script). The four in order is shown as read, not tested; a day that
+  reached the cap of 100 is named; votes on other days, and keys in another
+  layout, are counted apart.
+- **The export** has the prompt's columns and one more, `bought_matched`:
+  the plan's repeat metric needs a denominator - of the test shoppers who
+  bought a matched product, how many bought it again. NOSE cannot see which
+  card a shopper opened, so the store counts a matched purchase; the template
+  suggests a marker of the store's own on every catalog `product_url`
+  (`?from=flavor`, the same for every shopper). The export is taken at least
+  60 days after the last day, so every matched purchase has its full 60.
+- **It refuses as the catalog does** - `lib/b2b-catalog-format.js`'s own
+  `looksPersonal()` and `parseCsv()`, not copies - plus thirteen identity
+  words matched the same way (`shopper`, `member`, `loyalty`, `name`, `birth`,
+  `zip`, `zipcode`, `postal`, `postcode`, `account`, `id`, `uuid`, `guid`).
+  Unlike the catalog, one unreadable row refuses the whole file - a row left
+  out would change every denominator - and a refusal names the row and the
+  column, never the value. A row must agree with itself (no more inhalable
+  orders than orders, and so on); a control row with a sign of the widget is
+  read, counted and withholds the result.
+
+**Found on the way**: `b2b-catalog-test`'s rule that the catalog format has
+one reader flags any function named `parseCsv`, `checkHeader`, `readCatalog`
+or `looksPersonal` under `netlify/` and `scripts/`. The report's own header
+check, for another format, first carried the name `checkHeader` and failed
+that gate; it is `checkExportHeader`, and the rule is untouched.
+
+**The references** - nothing is checked against the scripts' own output:
+
+- [R's `power.prop.test` documentation](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/power.prop.test.html),
+  Examples (read 2026-10-13): `n = 76.7` (p1 .50, p2 .75, power .90),
+  `n = 10451937` (p1 .5, p2 .501, alpha .001, power .90), `n = 73.37` (p1 .90,
+  p2 1.0, power .8), `power = 0.740` (n 50, p1 .50, p2 .75). The formula was
+  read from R's source, `src/library/stats/R/power.R`, its "normal case".
+- The normal quantile is Wichura's AS 241 (Applied Statistics 37, 1988,
+  477-484) and the distribution function Cody's (Mathematics of Computation
+  23, 1969, 631-637), with the coefficients as R's `qnorm.c` and `pnorm.c`
+  carry them.
+- [NIST/SEMATECH e-Handbook, 7.2.4.1](https://www.itl.nist.gov/div898/handbook/prc/section2/prc241.htm)
+  (read 2026-10-13): Wilson's interval, n 200, 0.13, one-sided 95% lower limit
+  0.09577.
+- Newcombe, "Interval estimation for the difference between independent
+  proportions: comparison of eleven methods", Statistics in Medicine 17
+  (1998), 873-890, Table II, method 10: 56/70 - 48/80, 0.0524 to 0.3339;
+  9/10 - 3/10, 0.1705 to 0.8090; 6/7 - 2/7, 0.0582 to 0.8062; 5/56 - 0/29,
+  -0.0381 to 0.1926. The paper is paywalled: the four were read from a
+  reproduction quoting the table
+  ([huggingface/lerobot #4659](https://github.com/huggingface/lerobot/pull/4659),
+  read 2026-10-13). The report's interval gives all four to the four
+  decimals printed.
+- [Wikipedia, "Sample ratio mismatch"](https://en.wikipedia.org/wiki/Sample_ratio_mismatch):
+  600 and 400 of 1000 assigned half and half, p = 2.54e-10.
+
+**The test** - `test/b2b-pilot-test.js`, 76 checks, a gate after `b2b
+strings`. The references above; the command line's sizes and refusals; the
+export read with a byte-order mark, CRLF, letter case and a blank row; a
+personal column refused before any row (its value never shown), eleven
+identity columns, an unknown, missing and doubled column, the six ways a
+file fails; twelve unreadable rows, each with its reason and none with its
+value, and "and 5 more" past twenty; the template's block not filled in;
+plan checks and block errors; pre-registration in throwaway repositories -
+committed before the first day, prose changed later, numbers changed and not
+committed, numbers committed late, committed on the first day, never
+committed, a shallow clone, no git; synthetic pilots - a known difference
+(180 of 450 against 132 of 440) found, by the exact lines; a null; the
+outcomes swapped read as the exact mirror; a short run and a run still going
+with no `%`, interval or result anywhere; numbers committed late, a lopsided
+split, three leaking control shoppers, a plan sized too small, each with its
+figures and no result; average order value that fell; the plan's alpha of
+0.01 deciding against the 95% shown; the votes - another store's apart, days
+outside and a key of another layout counted apart, a capped day named, too
+few votes, Strong against Low all three ways, the bands read from
+`matchBand()` itself; the vote store asked only to list, no file written,
+`pg`, `coa.js`, the archive and `@netlify/blobs` never loaded; the command
+line end to end in a throwaway tree with a stand-in `@netlify/blobs`,
+writing nothing; no effect wording in the four files or any output; the two
+documents naming what the code reads.
+
+- **Against broken copies**: 39 deliberate faults, one at a time - among them
+  the unpooled variance under no difference, a one-sided alpha, no rounding
+  up, an additive lift, Wald for Wilson, Newcombe's limits crossed, n for
+  n - 1, a one-tailed split check, the split or the leak ignored, figures
+  while short or running, today ignored, the first day counted as before,
+  the latest commit taken, changes not committed or a shallow clone
+  accepted, a plan sized too small allowed, 95% deciding whatever the alpha,
+  only "more" ever found, bad rows dropped, a value echoed, the identity words
+  dropped, the personal check after the unknown one, no window, no cap, the
+  band result without enough votes or without pre-registration, a
+  denominator dropped, up shares while short, a file written, the vote store
+  asked for more, an effect word in the plan, "published either way" gone, a
+  column missing from the format, no secrets needed - each fails it. A
+  scratch harness, not committed. One, any vote key counted, fails by the
+  test stopping rather than by a check.
+
+**How it was verified, 2026-10-13, in the cloud workspace.** npm was
+blocked (registry.npmjs.org answered 403), so as before the gates ran on
+stand-ins: unpdf 1.8.0's `getDocumentProxy` and `extractTextItems`, from its
+source, over pdfjs-dist 6.2.108 (56/3, 56/0, clean, 4.124/0.944); PGlite
+0.5.8's API, type and result rules, from its source at that tag, over a
+throwaway PostgreSQL 16 cluster per instance; the committed html5-qrcode in
+place of `build.sh`'s download; Playwright 1.56's Chromium 141. ALL GATES
+GREEN on `cbce6e0` before any edit, 29 gates, and after it with the new
+gate, 30 - `KAY-CAR-001` 4.124 and `KAY-PRR-001` 0.944. `parse-coa.js`,
+`coa-dates.js` and `extract-text.js` are untouched, so no reparse is due; no
+file in `js/` changed, so `build.sh` renamed nothing; no migration. Nothing
+ran against a real database, Netlify or a lab's server. The Codespace run on
+the real packages is the one that counts.
+
+**In the Codespace, in this order** (nothing here writes anywhere):
+
+1. Bring the commit in, then `bash scripts/gates.sh` - ALL GATES GREEN, 30
+   gates, `b2b pilot` among them.
+2. `git push` - nothing new is served: `docs/` and `scripts/` are forced 404.
+3. Before a pilot's first day: the privacy page describes the export ("Still
+   open"); then `cp docs/B2B-PILOT-PLAN.md docs/pilots/<slug>.md`, fill it
+   in, `node scripts/b2b-sample-size.js ...` for its two sizes, commit and
+   push.
+4. At least 60 days after its last day: the export into `b2b-out/<slug>/`,
+   `node scripts/b2b-pilot-report.js b2b-out/<slug>/<file>.csv --store
+   <slug>`, the report published, `rm -r b2b-out/<slug>`.
+
 ### Still open
 
 - `scripts/download-twice.js` keeps its own looser fetch loop. Moving it onto
@@ -4688,6 +4905,38 @@ fails against the old script. The function is unchanged.
   deleted account's or removed report's alike. The privacy page says nothing
   about backups yet, and has to before the plan changes - the move the plan
   asks for before a licensee depends on NOSE.
+- **The privacy page does not describe the end-of-pilot export yet.** Its
+  dispensary section lists what a dispensary sends NOSE - the catalog, and a
+  catalog read once before signing up - and the integration guide says
+  everything NOSE receives is set out there. A pilot export is one more
+  thing a dispensary sends: one row per assigned shopper, a group label and
+  counts, no identity. Before NOSE receives a first one, the section needs a
+  paragraph - what the export holds, that it is read once in the maintenance
+  workspace and deleted there once the report is published - and the
+  sentence "Nor are we told ... which group of a test the dispensary has put
+  them in" needs reconciling: an export tells NOSE the group of each row,
+  never who the row is. Its own prompt; the plan template's checklist names
+  it.
+- **The primary metric is the owner's to confirm** (above, "Pilot plan and
+  report"): a share of shoppers with an inhalable order, so that the sample
+  size fits it, where the plan wrote a count per shopper. Keeping the count
+  as the decider needs a different sample size - a difference in two means,
+  with the spread of last period's orders - and changes the template's §3
+  and the report's primary block together.
+- **A matched purchase is the store's to count.** NOSE never sees which
+  card a shopper opened. The template's marker on `product_url` is one way;
+  whatever the store uses is written into the plan before the first day.
+- **Pre-registration rests on git's committer date**, which a committer can
+  set. Pushing the plan to GitHub before the first day is the record others
+  can see; the report checks the date it is given.
+- **Votes cast after the last day** - on purchases made in the pilot - are
+  not counted: the band check reads the pilot's days, first to last.
+- **The split check's threshold, p below 0.001, is fixed in the report** and
+  stated in the template; changing it is a code change in its own commit,
+  never a setting in a plan.
+- **Newcombe's four values were read from a reproduction** of his Table II,
+  the paper being paywalled; worth setting beside the paper itself when
+  someone has it.
 
 ### Later
 

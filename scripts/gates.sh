@@ -96,6 +96,11 @@ gate 'b2b rank'       'b2b-rank clean'           '^b2b-rank clean$' \
   node test/b2b-rank-test.js
 gate 'b2b strings'    'b2b-strings clean'        '^b2b-strings clean$' \
   node test/b2b-strings-test.js
+# The pilot's plan, sample size and report (scripts/b2b-sample-size.js,
+# scripts/b2b-pilot-report.js): synthetic exports, throwaway git repositories,
+# votes stood in for. Offline; writes nothing in the repository.
+gate 'b2b pilot'      'b2b-pilot clean'          '^b2b-pilot clean$' \
+  node test/b2b-pilot-test.js
 gate 'trust guard'    'check-trust clean'        '^check-trust clean$' \
   node test/check-trust-test.js
 gate 'build'          'OK — ready to deploy'     '^OK — ready to deploy$' \
