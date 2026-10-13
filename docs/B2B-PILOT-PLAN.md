@@ -56,25 +56,30 @@ and report"). When they change, this file changes in the same commit, and
 
 ## 3. The primary metric — the one that decides
 
-**Shoppers with an inhalable order, per assigned shopper**: in each group,
-the share of all assigned shoppers who placed at least one order containing
-an inhalable (flower, pre-roll, vape or concentrate) between their assignment
-and the last day.
+**Inhalable orders per assigned shopper**: in each group, every order
+containing an inhalable (flower, pre-roll, vape or concentrate), placed
+between a shopper's assignment and the last day, divided by all the shoppers
+assigned — those who ordered nothing count, as 0.
 
-- It is a share of shoppers, so the sample size in §7 is one for a
-  difference in two proportions.
-- **Reported beside it, deciding nothing**: inhalable orders per assigned
-  shopper — every order containing an inhalable, divided by the shoppers
-  assigned — the plan's first wording of this metric.
-- **The result**, at the `alpha` in §9: the interval of the difference
-  (test minus control) at 1 − `alpha` — 95% at 0.05 — by Newcombe's hybrid
-  score method, built from each group's Wilson score interval.
-  - wholly above zero: *more test shoppers placed an inhalable order*;
-  - wholly below zero: *fewer test shoppers placed an inhalable order*;
+- It is a mean over shoppers, so the sample size in §7 is one for a
+  difference in two means, and needs the spread of the store's past counts.
+- **The result**, at the `alpha` in §9: the interval of the difference in
+  means (test minus control) at 1 − `alpha` — 95% at 0.05 — by the normal
+  approximation, each group with its own spread.
+  - wholly above zero: *more inhalable orders per assigned shopper in the
+    test group*;
+  - wholly below zero: *fewer inhalable orders per assigned shopper in the
+    test group*;
   - including zero: *no difference shown*.
 
   The three are computed by one rule, so the result reads the same way
   whether the module helps or not.
+- **Reported beside it, deciding nothing**: the share of assigned shoppers
+  with at least one inhalable order, with its interval (Wilson's, and
+  Newcombe's for the difference).
+- One shopper with very many orders widens the interval. No count is capped
+  — not in the export, not in the past figures of §7 — so the plan and the
+  result measure the same thing.
 
 ## 4. Secondary metrics — reported, deciding nothing
 
@@ -143,19 +148,32 @@ shopper was shown, up or down, and the day — nothing about who voted.
 - **The sample size**, from the store's own numbers:
 
   ```bash
+  node scripts/b2b-sample-size.js --mean ____ --sd ____ --lift ____ --alpha 0.05 --power 0.8
+  ```
+
+  - The store works out two figures from its own records, for a past period
+    as long as the pilot (period: ____): one count per signed-in shopper of
+    that period — their orders containing an inhalable, 0 for those with
+    none — then
+    - `--mean`: the average of those counts (a spreadsheet's `AVERAGE`):
+      ____;
+    - `--sd`: their standard deviation (`STDEV.S`): ____.
+
+    Only the two figures go in this plan; the counts stay with the store.
+  - `--lift`: the smallest relative rise worth acting on (0.10 is 10%): ____.
+  - It prints the shoppers needed in each group, and the lines to paste into
+    §9, `shoppers_per_group` among them. The report checks that number
+    against the same computation and gives no result if it is smaller.
+- **Votes per band**, for the band check in §5 — a share, so its own mode:
+
+  ```bash
   node scripts/b2b-sample-size.js --baseline ____ --lift ____ --alpha 0.05 --power 0.8
   ```
 
-  - `--baseline`: the share of signed-in shoppers with an inhalable order in
-    a past period as long as the pilot: ____ (period: ____).
-  - `--lift`: the smallest relative rise worth acting on: ____.
-  - It prints the shoppers needed in each group; that number goes in §9 as
-    `shoppers_per_group`. The report checks it against the same
-    computation and gives no result if it is smaller.
-- **Votes per band**, the same way: `--baseline` the up share expected in Low
-  (____), `--lift` the smallest rise in Strong worth acting on (____); its
-  answer is `votes_per_band` in §9. The vote cap and the share of shoppers who
-  vote make this slow to reach: estimate ____ votes a week.
+  `--baseline` the up share expected in Low (____), `--lift` the smallest
+  rise in Strong worth acting on (____), and the same `alpha` and `power` as
+  §9. Its answer is `votes_per_band`. The vote cap and the share of shoppers
+  who vote make this slow to reach: estimate ____ votes a week.
 - **How long**: the store assigns about ____ new signed-in shoppers a week, so
   2 × `shoppers_per_group` takes about ____ weeks: the first and last days in
   §1.
@@ -197,7 +215,8 @@ too late.
 store:              ____
 first_day:          ____
 last_day:           ____
-baseline:           ____
+mean:               ____
+sd:                 ____
 lift:               ____
 alpha:              0.05
 power:              0.8
@@ -206,9 +225,9 @@ votes_per_band:     ____
 ```
 
 - `store`: the slug; `first_day`, `last_day`: `YYYY-MM-DD`, UTC;
-  `baseline`, `lift`, `alpha`, `power`: as given to
-  `scripts/b2b-sample-size.js`; `shoppers_per_group`, `votes_per_band`: its
-  answers.
+  `mean`, `sd`, `lift`, `alpha`, `power`, `shoppers_per_group`: the lines
+  `scripts/b2b-sample-size.js --mean ...` prints for this block (§7);
+  `votes_per_band`: the line its `--baseline` run prints.
 
 ## 10. Published either way
 

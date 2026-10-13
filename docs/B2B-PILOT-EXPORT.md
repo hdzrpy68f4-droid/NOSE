@@ -37,7 +37,7 @@ when it is deleted (PARSER-HANDOFF.md §14, "Still open").
 |---|---|
 | `group` | `test` or `control`: the group the page gave the shopper. |
 | `orders` | Orders the shopper placed from their assignment to the pilot's last day. A whole number. |
-| `inhalable_orders` | Of those, the orders containing at least one inhalable: flower, pre-roll, vape or concentrate. |
+| `inhalable_orders` | Of those, the orders containing at least one inhalable: flower, pre-roll, vape or concentrate. The pilot is decided by these: their total over the shoppers assigned, in each group. |
 | `revenue` | The total of those orders, in the currency and with the tax and discounts the plan names: a plain number with at most two decimals, `152.40` — no currency sign, no thousands separator. `0` when `orders` is 0. |
 | `soldout_sessions` | Visits during the pilot in which the product the shopper had bought most often from the store had no batch in stock: the rule the widget's sold-out panel uses (`js/b2b-rank`'s `soldOut()` — purchases counted, not batches, within the store's window). Counted for both groups. |
 | `soldout_sessions_ordered` | Of those visits, the ones that ended in an order containing an inhalable. |

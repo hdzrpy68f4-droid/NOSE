@@ -6,23 +6,31 @@
  *
  * What it pins down (PARSER-HANDOFF s14, "Pilot plan and report"):
  *
- *   - scripts/b2b-sample-size.js against the worked examples in the
- *     documentation of R's stats::power.prop.test (R manual,
- *     library/stats/html/power.prop.test.html: n = 76.7, n = 10451937,
- *     n = 73.37, power = 0.740) - never against its own output
- *   - the report's intervals against published worked examples: Wilson's
- *     interval against the NIST/SEMATECH e-Handbook of Statistical Methods,
+ *   - scripts/b2b-sample-size.js against published worked examples, never
+ *     against its own output: two means - the primary metric - against the
+ *     NCSS PASS chapter "Two-Sample Z-Tests Assuming Equal Variance" (its
+ *     validation against Chow, Shao and Wang 2008, pages 63-64: sigma 0.10,
+ *     delta 0.05 - 63 a group, power 0.8013; and its Example 1: sigma 4.5,
+ *     delta 2, power 0.90 - 107 at alpha 0.05, 151 at 0.01); two proportions
+ *     - the band check's votes - against the documentation of R's
+ *     stats::power.prop.test (n = 76.7, n = 10451937, n = 73.37,
+ *     power = 0.740)
+ *   - the report's statistics against published worked examples: the
+ *     deciding difference of two means, from raw data, against the
+ *     NIST/SEMATECH e-Handbook of Statistical Methods, 7.3.1 (11 and 9
+ *     assembly times: means 36.0909 and 32.2222, standard deviations 4.9082
+ *     and 2.5386, t = 2.2694); Wilson's interval against the e-Handbook,
  *     7.2.4.1 (n = 200, 0.13, one-sided 95% lower limit 0.09577);
  *     Newcombe's hybrid score interval against his Table II, method 10
  *     (Statistics in Medicine 17, 1998, 873-890: 56/70 - 48/80 and three
  *     more); the split check against Wikipedia's "Sample ratio mismatch"
  *     example (600 and 400 of 1000: p = 2.54e-10); the delta method against
  *     the mean it must equal when every shopper has one order
- *   - synthetic exports: a known difference is found; a null reads as null;
- *     the same export with the groups swapped reads as its mirror; a short
- *     run, and a run still going, say only how far short; a personal column
- *     is refused before any row is read; any unreadable row refuses the file,
- *     never echoing a value
+ *   - synthetic exports: a known difference in inhalable orders per shopper
+ *     is found; a null reads as null; the groups' outcomes swapped read as the
+ *     mirror; the plan's alpha decides; a short run, and a run still going,
+ *     say only how far short; a personal column is refused before any row is
+ *     read; any unreadable row refuses the file, never echoing a value
  *   - the plan: its ```pilot block, its checks, and pre-registration by git -
  *     committed before the first day or not, numbers changed later, prose
  *     changed later, uncommitted, shallow, no git - in throwaway repositories
@@ -98,13 +106,14 @@ const row = (o = {}) => {
   return report.COLUMNS.map(c => r[c]).join(',');
 };
 
-/* n shoppers of one group, the first `buyers` of them with an inhalable
-   order; aov is revenue per order; leak marks control shoppers. */
-function shoppers(group, n, buyers, { aov = 40.5, leak = 0 } = {}) {
+/* n shoppers of one group, the first `buyers` of them with inhalable orders
+   - 1 and 2 by turns, or `each` apiece; aov is revenue per order; leak marks
+   control shoppers. */
+function shoppers(group, n, buyers, { aov = 40.5, leak = 0, each = 0 } = {}) {
   const lines = [];
   for (let i = 0; i < n; i++) {
     const buyer = i < buyers;
-    const inh = buyer ? 1 + (i % 2) : 0;
+    const inh = buyer ? each || 1 + (i % 2) : 0;
     const orders = inh + (i % 3 === 0 ? 1 : 0);
     const soldout = i % 5 === 0 ? 1 : 0;
     const test = group === 'test';
@@ -119,11 +128,22 @@ function shoppers(group, n, buyers, { aov = 40.5, leak = 0 } = {}) {
   return lines;
 }
 const csv = lines => `${HEADER}\n${lines.join('\n')}\n`;
+/* The inhalable orders shoppers() gives n shoppers, the first `buyers` of them buyers. */
+const countsOf = (n, buyers) => Array.from({ length: n }, (_, i) => (i < buyers ? 1 + (i % 2) : 0));
+/* A mean, its spread and its standard error by the textbook's one-pass sums -
+   not the report's code - to check what the report prints. */
+function byHand(values) {
+  const n = values.length;
+  const sum = values.reduce((a, v) => a + v, 0);
+  const squares = values.reduce((a, v) => a + v * v, 0);
+  const variance = (squares - (sum * sum) / n) / (n - 1);
+  return { n, sum, m: sum / n, sd: Math.sqrt(variance), se: Math.sqrt(variance / n) };
+}
 const read = text => report.readExport(Buffer.from(text, 'utf8'));
 
 /* ============================================================== plans */
 
-const FILL = { store: 'test-shop', first_day: '2026-08-03', last_day: '2026-09-27', baseline: '0.30', lift: '0.30',
+const FILL = { store: 'test-shop', first_day: '2026-08-03', last_day: '2026-09-27', mean: '0.45', sd: '0.75', lift: '0.35',
   alpha: '0.05', power: '0.8', shoppers_per_group: '437', votes_per_band: '40' };
 function planText(values, extra = '') {
   const block = '```pilot\n' + report.PLAN_KEYS.map(k => `${(k + ':').padEnd(20)}${values[k]}`).join('\n') + '\n```';
@@ -187,12 +207,35 @@ const line = (lines, start) => lines.find(l => l.startsWith(start)) || null;
 
 async function main() {
   /* ====================================================== the sample size */
-  /* R's documentation for power.prop.test, its Examples section:
+  const cli = (script, args, opts = {}) => spawnSync(process.execPath, [script, ...args],
+    { encoding: 'utf8', timeout: 30000, cwd: opts.cwd || ROOT, env: { PATH: process.env.PATH, HOME: os.tmpdir(), ...(opts.env || {}) } });
+  /* Two means - the primary metric. NCSS PASS, "Two-Sample Z-Tests Assuming
+     Equal Variance": its Example 4 validates against Chow, Shao and Wang
+     (2008), pages 63-64 - alpha 0.05, power 0.80, sigma 0.10, delta 0.05,
+     two-sided: "the per group sample size as 63", and PASS's actual power at
+     63, 0.8013; its Example 1 - sigma 4.5, means 11 and 9, power 0.90: 107 a
+     group at alpha 0.05, 151 at alpha 0.01. */
+  check('two means: Chow, Shao and Wang\'s 63 a group (sigma 0.10, delta 0.05, alpha 0.05, power 0.80), as PASS validates it',
+    Math.ceil(sizing.sampleSizeMeans({ delta: 0.05, sd: 0.10, alpha: 0.05, power: 0.8 })), 63);
+  check('...with PASS\'s power at 63 a group, 0.8013', round(sizing.powerForMeans({ n: 63, delta: 0.05, sd: 0.10 }), 4), 0.8013);
+  check('...and PASS\'s Example 1, sigma 4.5, delta 2, power 0.90: 107 a group at alpha 0.05, 151 at 0.01',
+    [Math.ceil(sizing.sampleSizeMeans({ delta: 2, sd: 4.5, alpha: 0.05, power: 0.9 })),
+      Math.ceil(sizing.sampleSizeMeans({ delta: 2, sd: 4.5, alpha: 0.01, power: 0.9 }))], [107, 151]);
+  const means1 = cli(SIZE, ['--mean', '9', '--sd', '4.5', '--lift', '0.2222222222222222', '--power', '0.9']);
+  check('the command, primary metric: a mean of 9 lifted to 11, sd 4.5, power 0.90 - PASS\'s 107 a group, and the lines to paste, as typed',
+    [means1.status, /^ {2}shoppers per group +107 {3}\(214 in all; /m.test(means1.stdout), /^mean: +9$/m.test(means1.stdout), /^sd: +4\.5$/m.test(means1.stdout),
+      /^lift: +0\.2222222222222222$/m.test(means1.stdout), /^alpha: +0\.05$/m.test(means1.stdout), /^power: +0\.9$/m.test(means1.stdout),
+      /^shoppers_per_group: 107$/m.test(means1.stdout)], [0, true, true, true, true, true, true, true]);
+  const means2 = cli(SIZE, ['--mean', '11', '--sd', '4.5', '--lift', '-0.18181818181818182', '--alpha', '0.01', '--power', '0.9']);
+  check('...a fall sized the same way: 11 down to 9 at alpha 0.01 needs PASS\'s 151', [means2.status, /^ {2}shoppers per group +151 /m.test(means2.stdout)], [0, true]);
+
+  /* Two proportions - the band check's votes. R's documentation for
+     power.prop.test, its Examples section:
        power.prop.test(p1 = .50, p2 = .75, power = .90)              ## =>     n = 76.7
        power.prop.test(p1 = .5, p2 = 0.501, sig.level=.001, power=0.90) ## => n = 10451937
        power.prop.test(      p1=0.90, p2= 1.0, power=0.8)              ##-> n = 73.37
        power.prop.test(n = 50, p1 = .50, p2 = .75)                   ## => power = 0.740 */
-  check('sample size: p1 .50, p2 .75, power .90 - R\'s documented n = 76.7',
+  check('two proportions: p1 .50, p2 .75, power .90 - R\'s documented n = 76.7',
     round(sizing.sampleSize({ p1: 0.5, p2: 0.75, power: 0.9 }), 1), 76.7);
   check('...p1 .5, p2 .501, alpha .001, power .90 - R\'s n = 10451937, as R prints it',
     Math.round(sizing.sampleSize({ p1: 0.5, p2: 0.501, alpha: 0.001, power: 0.9 })), 10451937);
@@ -200,26 +243,40 @@ async function main() {
     round(sizing.sampleSize({ p1: 0.9, p2: 1.0, power: 0.8 }), 2), 73.37);
   check('...and the power with n = 50 a group, p1 .50, p2 .75 - R\'s 0.740',
     round(sizing.powerFor({ n: 50, p1: 0.5, p2: 0.75 }), 3), 0.74);
-  const cli = (script, args, opts = {}) => spawnSync(process.execPath, [script, ...args],
-    { encoding: 'utf8', timeout: 30000, cwd: opts.cwd || ROOT, env: { PATH: process.env.PATH, HOME: os.tmpdir(), ...(opts.env || {}) } });
   const s1 = cli(SIZE, ['--baseline', '0.5', '--lift', '0.5', '--power', '0.9']);
-  check('the command: baseline .5 with a 50% lift is p2 .75 - 77 shoppers a group, R\'s 76.7 rounded up',
-    [s1.status, /^ {2}shoppers per group +77 {3}\(154 in all; 76\.7 before rounding up\)$/m.test(s1.stdout), /shoppers_per_group 77\./.test(s1.stdout)], [0, true, true]);
+  check('the command, band check: Low at .5, Strong .75, power 0.90 - 77 votes a band, R\'s 76.7 rounded up, and the line to paste',
+    [s1.status, /^ {2}votes per band +77 {3}\(154 in Strong and Low; 76\.71 before rounding up\)$/m.test(s1.stdout),
+      /^votes_per_band: +77$/m.test(s1.stdout), /^shoppers_per_group:/m.test(s1.stdout)], [0, true, true, false]);
   const s2 = cli(SIZE, ['--baseline', '0.75', '--lift', '-0.3333333333333333', '--power', '0.9']);
   check('...a negative lift sizes a fall: .75 to .50 needs what .50 to .75 needs (76.7, 77)',
-    [s2.status, /^ {2}shoppers per group +77 /m.test(s2.stdout)], [0, true]);
+    [s2.status, /^ {2}votes per band +77 /m.test(s2.stdout)], [0, true]);
   const s3 = cli(SIZE, ['--baseline', '0.9', '--lift', '0.11111111111111', '--alpha', '0.05', '--power', '0.8']);
-  check('...baseline .9, test just under 1: R\'s 73.37 rounds up to 74',
-    [s3.status, /^ {2}shoppers per group +74 /m.test(s3.stdout)], [0, true]);
+  check('...Low at .9, Strong just under 1: R\'s 73.37 rounds up to 74',
+    [s3.status, /^ {2}votes per band +74 /m.test(s3.stdout)], [0, true]);
   const usage = args => { const r = cli(SIZE, args); return [r.status, /usage: node scripts\/b2b-sample-size\.js/.test(r.stderr)]; };
-  check('...and refuses, printing its usage: nothing given, no lift, a baseline of 0 or 1, a lift of 0, a share pushed to 1, alpha 0, power 0.4, an unknown flag, a flag twice, a word',
-    [usage([]), usage(['--baseline', '0.3']), usage(['--baseline', '0', '--lift', '0.1']), usage(['--baseline', '1', '--lift', '0.1']),
-      usage(['--baseline', '0.3', '--lift', '0']), usage(['--baseline', '0.5', '--lift', '1']), usage(['--baseline', '0.3', '--lift', '0.1', '--alpha', '0']),
-      usage(['--baseline', '0.3', '--lift', '0.1', '--power', '0.4']), usage(['--baseline', '0.3', '--lift', '0.1', '--n', '5']),
-      usage(['--baseline', '0.3', '--baseline', '0.3', '--lift', '0.1']), usage(['--baseline', 'thirty', '--lift', '0.1'])],
-    Array(11).fill([2, true]));
+  check('...and refuses, printing its usage: nothing given; a mode half given or both at once; a mean, sd or share of 0; a share of 1; a lift of 0 or -1; a share pushed to 1; alpha 0; power 0.4; an unknown flag; a flag twice; a word',
+    [usage([]), usage(['--baseline', '0.3']), usage(['--mean', '0.5', '--lift', '0.1']), usage(['--mean', '0.5', '--sd', '0.8']),
+      usage(['--sd', '0.8', '--lift', '0.1']), usage(['--mean', '0.5', '--sd', '0.8', '--lift', '0.1', '--baseline', '0.3']),
+      usage(['--mean', '0', '--sd', '0.8', '--lift', '0.1']), usage(['--mean', '0.5', '--sd', '0', '--lift', '0.1']),
+      usage(['--baseline', '0', '--lift', '0.1']), usage(['--baseline', '1', '--lift', '0.1']), usage(['--baseline', '0.3', '--lift', '0']),
+      usage(['--mean', '0.5', '--sd', '0.8', '--lift', '-1']), usage(['--baseline', '0.5', '--lift', '1']),
+      usage(['--mean', '0.5', '--sd', '0.8', '--lift', '0.1', '--alpha', '0']), usage(['--baseline', '0.3', '--lift', '0.1', '--power', '0.4']),
+      usage(['--baseline', '0.3', '--lift', '0.1', '--n', '5']), usage(['--baseline', '0.3', '--baseline', '0.3', '--lift', '0.1']),
+      usage(['--mean', 'lots', '--sd', '0.8', '--lift', '0.1'])],
+    Array(18).fill([2, true]));
 
   /* =================================================== the intervals */
+  /* NIST/SEMATECH e-Handbook 7.3.1: assembly times, the old process on 11
+     devices and the new on 9 - means 36.0909 and 32.2222, standard deviations
+     4.9082 and 2.5386, and the statistic for unequal standard deviations,
+     t = 2.2694. */
+  const OLD = [32, 37, 35, 28, 41, 44, 35, 31, 34, 38, 42];
+  const NEW = [36, 31, 30, 31, 34, 36, 29, 32, 31];
+  const mOld = report.mean(OLD);
+  const mNew = report.mean(NEW);
+  const dNist = report.difference(mOld, mNew, e => e.m);
+  check('the deciding statistic: NIST e-Handbook 7.3.1 from its raw data - means 36.0909 and 32.2222, standard deviations 4.9082 and 2.5386, t = 2.2694 with each group\'s own spread',
+    [round(mOld.m, 4), round(mNew.m, 4), round(mOld.sd, 4), round(mNew.sd, 4), round(dNist.d / dNist.se, 4)], [36.0909, 32.2222, 4.9082, 2.5386, 2.2694]);
   check('Wilson\'s interval: NIST e-Handbook 7.2.4.1 - n 200, 0.13, one-sided 95% (z 1.645), lower limit 0.09577',
     round(report.wilson(26, 200, 1.645)[0], 5), 0.09577);
   /* Newcombe (1998), Table II, method 10 - as reproduced with his four
@@ -281,21 +338,26 @@ async function main() {
   /* ========================================================= the plan */
   const tpl = fs.readFileSync(PLAN_DOC, 'utf8');
   check('the template\'s ```pilot block holds exactly the numbers the report reads, its blanks not filled in',
-    report.readPlanBlock(tpl).error, 'it is not filled in: store, first_day, last_day, baseline, lift, shoppers_per_group, votes_per_band');
+    report.readPlanBlock(tpl).error, 'it is not filled in: store, first_day, last_day, mean, sd, lift, shoppers_per_group, votes_per_band');
   const filled = report.readPlanBlock(planText(FILL));
   const okPlan = report.checkPlan(filled.values, 'test-shop');
-  check('a filled-in plan reads, typed; its required size is the sample-size script\'s for the same numbers',
-    [okPlan.error, okPlan.plan && [okPlan.plan.firstDay, okPlan.plan.perGroup, okPlan.plan.required],
-      sizing.perGroup({ baseline: 0.3, lift: 0.3, alpha: 0.05, power: 0.8 }).n], [undefined, ['2026-08-03', 437, 437], 437]);
+  /* 2 x 0.75^2 x (1.959964 + 0.841621)^2 / (0.45 x 0.35)^2 = 355.96: 356 a group. */
+  check('a filled-in plan reads, typed; its required size is the sample-size script\'s two-means answer for the same numbers - 356',
+    [okPlan.error, okPlan.plan && [okPlan.plan.firstDay, okPlan.plan.mean, okPlan.plan.sd, okPlan.plan.perGroup, okPlan.plan.required],
+      okPlan.plan && okPlan.plan.required === sizing.perGroupMeans({ mean: 0.45, sd: 0.75, lift: 0.35, alpha: 0.05, power: 0.8 }).n],
+    [undefined, ['2026-08-03', 0.45, 0.75, 437, 356], true]);
   const planErr = values => {
     const b = report.readPlanBlock(planText({ ...FILL, ...values }));
     return b.error || report.checkPlan(b.values, 'test-shop').error;
   };
-  check('...and refuses another store\'s plan, a day that is not one, a last day first, a share out of range, a size that is not whole',
+  check('...and refuses another store\'s plan, a day that is not one, a last day first, a mean or spread of 0 or less, a size that is not whole or below 2',
     [planErr({ store: 'other-shop' }), planErr({ first_day: '2026-02-30' }), planErr({ last_day: '2026-08-01' }),
-      planErr({ baseline: '1.2' }), planErr({ shoppers_per_group: '437.5' }), planErr({ power: '0.3' })],
+      planErr({ mean: '0' }), planErr({ sd: '-0.5' }), planErr({ shoppers_per_group: '437.5' }), planErr({ shoppers_per_group: '1' }),
+      planErr({ power: '0.3' })],
     ['it is the plan of store "other-shop", not "test-shop"', 'first_day is not a day, YYYY-MM-DD', 'last_day is before first_day',
-      'baseline is a share between 0 and 1 (0.30 is 30%)', 'shoppers_per_group is not a whole number above 0', 'power is not from 0.5 to below 1']);
+      'mean is inhalable orders per shopper in a past period, a number above 0',
+      'sd is the standard deviation of those orders per shopper, a number above 0', 'shoppers_per_group is not a whole number above 0',
+      'shoppers_per_group is at least 2: a group\'s spread needs two shoppers', 'power is not from 0.5 to below 1']);
   check('...and a block with a line too many, a line missing, a line twice, two blocks or none',
     [report.readPlanBlock(planText(FILL).replace('votes_per_band:', 'note: x\nvotes_per_band:')).error,
       report.readPlanBlock(planText(FILL).replace(/^votes_per_band:.*\n/m, '')).error,
@@ -353,18 +415,33 @@ async function main() {
   try { a = await run({ text: known, repo }); }
   finally { for (const k of watch) fs[k] = saved[k]; }
   const reportLoads = loads.slice(loadsBefore);
-  check('a known difference is found: 180 of 450 test shoppers against 132 of 440 control - more test shoppers',
+  check('a known difference is found: 270 inhalable orders from 450 test shoppers against 198 from 440 control - more a shopper in test',
     [a.out.state, a.out.result], ['complete', 'more']);
+  const z95 = sizing.normalQuantile(0.975);
+  const f3 = v => v.toFixed(3);
+  const T = byHand(countsOf(450, 180));
+  const C = byHand(countsOf(440, 132));
+  const dd = T.m - C.m;
+  const seD = Math.sqrt(T.se ** 2 + C.se ** 2);
+  check('...each group\'s count over its shoppers, the mean and its 95% interval; the difference, each group with its own spread - by the textbook\'s sums, not the report\'s code',
+    [line(a.lines, '  test       270 inhalable orders'), line(a.lines, '  control    198 inhalable orders'), line(a.lines, '  difference (test - control)   +0.150')],
+    [`  test       270 inhalable orders / 450 shoppers = 0.600 a shopper   95% interval ${f3(T.m - z95 * T.se)} to ${f3(T.m + z95 * T.se)}`,
+      `  control    198 inhalable orders / 440 shoppers = 0.450 a shopper   95% interval ${f3(C.m - z95 * C.se)} to ${f3(C.m + z95 * C.se)}`,
+      `  difference (test - control)   +0.150 a shopper   95% interval +${f3(dd - z95 * seD)} to +${f3(dd + z95 * seD)}   relative +33.3%`]);
+  check('...and says so by the pre-registered rule',
+    line(a.lines, '  RESULT: more'), `  RESULT: more inhalable orders per assigned shopper in the test group - the 95% interval of the difference, +${f3(dd - z95 * seD)} to +${f3(dd + z95 * seD)} a shopper, is wholly above zero.`);
+  check('...the plan\'s mean and spread set beside the pilot\'s - here a wider spread than planned, said',
+    line(a.lines, '  The plan assumed'), `  The plan assumed 0.45 inhalable orders a shopper, standard deviation 0.75; the pilot shows control at 0.450, standard deviation ${f3(C.sd)} (test ${f3(T.sd)}) - a wider spread than planned, so the test was less likely than planned to find the lift.`);
   const t95 = report.wilson(180, 450).map(v => (v * 100).toFixed(1));
   const c95 = report.wilson(132, 440).map(v => (v * 100).toFixed(1));
   const d95 = report.newcombe(180, 450, 132, 440).map(v => (v * 100).toFixed(1));
-  check('...each group with its count beside its share and the Wilson interval, the difference with Newcombe\'s',
-    [line(a.lines, '  test       180 of 450 shoppers'), line(a.lines, '  control    132 of 440 shoppers'), line(a.lines, '  difference (test - control)   +10.0 points')],
-    [`  test       180 of 450 shoppers   40.0%   95% interval ${t95[0]}% to ${t95[1]}%`,
+  check('...beside it, deciding nothing: the share of shoppers with an inhalable order, its count beside it, Wilson\'s interval and Newcombe\'s',
+    [line(a.lines, '  Beside it, deciding nothing'), line(a.lines, '  test       180 of 450 shoppers'), line(a.lines, '  control    132 of 440 shoppers'),
+      line(a.lines, '  difference (test - control)   +10.0 points')],
+    ['  Beside it, deciding nothing - shoppers with an inhalable order, per assigned shopper:',
+      `  test       180 of 450 shoppers   40.0%   95% interval ${t95[0]}% to ${t95[1]}%`,
       `  control    132 of 440 shoppers   30.0%   95% interval ${c95[0]}% to ${c95[1]}%`,
-      `  difference (test - control)   +10.0 points   95% interval +${d95[0]} to +${d95[1]} points   relative +33.3%`]);
-  check('...and says so by the pre-registered rule',
-    line(a.lines, '  RESULT: more'), `  RESULT: more test shoppers placed an inhalable order - the 95% interval of the difference, +${d95[0]} to +${d95[1]} points, is wholly above zero.`);
+      `  difference (test - control)   +10.0 points   95% interval +${d95[0]} to +${d95[1]} points`]);
   check('...every check passed, and said',
     a.lines.filter(l => /^ {2}(ok|FAIL|WAIT|SHORT)/.test(l)).map(l => l.slice(2, 7)), ['ok   ', 'ok   ', 'ok   ', 'ok   ', 'ok   ', 'ok   ']);
   check('...every share has its denominator beside it: shoppers, visits, test shoppers, votes',
@@ -372,12 +449,10 @@ async function main() {
       /^ {2}Opt-in rate \(test only\): 150 of 450 test shoppers {3}33\.3% {3}95% interval/.test(line(a.lines, '  Opt-in rate') || ''),
       /^ {2}A matched product bought again within 60 days \(test only\): 23 of 45 test shoppers who bought one {3}51\.1%.*\(23 of 450 test shoppers in all\)$/.test(line(a.lines, '  A matched product') || ''),
       line(a.lines, '  Strong     '), line(a.lines, '  Low        '),
-      a.lines.filter(l => /\d+\.\d%/.test(l) && !/ of [\d,]+/.test(l) && !/^ {2}difference/.test(l)).length],
+      a.lines.filter(l => /\d+\.\d%/.test(l) && !/ of [\d,]+/.test(l) && !/^ {2}difference/.test(l)).length,
+      a.lines.filter(l => / a shopper/.test(l) && !/^ {2}(difference|RESULT|The plan assumed)/.test(l) && !/ \/ [\d,]+ shoppers = /.test(l)).length],
     [true, true, true, `  Strong     40 of 50          80.0%      ${report.wilson(40, 50).map(v => `${(v * 100).toFixed(1)}%`).join(' to ')}`,
-      `  Low        20 of 80          25.0%      ${report.wilson(20, 80).map(v => `${(v * 100).toFixed(1)}%`).join(' to ')}`, 0]);
-  check('...inhalable orders per assigned shopper beside it, deciding nothing',
-    [line(a.lines, '  Beside it, deciding nothing'), /^ {2}test {7}\d+ inhalable orders \/ 450 shoppers = \d\.\d\d {3}95% interval/.test(a.lines.find(l => /inhalable orders \/ 450/.test(l)) || '')],
-    ['  Beside it, deciding nothing - inhalable orders per assigned shopper:', true]);
+      `  Low        20 of 80          25.0%      ${report.wilson(20, 80).map(v => `${(v * 100).toFixed(1)}%`).join(' to ')}`, 0, 0]);
   check('...the guardrail: average order value, no drop shown', a.out.guardrail, 'no drop shown');
   check('...the votes: Strong 40 of 50 up, Low 20 of 80 - Strong beats Low; the four fall in order', [a.out.bandResult,
     line(a.lines, '  As read, the up share falls')], ['strong', '  As read, the up share falls from Strong to Low, band by band: yes (shown, not tested).']);
@@ -388,25 +463,42 @@ async function main() {
     reportLoads.filter(f => /(^|[\\/])(pg|coa\.js|archive\.js|pdf-store\.js)$|node_modules[\\/]pg[\\/]|@netlify[\\/]blobs/.test(f)), []);
 
   const nul = await run({ text: csv([...shoppers('test', 450, 135), ...shoppers('control', 440, 132)]), repo });
-  check('a null reads as null: 135 of 450 against 132 of 440 - no difference shown',
-    [nul.out.result, /^ {2}RESULT: no difference shown - the 95% interval of the difference, -\d+\.\d to \+\d+\.\d points, includes zero\.$/.test(line(nul.lines, '  RESULT:') || '')],
-    ['no difference shown', true]);
+  check('a null reads as null: 202 inhalable orders from 450 against 198 from 440 - no difference shown',
+    [nul.out.result, line(nul.lines, '  test       202 inhalable orders / 450 shoppers = 0.449 a shopper') !== null,
+      /^ {2}RESULT: no difference shown - the 95% interval of the difference, -\d\.\d{3} to \+\d\.\d{3} a shopper, includes zero\.$/.test(line(nul.lines, '  RESULT:') || '')],
+    ['no difference shown', true, true]);
+  /* The owner's choice, 2026-10-13: the count decides, not the share. The
+     same share of shoppers buy in both groups - 135 of 450 and 132 of 440,
+     30% each - but each test buyer places 2 inhalable orders. */
+  const each = await run({ text: csv([...shoppers('test', 450, 135, { each: 2 }), ...shoppers('control', 440, 132)]), repo });
+  check('the count decides, not the share: 30% of shoppers buy in each group, but test buyers order twice - more inhalable orders a shopper in test',
+    [each.out.result, line(each.lines, '  difference (test - control)   0.0 points') !== null,
+      line(each.lines, '  test       270 inhalable orders / 450 shoppers = 0.600 a shopper') !== null], ['more', true, true]);
+  check('a bound that is not zero never prints as zero; zero prints as zero',
+    [report.figure(0.0004, 3), report.figure(-0.00041, 3), report.signed(0.0004, 3), report.figure(0, 3), report.signed(0, 1), report.signed(12.34, 1)],
+    ['0.00040', '-0.00041', '+0.00040', '0.000', '0.0', '+12.3']);
   /* The same shoppers with the groups' outcomes swapped: 132 of 440 test, 180 of 450 control. */
   const mirror = await run({ text: csv([...shoppers('test', 440, 132), ...shoppers('control', 450, 180)]), repo });
   const negated = a.out.primary.interval.map(v => -v).reverse();
-  check('the groups\' outcomes swapped read as the mirror: fewer test shoppers, the difference and its interval negated, by the same rule',
+  check('the groups\' outcomes swapped read as the mirror: fewer a shopper in test, the difference and its interval negated, by the same rule',
     [mirror.out.result, mirror.out.primary.diff === -a.out.primary.diff, mirror.out.primary.interval.every((v, i) => Math.abs(v - negated[i]) < 1e-12)],
     ['fewer', true, true]);
 
-  /* The plan's alpha decides, not the 95% shown: at 0.01, 180 of 450 against
-     145 of 440 has a 95% interval above zero and a 99% one that includes it. */
-  const strict = planRepo({ values: { ...FILL, alpha: '0.01', lift: '0.40' } });
-  const at99 = await run({ text: csv([...shoppers('test', 450, 180), ...shoppers('control', 440, 145)]), repo: strict });
-  const iv95 = report.newcombe(180, 450, 145, 440);
-  const iv99 = report.newcombe(180, 450, 145, 440, sizing.normalQuantile(0.995));
+  /* The plan's alpha decides, not the 95% shown: at 0.01, 255 inhalable
+     orders from 450 against 198 from 440 has a 95% interval above zero and a
+     99% one that includes it. This plan's spread, 0.85, is wider than the
+     pilot's, so no note about it. */
+  const strict = planRepo({ values: { ...FILL, alpha: '0.01', lift: '0.45', sd: '0.85' } });
+  const at99 = await run({ text: csv([...shoppers('test', 450, 170), ...shoppers('control', 440, 132)]), repo: strict });
+  const tm = report.mean(countsOf(450, 170));
+  const cm = report.mean(countsOf(440, 132));
+  const iv95 = report.difference(tm, cm, e => e.m).interval;
+  const iv99 = report.difference(tm, cm, e => e.m, sizing.normalQuantile(0.995)).interval;
   check('the plan\'s alpha decides: at 0.01 the 99% interval includes zero, though the 95% one shown is above it',
-    [iv95[0] > 0, iv99[0] < 0, at99.out.result, /^ {2}RESULT: no difference shown - the 99% interval of the difference, -\d\.\d to \+\d+\.\d points, includes zero\.$/.test(line(at99.lines, '  RESULT:') || '')],
-    [true, true, 'no difference shown', true]);
+    [iv95[0] > 0, iv99[0] < 0, at99.out.checks.sized, at99.out.result,
+      /^ {2}RESULT: no difference shown - the 99% interval of the difference, -\d\.\d{3} to \+\d\.\d{3} a shopper, includes zero\.$/.test(line(at99.lines, '  RESULT:') || ''),
+      /\(test \d\.\d{3}\)\.$/.test(line(at99.lines, '  The plan assumed') || '')],
+    [true, true, true, 'no difference shown', true, true]);
   fs.rmSync(strict.dir, { recursive: true, force: true });
 
   const short = await run({ text: csv([...shoppers('test', 300, 150), ...shoppers('control', 290, 60)]), repo });
@@ -425,7 +517,8 @@ async function main() {
   const lateRepo = planRepo({ day: '2026-08-05' });
   const unreg = await run({ text: known, repo: lateRepo });
   check('numbers committed after the first day: every figure shown, no result, and why',
-    [unreg.out.result, unreg.out.guardrail, unreg.out.bandResult, line(unreg.lines, '  RESULT:'), /^ {2}test {7}180 of 450 shoppers {3}40\.0%/.test(line(unreg.lines, '  test       180') || '')],
+    [unreg.out.result, unreg.out.guardrail, unreg.out.bandResult, line(unreg.lines, '  RESULT:'),
+      /^ {2}test {7}270 inhalable orders \/ 450 shoppers = 0\.600 a shopper {3}95% interval/.test(line(unreg.lines, '  test       270') || '')],
     [null, null, undefined, '  RESULT: none - the plan was not committed before the first day.', true]);
   const lopsided = await run({ text: csv([...shoppers('test', 600, 240), ...shoppers('control', 440, 132)]), repo });
   check('a split that does not fit half and half: 600 and 440 - no result, and why',
@@ -436,7 +529,7 @@ async function main() {
   const small = planRepo({ values: { ...FILL, shoppers_per_group: '300' } });
   const under = await run({ text: known, repo: small });
   check('a plan whose size is below its own numbers: no result, and why',
-    [under.out.result, line(under.lines, '  FAIL')], [null, '  FAIL   shoppers_per_group 300 is below what baseline, lift, alpha and power require (437)']);
+    [under.out.result, line(under.lines, '  FAIL')], [null, '  FAIL   shoppers_per_group 300 is below what mean, sd, lift, alpha and power require (356)']);
   const cheaper = await run({ text: csv([...shoppers('test', 450, 180, { aov: 30 }), ...shoppers('control', 440, 132, { aov: 40.5 })]), repo });
   check('average order value that fell in the test group: the guardrail says dropped', cheaper.out.guardrail, 'dropped');
 
@@ -493,7 +586,7 @@ exports.getStore = o => {
   const secrets = { NETLIFY_SITE_ID: 'site-for-the-test', NETLIFY_AUTH_TOKEN: 'token-for-the-test', STAND_IN_VOTES: path.join(tree, 'votes.json') };
   const end = cli(treeReport, [exp, '--store', 'test-shop'], { cwd: tree, env: secrets });
   check('the command, end to end: the plan, the export and the votes read, the report printed, exit 0',
-    [end.status, end.stderr, /^NOSE pilot report - test-shop$/m.test(end.stdout), /^ {2}RESULT: more test shoppers placed an inhalable order/m.test(end.stdout),
+    [end.status, end.stderr, /^NOSE pilot report - test-shop$/m.test(end.stdout), /^ {2}RESULT: more inhalable orders per assigned shopper in the test group/m.test(end.stdout),
       /^ {2}RESULT: Strong matches drew a larger share/m.test(end.stdout), end.stdout.includes('token-for-the-test')], [0, '', true, true, true, false]);
   const treeFiles = execFileSync('git', ['-C', tree, 'status', '--porcelain', '--untracked-files=all'], { encoding: 'utf8' }).split('\n').filter(Boolean).sort();
   check('...and wrote nothing: the tree holds what the test put there', treeFiles.filter(l => !/ (export|personal)\.csv$| votes\.json$| node_modules\/| scripts\/| netlify\//.test(l)), []);
@@ -517,12 +610,16 @@ exports.getStore = o => {
   check('no effect wording in the plan, the export format, the report or the sample-size script',
     files.map(([f, s]) => [f, wordsIn(s)]).filter(([, w]) => w.length), []);
   check('...nor in anything the report or the sample-size script printed',
-    [a.text, nul.text, short.text, vm.text, backwards.text, end.stdout, s1.stdout].flatMap(wordsIn), []);
+    [a.text, nul.text, short.text, vm.text, backwards.text, end.stdout, s1.stdout, means1.stdout].flatMap(wordsIn), []);
   const plan = files[0][1];
   check('the plan template has every part the pilot needs, and the line "published either way"',
     ['## 1. Store and dates', '## 2. How the page assigns groups', '## 3. The primary metric', '## 4. Secondary metrics',
       '## 5. The hypothesis check', '## 6. Guardrails', '## 7. Sample size and stopping rule', '## 10. Published either way',
-      'published either way', 'NOSE learns', 'Strong, Good, Moderate, Low', 'scripts/b2b-sample-size.js'].filter(s => !plan.includes(s)), []);
+      'published either way', 'NOSE learns', 'Strong, Good, Moderate, Low', '**Inhalable orders per assigned shopper**',
+      'scripts/b2b-sample-size.js --mean ____ --sd ____ --lift ____', 'scripts/b2b-sample-size.js --baseline ____ --lift ____',
+      'the counts stay with the store'].filter(s => !plan.includes(s)), []);
+  check('...and its block names exactly the numbers the report reads, in its order',
+    (/^```pilot\n([\s\S]*?)^```$/m.exec(plan) || [, ''])[1].split('\n').filter(Boolean).map(l => l.split(':')[0]), [...report.PLAN_KEYS]);
   const exportDoc = files[1][1];
   check('the export format names every column, every personal and identity word, and every value the report reads',
     [report.COLUMNS.filter(c => !exportDoc.includes(`| \`${c}\` |`)), format.PERSONAL_WORDS.filter(w => !exportDoc.includes(`\`${w}\``)),

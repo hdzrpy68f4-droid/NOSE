@@ -211,7 +211,7 @@ someone to look.
 | `b2b-endpoints-test.js` | the widget's two calls (§14, "Feed and votes") on PGlite, both functions behind a stand-in `pg` that runs every statement as `nose_b2b` and a stand-in `@netlify/blobs`: the switch; the feed byte-identical for two visitors, every batch in the window in stock or not, the prompt's fields alone, a reading's figures only when it is the current one and accepted, no lab-report link; the origin rule (a foreign, missing, `null` or other store's origin gets no CORS header and no data), a revoked key, `public, max-age=60`; a vote's six fields and nothing else, matchBand()'s four bands all stored, no time of day in key or value, keys in no arrival order, the per-store daily cap with the same reply; one fixed log line on failure; `delete-store` removing a store's votes and only its own; schema `nose`, the archive and the consumer's store untouched; offline |
 | `b2b-rank-test.js` | `js/b2b-rank.<hash>.js`, the dispensary ranking engine (§14, "The ranking engine"): one file, loaded as a page loads it and in Node; no maths of its own, every number traced to NoseMatch; the 1830 golden pairs, 61 self-scores and 65 palates through `rank()` and `palateFrom()` to the last bit; 3x the intensity the same; unread batches last, with no number; routes, category, stock and the guardrail leaving batches out and never reordering; ties by `list_position`; each skip reason, a removed batch, one count per batch, the window as PostgreSQL counts it; `soldOut()` and `voteScore()`; no name or brand read; `build.sh`'s load-order rule, its own lines, on throwaway pages; offline |
 | `b2b-strings-test.js` | `js/b2b-strings.<hash>.js`, every word the dispensary widget shows (§14, "The widget"): two variants, default and florida, with the same keys and placeholders; no effect or recreational word - the prompt's list and their forms - in any string or anywhere in the file; Florida's says aroma and orders; the words shown from other files true to `matchBand()` and `renderBar()`; every key read by the widget and none written out in it; offline |
-| `b2b-pilot-test.js` | the pilot's plan, sample size and report (§14, "Pilot plan and report"): `scripts/b2b-sample-size.js` against the worked examples in R's `power.prop.test` documentation, never its own output; Wilson's interval against NIST's example, Newcombe's against his Table II, the split check against a published example, the delta method against the mean it must equal; synthetic exports - a known difference found, a null read as null, the mirror read as the mirror, a short run and a run still going showing only how far short, a personal column refused before any row, an unreadable row refusing the file without its value; the plan's block and its pre-registration by git in throwaway repositories; the votes by band; the vote store only listed, no file written, the command line end to end; offline |
+| `b2b-pilot-test.js` | the pilot's plan, sample size and report (§14, "Pilot plan and report"): `scripts/b2b-sample-size.js` against published worked examples, never its own output - two means against the NCSS PASS chapter's (Chow, Shao and Wang's 63 a group, and 107 and 151), two proportions against R's `power.prop.test` documentation; the deciding difference of two means against NIST's raw-data example, Wilson's interval against NIST's, Newcombe's against his Table II, the split check against a published example, the delta method against the mean it must equal; synthetic exports - a known difference in inhalable orders per shopper found, the plan's alpha deciding, a null read as null, the mirror read as the mirror, a short run and a run still going showing only how far short, a personal column refused before any row, an unreadable row refusing the file without its value; the plan's block and its pre-registration by git in throwaway repositories; the votes by band; the vote store only listed, no file written, the command line end to end; offline |
 | `check-trust-test.js` | `scripts/check-trust.mjs` (§13, "The trust guard") on throwaway sites: every form of the old promise fails, true sentences pass; offline |
 | `b2b-release-test.js` | pinned widget releases (§14, "Pinned releases"): `scripts/b2b-release.js`'s build - the same bytes from one commit and version, every time, anywhere; the five files verbatim and in order but for the widget's two stylesheet lines; the stylesheet verbatim; the bundle running as a page runs it - its refusals, its publishing to a stand-in Blobs (never overwriting, going on after a stop, an ETag or a failure, the row last), `netlify/functions/b2b-release.js` (the switch, GET and HEAD, one path shape, the bytes with exactly their five headers, a 404 nothing caches, 503 and one line), `scripts/b2b-release-check.js` against each kind of mismatch, nothing built left in the repo, no effect wording, the integration guide's names; offline, in throwaway git repos; a gate, run after the build |
 | `b2b-widget-test.mjs` | `<nose-matches>` in headless Chromium (§14, "The widget"): the built files on a store's page from another origin, under the prompt's CSP, against a stand-in feed and vote; only the feed and the vote leave the page, and no request carries a purchase; consent, denied, control; each mode equal to `js/b2b-rank`'s answers; every bar `renderBar()`'s; keyboard reach; the demo page; one copy of the bar; `build.sh`'s load-order lines; since 2026-10-09 the vote by `fetch` with no cookie or referrer, and a pinned release - one tag with its hash under the integration guide's own CSP lines, the same rail and vote, its stylesheet checked by its hash, an altered file or a missing `crossorigin` refused. Needs Playwright; a gate, run after the build |
@@ -4511,7 +4511,8 @@ reads a plan, an export and the store's vote keys, and prints.
 ```
 docs/B2B-PILOT-PLAN.md       the plan, a fill-in template: copied to docs/pilots/<slug>.md, committed before the first day
 docs/B2B-PILOT-EXPORT.md     the CSV a store sends at the end: one row per assigned shopper, counts only
-scripts/b2b-sample-size.js   --baseline <rate> --lift <relative> [--alpha] [--power]: shoppers per group, two proportions
+scripts/b2b-sample-size.js   --mean <orders> --sd <spread> --lift <relative>: shoppers per group, two means (the primary metric);
+                             --baseline <rate> --lift <relative>: votes per band, two proportions (the band check)
 scripts/b2b-pilot-report.js  <export.csv> --store <slug>: the plan, the export and the votes, read; the report, printed
 test/b2b-pilot-test.js       offline, a gate: "b2b-pilot clean"
 scripts/gates.sh             the gate, after b2b strings
@@ -4545,12 +4546,19 @@ scripts/gates.sh             the gate, after b2b strings
 
 **Decided here, where the prompt was silent or pulled two ways:**
 
-- **The pre-registered test is a share of shoppers.** The plan's primary
-  metric is a count per shopper; the prompt sizes the test as a difference
-  in two proportions. So the result rests on the share of assigned shoppers
-  with at least one order containing an inhalable - what the sample size
-  sizes - and inhalable orders per assigned shopper is reported beside it,
-  deciding nothing. The owner confirms (below, "Still open").
+- **The count decides** - the owner's choice, 2026-10-13. The plan's
+  primary metric is a count, inhalable orders per assigned shopper; the
+  prompt sized the test as a difference in two proportions. The first commit
+  (`38d0f86`) made the share of shoppers with an inhalable order decide, to
+  fit that sizing; asked, the owner chose the count the same day, and the
+  second commit made it decide. So the result is the interval of the
+  difference in two means - test minus control, each group's own spread -
+  and the sample size is one for two means, which needs the spread of the
+  store's past counts: `--mean`, `--sd` and `--lift`. The store works the
+  two figures out from its own records, one count per signed-in shopper of
+  a past period as long as the pilot, zeros included; only the two figures
+  go in the plan. The share is shown beside the count, deciding nothing.
+  The proportions mode stays, for the band check's votes per band.
 - **The plan's numbers are one block the report reads**, ```` ```pilot ````,
   in `docs/pilots/<slug>.md`, committed to this public repository before the
   first day: that commit is the pre-registration. The report takes the first
@@ -4573,22 +4581,34 @@ scripts/gates.sh             the gate, after b2b strings
   describes, read 2026-10-13); any control shopper with `yes` in `opted_in`,
   `bought_matched` or `bought_matched_again` - control saw nothing of the
   widget, so the groups leaked; `shoppers_per_group` below what the plan's
-  own baseline, lift, alpha and power give.
+  own mean, sd, lift, alpha and power give.
 - **The plan's alpha decides**: every figure is shown with a 95% interval,
   and the result line names the interval it used.
-- **Methods.** A share: Wilson's score interval. A difference of two shares:
-  Newcombe's hybrid score interval, his method 10. A ratio of sums over
-  shoppers (sold-out visits; revenue per order): the delta method, each
-  shopper one unit, since shoppers are what the page randomised. The count
-  per shopper: the normal interval of a mean. The sample size is the normal
-  approximation R's `power.prop.test` solves - pooled variance with no
-  difference, unpooled under the lift, no continuity correction. The pooled
-  variance is the larger of the two, so at the sizes a pilot needs, the
-  Newcombe interval the result is read with - close to the unpooled one - has
-  about the planned power, if anything a little more. Simulated while
-  building (not committed): at 437 a group, .30 against .39, the rule found
-  the difference in 80.2% of 20,000 runs, and a difference that was not
-  there in 5.0%; at 3,763 a group, .30 against .33, 80.2% and 5.0% of 6,000.
+- **Methods.** The count per shopper, which decides: the normal interval of
+  a mean, and for the difference of two, each group's own spread (the
+  unequal-variance statistic, NIST/SEMATECH e-Handbook 7.3.1), read with z,
+  as the sample size is planned with it: `n = 2 sd^2 (z(1 - alpha/2) +
+  z(power))^2 / (mean x lift)^2`, the normal approximation for two means
+  with one spread (Chow, Shao and Wang 2008, section 3.2). At a pilot's sizes
+  z and t differ in the third decimal; R's `power.t.test`, on t, asks about
+  one shopper more a group. A share: Wilson's score interval. A difference
+  of two shares: Newcombe's hybrid score interval, his method 10. A ratio of
+  sums over shoppers (sold-out visits; revenue per order): the delta method,
+  each shopper one unit, since shoppers are what the page randomised. The
+  votes per band: the normal approximation R's `power.prop.test` solves -
+  pooled variance with no difference, unpooled under the lift, no continuity
+  correction. Simulated while building (not committed): counts on 0 to 3,
+  mean 0.45 and standard deviation 0.75 in control, 0.6075 and 0.75 in test,
+  356 shoppers a group (the size the script gives for mean 0.45, sd 0.75,
+  lift 0.35): the rule found the lift in 79.6% of 20,000 runs, and a
+  difference that was not there in 4.9%. For the band check's rule, at 437
+  votes a band, .30 against .39: 80.2% and 5.0% of 20,000.
+- **A wider spread than planned is said.** The report sets the plan's mean
+  and standard deviation beside the pilot's control mean and both groups'
+  spreads, and when either group's spread is wider than the plan's it says
+  the test was less likely than planned to find the lift. It decides
+  nothing. No count is capped, in the export or in the past figures, so the
+  plan and the result measure the same thing.
 - **The band check**: the up share in each of Strong, Good, Moderate and Low,
   from the store's vote keys dated on the pilot's days, first to last -
   listed through `lib/b2b-votes.js`'s own `open()` and `storeVoteKeys()`,
@@ -4622,6 +4642,19 @@ that gate; it is `checkExportHeader`, and the rule is untouched.
 
 **The references** - nothing is checked against the scripts' own output:
 
+- [NCSS PASS, "Two-Sample Z-Tests Assuming Equal Variance"](https://www.ncss.com/wp-content/themes/ncss/pdf/Procedures/PASS/Two-Sample_Z-Tests_Assuming_Equal_Variance.pdf)
+  (read 2026-10-13), for the deciding count's sample size: its Example 4
+  validates against Chow, Shao and Wang (2008), pages 63-64 - alpha 0.05,
+  power 0.80, sigma 0.10, delta 0.05, two-sided - "the per group sample size
+  as 63", with PASS's actual power at 63, 0.8013; its Example 1 - sigma 4.5,
+  means 11 and 9, power 0.90 - 107 a group at alpha 0.05 and 151 at 0.01.
+  The script gives 62.79, 0.8013, 106.39 and 150.65: all four.
+- [NIST/SEMATECH e-Handbook, 7.3.1](https://www.itl.nist.gov/div898/handbook/prc/section3/prc31.htm)
+  (read 2026-10-13), for the deciding statistic: assembly times, 11 devices
+  on the old process and 9 on the new, listed one by one - means 36.0909 and
+  32.2222, standard deviations 4.9082 and 2.5386, and for unequal standard
+  deviations t = 2.2694. The report's own `mean()` and `difference()`, fed
+  the raw times, give all five.
 - [R's `power.prop.test` documentation](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/power.prop.test.html),
   Examples (read 2026-10-13): `n = 76.7` (p1 .50, p2 .75, power .90),
   `n = 10451937` (p1 .5, p2 .501, alpha .001, power .90), `n = 73.37` (p1 .90,
@@ -4646,8 +4679,9 @@ that gate; it is `checkExportHeader`, and the rule is untouched.
 - [Wikipedia, "Sample ratio mismatch"](https://en.wikipedia.org/wiki/Sample_ratio_mismatch):
   600 and 400 of 1000 assigned half and half, p = 2.54e-10.
 
-**The test** - `test/b2b-pilot-test.js`, 76 checks, a gate after `b2b
-strings`. The references above; the command line's sizes and refusals; the
+**The test** - `test/b2b-pilot-test.js`, 86 checks, a gate after `b2b
+strings`. The references above; the command line's sizes, in both modes,
+the lines it prints to paste - as typed - and its refusals; the
 export read with a byte-order mark, CRLF, letter case and a blank row; a
 personal column refused before any row (its value never shown), eleven
 identity columns, an unknown, missing and doubled column, the six ways a
@@ -4657,8 +4691,13 @@ plan checks and block errors; pre-registration in throwaway repositories -
 committed before the first day, prose changed later, numbers changed and not
 committed, numbers committed late, committed on the first day, never
 committed, a shallow clone, no git; synthetic pilots - a known difference
-(180 of 450 against 132 of 440) found, by the exact lines; a null; the
-outcomes swapped read as the exact mirror; a short run and a run still going
+(270 inhalable orders from 450 shoppers against 198 from 440) found, its
+lines checked against the textbook's one-pass sums rather than the report's
+code; the plan's spread set beside the pilot's, the wider one said; the
+share beside it; the count deciding where the share would not (30% of
+shoppers buying in each group, test buyers ordering twice); a bound near
+zero never printed as zero; a null; the outcomes swapped read as the exact
+mirror; a short run and a run still going
 with no `%`, interval or result anywhere; numbers committed late, a lopsided
 split, three leaking control shoppers, a plan sized too small, each with its
 figures and no result; average order value that fell; the plan's alpha of
@@ -4671,9 +4710,16 @@ line end to end in a throwaway tree with a stand-in `@netlify/blobs`,
 writing nothing; no effect wording in the four files or any output; the two
 documents naming what the code reads.
 
-- **Against broken copies**: 39 deliberate faults, one at a time - among them
-  the unpooled variance under no difference, a one-sided alpha, no rounding
-  up, an additive lift, Wald for Wilson, Newcombe's limits crossed, n for
+- **Against broken copies**: 59 deliberate faults, one at a time - among them,
+  for the count, a one-sided alpha, no factor 2, the spread not squared, no
+  rounding up, the lift taken as the difference, the paste lines from the
+  parsed numbers, `--baseline` with `--mean`, the spread with n, standard
+  errors added, zeros dropped, the share deciding again, the plan sized as a
+  share, the wider spread never or always said, the count without its
+  shoppers, a group of one, a bound near zero printed as zero, the template
+  back to a baseline; and, as before, the unpooled variance under no
+  difference, a one-sided alpha, no rounding up and an additive lift for
+  the votes, Wald for Wilson, Newcombe's limits crossed, n for
   n - 1, a one-tailed split check, the split or the leak ignored, figures
   while short or running, today ignored, the first day counted as before,
   the latest commit taken, changes not committed or a shallow clone
@@ -4695,7 +4741,9 @@ source, over pdfjs-dist 6.2.108 (56/3, 56/0, clean, 4.124/0.944); PGlite
 throwaway PostgreSQL 16 cluster per instance; the committed html5-qrcode in
 place of `build.sh`'s download; Playwright 1.56's Chromium 141. ALL GATES
 GREEN on `cbce6e0` before any edit, 29 gates, and after it with the new
-gate, 30 - `KAY-CAR-001` 4.124 and `KAY-PRR-001` 0.944. `parse-coa.js`,
+gate, 30; for the count's commit, ALL GATES GREEN on `38d0f86` before it and
+after, 30 gates - `KAY-CAR-001` 4.124 and `KAY-PRR-001` 0.944 each time.
+`parse-coa.js`,
 `coa-dates.js` and `extract-text.js` are untouched, so no reparse is due; no
 file in `js/` changed, so `build.sh` renamed nothing; no migration. Nothing
 ran against a real database, Netlify or a lab's server. The Codespace run on
@@ -4703,13 +4751,14 @@ the real packages is the one that counts.
 
 **In the Codespace, in this order** (nothing here writes anywhere):
 
-1. Bring the commit in, then `bash scripts/gates.sh` - ALL GATES GREEN, 30
+1. Bring both commits in, then `bash scripts/gates.sh` - ALL GATES GREEN, 30
    gates, `b2b pilot` among them.
 2. `git push` - nothing new is served: `docs/` and `scripts/` are forced 404.
 3. Before a pilot's first day: the privacy page describes the export ("Still
    open"); then `cp docs/B2B-PILOT-PLAN.md docs/pilots/<slug>.md`, fill it
-   in, `node scripts/b2b-sample-size.js ...` for its two sizes, commit and
-   push.
+   in - `node scripts/b2b-sample-size.js --mean ... --sd ... --lift ...` for
+   `shoppers_per_group`, and `--baseline ... --lift ...` for
+   `votes_per_band`, pasting the lines each prints - commit and push.
 4. At least 60 days after its last day: the export into `b2b-out/<slug>/`,
    `node scripts/b2b-pilot-report.js b2b-out/<slug>/<file>.csv --store
    <slug>`, the report published, `rm -r b2b-out/<slug>`.
@@ -4917,12 +4966,17 @@ the real packages is the one that counts.
   them in" needs reconciling: an export tells NOSE the group of each row,
   never who the row is. Its own prompt; the plan template's checklist names
   it.
-- **The primary metric is the owner's to confirm** (above, "Pilot plan and
-  report"): a share of shoppers with an inhalable order, so that the sample
-  size fits it, where the plan wrote a count per shopper. Keeping the count
-  as the decider needs a different sample size - a difference in two means,
-  with the spread of last period's orders - and changes the template's §3
-  and the report's primary block together.
+- **Settled 2026-10-13: the count decides** (above, "Pilot plan and
+  report"), inhalable orders per assigned shopper, as the plan wrote it.
+- **The plan's spread is a past period's.** If the pilot's counts spread
+  wider - a rise in orders usually widens them - the test is less likely
+  than planned to find the lift. The report says when that happened; it
+  never changes the result. A store with few heavy buyers can set a larger
+  `--sd` than its past figure, for a margin.
+- **Heavy buyers are not capped.** One shopper with very many orders widens
+  the interval; capping each count at a ceiling written into the plan would
+  narrow it, and needs its own prompt - the export, the report and the
+  template's past figures would all change together.
 - **A matched purchase is the store's to count.** NOSE never sees which
   card a shopper opened. The template's marker on `product_url` is one way;
   whatever the store uses is written into the plan before the first day.

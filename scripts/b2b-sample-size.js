@@ -1,50 +1,76 @@
 #!/usr/bin/env node
 'use strict';
-/* NOSE for dispensaries - how many shoppers each group of a pilot needs.
- * PARSER-HANDOFF s14, "Pilot plan and report".
+/* NOSE for dispensaries - how many shoppers (or votes) each group of a pilot
+ * needs. PARSER-HANDOFF s14, "Pilot plan and report".
  *
+ *   node scripts/b2b-sample-size.js --mean <orders> --sd <spread> --lift <relative> [--alpha 0.05] [--power 0.8]
  *   node scripts/b2b-sample-size.js --baseline <rate> --lift <relative> [--alpha 0.05] [--power 0.8]
  *
- * The pilot's primary question (docs/B2B-PILOT-PLAN.md) is a difference in
- * two proportions: the share of assigned shoppers who placed an order
- * containing an inhalable, in the control group and in the test group.
+ * THE PRIMARY METRIC - a difference in two means. The pilot is decided by
+ * inhalable orders per assigned shopper (docs/B2B-PILOT-PLAN.md, section 3;
+ * the owner's choice, 2026-10-13): every order containing an inhalable,
+ * divided by the shoppers assigned, in the control group and in the test
+ * group.
  *
- *   --baseline   the control group's share, expected from the store's own
- *                past orders: 0.30 is 30%
- *   --lift       how much larger the test group's share must be to count,
- *                relative to the baseline: 0.10 means 10% larger, so a
- *                baseline of 0.30 is compared with 0.33. A negative lift
- *                sizes a fall instead.
- *   --alpha      the chance of a false difference the plan accepts,
- *                two-sided (default 0.05)
- *   --power      the chance of finding the lift when it is there (default
- *                0.8), from 0.5 to below 1
+ *   --mean    inhalable orders per signed-in shopper in a past period as long
+ *             as the pilot, every signed-in shopper of that period counted -
+ *             those with no order as 0
+ *   --sd      the standard deviation of those same counts, one per shopper
+ *             (a spreadsheet's STDEV.S over that column)
+ *   --lift    how much larger the test group's mean must be to count,
+ *             relative to the past mean: 0.10 means 10% larger. A negative
+ *             lift sizes a fall instead.
  *
- * Each group then needs, with p1 the baseline, p2 = p1 * (1 + lift) and
- * pbar their mean,
+ * Each group then needs, with delta = mean * lift,
+ *
+ *   n = 2 sd^2 ( z(1 - alpha/2) + z(power) )^2 / delta^2
+ *
+ * shoppers, rounded up: the normal approximation for a two-sided test of two
+ * means with one spread in both groups (Chow, Shao and Wang, Sample Size
+ * Calculations in Clinical Research, 2nd ed., 2008, section 3.2). The pilot
+ * report decides with the matching normal interval, each group's own spread.
+ *
+ * THE BAND CHECK - a difference in two proportions: the share of up votes in
+ * Strong against Low, votes per band.
+ *
+ *   --baseline   the up share expected in Low: 0.30 is 30%
+ *   --lift       how much larger Strong's share must be to count, relative to
+ *                the baseline: 0.30 compares 0.30 with 0.39
  *
  *   n = ( z(1 - alpha/2) * sqrt(2 pbar (1 - pbar)) + z(power) * sqrt(p1 (1 - p1) + p2 (1 - p2)) )^2 / (p1 - p2)^2
  *
- * shoppers, rounded up: the normal approximation for a two-sided test of two
- * proportions, without continuity correction - the formula R's
- * stats::power.prop.test solves (src/library/stats/R/power.R, its "normal
- * case"). test/b2b-pilot-test.js checks it against the worked examples in
- * that function's documentation, never against this file's own output.
+ * with p1 the baseline, p2 = p1 * (1 + lift) and pbar their mean: the formula
+ * R's stats::power.prop.test solves (src/library/stats/R/power.R, its "normal
+ * case"), without continuity correction.
+ *
+ * Both take
+ *
+ *   --alpha   the chance of a false difference the plan accepts, two-sided
+ *             (default 0.05)
+ *   --power   the chance of finding the lift when it is there (default 0.8),
+ *             from 0.5 to below 1
+ *
+ * test/b2b-pilot-test.js checks both against published worked examples - the
+ * NCSS PASS chapter "Two-Sample Z-Tests Assuming Equal Variance" (its
+ * validation against Chow, Shao and Wang) and R's power.prop.test
+ * documentation - never against this file's own output.
  *
  * z() is the normal quantile, Wichura's Algorithm AS 241 (Applied
  * Statistics 37, 1988, 477-484), accurate to about one part in 10^16; the
  * normal distribution function is Cody's (Mathematics of Computation 23,
  * 1969, 631-637) - the coefficients both papers publish, as R's own
- * qnorm.c and pnorm.c use them. scripts/b2b-pilot-report.js takes all three
- * from here, so the plan's number and the report's check of it are one
+ * qnorm.c and pnorm.c use them. scripts/b2b-pilot-report.js takes them from
+ * here, so the plan's number and the report's check of it are one
  * computation.
  *
- * It reads nothing and writes nothing: arguments in, one answer out.
+ * It reads nothing and writes nothing: arguments in, one answer out, and the
+ * lines to paste into the plan.
  */
 
 class UsageError extends Error {}
 
-const USAGE = 'usage: node scripts/b2b-sample-size.js --baseline <rate> --lift <relative> [--alpha 0.05] [--power 0.8]';
+const USAGE = 'usage: node scripts/b2b-sample-size.js --mean <orders> --sd <spread> --lift <relative> [--alpha 0.05] [--power 0.8]\n' +
+              '       node scripts/b2b-sample-size.js --baseline <rate> --lift <relative> [--alpha 0.05] [--power 0.8]';
 
 /* ------------------------------------------------- the normal distribution */
 
@@ -132,42 +158,86 @@ function normalBoth(x) {
 const normalCdf = x => normalBoth(x)[0];
 const normalUpper = x => normalBoth(x)[1];
 
-/* ------------------------------------------------------------ the formula */
+/* ------------------------------------------------------ the two formulas */
+
+function checkLevels(alpha, power) {
+  if (!(alpha > 0 && alpha < 1)) throw new RangeError('alpha is between 0 and 1');
+  if (!(power >= 0.5 && power < 1)) throw new RangeError('power is from 0.5 to below 1');
+}
+
+/* Two means, one spread: shoppers per group, before rounding up. */
+function sampleSizeMeans({ delta, sd, alpha = 0.05, power = 0.8 }) {
+  if (typeof delta !== 'number' || !Number.isFinite(delta) || delta === 0) throw new RangeError('delta is a difference other than 0');
+  if (typeof sd !== 'number' || !(sd > 0) || !Number.isFinite(sd)) throw new RangeError('sd is a spread above 0');
+  checkLevels(alpha, power);
+  const z = normalQuantile(1 - alpha / 2) + normalQuantile(power);
+  return (2 * sd * sd * z * z) / (delta * delta);
+}
+
+/* The power of that two-sided test with n shoppers in each group: the
+   quantity sampleSizeMeans() solves for. */
+function powerForMeans({ n, delta, sd, alpha = 0.05 }) {
+  if (!(n > 0)) throw new RangeError('n is a number of shoppers above 0');
+  if (!(sd > 0)) throw new RangeError('sd is a spread above 0');
+  return normalCdf(Math.abs(delta) * Math.sqrt(n / (2 * sd * sd)) - normalQuantile(1 - alpha / 2));
+}
+
+function checkLift(lift) {
+  if (typeof lift !== 'number' || !Number.isFinite(lift) || lift === 0 || lift <= -1) {
+    throw new UsageError('--lift is a relative change other than 0, above -1 (0.10 is 10% larger)');
+  }
+}
+
+/* The plan's inputs for the primary metric: a past mean, its spread, and a
+   relative lift. */
+function meansOf({ mean, sd, lift }) {
+  if (typeof mean !== 'number' || !(mean > 0) || !Number.isFinite(mean)) {
+    throw new UsageError('--mean is inhalable orders per shopper in a past period, a number above 0');
+  }
+  if (typeof sd !== 'number' || !(sd > 0) || !Number.isFinite(sd)) {
+    throw new UsageError('--sd is the standard deviation of those orders per shopper, a number above 0');
+  }
+  checkLift(lift);
+  return { mean1: mean, mean2: mean * (1 + lift), delta: mean * lift, sd };
+}
+
+function perGroupMeans({ mean, sd, lift, alpha = 0.05, power = 0.8 }) {
+  const m = meansOf({ mean, sd, lift });
+  const exact = sampleSizeMeans({ delta: m.delta, sd, alpha, power });
+  return { ...m, alpha, power, exact, n: Math.ceil(exact) };
+}
 
 function checkProportions(p1, p2) {
   for (const p of [p1, p2]) if (typeof p !== 'number' || !(p >= 0 && p <= 1)) throw new RangeError('a proportion is between 0 and 1');
   if (p1 === p2) throw new RangeError('the two proportions must differ');
 }
 
-/* Shoppers per group, before rounding up. */
+/* Two proportions: per group, before rounding up. */
 function sampleSize({ p1, p2, alpha = 0.05, power = 0.8 }) {
   checkProportions(p1, p2);
-  if (!(alpha > 0 && alpha < 1)) throw new RangeError('alpha is between 0 and 1');
-  if (!(power >= 0.5 && power < 1)) throw new RangeError('power is from 0.5 to below 1');
+  checkLevels(alpha, power);
   const pbar = (p1 + p2) / 2;
   const root = normalQuantile(1 - alpha / 2) * Math.sqrt(2 * pbar * (1 - pbar)) +
                normalQuantile(power) * Math.sqrt(p1 * (1 - p1) + p2 * (1 - p2));
   return (root * root) / ((p1 - p2) * (p1 - p2));
 }
 
-/* The power of the same two-sided test with n shoppers in each group: the
-   quantity sampleSize() solves for, as power.prop.test computes it. */
+/* The power of the same two-sided test with n in each group: the quantity
+   sampleSize() solves for, as power.prop.test computes it. */
 function powerFor({ n, p1, p2, alpha = 0.05 }) {
   checkProportions(p1, p2);
-  if (!(n > 0)) throw new RangeError('n is a number of shoppers above 0');
+  if (!(n > 0)) throw new RangeError('n is a number above 0');
   const pbar = (p1 + p2) / 2;
   return normalCdf((Math.sqrt(n) * Math.abs(p1 - p2) - normalQuantile(1 - alpha / 2) * Math.sqrt(2 * pbar * (1 - pbar))) /
                    Math.sqrt(p1 * (1 - p1) + p2 * (1 - p2)));
 }
 
-/* The plan's inputs, as the plan states them: a baseline and a relative lift. */
+/* The band check's inputs: a baseline share and a relative lift. */
 function proportionsOf({ baseline, lift }) {
   if (typeof baseline !== 'number' || !(baseline > 0 && baseline < 1)) throw new UsageError('--baseline is a share between 0 and 1 (0.30 is 30%)');
-  if (typeof lift !== 'number' || !Number.isFinite(lift) || lift === 0 || lift <= -1) {
-    throw new UsageError('--lift is a relative change other than 0, above -1 (0.10 is 10% larger)');
-  }
+  checkLift(lift);
   const p2 = baseline * (1 + lift);
-  if (!(p2 > 0 && p2 < 1)) throw new UsageError(`--baseline ${baseline} with --lift ${lift} puts the test group at ${p2} - a share must stay below 1`);
+  if (!(p2 > 0 && p2 < 1)) throw new UsageError(`--baseline ${baseline} with --lift ${lift} puts the share at ${p2} - a share must stay below 1`);
   return { p1: baseline, p2 };
 }
 
@@ -180,47 +250,93 @@ function perGroup({ baseline, lift, alpha = 0.05, power = 0.8 }) {
 /* ------------------------------------------------------------ the command */
 
 const NUMBER = /^[+-]?(\d+(\.\d*)?|\.\d+)$/;
+const FLAG_NAMES = { '--mean': 'mean', '--sd': 'sd', '--baseline': 'baseline', '--lift': 'lift', '--alpha': 'alpha', '--power': 'power' };
 
+/* { mode: 'means' | 'proportions', the numbers, and raw: each as typed, for
+   the lines to paste }. */
 function parseArgs(argv) {
-  const opts = { alpha: 0.05, power: 0.8 };
+  const opts = { alpha: 0.05, power: 0.8, raw: { alpha: '0.05', power: '0.8' } };
   const seen = new Set();
   for (let i = 0; i < argv.length; i++) {
     const flag = argv[i];
-    const name = { '--baseline': 'baseline', '--lift': 'lift', '--alpha': 'alpha', '--power': 'power' }[flag];
+    const name = FLAG_NAMES[flag];
     if (!name) throw new UsageError(`unknown: ${flag}`);
     if (seen.has(name)) throw new UsageError(`${flag} given twice`);
     seen.add(name);
     const v = argv[++i];
     if (v === undefined || !NUMBER.test(v)) throw new UsageError(`${flag} needs a number`);
     opts[name] = Number(v);
+    opts.raw[name] = v;
   }
-  if (!seen.has('baseline') || !seen.has('lift')) throw new UsageError('--baseline and --lift are both needed');
+  const means = seen.has('mean') || seen.has('sd');
+  if (means && seen.has('baseline')) {
+    throw new UsageError('--mean and --sd size the primary metric, --baseline the band check: give one or the other');
+  }
+  if (means && !(seen.has('mean') && seen.has('sd') && seen.has('lift'))) {
+    throw new UsageError('the primary metric needs --mean, --sd and --lift');
+  }
+  if (!means && !(seen.has('baseline') && seen.has('lift'))) {
+    throw new UsageError('give --mean, --sd and --lift (the primary metric), or --baseline and --lift (the band check)');
+  }
   if (!(opts.alpha > 0 && opts.alpha < 1)) throw new UsageError('--alpha is between 0 and 1 (0.05 is 5%)');
   if (!(opts.power >= 0.5 && opts.power < 1)) throw new UsageError('--power is from 0.5 to below 1 (0.8 is 80%)');
-  proportionsOf(opts);
+  opts.mode = means ? 'means' : 'proportions';
+  if (means) meansOf(opts); else proportionsOf(opts);
   return opts;
 }
 
 const thousands = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 const pct = p => `${(p * 100).toFixed(1)}%`;
+const brief = v => String(Number(v.toPrecision(4)));
+const row = (label, value) => `  ${label.padEnd(26)}${value}`;
+const paste = (key, value) => `${(key + ':').padEnd(20)}${value}`;
+const liftLabel = lift => `${lift > 0 ? '+' : ''}${(lift * 100).toFixed(1)}%`;
 
-function describe(opts) {
-  const r = perGroup(opts);
-  const sign = opts.lift > 0 ? '+' : '';
-  const achieved = powerFor({ n: r.n, p1: r.p1, p2: r.p2, alpha: r.alpha });
-  const row = (label, value) => `  ${label.padEnd(26)}${value}`;
+function describeMeans(opts) {
+  const r = perGroupMeans(opts);
+  const achieved = powerForMeans({ n: r.n, delta: r.delta, sd: r.sd, alpha: r.alpha });
   return [
-    'b2b-sample-size: shoppers per group for a difference in two proportions, two-sided',
-    row('control (baseline)', pct(r.p1)),
-    row(`test (lift ${sign}${(opts.lift * 100).toFixed(1)}%)`, `${pct(r.p2)}   a difference of ${((r.p2 - r.p1) * 100).toFixed(1)} points`),
+    'b2b-sample-size: shoppers per group for a difference in two means - the primary metric, two-sided',
+    row('control (past mean)', `${brief(r.mean1)} inhalable orders a shopper, standard deviation ${brief(r.sd)}`),
+    row(`test (lift ${liftLabel(opts.lift)})`, `${brief(r.mean2)}   a difference of ${brief(r.delta)} a shopper`),
     row('alpha', `${r.alpha}, two-sided`),
     row('power', String(r.power)),
-    row('shoppers per group', `${thousands(r.n)}   (${thousands(2 * r.n)} in all; ${r.exact.toFixed(1)} before rounding up)`),
+    row('shoppers per group', `${thousands(r.n)}   (${thousands(2 * r.n)} in all; ${r.exact.toFixed(2)} before rounding up)`),
     row(`power with ${thousands(r.n)} a group`, achieved.toFixed(3)),
     '',
-    `For the plan: baseline ${opts.baseline}, lift ${opts.lift}, alpha ${r.alpha}, power ${r.power}, shoppers_per_group ${r.n}.`,
+    'For the plan\'s ```pilot block (section 9), these lines as they are:',
+    paste('mean', opts.raw.mean),
+    paste('sd', opts.raw.sd),
+    paste('lift', opts.raw.lift),
+    paste('alpha', opts.raw.alpha),
+    paste('power', opts.raw.power),
+    paste('shoppers_per_group', r.n),
+    '',
+    'The normal approximation for two means with one spread in both groups (Chow, Shao and Wang 2008, section 3.2), two-sided.'
+  ].join('\n');
+}
+
+function describeProportions(opts) {
+  const r = perGroup(opts);
+  const achieved = powerFor({ n: r.n, p1: r.p1, p2: r.p2, alpha: r.alpha });
+  return [
+    'b2b-sample-size: votes per band for the band check - a difference in two proportions, two-sided',
+    row('Low (baseline up share)', pct(r.p1)),
+    row(`Strong (lift ${liftLabel(opts.lift)})`, `${pct(r.p2)}   a difference of ${((r.p2 - r.p1) * 100).toFixed(1)} points`),
+    row('alpha', `${r.alpha}, two-sided`),
+    row('power', String(r.power)),
+    row('votes per band', `${thousands(r.n)}   (${thousands(2 * r.n)} in Strong and Low; ${r.exact.toFixed(2)} before rounding up)`),
+    row(`power with ${thousands(r.n)} a band`, achieved.toFixed(3)),
+    '',
+    'For the plan\'s ```pilot block (section 9), this line as it is - use the plan\'s own alpha and power here:',
+    paste('votes_per_band', r.n),
+    '',
     'The normal approximation R\'s power.prop.test solves: two-sided, no continuity correction.'
   ].join('\n');
+}
+
+function describe(opts) {
+  return opts.mode === 'means' ? describeMeans(opts) : describeProportions(opts);
 }
 
 function main(argv = process.argv.slice(2)) {
@@ -234,7 +350,9 @@ function main(argv = process.argv.slice(2)) {
 }
 
 module.exports = {
-  normalQuantile, normalCdf, normalUpper, sampleSize, powerFor, proportionsOf, perGroup, parseArgs, describe,
-  UsageError, USAGE
+  normalQuantile, normalCdf, normalUpper,
+  sampleSizeMeans, powerForMeans, meansOf, perGroupMeans,
+  sampleSize, powerFor, proportionsOf, perGroup,
+  parseArgs, describe, UsageError, USAGE
 };
 if (require.main === module) main();

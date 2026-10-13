@@ -20,28 +20,33 @@
  *                names the band, up or down, and the UTC day.
  *
  * It keeps the analysis layer's habits (scripts/lab-stats.js): it only reads,
- * and a denominator sits beside every share - "180 of 450 shoppers (40.0%)" -
- * with a 95% interval beside every rate. Whatever the numbers show, the same
- * rule reads them:
+ * and a denominator sits beside every share and every rate - "180 of 450
+ * shoppers (40.0%)", "270 inhalable orders / 450 shoppers" - with a 95%
+ * interval beside each. Whatever the numbers show, the same rule reads them:
  *
  *   - Until the plan's last day has passed and both groups hold the
  *     pre-registered shoppers_per_group, it prints only how far short the run
  *     is: no rate, no interval, no result.
- *   - The primary result is the interval of the difference in the share of
- *     assigned shoppers with an inhalable order, test minus control, at the
- *     plan's alpha: wholly above zero, wholly below, or including it.
+ *   - The primary result is the interval of the difference in inhalable
+ *     orders per assigned shopper, test minus control, at the plan's alpha:
+ *     wholly above zero, wholly below, or including it (the count decides -
+ *     the owner's choice, 2026-10-13). The share of shoppers with an
+ *     inhalable order is shown beside it, deciding nothing.
  *   - It withholds every result, saying why, when the plan's numbers were
  *     first committed on or after the first day (or git cannot tell), when the
  *     split fails a chi-squared check against half and half (p < 0.001), when
  *     a control shopper shows any sign of the widget, or when the plan's
  *     shoppers_per_group is below what its own numbers require.
  *
- * The methods: a proportion's interval is Wilson's score interval; a
- * difference of two proportions, Newcombe's hybrid score interval, built from
- * the two Wilson intervals (Newcombe, Statistics in Medicine 17, 1998,
- * 873-890, method 10); a ratio of sums over shoppers - visits, revenue per
- * order - the delta method, each shopper the unit, since shoppers are what the
- * page randomised; a mean count, the normal interval of a mean; the split, a
+ * The methods: a mean count per shopper - the primary metric - the normal
+ * interval of a mean, and for the difference of two, each group's own spread
+ * (the unequal-variance statistic of the NIST/SEMATECH e-Handbook, 7.3.1),
+ * read with z as the sample size was planned with it; a proportion's
+ * interval, Wilson's score interval; a difference of two proportions,
+ * Newcombe's hybrid score interval, built from the two Wilson intervals
+ * (Newcombe, Statistics in Medicine 17, 1998, 873-890, method 10); a ratio of
+ * sums over shoppers - visits, revenue per order - the delta method, each
+ * shopper the unit, since shoppers are what the page randomised; the split, a
  * chi-squared goodness-of-fit test. The normal quantile and distribution are
  * scripts/b2b-sample-size.js's, so the sample size checked here is the one the
  * plan was given.
@@ -202,7 +207,7 @@ function readExport(buffer) {
 
 /* ============================================================= the plan */
 
-const PLAN_KEYS = Object.freeze(['store', 'first_day', 'last_day', 'baseline', 'lift', 'alpha', 'power',
+const PLAN_KEYS = Object.freeze(['store', 'first_day', 'last_day', 'mean', 'sd', 'lift', 'alpha', 'power',
   'shoppers_per_group', 'votes_per_band']);
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
@@ -246,17 +251,18 @@ function checkPlan(values, slug) {
   if (v.store !== slug) return { error: `it is the plan of store "${v.store}", not "${slug}"` };
   for (const k of ['first_day', 'last_day']) if (!isDay(v[k])) return { error: `${k} is not a day, YYYY-MM-DD` };
   if (v.last_day < v.first_day) return { error: 'last_day is before first_day' };
-  for (const k of ['baseline', 'lift', 'alpha', 'power']) if (!DECIMAL.test(v[k])) return { error: `${k} is not a number` };
+  for (const k of ['mean', 'sd', 'lift', 'alpha', 'power']) if (!DECIMAL.test(v[k])) return { error: `${k} is not a number` };
   for (const k of ['shoppers_per_group', 'votes_per_band']) {
     if (!/^\d{1,9}$/.test(v[k]) || Number(v[k]) < 1) return { error: `${k} is not a whole number above 0` };
   }
+  if (Number(v.shoppers_per_group) < 2) return { error: 'shoppers_per_group is at least 2: a group\'s spread needs two shoppers' };
   const plan = {
-    store: v.store, firstDay: v.first_day, lastDay: v.last_day, baseline: Number(v.baseline), lift: Number(v.lift),
+    store: v.store, firstDay: v.first_day, lastDay: v.last_day, mean: Number(v.mean), sd: Number(v.sd), lift: Number(v.lift),
     alpha: Number(v.alpha), power: Number(v.power), perGroup: Number(v.shoppers_per_group), votesPerBand: Number(v.votes_per_band)
   };
   if (!(plan.alpha > 0 && plan.alpha < 1)) return { error: 'alpha is not between 0 and 1' };
   if (!(plan.power >= 0.5 && plan.power < 1)) return { error: 'power is not from 0.5 to below 1' };
-  try { plan.required = sizing.perGroup(plan).n; }
+  try { plan.required = sizing.perGroupMeans(plan).n; }
   catch (e) { return { error: e.message.replace(/--(\w+)/g, '$1') }; }
   return { plan };
 }
@@ -361,25 +367,28 @@ function ratio(pairs, z = Z95) {
   return { n, X, Y, R, se, interval: [R - z * se, R + z * se] };
 }
 
-/* A mean, with the normal interval of a mean. */
+/* A mean, its spread (the standard deviation, n - 1) and the normal
+   interval of a mean. */
 function mean(values, z = Z95) {
   const n = values.length;
-  if (!n) return { n, m: null, se: null, interval: null };
+  if (!n) return { n, m: null, sd: null, se: null, interval: null };
   const m = values.reduce((a, b) => a + b, 0) / n;
-  if (n < 2) return { n, m, se: null, interval: null };
+  if (n < 2) return { n, m, sd: null, se: null, interval: null };
   const ss = values.reduce((a, v) => a + (v - m) * (v - m), 0);
-  const se = Math.sqrt(ss / (n - 1) / n);
-  return { n, m, se, interval: [m - z * se, m + z * se] };
+  const sd = Math.sqrt(ss / (n - 1));
+  const se = sd / Math.sqrt(n);
+  return { n, m, sd, se, interval: [m - z * se, m + z * se] };
 }
 
-/* The difference of two estimates with standard errors: a - b. */
+/* The difference of two estimates with standard errors, a - b: each keeps its
+   own spread (for two means, the unequal-variance statistic). */
 function difference(a, b, valueOf, z = Z95) {
   const va = valueOf(a);
   const vb = valueOf(b);
   if (va === null || vb === null || a.se === null || b.se === null) return null;
   const d = va - vb;
   const se = Math.hypot(a.se, b.se);
-  return { d, interval: [d - z * se, d + z * se] };
+  return { d, se, interval: [d - z * se, d + z * se] };
 }
 
 /* Does the split fit half and half? Pearson's chi-squared, one degree of
@@ -399,15 +408,21 @@ function fixed(v, d) {
   const s = v.toFixed(d);
   return /^-0(\.0+)?$/.test(s) ? s.slice(1) : s;
 }
+/* d decimals - or as many as it takes to show a value that is not zero as
+   not zero, so a printed bound never seems to touch zero when it does not. */
+function figure(v, d) {
+  if (v !== 0 && Number.isFinite(v) && Number(v.toFixed(d)) === 0) d = Math.min(20, 1 - Math.floor(Math.log10(Math.abs(v))));
+  return fixed(v, d);
+}
 function signed(v, d) {
-  const s = fixed(v, d);
+  const s = figure(v, d);
   return s.startsWith('-') || Number(s) === 0 ? s : `+${s}`;
 }
 const pct = p => `${fixed(p * 100, 1)}%`;
 const share = (x, n) => (n ? pct(x / n) : '-');
 const points = d => `${signed(d * 100, 1)}`;
 function money(v, sign = false) {
-  const s = fixed(v, 2);
+  const s = figure(v, 2);
   const neg = s.startsWith('-');
   const [i, f] = s.replace('-', '').split('.');
   return `${neg ? '-' : sign && Number(s) !== 0 ? '+' : ''}${thousands(i)}.${f}`;
@@ -429,7 +444,9 @@ function byGroup(rows) {
   return g;
 }
 
-function primaryOf(rows, z) {
+/* Shoppers with at least one inhalable order, of all assigned: shown beside
+   the primary metric, deciding nothing. */
+function buyersOf(rows, z) {
   const x = rows.filter(r => r.inhalable_orders > 0).length;
   return { x, n: rows.length, iv: wilson(x, rows.length, z) };
 }
@@ -454,8 +471,9 @@ async function pilotReport({ plan, planRel, values, exported, exportName, slug, 
   const check = (key, ok, text) => { out.checks[key] = ok; log(`  ${ok === true ? 'ok   ' : ok === 'wait' ? 'WAIT ' : ok === 'short' ? 'SHORT' : 'FAIL '}  ${text}`); };
 
   log(`NOSE pilot report - ${slug}`);
-  log(`Plan: ${planRel} - first day ${plan.firstDay}, last day ${plan.lastDay} (UTC); baseline ${values.baseline}, lift ${values.lift}, ` +
-      `alpha ${values.alpha}, power ${values.power}: ${thousands(plan.perGroup)} shoppers per group, ${thousands(plan.votesPerBand)} votes per band`);
+  log(`Plan: ${planRel} - first day ${plan.firstDay}, last day ${plan.lastDay} (UTC); mean ${values.mean}, sd ${values.sd}, ` +
+      `lift ${values.lift}, alpha ${values.alpha}, power ${values.power}: ${thousands(plan.perGroup)} shoppers per group, ` +
+      `${thousands(plan.votesPerBand)} votes per band`);
   log(`Export: ${exportName} - ${plural(rows.length, 'assigned shopper')}: ${thousands(nt)} test, ${thousands(nc)} control` +
       (blank ? ` (${plural(blank, 'blank row')} skipped)` : ''));
   log('Every figure here is computed the same way whatever it shows. A match score compares the terpene profiles two lab ' +
@@ -472,9 +490,9 @@ async function pilotReport({ plan, planRel, values, exported, exportName, slug, 
     check('size', true, `both groups reached the planned ${thousands(plan.perGroup)} shoppers: test ${thousands(nt)}, control ${thousands(nc)}`);
   }
   if (plan.perGroup >= plan.required) {
-    check('sized', true, `shoppers_per_group ${thousands(plan.perGroup)} is at least what baseline, lift, alpha and power require (${thousands(plan.required)})`);
+    check('sized', true, `shoppers_per_group ${thousands(plan.perGroup)} is at least what mean, sd, lift, alpha and power require (${thousands(plan.required)})`);
   } else {
-    check('sized', false, `shoppers_per_group ${thousands(plan.perGroup)} is below what baseline, lift, alpha and power require (${thousands(plan.required)})`);
+    check('sized', false, `shoppers_per_group ${thousands(plan.perGroup)} is below what mean, sd, lift, alpha and power require (${thousands(plan.required)})`);
     stops.push('the plan\'s sample size is below what its own numbers require');
   }
   if (split.p >= 0.001) {
@@ -506,37 +524,47 @@ async function pilotReport({ plan, planRel, values, exported, exportName, slug, 
 
   const withheld = stops.length ? `none - ${stops.join('; ')}.` : null;
 
-  /* ---- the primary metric ---- */
-  log('Primary - shoppers with an inhalable order, per assigned shopper (decides the result)');
-  const pt = primaryOf(g.test, Z95);
-  const pc = primaryOf(g.control, Z95);
-  for (const [name, p] of [['test', pt], ['control', pc]]) {
-    log(`  ${col(name)}${thousands(p.x)} of ${thousands(p.n)} shoppers   ${share(p.x, p.n)}   95% interval ${pct(p.iv[0])} to ${pct(p.iv[1])}`);
-  }
-  const d95 = newcombe(pt.x, pt.n, pc.x, pc.n, Z95);
-  const dPlan = newcombe(pt.x, pt.n, pc.x, pc.n, zPlan);
-  const diff = pt.x / pt.n - pc.x / pc.n;
-  const rel = pc.x ? `   relative ${signed((pt.x / pt.n) / (pc.x / pc.n) * 100 - 100, 1)}%` : '';
-  log(`  difference (test - control)   ${points(diff)} points   95% interval ${points(d95[0])} to ${points(d95[1])} points${rel}`);
-  const where = `the ${L} interval of the difference, ${points(dPlan[0])} to ${points(dPlan[1])} points,`;
-  out.primary = { test: pt, control: pc, diff, interval: dPlan };
-  if (withheld) log(`  RESULT: ${withheld}`);
-  else {
-    out.result = side(dPlan) === 'above' ? 'more' : side(dPlan) === 'below' ? 'fewer' : 'no difference shown';
-    log(`  RESULT: ${out.result === 'more' ? `more test shoppers placed an inhalable order - ${where} is wholly above zero.`
-      : out.result === 'fewer' ? `fewer test shoppers placed an inhalable order - ${where} is wholly below zero.`
-        : `no difference shown - ${where} includes zero.`}`);
-  }
-  log('  Beside it, deciding nothing - inhalable orders per assigned shopper:');
+  /* ---- the primary metric: the count decides ---- */
+  log('Primary - inhalable orders per assigned shopper (decides the result)');
   const mt = mean(g.test.map(r => r.inhalable_orders));
   const mc = mean(g.control.map(r => r.inhalable_orders));
   for (const [name, m, rs] of [['test', mt, g.test], ['control', mc, g.control]]) {
     const total = rs.reduce((a, r) => a + r.inhalable_orders, 0);
-    log(`  ${col(name)}${plural(total, 'inhalable order')} / ${plural(m.n, 'shopper')} = ${fixed(m.m, 2)}` +
-        (m.interval ? `   95% interval ${fixed(Math.max(0, m.interval[0]), 2)} to ${fixed(m.interval[1], 2)}` : ''));
+    log(`  ${col(name)}${plural(total, 'inhalable order')} / ${plural(m.n, 'shopper')} = ${figure(m.m, 3)} a shopper` +
+        (m.interval ? `   95% interval ${figure(Math.max(0, m.interval[0]), 3)} to ${figure(m.interval[1], 3)}` : ''));
   }
-  const md = difference(mt, mc, e => e.m);
-  if (md) log(`  difference (test - control)   ${signed(md.d, 2)}   95% interval ${signed(md.interval[0], 2)} to ${signed(md.interval[1], 2)}`);
+  const d95 = difference(mt, mc, e => e.m);
+  const dPlan = difference(mt, mc, e => e.m, zPlan);
+  out.primary = { test: mt, control: mc, diff: d95 ? d95.d : null, interval: dPlan ? dPlan.interval : null };
+  if (d95) {
+    const rel = mc.m > 0 ? `   relative ${signed((mt.m / mc.m) * 100 - 100, 1)}%` : '';
+    log(`  difference (test - control)   ${signed(d95.d, 3)} a shopper   95% interval ${signed(d95.interval[0], 3)} to ` +
+        `${signed(d95.interval[1], 3)}${rel}`);
+  }
+  if (withheld) log(`  RESULT: ${withheld}`);
+  else if (!dPlan) log('  RESULT: none - a group has fewer than two shoppers, so its spread cannot be measured.');
+  else {
+    const where = `the ${L} interval of the difference, ${signed(dPlan.interval[0], 3)} to ${signed(dPlan.interval[1], 3)} a shopper,`;
+    out.result = side(dPlan.interval) === 'above' ? 'more' : side(dPlan.interval) === 'below' ? 'fewer' : 'no difference shown';
+    log(`  RESULT: ${out.result === 'more' ? `more inhalable orders per assigned shopper in the test group - ${where} is wholly above zero.`
+      : out.result === 'fewer' ? `fewer inhalable orders per assigned shopper in the test group - ${where} is wholly below zero.`
+        : `no difference shown - ${where} includes zero.`}`);
+  }
+  if (mt.sd !== null && mc.sd !== null) {
+    const wider = Math.max(mt.sd, mc.sd) > plan.sd;
+    log(`  The plan assumed ${values.mean} inhalable orders a shopper, standard deviation ${values.sd}; the pilot shows control at ` +
+        `${figure(mc.m, 3)}, standard deviation ${figure(mc.sd, 3)} (test ${figure(mt.sd, 3)})` +
+        (wider ? ' - a wider spread than planned, so the test was less likely than planned to find the lift.' : '.'));
+  }
+  log('  Beside it, deciding nothing - shoppers with an inhalable order, per assigned shopper:');
+  const bt = buyersOf(g.test, Z95);
+  const bc = buyersOf(g.control, Z95);
+  for (const [name, b] of [['test', bt], ['control', bc]]) {
+    log(`  ${col(name)}${thousands(b.x)} of ${thousands(b.n)} shoppers   ${share(b.x, b.n)}   95% interval ${pct(b.iv[0])} to ${pct(b.iv[1])}`);
+  }
+  const b95 = newcombe(bt.x, bt.n, bc.x, bc.n, Z95);
+  log(`  difference (test - control)   ${points(bt.x / bt.n - bc.x / bc.n)} points   95% interval ${points(b95[0])} to ${points(b95[1])} points`);
+  out.buyers = { test: bt, control: bc, interval: b95 };
   log('');
 
   /* ---- secondary metrics ---- */
@@ -709,7 +737,7 @@ async function main(argv = process.argv.slice(2), env = process.env) {
 module.exports = {
   COLUMNS, COUNTS, FLAGS, GROUPS, IDENTITY_WORDS, PLAN_KEYS, EXPORT_DOC, PLAN_DOC, PLANS_DIR, USAGE,
   looksIdentifying, checkExportHeader, readExport, readPlanBlock, checkPlan, preRegistration, gitIn, readVotes,
-  wilson, newcombe, ratio, mean, difference, splitCheck, pilotReport, parseArgs, loadPlan, main, UsageError, Refusal
+  wilson, newcombe, ratio, mean, difference, splitCheck, figure, signed, pilotReport, parseArgs, loadPlan, main, UsageError, Refusal
 };
 if (require.main === module) {
   main().catch(e => { console.error('pilot report failed:', e && e.message); process.exit(1); });
