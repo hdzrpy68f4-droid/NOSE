@@ -5002,9 +5002,9 @@ with the new gate, 31 - `KAY-CAR-001` 4.124 and `KAY-PRR-001` 0.944. The new
 test passed on Node 22.22 and 20.20 (`.nvmrc`). `parse-coa.js`, `coa-dates.js`
 and `extract-text.js` are untouched, so no reparse is due; no file in `js/`
 or `css/` changed, so `build.sh` renamed nothing; no migration. The
-workspace's egress policy refuses nose-app.com (403), so the kit's
-comparison with the published privacy page has run only against a stand-in:
-its first run online is the Codespace's.
+workspace's egress policy refuses nose-app.com (403), so there the kit's
+comparison with the published privacy page ran only against a stand-in; its
+first run online was the Codespace's (below, "Live").
 
 **In the Codespace, in this order** (nothing here writes anywhere but
 `b2b-out/`, which git ignores):
@@ -5023,6 +5023,21 @@ its first run online is the Codespace's.
    <its npk_ key> --origin <an origin it allows>`. The kit is in
    `b2b-out/<slug>/compliance-kit/`. Send that folder to the store, then
    `rm -r b2b-out/<slug>`: nothing else holds a copy.
+
+**Live, 2026-10-13 (US Eastern)**, from the Codespace, steps 1 and 2 as
+written: `git pull --ff-only` fast-forwarded `09f044b..7150db8` (4 files);
+`bash scripts/gates.sh` said ALL GATES GREEN, 31 gates - the first run of
+`b2b-compliance-kit-test` in the Codespace, on its own Playwright and
+Chromium - with `KAY-CAR-001` 4.124 and `KAY-PRR-001` 0.944. Then `node
+scripts/b2b-compliance-kit.js`, without `--offline`: `compliance kit
+written: b2b-out/test-store/compliance-kit/ - 10 screens, 37 PNGs,
+README.md, strings.md, data.md`, with the cloud workspace's strings a
+screen - 2, 200, 187, 45, 4, 200, 199, 5, 5 and 16. **The published page is
+the one this checkout holds**: without `--offline` the kit reads
+`https://nose-app.com/privacy/` and writes nothing unless its dispensary
+section and every other mention of dispensaries on it are
+`privacy/index.html`'s, word for word - the first time that comparison ran
+against the real site.
 
 ### Still open
 
@@ -5253,9 +5268,6 @@ its first run online is the Codespace's.
 - **Newcombe's four values were read from a reproduction** of his Table II,
   the paper being paywalled; worth setting beside the paper itself when
   someone has it.
-- **The compliance kit has compared the published privacy page only with a
-  stand-in**: the cloud workspace's egress policy refuses nose-app.com, so
-  its first online run is the Codespace's (above, "In the Codespace", step 2).
 - **The privacy page says flavor where the Florida variant says aroma**
   ("NOSE's flavor match", "was its flavor close?"), found by the kit. It is
   NOSE's page, not a dispensary's, and data.md gives it as published.
