@@ -153,12 +153,12 @@ Also run `node test/resolver-test.js` - expect `resolver clean`, and
 **Or all at once:** `bash scripts/gates.sh` runs these, the Kaycha anchors,
 `novelty-test`, `coa-dates-test`, `store-test`, `probe-test`, `archive-wiring-test`,
 `archive-scripts-test`, `rerun-test`, `review-queue-test`,
-`analysis-test`, `duplicates-test`, `remove-copies-test`, `remove-document-test`, `b2b-coverage-test`, `b2b-store-test`, `b2b-catalog-test`, `b2b-endpoints-test`, `b2b-rank-test`, `b2b-strings-test`, `b2b-pilot-test`, `check-trust-test` and, after the build, `b2b-release-test`, `input-paths-test` and `b2b-widget-test`.
+`analysis-test`, `duplicates-test`, `remove-copies-test`, `remove-document-test`, `b2b-coverage-test`, `b2b-store-test`, `b2b-catalog-test`, `b2b-endpoints-test`, `b2b-rank-test`, `b2b-strings-test`, `b2b-pilot-test`, `check-trust-test` and, after the build, `b2b-release-test`, `input-paths-test`, `b2b-widget-test` and `b2b-compliance-kit-test`.
 It prints the line each gate produced and ends with `ALL GATES GREEN`. It passes
 a gate only on its exact expected line, so when a session legitimately changes
 a count, update the script in the same commit.
 
-**The input-paths and b2b-widget gates need Playwright and its Chromium**, which are not
+**The input-paths, b2b-widget and b2b kit gates need Playwright and its Chromium**, which are not
 project dependencies. Install them once per Codespace, and again after any
 `npm ci`, which removes Playwright: `npm install --no-save playwright`, then
 `npx playwright install --with-deps chromium`. Without them the gate fails and
@@ -216,6 +216,7 @@ someone to look.
 | `b2b-release-test.js` | pinned widget releases (§14, "Pinned releases"): `scripts/b2b-release.js`'s build - the same bytes from one commit and version, every time, anywhere; the five files verbatim and in order but for the widget's two stylesheet lines; the stylesheet verbatim; the bundle running as a page runs it - its refusals, its publishing to a stand-in Blobs (never overwriting, going on after a stop, an ETag or a failure, the row last), `netlify/functions/b2b-release.js` (the switch, GET and HEAD, one path shape, the bytes with exactly their five headers, a 404 nothing caches, 503 and one line), `scripts/b2b-release-check.js` against each kind of mismatch, nothing built left in the repo, no effect wording, the integration guide's names; offline, in throwaway git repos; a gate, run after the build |
 | `b2b-widget-test.mjs` | `<nose-matches>` in headless Chromium (§14, "The widget"): the built files on a store's page from another origin, under the prompt's CSP, against a stand-in feed and vote; only the feed and the vote leave the page, and no request carries a purchase; consent, denied, control; each mode equal to `js/b2b-rank`'s answers; every bar `renderBar()`'s; keyboard reach; the demo page; one copy of the bar; `build.sh`'s load-order lines; since 2026-10-09 the vote by `fetch` with no cookie or referrer, and a pinned release - one tag with its hash under the integration guide's own CSP lines, the same rail and vote, its stylesheet checked by its hash, an altered file or a missing `crossorigin` refused. Needs Playwright; a gate, run after the build |
 | `input-paths-test.mjs` | the app's ways in, in headless Chromium: Scan QR (fake camera and QR image), COA link, Upload. The real `coa.js` and parser answer, with only the download and unpdf stood in for (§13, "The input paths"). Needs Playwright; a gate, run after the build |
+| `b2b-compliance-kit-test.mjs` | `scripts/b2b-compliance-kit.js` (§14, "The compliance kit") in throwaway git worlds, each with release 1 recorded from its own commit: the test store's kit end to end - ten screens at phone and desktop, scroll pages, README.md, strings.md (every Florida string, every screen's strings traced, "Shown in" exactly where seen or read aloud) and data.md (every paragraph of the privacy page's dispensary section and every other mention) - a store's kit against a stand-in site (one feed request, the key alone, the store's origin), the tag and CSP of the stand-in page, sixteen refusals that write nothing, no time of day, no effect wording, no database or Blobs code loaded, this repository untouched. Needs Playwright; a gate, run after the build |
 
 The counts in section 2 are checked by `fixture-lint.js` against the corpus, so
 a stale one fails the lint rather than misleading the next session.
@@ -2538,7 +2539,9 @@ and pinned releases of the widget - a second Blobs store (`b2b-releases`) and
 function (`b2b-release`), since 2026-10-09 - and the pilot's plan and report
 (`docs/B2B-PILOT-PLAN.md`, `docs/B2B-PILOT-EXPORT.md`,
 `scripts/b2b-sample-size.js`, `scripts/b2b-pilot-report.js`), which read and
-write nothing in production, since 2026-10-13 -
+write nothing in production, since 2026-10-13, and the compliance kit
+(`scripts/b2b-compliance-kit.js`), which reads a store's public feed and
+nothing else, writes only under `b2b-out/`, also since 2026-10-13 -
 and whatever runs on Netlify stays off unless `B2B_ENABLED=1` in the
 Production context and `build-info.json` says production
 (`lib/b2b-flag.js`) - on since 2026-10-09, after the privacy page described
@@ -4763,6 +4766,264 @@ the real packages is the one that counts.
    `node scripts/b2b-pilot-report.js b2b-out/<slug>/<file>.csv --store
    <slug>`, the report published, `rm -r b2b-out/<slug>`.
 
+### The compliance kit, 2026-10-13
+
+Prompt 10. Everything a Florida dispensary needs to show the Department what
+NOSE's module puts on its website, made from the real widget so that it shows
+exactly what ships: a PNG of every screen at phone and desktop width, every
+string with where it appears and where its words come from, and the privacy
+page's dispensary section as published. A Codespace script that writes one
+folder under `b2b-out/` and nothing else; it reads no database and no vote.
+
+```
+scripts/b2b-compliance-kit.js       the kit: [--offline] | --store <slug> --key npk_... --origin https://...; [--release N] [--site ORIGIN] [--out DIR]
+test/b2b-compliance-kit-test.mjs    Playwright, after the build, a gate: "b2b-compliance-kit clean"
+scripts/gates.sh                    the gate, after b2b widget
+```
+
+**The probe, before any edit**, on `09f044b` - ALL GATES GREEN, 30 gates:
+
+- Every mode of `/b2b/demo/` in headless Chromium with the Florida words, set
+  as a presenter sets them: not asked yet, the flower rail, its basis opened,
+  the pre-roll rail (a batch with no panel), the sold-out panel, the vote, the
+  vote answered, denied, control - nine states, shown to the owner. Every
+  visible string in the widget's shadow root - text, words read aloud only,
+  `aria-label`s, tooltips - traced to a Florida template filled in, a word
+  `js/b2b-strings` lists in `SHOWN_FROM_OTHER_FILES` (the match labels, the
+  bar's words), or the catalog. None was untraced and none was only the
+  default variant's, so the Florida variant covers every visible string, and
+  the build went on.
+- Ten Florida strings belong to conditions the demo's settings do not reach:
+  `railEmpty`, `railNone`, `basisNone`, `removedTitle`, `putBack`,
+  `putBackAria`, `notUsedOthersOne`, `thcMissing`, `soldOutNoPanel`,
+  `soldOutNone`. The kit draws the six the test store can show and lists the
+  other four, each exactly as written, with when it shows (below).
+- On the demo page a widget kept its basis list open from one state to the
+  next (`_basisOpen`), and the pointer left a hover border on a card. So the
+  kit draws every screen on a fresh page, and moves the pointer off and the
+  focus away before each capture.
+
+**Read 2026-10-13, where the design depends on it:**
+
+- Playwright locators reach into open shadow roots by default, closed ones
+  and XPath aside ([Locators](https://playwright.dev/docs/locators), "Locate
+  in Shadow DOM"). Whether an element taller than the viewport is captured
+  whole is not documented ([Screenshots](https://playwright.dev/docs/screenshots));
+  checked here: a 2000 px element in a 390 x 844 viewport at 2x came back
+  4000 px tall in Chromium 141.0.7390.37. The kit captures by page
+  coordinates with `fullPage` and a clip, which holds either way.
+- Node's `fetch` is undici, which does not enforce the Fetch standard's
+  forbidden header names ([undici](https://undici.nodejs.org/), "Forbidden
+  and Safelisted Header Names"), so the kit can send a store's `Origin` with
+  the feed request as a shopper's browser does - checked against a local
+  server.
+- Florida's emergency rule 64ER25-6, from secondary sources
+  ([Fox Rothschild](https://www.foxrothschild.com/cannabis-law/publications/florida-severely-restricts-medical-marijuana-treatment-center-advertising-and-marketing);
+  [Vicente LLP](https://vicentellp.com/insights/florda-mmtc-advertising-rules-2026-64er25-6/)):
+  an MMTC's website and app must be approved by the Department; an MMTC
+  answers for its marketing vendors; marketing may not depict consumption or
+  imply recreational use; effective December 31, 2025, per Fox Rothschild.
+  The rule's own text was not read: its page asked for a permission not
+  given in time. The kit records what the module shows and sends; what to
+  submit is for the store and its counsel, and its README says so.
+
+**Decided here, where the prompt was silent:**
+
+- **The pinned release, not the tree.** A store's page pins a release
+  (`docs/B2B-INTEGRATION.md`), so what ships is that release's bytes. The
+  kit builds the newest recorded release (or `--release N`) again from its
+  commit with `scripts/b2b-release.js`'s own `build()`, refuses unless both
+  files match the record's two sha384 values, and says whether this
+  checkout's widget files are the release's byte for byte (for release 1
+  they are). The commit must be in the clone: a shallow one is told to run
+  `git fetch origin main`.
+- **A blank stand-in for the store's page**: the guide's tag (the release's
+  address, `integrity`, `crossorigin="anonymous"`,
+  `referrerpolicy="no-referrer"`, `defer`) under the guide's three CSP lines
+  with the store's own `'self'`, the attributes a store's page sets, and
+  `strings="florida"`. b2b-feed and b2b-vote are stood in for on NOSE's side
+  and answer as they do - the origin rule, the headers - and the release's
+  files come with `lib/b2b-releases.js`'s headers. The widget takes only its
+  font and text colour from the page around it (`css/b2b-widget`); the
+  stand-in gives it the system sans-serif and near-black, and the README
+  says a store's own page decides those two.
+- **Ten screens**: the prompt's five first - 01 before a yes, 02 the rail,
+  03 the sold-out panel, 04 a batch with no terpene panel, 05 the vote -
+  then five that show the rest of the words: 06 the basis opened, 07 a
+  product taken out of the palate, 08 the vote answered, 09 a rail with
+  nothing to compare with yet, 10 a rail with nothing available (routes that
+  leave its category out). Denied and control show nothing, so they are
+  said, not drawn. Each screen's category, product and routes are chosen in
+  the page by the release's own `NoseRank`, as the widget would choose; a
+  screen a store's data cannot reach is listed with why, never faked.
+- **Phone 390 x 844 and desktop 1280 x 800, both at 2x**, each PNG the widget
+  with the stand-in page's 16 px margin. Where a list of cards scrolls
+  sideways (screens 02 to 04) there is one more PNG per scroll until every
+  card has been in view, and strings.md names the PNGs each card is in.
+- **"Every visible string"** is everything a shopper sees or a screen reader
+  reads: text, `aria-label`s, `title`s, the visually hidden match line, each
+  with how it is presented. Strings in the closed "Based on ..." list are
+  listed as there, shown and read only once it is opened - a closed
+  `<details>` keeps them from screen readers too - and are never counted as
+  shown.
+- **It fails closed on words.** A screen with any string that is not the
+  Florida variant's, a `SHOWN_FROM_OTHER_FILES` word or the catalog's stops
+  the kit there, naming each such string and, where it is one, the default
+  variant's key. Every key of both variants must be placed in the kit's
+  `WHEN` - the sentence strings.md gives for a string no screen showed - or
+  the kit refuses until it is.
+- **The store's words apart.** Product names, brands and THC and CBD figures
+  are listed as the store's to clear. NOSE does not review them.
+- **`--store <slug> --key npk_... --origin https://...`**: the public key and
+  an origin the store allows, because the feed answers only the store's
+  origins and the database keeps only the key's hash. The feed is fetched
+  once from `--site` (default `https://nose-app.com`) with that origin, no
+  cookie, no referrer and no redirect - the list every visitor gets - and
+  nothing else of the store is read. An `nsk_` key is refused before any
+  request. Purchases are made up from that list by a rule after the demo's
+  own: the usual (the first batch out of stock, with a panel, whose category
+  has one in stock) three times, two more of its category, one refused and
+  one unread of it, the first of each other category, a batch the store
+  never listed, and the usual again from before the window. Such a shopper
+  has an order in every category, so screen 09 hands the widget the list
+  less one category's orders, and the README says so.
+- **The test store** takes the demo page's own example list, read out of the
+  built `js/b2b-demo` (a change of its shape refuses the kit), dated back
+  from the day of the run as the demo dates it.
+- **data.md**: the `#dispensaries` article as Markdown - headings,
+  paragraphs, bold, links as the page writes them - and every other
+  paragraph or list item of the page that names dispensaries, under its
+  heading (three today). The same code converts `privacy/index.html` and
+  `<site>/privacy/`, in the browser; a difference refuses the kit, and so
+  does a page it cannot read, unless `--offline`, which only the test store
+  takes and which data.md then states at the top.
+- **What left the page**: every request either stand-in receives is checked
+  after each screen - the release's two files, the feed by the key alone,
+  votes of exactly six fields about that screen's product, the store's page
+  and stylesheet - and anything else, a cookie, a referrer, or a purchased
+  batch ID or day anywhere in a request, refuses the kit. The README
+  tabulates them.
+- **The folder**: under `b2b-out/` only, checked against git's own ignore
+  rules; built in a staging folder beside it and moved into place whole; an
+  earlier kit is replaced, anything else refused; a refused run leaves
+  nothing, not even a folder it made. It prints one line a screen and the
+  folder, never a whole key.
+
+**The test store's kit**: 10 screens, 37 PNGs - for the rail and for the
+sold-out panel 7 at phone width and 3 at desktop, for the batch with no
+panel 2 and 1, one each otherwise; 863 strings across the ten screens. Four
+Florida strings no screen showed: `soldOutNoPanel` and `soldOutNone` (the
+sold-out product's latest batch has a panel, and its category has batches in
+stock), `thcMissing` (every batch lists THC) and `notUsedOthersOne`. Left the
+page: 21 requests for each release file, 18 feeds (every screen but the two
+opt-ins) and 2 votes - `D-106`, Cold Creek Kush, score 96, Strong, a palate
+of 2 batches, up.
+
+**Found on the way:**
+
+- **The privacy page says "flavor match" and "was its flavor close?"** about
+  the dispensary program, where the Florida variant says aroma. It is NOSE's
+  page, not the dispensary's, and data.md gives it as published; whether a
+  Florida submission wants other words there is for counsel ("Still open").
+- The test store's catalog gives a CBD figure for 5 of its 30 batches, so
+  most cards say "CBD not listed", and THC for all 30, so "THC not listed"
+  never shows with it.
+- A first draft counted a string as shown on screen 02 when it sat in the
+  closed basis list there; the test now compares every Florida key's "Shown
+  in" with the screens where it is seen or read aloud.
+
+**The test** - `test/b2b-compliance-kit-test.mjs`, 64 checks, a gate after
+`b2b widget`. Every run is in a throwaway git world: this tree's built `js/`
+and `css/`, the demo, the privacy page, the integration guide and
+`.gitignore`, committed, with release 1 built from that commit by
+`scripts/b2b-release.js` and recorded - so the kit builds from git as in the
+Codespace, and this repository is never written. It checks: the kit's
+`WHEN` against both variants, its own words for effect wording, the
+categories and routes taken from the catalog format; the stand-in page's
+CSP against the guide's lines and its one tag; the test store's kit - its
+files and their names, the scroll pages, every PNG's width at 2x, README.md
+(the release, its commit and hashes, an index naming every file, every PNG
+in the screens table, data.md called unchecked under `--offline`, the demo's
+purchases and days, the four kinds of request and their counts), strings.md
+(every Florida string as written and in order, a section a screen, every
+string traced and
+none to the default variant, each Florida row holding its template's own
+words, apart from the kit's trace, "Shown in" key by key, the four not
+rendered, the closed list, the removal, the thanks, the empty rails, the
+no-panel card, the catalog's words as written), data.md (every paragraph of
+the section and every other mention, the `--offline` line, links as
+written), no time of day, no effect wording, the world untouched outside
+`b2b-out/`; a store's kit against a stand-in site - one feed request with
+the key alone and the store's origin, one privacy read, the earlier kit
+replaced, the made-up purchases by the rule, screen 09's shorter list and
+what it shows, the comparison said, the store's names and none of the test
+store's; sixteen refusals, each leaving the world as it was - a secret key,
+`--offline` with a store, an origin with a path, a folder outside `b2b-out/`, a folder
+holding something else, a release not recorded, a site that cannot be
+reached, a feed that answers 403, a published section that differs, a
+record that does not match, a commit not in the clone, `b2b-out/` not
+ignored, a widget showing the default words, a widget that breaks the
+store's CSP, a vote with a seventh field, a vote carrying purchase days in
+its own fields; no `pg`, `@netlify/blobs`, `lib/b2b-store.js`,
+`lib/archive.js`, `lib/pdf-store.js` or `coa.js` loaded; this repository's
+`git status` and `b2b-out/` as they were.
+
+- **Against broken copies**: 46 deliberate faults, one at a time, in copies
+  of the repo - among them the default words, a trace that never fails or
+  takes the default variant, the record not compared, a release built from
+  the tree, a folder outside `b2b-out/` or a foreign one replaced, `b2b-out/`
+  not ignored, a secret key or `--offline` with a store let through, the feed
+  without the store's origin, with a referrer or fetched twice, the published
+  page not compared or the `--offline` line dropped, the wrong section, the
+  demo's purchases reversed, made up or a day off, the usual in stock, a
+  closed list counted as shown or not said, the request audit or the
+  purchase search off, no scroll pages, one width, the index missing PNGs, a
+  key missing from `WHEN`, an effect word in a comment, the store's database
+  code loaded, a staging or an empty folder left, an earlier kit refused or
+  merged, the origin unsaid, the CSP dropped, its violations ignored or
+  `'unsafe-inline'` added, the tag without `integrity` or `referrerpolicy`,
+  the whole key printed, the not-rendered mark dropped, the other mentions
+  skipped, links resolved, a time of day - each fails it. A scratch harness,
+  not committed. Its first run let two through - the index listing one PNG a
+  screen, and screen 09 handed a store's whole list - and the test gained the
+  checks that catch them; run again on the final kit and test, 46 of 46.
+
+**How it was verified, 2026-10-13, in the cloud workspace.** npm and
+cdn.jsdelivr.net were refused by the egress policy, so the gates ran on
+stand-ins built from upstream source at the lockfile's versions: pg 8.23.0
+and the thirteen packages under it from their git tags, pg-protocol compiled
+with tsc; unpdf 1.8.0's text extraction from its source over pdfjs-dist 6.2.108,
+with unpdf's own eight literal PDF.js patches, every anchor matched; PGlite
+0.5.8's parsers, serializers, result rules and query flow from its source at
+that tag, over a throwaway PostgreSQL 16 server per instance; the committed
+html5-qrcode in place of `build.sh`'s download; Playwright 1.56.0's Chromium
+141. ALL GATES GREEN on `09f044b` before any edit, 30 gates, and after it
+with the new gate, 31 - `KAY-CAR-001` 4.124 and `KAY-PRR-001` 0.944. The new
+test passed on Node 22.22 and 20.20 (`.nvmrc`). `parse-coa.js`, `coa-dates.js`
+and `extract-text.js` are untouched, so no reparse is due; no file in `js/`
+or `css/` changed, so `build.sh` renamed nothing; no migration. The
+workspace's egress policy refuses nose-app.com (403), so the kit's
+comparison with the published privacy page has run only against a stand-in:
+its first run online is the Codespace's.
+
+**In the Codespace, in this order** (nothing here writes anywhere but
+`b2b-out/`, which git ignores):
+
+1. `git pull --ff-only`, then `bash scripts/gates.sh` - ALL GATES GREEN, 31
+   gates, `b2b kit` among them. If a browser gate says Playwright is not
+   installed: `npm install --no-save playwright`, then
+   `npx playwright install --with-deps chromium`.
+2. The test store's kit, checked against the live privacy page:
+   `node scripts/b2b-compliance-kit.js` - it ends `compliance kit written:
+   b2b-out/test-store/compliance-kit/ - 10 screens, 37 PNGs, README.md,
+   strings.md, data.md`.
+3. In the Explorer, open `b2b-out/test-store/compliance-kit/README.md`
+   (right-click, Open Preview), then `strings.md`, `data.md` and the PNGs.
+4. For a store: `node scripts/b2b-compliance-kit.js --store <slug> --key
+   <its npk_ key> --origin <an origin it allows>`. The kit is in
+   `b2b-out/<slug>/compliance-kit/`. Send that folder to the store, then
+   `rm -r b2b-out/<slug>`: nothing else holds a copy.
+
 ### Still open
 
 - `scripts/download-twice.js` keeps its own looser fetch loop. Moving it onto
@@ -4850,8 +5111,8 @@ the real packages is the one that counts.
   neither. A product voted on is named by its `product_id` alone. A store's
   own product names can hold words NOSE's strings never would - a "Cured
   Resin" - and `b2b-strings-test` reads NOSE's words,
-  not a catalog's: the store's names are the store's to clear (Prompt 10's
-  kit shows them as they render).
+  not a catalog's: the store's names are the store's to clear. The compliance
+  kit lists them apart, as they render, since 2026-10-13.
 - **Suggestions across forms stay off** (Prompt 6, "The widget"): the rail's
   palate is made of the purchases in its own category, looked up in the feed,
   and its basis line names the category. Prompt 5's `palateFrom()` takes no
@@ -4891,8 +5152,9 @@ the real packages is the one that counts.
 - **The Florida variant is NOSE's reading of 64ER25-6**, not counsel's.
   Whether the rule reaches a vendor's widget, and whether words like
   "palate" or a store's flavor-named products count, is for the
-  Florida cannabis-regulatory attorney the plan books; Prompt 10's kit
-  renders the variant for the Department.
+  Florida cannabis-regulatory attorney the plan books. The compliance kit
+  renders the variant for the Department since 2026-10-13; counsel's review
+  is still to come.
 - **Two attributes and one event more than the prompt named**: `strings`
   and `feed`, and `nose:palate-restored`, documented with the rest in
   `docs/B2B-INTEGRATION.md` since 2026-10-09.
@@ -4935,8 +5197,8 @@ the real packages is the one that counts.
   `<script>` and on a shadow root's `<link>`, and CORS with `crossorigin`, are
   standard (MDN, above); `fetch` with `keepalive` has been Baseline since
   November 2024 ([MDN, Request.keepalive](https://developer.mozilla.org/en-US/docs/Web/API/Request/keepalive),
-  modified 2025-03-13). Firefox and Safari wait for the pilot store's own
-  check, or Prompt 10's kit.
+  modified 2025-03-13). The compliance kit draws in Chromium too, so Firefox
+  and Safari still wait for the pilot store's own check.
 - **A release request is in Netlify's request logs**, with its address and
   time, like the feed's. Netlify's documented log fields hold no `Origin`
   ([Log Drains](https://docs.netlify.com/monitor-sites/log-drains)), and a
@@ -4991,6 +5253,33 @@ the real packages is the one that counts.
 - **Newcombe's four values were read from a reproduction** of his Table II,
   the paper being paywalled; worth setting beside the paper itself when
   someone has it.
+- **The compliance kit has compared the published privacy page only with a
+  stand-in**: the cloud workspace's egress policy refuses nose-app.com, so
+  its first online run is the Codespace's (above, "In the Codespace", step 2).
+- **The privacy page says flavor where the Florida variant says aroma**
+  ("NOSE's flavor match", "was its flavor close?"), found by the kit. It is
+  NOSE's page, not a dispensary's, and data.md gives it as published.
+  Whether a Florida submission wants other words there is for counsel; a
+  change is its own prompt, and changes data.md with it.
+- **A kit is for one release and one day.** It names the release, its
+  commit and both hashes, and the day the store's feed was read; a new
+  release needs a new kit - in Florida perhaps a new approval - and so may a
+  catalog that changes what the screens show. Nothing ties a kit to an
+  approval but the store's own record.
+- **A kit's PNGs draw with the machine's fonts.** The widget takes its font
+  from the store's page; the stand-in names the system sans-serif, which is
+  whatever the machine has. Two machines draw the same words and layout in
+  different type; strings.md is the record of the words.
+- **Four Florida strings are not drawn with the test store** -
+  `soldOutNoPanel`, `soldOutNone`, `thcMissing`, `notUsedOthersOne` - and
+  strings.md gives each exactly as written, with when it shows. A store's
+  feed that reaches one draws it.
+- **The kit makes up a store's shopper by a rule** (above). A store whose
+  feed has no batch out of stock with a panel gets no sold-out panel, and one
+  with no in-stock batch lacking a panel among a rail's first twelve gets no
+  no-panel screen; each is listed with why. A store wanting particular
+  screens would need a purchase list of its own design, which no prompt has
+  asked for.
 
 ### Later
 
