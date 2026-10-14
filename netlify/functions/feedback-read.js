@@ -40,6 +40,14 @@ import { VOTES_STORE } from '../lib/beacon.js';
 // stored. Its candidate is a real sample id, the same as any vote on the
 // default pair, so filter it on its ts, not its candidate.
 //
+//   ts 2026-10-14T20:04:09.139Z   the smell words deploy check (PARSER-HANDOFF
+//                                 s13, "Smell words on a vote"): Moderate
+//                                 down, score 74, candidate 'cold-creek',
+//                                 palate 'lemon-tart', notes gas skunk
+//
+// Pressed by the owner on /app after Gas or fuel and Skunk, to prove a vote's
+// words reach the store. Filter it on its ts too.
+//
 // Real votes to date (2026-10-14): 1 (candidate 'cold-creek', score 84, up).
 // That is not a finding. It is one vote.
 

@@ -3100,6 +3100,25 @@ ran against Netlify or the live site. The Codespace run on the real
 packages is the one that counts. This record closes no "Still open" item;
 it adds three.
 
+**Live, 2026-10-14 (US Eastern).** The owner merged `smell-words` into main
+as a fast-forward and pushed: GitHub's main read `fd6614c` afterwards, so
+the privacy page and the feature went out in one push. The live privacy
+page, read from the cloud workspace, carries the new ending of the sentence
+about votes and the sixth "What changed" entry, dated October 14, 2026 - the
+day it went live, so that "Still open" item is gone. The owner then opened
+`/app` in a private window, pressed Gas or fuel and Skunk, then Didn't
+match, and read `feedback-read`'s CSV in the Codespace with the token kept
+out of the shell's history and out of the chat. Its header ends
+`ctx,notes`, and the vote's row reads: `ts` 2026-10-14T20:04:09.139Z,
+`clientTs` 2026-10-14T20:03:35.445Z, down, Moderate, 74, `cold-creek`, 1,
+`lemon-tart`, an empty `palateTruncated`, `ctx` `c1154cc3fda2`, notes `gas
+skunk` - the two words, in the list's order, as the page sent them. **That
+vote is a deploy check, not a person's answer**: `feedback-read.js`'s
+synthetic records comment lists it by its `ts`, beside the Moderate check
+of the morning, so the second "Still open" item is gone too. Real votes to
+date stay at one. The Codespace's gate run was not pasted into this
+session.
+
 ### After a deploy — check it
 
 1. `node scripts/archive-health.js` in the Codespace (reads as `nose_writer`;
@@ -3263,14 +3282,6 @@ schema comment if wanted.
 - **An `npm audit` warning** was seen in the Codespace (reported 2026-09-23)
 and has not been looked at: the cloud workspace cannot reach npm. Next step:
 `npm audit` in the Codespace, and bring its output.
-- **The privacy page dates the sixth change October 14, 2026** (above,
-  "Smell words on a vote"), the day it was built. If it went live on
-  another day (US Eastern), that date changes to the deploy day, in a
-  commit of its own.
-- **The first vote with words on the live site will be a deploy check**,
-  not a person's answer. Once it is made, `feedback-read.js`'s synthetic
-  records comment lists it by its `ts`, as it lists the Moderate check of
-  2026-10-14.
 - **The word buttons were watched in Chromium only**, at 1280 and 390 px:
   their wrapping, the tick and the status line. Safari and Firefox have not
   been looked at, nor a screen reader's reading of the note.
