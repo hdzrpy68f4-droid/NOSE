@@ -35,9 +35,10 @@
  *     inside ASTM D8197's 0.55-0.65 for dried flower, edges inside, and its
  *     Moisture row gives the value with no verdict; each says "no number on
  *     this report" without one. Below (KAY-PRR-001, 0.54), inside (KAY-FLW-002,
- *     0.583), the 0.55 edge (ACS-PRR-001), above (KAY-FLW-002's reply set to
- *     0.68 - no fixture prints one) and Pass only (MCL-FLW-001). Since
- *     2026-10-14; INPUT_PATHS_SHOTS=<folder> saves each card as a picture
+ *     0.583), the 0.55 edge (ACS-PRR-001), the 0.65 edge and above
+ *     (KAY-FLW-002's reply set to 0.65 and 0.68 - no fixture prints either)
+ *     and Pass only (MCL-FLW-001). Since 2026-10-14;
+ *     INPUT_PATHS_SHOTS=<folder> saves each card as a picture
  *   - Upload: the tab and the message after choosing a file say plainly that
  *     reading an uploaded file isn't available yet and point to Scan QR, COA
  *     link and Manual; the page makes no request, so the file goes nowhere
@@ -84,8 +85,9 @@ const FIXTURES = { plain: 'KAY-CAR-001', warned: 'MCL-FLW-002', novel: `${NOVEL_
 /* Water activity against ASTM D8197's 0.55-0.65 for dried flower, and moisture
    as printed with no verdict (PARSER-HANDOFF s13). Real flower reports below,
    inside and on the 0.55 edge, and one that prints only Pass for both. No
-   fixture prints a water activity above 0.65, so that case is KAY-FLW-002's
-   real reply with only waterActivity changed. Each row's text is written out;
+   fixture prints a water activity of 0.65 or above, so those two cases are
+   KAY-FLW-002's real reply with only waterActivity changed. Each row's text
+   is written out;
    the card puts a word joiner (U+2060) after the en dash, so the range never
    breaks across two lines. */
 const RANGE = 'ASTM D8197\'s 0.55–\u20600.65 range for dried flower';
@@ -94,6 +96,7 @@ const FRESHNESS = [
   { name: 'KAY-PRR-001', fixture: 'KAY-PRR-001', aw: 0.54, moisture: '12%', water: `0.54 — below ${RANGE}` },
   { name: 'KAY-FLW-002', fixture: 'KAY-FLW-002', aw: 0.583, moisture: '14.97%', water: `0.583 — inside ${RANGE}` },
   { name: 'ACS-PRR-001', fixture: 'ACS-PRR-001', aw: 0.55, moisture: '10%', water: `0.55 — inside ${RANGE}` },
+  { name: 'KAY-FLW-002 at 0.65', fixture: 'KAY-FLW-002', aw: 0.583, set: { waterActivity: 0.65 }, moisture: '14.97%', water: `0.65 — inside ${RANGE}` },
   { name: 'KAY-FLW-002 at 0.68', fixture: 'KAY-FLW-002', aw: 0.583, set: { waterActivity: 0.68 }, moisture: '14.97%', water: `0.68 — above ${RANGE}` },
   { name: 'MCL-FLW-001', fixture: 'MCL-FLW-001', aw: null, moisture: NO_NUMBER, water: NO_NUMBER }
 ];
