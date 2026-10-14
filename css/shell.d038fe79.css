@@ -638,7 +638,20 @@
 .feedback-btn[aria-pressed="true"]{background:var(--green);border-color:var(--green);color:#fff}
 .feedback-btn[disabled]{opacity:.55;cursor:default}
 .match-feedback-ack{margin:14px 0 0;font-size:0.875rem;color:var(--green-dark);font-weight:600}
-@media(prefers-reduced-motion:reduce){.feedback-btn{transition:none}}
+/* Smell words on a vote (PARSER-HANDOFF s13): smaller than the two vote
+   buttons, and pressed shows a tick as well as color. */
+.match-feedback-notes{margin:0 0 16px}
+.match-feedback-notes-q{margin:0 0 10px;font-size:0.875rem;color:var(--muted);font-weight:600}
+.note-btns{display:flex;gap:8px;flex-wrap:wrap}
+.note-btn{min-height:40px;display:inline-flex;align-items:center;gap:6px;padding:0 14px;border-radius:999px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);font:600 13px/1 Inter,system-ui,sans-serif;cursor:pointer;transition:border-color .15s,background .15s}
+.note-btn:hover{border-color:color-mix(in srgb,var(--green) 45%,var(--line))}
+.note-btn[aria-pressed="true"]{border-color:var(--green);background:color-mix(in srgb,var(--green) 9%,var(--surface));color:var(--green-dark);box-shadow:inset 0 0 0 1px var(--green)}
+.note-tick{display:none}
+.note-btn[aria-pressed="true"] .note-tick{display:inline}
+.note-btn[disabled]{opacity:.55;cursor:default}
+.match-feedback-notes-limit{margin:10px 0 0;font-size:0.8125rem;color:var(--muted)}
+.match-feedback-notes-limit:empty{margin:0}
+@media(prefers-reduced-motion:reduce){.feedback-btn,.note-btn{transition:none}}
 .sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
 
 /* ---- Tier 3: utility classes replacing inline style attributes ----

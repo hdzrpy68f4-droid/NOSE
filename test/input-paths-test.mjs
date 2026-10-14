@@ -44,6 +44,14 @@
  *     row (MCL-FLW-001); the note under it; every other row as before; today,
  *     yesterday and the person's tomorrow, on a frozen clock in New York's
  *     time zone. Since 2026-10-14
+ *   - smell words on a vote: the result's thirteen word buttons, the prompt's
+ *     list in its order, reached in order by Tab and pressed by Space or
+ *     Enter; a fourth word refused with a note in a status line; two words
+ *     picked, a vote, and the POST it sends taken before it leaves the page -
+ *     its body carries exactly those two slugs, in the list's order, and no
+ *     other new field; the words fixed after the vote, cleared by a new
+ *     result. Since 2026-10-14 (PARSER-HANDOFF s13, "Smell words on a vote");
+ *     INPUT_PATHS_SHOTS also saves the block, picked and voted
  *   - Upload: the tab and the message after choosing a file say plainly that
  *     reading an uploaded file isn't available yet and point to Scan QR, COA
  *     link and Manual; the page makes no request, so the file goes nowhere
@@ -633,6 +641,100 @@ try {
     }
     if (SHOTS && shown) await shoot(`date ${c.name}`);
     await discard(`COA link, ${c.name}`, 'urlMessage');
+  }
+
+  /* ---- Smell words on a vote (PARSER-HANDOFF s13, since 2026-10-14) -------- */
+  /* The result panel's feedback block, after the jars added above: thirteen
+     word buttons drawn from the bundle's SMELL_NOTES, reached in order by
+     Tab and pressed by Space or Enter; a fourth word refused with a note; then
+     two words and a vote, and the POST the vote sends, taken before it
+     leaves the page. Its body must carry exactly those two slugs, in the
+     list's order, and no other new field. */
+  {
+    const votes = [];
+    await page.route('**/.netlify/functions/match-feedback', async route => {
+      votes.push(route.request().postData() || '');
+      await route.fulfill({ status: 204, body: '' });
+    });
+    await page.click('#sampleTab');
+    await page.waitForSelector('#fullResult:not([hidden])');
+    const btns = () => page.$$eval('#feedbackNotes .note-btn', bs => bs.map(b => [b.dataset.note, b.textContent.replace('✓', '').trim(),
+      b.getAttribute('aria-pressed'), b.type, b.tabIndex, b.disabled]));
+    const LIST = [['gas', 'Gas or fuel'], ['skunk', 'Skunk'], ['savory', 'Savory or garlic'], ['chemical', 'Chemical'], ['sweet', 'Sweet'],
+      ['fruity', 'Fruity or tropical'], ['hay', 'Hay'], ['citrus', 'Citrus'], ['earthy', 'Earthy'], ['spice', 'Spice'], ['pine', 'Pine'],
+      ['floral', 'Floral'], ['herbal', 'Herbal']];
+    const first = await btns();
+    check('smell words: thirteen toggle buttons, the prompt\'s words in its order, none pressed, each a button in the Tab order',
+      JSON.stringify(first) === JSON.stringify(LIST.map(([s, l]) => [s, l, 'false', 'button', 0, false])), JSON.stringify(first));
+    check('smell words: the question above them reads "What did you smell? Optional, up to three.", and names their group',
+      (await text('#feedbackNotesQ')) === 'What did you smell? Optional, up to three.'
+        && (await page.getAttribute('.match-feedback-notes', 'aria-labelledby')) === 'feedbackNotesQ'
+        && (await page.getAttribute('.match-feedback-notes', 'role')) === 'group', await text('#feedbackNotesQ'));
+
+    /* Keyboard: from the first word, Tab walks every word in order, then
+       Matched; Space and Enter press one. */
+    await page.focus('#feedbackNotes .note-btn >> nth=0');
+    const walk = [await page.evaluate(() => document.activeElement.dataset.note)];
+    for (let i = 0; i < LIST.length; i++) {
+      await page.keyboard.press('Tab');
+      walk.push(await page.evaluate(() => document.activeElement.dataset.note || document.activeElement.dataset.vote || document.activeElement.id));
+    }
+    check('smell words: Tab reaches each word in order, then Matched', JSON.stringify(walk) === JSON.stringify([...LIST.map(w => w[0]), 'up']), JSON.stringify(walk));
+    const pressed = async () => (await btns()).filter(b => b[2] === 'true').map(b => b[0]);
+    await page.focus('#feedbackNotes [data-note="gas"]');
+    await page.keyboard.press('Space');
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Enter');
+    check('smell words: Space presses Gas or fuel, Enter presses Skunk', JSON.stringify(await pressed()) === '["gas","skunk"]', JSON.stringify(await pressed()));
+    await page.keyboard.press('Space');
+    check('smell words: pressed again, Skunk is unpicked', JSON.stringify(await pressed()) === '["gas"]', JSON.stringify(await pressed()));
+
+    /* A fourth word is refused, with a short note; unpicking one clears it. */
+    await page.click('#feedbackNotes [data-note="pine"]');
+    await page.click('#feedbackNotes [data-note="floral"]');
+    check('smell words: no note while three or fewer are picked', (await text('#feedbackNotesLimit')) === '', await text('#feedbackNotesLimit'));
+    await page.click('#feedbackNotes [data-note="sweet"]');
+    check('smell words: a fourth is refused - Sweet stays unpicked, the three stay picked',
+      JSON.stringify(await pressed()) === '["gas","pine","floral"]', JSON.stringify(await pressed()));
+    check('smell words: ...and the note says so, in the status line',
+      (await text('#feedbackNotesLimit')) === 'Up to three. Press a word you picked to remove it.'
+        && (await page.getAttribute('#feedbackNotesLimit', 'role')) === 'status', await text('#feedbackNotesLimit'));
+    await page.click('#feedbackNotes [data-note="pine"]');
+    check('smell words: unpicking one clears the note', (await text('#feedbackNotesLimit')) === '' && JSON.stringify(await pressed()) === '["gas","floral"]',
+      `${await text('#feedbackNotesLimit')} ${JSON.stringify(await pressed())}`);
+    await page.click('#feedbackNotes [data-note="gas"]');
+    await page.click('#feedbackNotes [data-note="floral"]');
+    check('smell words: all unpicked again', JSON.stringify(await pressed()) === '[]', JSON.stringify(await pressed()));
+
+    /* Two words, picked out of the list's order, then a vote. */
+    await page.click('#feedbackNotes [data-note="hay"]');
+    await page.click('#feedbackNotes [data-note="skunk"]');
+    if (SHOTS) await page.locator('#matchFeedback').screenshot({ path: path.join(SHOTS, 'smell-words-picked.png') });
+    await page.click('#matchFeedback [data-vote="down"]');
+    await page.waitForFunction(() => !document.getElementById('feedbackAck').hidden);
+    for (let i = 0; i < 40 && !votes.length; i++) await page.waitForTimeout(50);
+    let body = null;
+    try { body = JSON.parse(votes[0]); } catch {}
+    check('smell words: the vote sends one POST to match-feedback', votes.length === 1 && !!body, `${votes.length} sent: ${votes.join(' | ')}`);
+    check('smell words: its body carries exactly those two slugs, in the list\'s order - Skunk, then Hay',
+      !!body && JSON.stringify(body.notes) === '["skunk","hay"]', body && JSON.stringify(body.notes));
+    check('smell words: ...and no other new field: R1\'s seven, then notes',
+      !!body && JSON.stringify(Object.keys(body)) === JSON.stringify(['score', 'band', 'palate', 'palateSize', 'candidate', 'ts', 'vote', 'notes']),
+      body && JSON.stringify(Object.keys(body)));
+    check('smell words: ...with the vote, and nothing anyone typed - no jar name from this run, the jars added here sent as custom',
+      !!body && body.vote === 'down' && !/Input paths/i.test(votes[0]) && body.palate.includes('custom')
+        && body.palate.every(id => /^[a-z0-9-]+$/.test(id)), votes[0]);
+    const after = await btns();
+    check('smell words: after the vote the words are fixed - all disabled, Skunk and Hay still shown pressed',
+      after.every(b => b[5] === true) && JSON.stringify(after.filter(b => b[2] === 'true').map(b => b[0])) === '["skunk","hay"]', JSON.stringify(after));
+    if (SHOTS) await page.locator('#matchFeedback').screenshot({ path: path.join(SHOTS, 'smell-words-voted.png') });
+
+    /* A new result starts with no words. */
+    await page.click('#candidateSamples .sample-chip[data-profile="pepper-grove"]');
+    const fresh = await btns();
+    check('smell words: a new result starts with none picked and every word pressable again',
+      fresh.every(b => b[2] === 'false' && b[5] === false), JSON.stringify(fresh));
+    await page.unroute('**/.netlify/functions/match-feedback');
   }
 
   /* ---- Upload -------------------------------------------------------------- */

@@ -30,6 +30,20 @@
  *     the default /app pair (74, Partial overlap), and that vote is counted
  *     under Moderate; the question asks whether the smell and taste matched the
  *     score, with no effect word anywhere in the feedback block
+ *   - smell words, since 2026-10-14 (PARSER-HANDOFF s13, "Smell words on a
+ *     vote"): the bundle's SMELL_NOTES and match-feedback.js's NOTES are the
+ *     same thirteen slugs in the same order, the prompt's list; a vote's
+ *     notes - up to three distinct words from the list - are stored, in the
+ *     list's order, as the record's eleventh field, and the record is v 2; an
+ *     unknown word, a fourth word, a duplicate, a typed string and every other
+ *     shape are refused with bad-notes and nothing stored; a vote without
+ *     notes is stored with null; the key layout does not move; feedback-read's
+ *     CSV gains a notes column, last, its JSON records carry notes, and its
+ *     summary is still read from the keys alone; the bundle's own vote sends
+ *     notes, the chosen slugs in list order, [] when none; no word or label on
+ *     the list matches analysis-test's EFFECT_WORDS or the prompt's list; the
+ *     words' question sits above the two buttons; the privacy page's sentence
+ *     names them
  *
  * No network, no Netlify, no database. Nothing is written to disk.
  */
@@ -71,6 +85,11 @@ function check(label, actual, expected) {
 const codeOf = src => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/\s\/\/.*$/gm, '');
 /* The prompt's list of words that speak about effects. */
 const EFFECT_WORDS = /relax|calm|sleep|energ|focus|uplift|euphor|sedat|mood|high|buzz|stoned|pain|anxiety|stress|treat|relief|cure/i;
+/* The smell words, as the prompt gives them: slug, then label, in this order. */
+const SMELL_WORDS = [['gas', 'Gas or fuel'], ['skunk', 'Skunk'], ['savory', 'Savory or garlic'], ['chemical', 'Chemical'],
+  ['sweet', 'Sweet'], ['fruity', 'Fruity or tropical'], ['hay', 'Hay'], ['citrus', 'Citrus'], ['earthy', 'Earthy'],
+  ['spice', 'Spice'], ['pine', 'Pine'], ['floral', 'Floral'], ['herbal', 'Herbal']];
+const FIELDS = ['v', 'vote', 'band', 'score', 'candidate', 'palate', 'palateSize', 'ts', 'clientTs', 'ctx', 'notes'];
 
 /* ------------------------------------------- Netlify Blobs, stood in for */
 
@@ -220,9 +239,9 @@ async function main() {
     [true, true, true, true]);
   check('one store, "match-feedback", site-wide and strongly consistent, as before',
     [...new Set(blobs.opened.map(o => JSON.stringify(o)))], [JSON.stringify({ name: 'match-feedback', consistency: 'strong' })]);
-  check('the record has not moved: its ten fields, the band as matchBand() names it, the score as sent',
-    kept.map(k => { const r = recordAt(k); return [Object.keys(r), r.v, r.band, r.score]; }),
-    NAMES.map((n, i) => [['v', 'vote', 'band', 'score', 'candidate', 'palate', 'palateSize', 'ts', 'clientTs', 'ctx'], 1, n, M.shownScore(inBand[i])]));
+  check('the record: its ten fields, then notes - null, as these votes send none - v 2, the band as matchBand() names it, the score as sent',
+    kept.map(k => { const r = recordAt(k); return [Object.keys(r), r.v, r.band, r.score, r.notes]; }),
+    NAMES.map((n, i) => [FIELDS, 2, n, M.shownScore(inBand[i]), null]));
 
   /* ============================================================ refusals */
 
@@ -251,6 +270,86 @@ async function main() {
                        ballot('Good', 80, { candidate: 'Cold Creek' })].map(async b => (await (await post(b)).json()).reason)),
     ['bad-vote', 'bad-score', 'bad-score', 'bad-score', 'bad-candidate']);
 
+  /* ========================================================= smell words */
+
+  const notesSrc = voteCode.match(/^const NOTES = (\[[^\]]*\]);$/m);
+  const NOTES = notesSrc ? JSON.parse(notesSrc[1].replace(/'/g, '"')) : null;
+  check('match-feedback.js holds the smell words as one constant, NOTES: the prompt\'s thirteen slugs, in its order',
+    NOTES, SMELL_WORDS.map(w => w[0]));
+  check('...at most three to a vote', (voteCode.match(/^const MAX_NOTES = (\d+);$/m) || [])[1], '3');
+
+  /* Stored: each vote's notes in the list's order, as the record's eleventh
+     field, the record v 2, the key layout unmoved. */
+  const notedVotes = [
+    { label: 'two words, Strong, down', band: NAMES[0], vote: 'down', notes: ['gas', 'skunk'], want: ['gas', 'skunk'] },
+    { label: 'three words sent out of order, Good, up', band: NAMES[1], vote: 'up', notes: ['pine', 'gas', 'hay'], want: ['gas', 'hay', 'pine'] },
+    { label: 'none picked, Moderate, up', band: NAMES[2], vote: 'up', notes: [], want: [] },
+  ];
+  const noted = [];
+  for (const c of notedVotes) {
+    const before = votesIn();
+    const i = NAMES.indexOf(c.band);
+    const res = await quietly(() => post(ballot(c.band, M.shownScore(inBand[i]), { vote: c.vote, notes: c.notes, candidate: 'violet-hour' })));
+    const added = votesIn().filter(k => !before.includes(k));
+    const r = added[0] && recordAt(added[0]);
+    check(`notes stored, ${c.label}: 204, one vote, under votes/${SLUGS[i]}/${c.vote}/, eleven fields, v 2, notes ${JSON.stringify(c.want)}, nothing logged`,
+      [res.value.status, added.length, added.every(k => k.startsWith(`votes/${SLUGS[i]}/${c.vote}/`)), r && Object.keys(r), r && r.v, r && r.notes, res.lines],
+      [204, 1, true, FIELDS, 2, c.want, []]);
+    noted.push(...added);
+  }
+  /* The same match as the first, without words: v 2, notes null. */
+  let unnoted;
+  {
+    const before = votesIn();
+    await post(ballot(NAMES[0], M.shownScore(inBand[0]), { vote: 'up', candidate: 'violet-hour' }));
+    unnoted = votesIn().filter(k => !before.includes(k))[0];
+  }
+  kept.push(...noted, unnoted);
+  check('a vote with no notes field is stored with notes null - never asked, not the same as none picked',
+    [Object.keys(recordAt(unnoted)), recordAt(unnoted).v, recordAt(unnoted).notes], [FIELDS, 2, null]);
+  check('...the key layout has not moved for a vote with words',
+    noted.map(k => { const r = recordAt(k); return /^votes\/(strong|good|moderate|low)\/(up|down)\/\d{4}-\d{2}-\d{2}\/\d{9}-[a-z0-9]{1,6}$/.test(k) && k.split('/')[3] === r.ts.slice(0, 10); }),
+    noted.map(() => true));
+  check('...and the words do not change ctx: the same match with and without them groups together',
+    [recordAt(noted[0]).ctx === recordAt(unnoted).ctx, recordAt(noted[1]).ctx === recordAt(unnoted).ctx], [true, false]);
+
+  /* Refused: anything but an array of at most three distinct words from the
+     list - the whole vote, with bad-notes, nothing stored. */
+  const badNotes = [
+    ['an unknown word', ['diesel']],
+    ['a fourth word', ['gas', 'skunk', 'hay', 'pine']],
+    ['a duplicate', ['gas', 'gas']],
+    ['a typed string', 'smells like gas'],
+    ['a typed string in the list', ['smells like gas']],
+    ['a word in another case', ['Gas']],
+    ['a label, not a slug', ['Gas or fuel']],
+    ['one word not in a list', 'gas'],
+    ['null', null],
+    ['an object', { gas: true }],
+    ['a number', 3],
+    ['a number in the list', [1]],
+    ['a list in the list', [['gas']]],
+    ['null in the list', ['gas', null]],
+    ['"constructor"', ['constructor']],
+  ];
+  const notesAnswers = [];
+  for (const [, notes] of badNotes) {
+    const before = writes();
+    const res = await post(ballot('Good', 80, { notes }));
+    notesAnswers.push([res.status, await res.text(), writes() - before]);
+  }
+  check(`refused with bad-notes and nothing stored: ${badNotes.map(b => b[0]).join(', ')}`,
+    notesAnswers, badNotes.map(() => [400, JSON.stringify({ error: 'rejected', reason: 'bad-notes' }), 0]));
+
+  /* No word or label on the list speaks about effects: analysis-test's
+     EFFECT_WORDS, read from its source, and the prompt's list. */
+  const analysisSrc = fs.readFileSync(path.join(ROOT, 'test/analysis-test.js'), 'utf8');
+  const lit = analysisSrc.match(/^const EFFECT_WORDS = \/(.+)\/([a-z]*);$/m);
+  check('analysis-test.js has its EFFECT_WORDS', !!lit, true);
+  const ANALYSIS_EFFECT = lit ? new RegExp(lit[1], lit[2]) : /$^/;
+  check('no smell word or label matches analysis-test\'s EFFECT_WORDS, nor the prompt\'s list',
+    SMELL_WORDS.flat().filter(w => ANALYSIS_EFFECT.test(w) || EFFECT_WORDS.test(w)), []);
+
   /* ======================================================== feedback-read */
 
   const token = crypto.randomBytes(24).toString('hex');
@@ -267,6 +366,11 @@ async function main() {
      before today but by hand - is not one of the four, and is not read. */
   storeNamed('match-feedback').setJSON('votes/partial/up/2026-10-01/120000000-abc123', { v: 1, vote: 'up', band: 'Partial' });
   storeNamed('match-feedback').setJSON('votes/weak/down/2026-10-01/120000000-def456', { v: 1, vote: 'down', band: 'Weak' });
+  /* A v1 record, as every vote was stored before 2026-10-14: no notes. */
+  const V1_KEY = 'votes/good/up/2026-10-01/120000000-aaa111';
+  await storeNamed('match-feedback').setJSON(V1_KEY, { v: 1, vote: 'up', band: 'Good', score: 84, candidate: 'cold-creek', palate: ['lemon-tart'],
+    palateSize: 1, ts: '2026-10-01T12:00:00.000Z', clientTs: null, ctx: 'v1ctx' });
+  kept.push(V1_KEY);
 
   const counts = slug => {
     const ks = kept.filter(k => k.split('/')[1] === slug);
@@ -293,26 +397,45 @@ async function main() {
     [['Low', 'down', 0], ['Low', 'down', M.shownScore(inBand[3])]]);
   const csv = await get('?format=csv');
   const rows = (await csv.text()).trim().split('\n');
-  check('the CSV export: the same columns, a row for every vote of the four, every band in it',
+  check('the CSV export: the same columns and a notes column, last; a row for every vote of the four, every band in it',
     [csv.status, csv.headers.get('content-type'), rows[0], rows.length - 1,
      NAMES.map(n => rows.slice(1).filter(r => r.split(',')[3] === n).length)],
-    [200, 'text/csv; charset=utf-8', 'ts,clientTs,vote,band,score,candidate,palateSize,palate,palateTruncated,ctx', kept.length,
+    [200, 'text/csv; charset=utf-8', 'ts,clientTs,vote,band,score,candidate,palateSize,palate,palateTruncated,ctx,notes', kept.length,
      SLUGS.map(s => kept.filter(k => k.split('/')[1] === s).length)]);
+  /* One row, one record, by what tells them apart here: ctx and vote. */
+  const sample = [...noted, unnoted, V1_KEY];
+  const rowOf = key => { const r = recordAt(key); const m = rows.slice(1).map(x => x.split(',')).filter(c => c[9] === r.ctx && c[2] === r.vote); return m.length === 1 ? m[0] : null; };
+  check('...each vote\'s words in its notes column, space-separated like palate; empty for none picked, for null and for a v1 record',
+    sample.map(k => { const c = rowOf(k); return c && [c.length, c[10]]; }),
+    [[11, 'gas skunk'], [11, 'gas hay pine'], [11, ''], [11, ''], [11, '']]);
+  const json = await (await get('?limit=50')).json();
+  check('the JSON records carry notes as stored: the words, [] and null; a v1 record has no notes field',
+    sample.map(k => { const want = recordAt(k); const m = json.records.filter(x => x.ctx === want.ctx && x.vote === want.vote); return m.length === 1 ? [m[0].v, 'notes' in m[0] ? m[0].notes : 'no field'] : null; }),
+    [[2, ['gas', 'skunk']], [2, ['gas', 'hay', 'pine']], [2, []], [2, null], [1, 'no field']]);
+  {
+    const gets = blobs.calls.filter(c => c[0] === 'get').length;
+    const again = await (await get()).json();
+    check('...and the summary is still read from the keys alone: no blob read, the words in no count',
+      [blobs.calls.filter(c => c[0] === 'get').length - gets, Object.keys(again), Object.keys(again.summary), Object.keys(again.summary.byBand.Strong)],
+      [0, ['summary', 'totalRecords', 'caveat'], ['byBand', 'overall'], ['up', 'down', 'total', 'upShare']]);
+  }
 
   /* ============================================================== the app */
 
   check('the app\'s vote takes its band from matchBand(score)[1] and its number from shownScore(score), in its bundle\'s source text',
     [/\bscore:shownScore\(score\),/.test(app), /\bband:matchBand\(score\)\[1\],/.test(app)], [true, true]);
-  check('...and its only sender posts that context, with the vote, to match-feedback',
-    [(app.match(/\/\.netlify\/functions\/match-feedback/g) || []).length, /const payload=\{\.\.\.feedbackContext,vote\};/.test(app)], [2, true]);
+  check('...and its only sender posts that context, with the vote and the chosen words, to match-feedback',
+    [(app.match(/\/\.netlify\/functions\/match-feedback/g) || []).length, /const payload=\{\.\.\.feedbackContext,vote,notes:chosenNotes\(\)\};/.test(app)], [2, true]);
 
   /* The bundle's own pieces, run as the page runs them on the default /app
      pair, with the maths from js/match-math.*.js and a beacon that records. */
   const sent = [];
-  const pieces = ['const PROFILES =', 'function profileById(', 'function palateProfiles(', 'function palateVector(',
+  const pieces = ['const PROFILES =', 'const SMELL_NOTES=', 'function chosenNotes(', 'function profileById(', 'function palateProfiles(', 'function palateVector(',
                   'function reportableId(', 'function resetFeedback(', 'function sendFeedback('].map(o => pieceOf(app, o));
-  check('the vote\'s pieces are in the bundle: PROFILES, profileById, palateProfiles, palateVector, reportableId, resetFeedback, sendFeedback',
-    pieces.map(p => typeof p === 'string'), pieces.map(() => true));
+  /* The two one-line statements the words need, which pieceOf() cannot take. */
+  const lines = [/^\s*const MAX_NOTES=\d+;$/m, /^\s*const feedbackNotes=new Set\(\);$/m].map(re => (app.match(re) || [null])[0]);
+  check('the vote\'s pieces are in the bundle: PROFILES, SMELL_NOTES, chosenNotes, profileById, palateProfiles, palateVector, reportableId, resetFeedback, sendFeedback, MAX_NOTES and feedbackNotes',
+    [...pieces, ...lines].map(p => typeof p === 'string'), [...pieces, ...lines].map(() => true));
   const defaults = app.match(/palateIds:\['([a-z0-9-]+)'\], appCandidate:'([a-z0-9-]+)',/);
   const element = () => ({ hidden: false, textContent: 'x', querySelectorAll: () => [] });
   const sandbox = {
@@ -321,10 +444,14 @@ async function main() {
     document: { getElementById: element }, state: { palateIds: [defaults[1]], appCandidate: defaults[2], saved: [] },
   };
   vm.createContext(sandbox);
-  vm.runInContext(`const { normalize, averageProfiles, cosine, matchBand, shownScore } = window.NoseMatch;\n${pieces.join('\n')}\n` +
+  vm.runInContext(`const { normalize, averageProfiles, cosine, matchBand, shownScore } = window.NoseMatch;\n${pieces.join('\n')}\n${lines.join('\n')}\n` +
     'let feedbackContext=null;\n' +
-    'this.run = (vote) => { const b=profileById(state.appCandidate); const palateVec=palateVector(); const score=cosine(palateVec,normalize(b.terps));' +
-    ' resetFeedback(score,b); sendFeedback(vote); return score; };', sandbox);
+    'this.list = () => SMELL_NOTES.map(([slug, label]) => [slug, label]);\n' +
+    /* picks: the words pressed after the result shows, as a click adds them */
+    'this.run = (vote, picks = []) => { const b=profileById(state.appCandidate); const palateVec=palateVector(); const score=cosine(palateVec,normalize(b.terps));' +
+    ' resetFeedback(score,b); picks.forEach(s => feedbackNotes.add(s)); sendFeedback(vote); return score; };', sandbox);
+  check('the bundle\'s SMELL_NOTES is the prompt\'s list, slugs and labels, in its order', sandbox.list(), SMELL_WORDS);
+  check('...and its slugs are match-feedback.js\'s NOTES, in the same order', sandbox.list().map(w => w[0]), NOTES);
   check('the default /app pair is the home page\'s, lemon-tart against cold-creek', [defaults[1], defaults[2]], ['lemon-tart', 'cold-creek']);
   check('...and updateFullResult() scores it as this run does', /const score=cosine\(palateVec,normalize\(b\.terps\)\);/.test(pieceOf(app, 'function updateFullResult(') || ''), true);
   const score = sandbox.run('up');
@@ -333,7 +460,8 @@ async function main() {
     [Object.is(score, golden.anchors.heroDefault.score), M.matchBand(score), sent.length, sent[0].url, sent[0].type,
      Object.keys(payload), payload.score, payload.band, payload.candidate, payload.palate, payload.palateSize, payload.vote],
     [true, ['Partial overlap', 'Moderate'], 1, '/.netlify/functions/match-feedback', 'application/json',
-     ['score', 'band', 'palate', 'palateSize', 'candidate', 'ts', 'vote'], 74, 'Moderate', 'cold-creek', ['lemon-tart'], 1, 'up']);
+     ['score', 'band', 'palate', 'palateSize', 'candidate', 'ts', 'vote', 'notes'], 74, 'Moderate', 'cold-creek', ['lemon-tart'], 1, 'up']);
+  check('...with notes [] when no word is picked', payload.notes, []);
   {
     const before = votesIn();
     const res = await post(sent[0].body);
@@ -342,6 +470,20 @@ async function main() {
     check('...that vote is stored under votes/moderate/up/ and counted under Moderate - before 2026-10-13 it was refused with bad-band',
       [res.status, added.length, added[0] && added[0].split('/').slice(0, 3).join('/'), after.summary.byBand.Moderate.up - counts('moderate').up],
       [204, 1, 'votes/moderate/up', 1]);
+    check('...with notes []', added[0] && recordAt(added[0]).notes, []);
+  }
+  {
+    sandbox.run('down', ['pine', 'gas']);
+    const withWords = JSON.parse(sent[1].body);
+    check('the bundle\'s vote with Pine then Gas picked sends notes in the list\'s order, ["gas","pine"], and no other new field',
+      [Object.keys(withWords), withWords.notes, withWords.vote], [['score', 'band', 'palate', 'palateSize', 'candidate', 'ts', 'vote', 'notes'], ['gas', 'pine'], 'down']);
+    const before = votesIn();
+    const res = await post(sent[1].body);
+    const added = votesIn().filter(k => !before.includes(k));
+    check('...stored under votes/moderate/down/, with those two words',
+      [res.status, added.length, added[0] && added[0].split('/').slice(0, 3).join('/'), added[0] && recordAt(added[0]).notes], [204, 1, 'votes/moderate/down', ['gas', 'pine']]);
+    sandbox.run('up');
+    check('...and a new result starts with none: the next vote sends notes []', JSON.parse(sent[2].body).notes, []);
   }
 
   const html = fs.readFileSync(APP_HTML, 'utf8');
@@ -354,10 +496,27 @@ async function main() {
   check('...both buttons stay: Matched (up) and Didn\'t match (down)',
     [...block.matchAll(/data-vote="(up|down)"[^>]*>\s*<span aria-hidden="true">[^<]*<\/span>\s*([^<]*?)\s*<\/button>/g)].map(m => [m[1], m[2]]),
     [['up', 'Matched'], ['down', 'Didn’t match']]);
-  const words = block.replace(/<[^>]+>/g, ' ') + ' ' + [...block.matchAll(/aria-label="([^"]*)"/g)].map(m => m[1]).join(' ');
-  check('no effect word in the feedback block, read or heard', (words.match(new RegExp(EFFECT_WORDS.source, 'gi')) || []), []);
-  check('the privacy page\'s sentence about votes still holds: these are the fields a vote sends',
-    fs.readFileSync(PRIVACY, 'utf8').includes('When you press &ldquo;Matched&rdquo; or &ldquo;Didn\'t match&rdquo; on a result, we receive: the similarity score, its confidence band, how many jars were in your palate, which built-in sample jars were involved, and a timestamp.</p>'),
+  /* The words: their question, then their buttons - drawn by the bundle from
+     SMELL_NOTES, so the page holds an empty container - then the note a
+     fourth word gets, all in one group named by the question, above the two
+     vote buttons. Nothing to type. */
+  const notesGroup = (block.match(/<div class="match-feedback-notes" role="group" aria-labelledby="feedbackNotesQ">([\s\S]*?)<\/div>\s*<div class="match-feedback-actions"/) || [])[1] || '';
+  check('the words\' question, as the prompt words it: "What did you smell? Optional, up to three."',
+    (notesGroup.match(/<p class="match-feedback-notes-q" id="feedbackNotesQ">([^<]*)<\/p>/) || [])[1], 'What did you smell? Optional, up to three.');
+  check('...then an empty container for the buttons, then a status line for the note, in a group the question names',
+    [/<div class="note-btns" id="feedbackNotes"><\/div>/.test(notesGroup), /<p class="match-feedback-notes-limit" id="feedbackNotesLimit" role="status"><\/p>/.test(notesGroup)], [true, true]);
+  check('...above the two vote buttons', block.indexOf('feedbackNotesQ') > 0 && block.indexOf('feedbackNotesQ') < block.indexOf('data-vote="up"'), true);
+  check('...and nothing to type anywhere in the feedback block', /<(input|textarea|select)\b|contenteditable/i.test(block), false);
+  const limitNote = (app.match(/const NOTES_LIMIT='([^']*)';/) || [])[1];
+  check('a fourth word gets a short note, from the bundle', limitNote, 'Up to three. Press a word you picked to remove it.');
+  const words = block.replace(/<[^>]+>/g, ' ') + ' ' + [...block.matchAll(/aria-label="([^"]*)"/g)].map(m => m[1]).join(' ') +
+    ' ' + sandbox.list().map(w => w[1]).join(' ') + ' ' + limitNote;
+  check('no effect word in the feedback block, read or heard - the words\' labels and the note included', (words.match(new RegExp(EFFECT_WORDS.source, 'gi')) || []), []);
+  check('the privacy page\'s sentence about votes names what a vote sends, the smell words included',
+    fs.readFileSync(PRIVACY, 'utf8').includes('When you press &ldquo;Matched&rdquo; or &ldquo;Didn\'t match&rdquo; on a result, we receive: the similarity score, its confidence band, how many jars were in your palate, which built-in sample jars were involved, a timestamp, and up to three smell words you picked from a fixed list.</p>'),
+    true);
+  check('...and its "What changed" list dates the change',
+    fs.readFileSync(PRIVACY, 'utf8').includes('<p><strong>A sixth change: smell words on a vote.</strong>') && /A sixth change: smell words on a vote\.[^\n]*That changed on <strong>October \d{1,2}, 2026<\/strong>/.test(fs.readFileSync(PRIVACY, 'utf8')),
     true);
 
   finished = true;

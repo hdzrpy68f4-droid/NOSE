@@ -10,6 +10,7 @@
 //   * only built-in sample ids arrive by name; user-created profiles arrive as
 //     the opaque token 'custom'
 //   * no strain names, no terpene values, no user identifiers, no IP address
+//   * smell words only from the fixed list below (NOTES), never free text
 //   * accounts exist, but votes carry NO account id and NO session cookie is
 //     read here — records stay anonymous and unlinkable BY DESIGN, not by
 //     absence of an account system. Do not add a user id to this payload:
@@ -29,6 +30,15 @@ import {
 // refused with bad-band and lost (PARSER-HANDOFF s13, "Every vote stored").
 const BANDS = { Strong: 'strong', Good: 'good', Moderate: 'moderate', Low: 'low' };
 const MAX_PALATE = 500;
+
+// The smell words a vote may carry, since 2026-10-14: the slugs of
+// SMELL_NOTES in js/nose.*.js, in the same order - test/match-feedback-test.js
+// checks the two lists match. Up to three, each once. A lab report measures
+// terpenes; a word beside a vote says which smell the matching may have
+// missed (PARSER-HANDOFF s13, "Smell words on a vote"). Only these words are
+// ever stored: nothing a person types reaches this function.
+const NOTES = ['gas', 'skunk', 'savory', 'chemical', 'sweet', 'fruity', 'hay', 'citrus', 'earthy', 'spice', 'pine', 'floral', 'herbal'];
+const MAX_NOTES = 3;
 
 
 export default async (request) => {
@@ -91,12 +101,28 @@ function validate(d) {
 
   if (!isInt(d.palateSize, 0, MAX_PALATE)) return { ok: false, reason: 'bad-palate-size' };
 
+  // Optional. Absent, as from a page opened before the words existed, it is
+  // stored as null - that vote was never asked - which is not the same as []
+  // (asked, none picked). Present, it must be an array of at most three
+  // distinct words from NOTES, or the whole vote is refused and nothing is
+  // stored. Kept in the list's order whatever order it arrived in.
+  let notes = null;
+  if (Object.hasOwn(d, 'notes')) {
+    const n = d.notes;
+    if (!Array.isArray(n) || n.length > MAX_NOTES
+        || !n.every((w) => typeof w === 'string' && NOTES.includes(w))
+        || new Set(n).size !== n.length) {
+      return { ok: false, reason: 'bad-notes' };
+    }
+    notes = NOTES.filter((w) => n.includes(w));
+  }
+
   const ts = new Date().toISOString();
 
   return {
     ok: true,
     value: {
-      v: 1,                              // schema version, so this can evolve
+      v: 2,                              // schema version: 2 adds notes (2026-10-14); 1 had none
       vote,
       band: d.band,                      // canonical casing preserved
       score: d.score,
@@ -106,6 +132,7 @@ function validate(d) {
       ts,                                // server clock: authoritative
       clientTs: safeClientTs(d.ts),      // as sent; may be null
       ctx: contextHash([d.band, d.score, d.candidate, d.palateSize, d.palate.join(',')]),
+      notes,                             // smell words, in NOTES order; null when the page sent none
       _bandSlug: bandSlug,               // key building only, stripped below
     },
   };

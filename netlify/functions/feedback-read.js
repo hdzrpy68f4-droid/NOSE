@@ -182,8 +182,12 @@ function json(obj) {
   });
 }
 
+// notes, last so every earlier column keeps its place: a v2 record's smell
+// words (match-feedback.js, since 2026-10-14), space-separated like palate.
+// Empty for a v1 record, which has none, and for a v2 vote with none - the
+// JSON records tell those apart (no field; null; []).
 const COLS = ['ts', 'clientTs', 'vote', 'band', 'score', 'candidate',
-              'palateSize', 'palate', 'palateTruncated', 'ctx'];
+              'palateSize', 'palate', 'palateTruncated', 'ctx', 'notes'];
 
 function csv(records) {
   const esc = (v) => {

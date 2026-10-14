@@ -78,8 +78,9 @@ gate 'review queue'   'review-queue clean'       '^review-queue clean$' \
 gate 'match maths'    'match clean'              '^match clean$' \
   node test/match-test.js
 # The app's votes (match-feedback.js, feedback-read.js): every band matchBand()
-# gives is stored and counted, the question asks about smell and taste.
-# Offline, Blobs stood in for.
+# gives is stored and counted, the question asks about smell and taste, and
+# since 2026-10-14 a vote's smell words are checked and stored. Offline,
+# Blobs stood in for.
 gate 'match feedback' 'match-feedback clean'     '^match-feedback clean$' \
   node test/match-feedback-test.js
 gate 'analysis'       'analysis clean'           '^analysis clean$' \

@@ -218,7 +218,7 @@ someone to look.
 | `resolver-test.js` | viewer-page resolution, offline, against saved portal pages |
 | `novelty-test.js` | the five `novelty` notes (§7) and the furniture the `unmapped` diagnostic skips; FAILS if an accepted fixture carries any novelty, and lists the refused ones that do, as information |
 | `match-test.js` | the matching maths has one home, `js/match-math.*.js`: the app takes it from there, nothing else holds a copy, and it returns every score in `test/fixtures/match-golden.json` to the last bit; every score is shown and sent through `shownScore()`, floored (§13, "The shown score"), and the worked examples on `learn/intensity-versus-character/` are the numbers the app shows; since 2026-10-14, a profile carrying `harvestOn`, `reportOn` and `totalTerpenes` normalises exactly as without them (§4) |
-| `match-feedback-test.js` | the app's votes (§13, "Every vote stored"): `match-feedback.js` and `feedback-read.js` offline, `@netlify/blobs` stood in for - matchBand()'s four names each stored under its slug, every other band refused with `bad-band` and nothing stored, a score of 0 kept; the key layout, the store, the record's ten fields and anonymity unmoved; the summary, filters and CSV over the four, in matchBand()'s order, its caveat word for word; the bundle's own vote run on the default `/app` pair, 74 · Moderate, stored and counted; the question asks about smell and taste, no effect word in the block; the privacy page's sentence about votes |
+| `match-feedback-test.js` | the app's votes (§13, "Every vote stored"): `match-feedback.js` and `feedback-read.js` offline, `@netlify/blobs` stood in for - matchBand()'s four names each stored under its slug, every other band refused with `bad-band` and nothing stored, a score of 0 kept; the key layout, the store, the record's ten fields and anonymity unmoved; the summary, filters and CSV over the four, in matchBand()'s order, its caveat word for word; the bundle's own vote run on the default `/app` pair, 74 · Moderate, stored and counted; the question asks about smell and taste, no effect word in the block; the privacy page's sentence about votes; since 2026-10-14 the smell words (§13, "Smell words on a vote") - the bundle's `SMELL_NOTES` and the handler's `NOTES` one list, up to three distinct words stored in list order in a v 2 record, every other shape refused with `bad-notes` and nothing stored, `null` when none was sent, the CSV's notes column, no word on the list an effect word |
 | `coa-dates-test.js` | `lib/coa-dates.js` and the parser's `harvestOn` / `reportOn` (§7): the three forms, the near misses, and every other field identical without it |
 | `analysis-test.js` | the analysis layer (§13) on PGlite: the two views, their grants; `drift.js`, `lab-stats.js` and, since 2026-10-14, `score-spread.js` |
 | `duplicates-test.js` | `duplicates.js` and `download-twice.js` (§13, "One report, many documents"): on PGlite, and on fixture PDFs behind a stand-in fetch - a PDF rebuilt between downloads, the same file twice, a text that changes, a link that fails; offline |
@@ -234,7 +234,7 @@ someone to look.
 | `check-trust-test.js` | `scripts/check-trust.mjs` (§13, "The trust guard") on throwaway sites: every form of the old promise fails, true sentences pass; offline |
 | `b2b-release-test.js` | pinned widget releases (§14, "Pinned releases"): `scripts/b2b-release.js`'s build - the same bytes from one commit and version, every time, anywhere; the five files verbatim and in order but for the widget's two stylesheet lines; the stylesheet verbatim; the bundle running as a page runs it - its refusals, its publishing to a stand-in Blobs (never overwriting, going on after a stop, an ETag or a failure, the row last), `netlify/functions/b2b-release.js` (the switch, GET and HEAD, one path shape, the bytes with exactly their five headers, a 404 nothing caches, 503 and one line), `scripts/b2b-release-check.js` against each kind of mismatch, nothing built left in the repo, no effect wording, the integration guide's names; offline, in throwaway git repos; a gate, run after the build |
 | `b2b-widget-test.mjs` | `<nose-matches>` in headless Chromium (§14, "The widget"): the built files on a store's page from another origin, under the prompt's CSP, against a stand-in feed and vote; only the feed and the vote leave the page, and no request carries a purchase; consent, denied, control; each mode equal to `js/b2b-rank`'s answers; every bar `renderBar()`'s; keyboard reach; the demo page; one copy of the bar; `build.sh`'s load-order lines; since 2026-10-09 the vote by `fetch` with no cookie or referrer, and a pinned release - one tag with its hash under the integration guide's own CSP lines, the same rail and vote, its stylesheet checked by its hash, an altered file or a missing `crossorigin` refused. Needs Playwright; a gate, run after the build |
-| `input-paths-test.mjs` | the app's ways in, in headless Chromium: Scan QR (fake camera and QR image), COA link, Upload. The real `coa.js` and parser answer, with only the download and unpdf stood in for (§13, "The input paths"). Since 2026-10-14 also the card's Moisture and Water activity rows on flower - below, inside, both edges (0.55 and 0.65), above and Pass only, each row's text written out (§13, "Water activity against ASTM D8197"); and the row after Batch - Harvested, else Report dated, else none - with its age and the note under it, on a frozen clock in New York's time zone (§13, "Harvest date and age on the card"); `INPUT_PATHS_SHOTS=<folder>` saves a picture of each of those cards. Needs Playwright; a gate, run after the build |
+| `input-paths-test.mjs` | the app's ways in, in headless Chromium: Scan QR (fake camera and QR image), COA link, Upload. The real `coa.js` and parser answer, with only the download and unpdf stood in for (§13, "The input paths"). Since 2026-10-14 also the card's Moisture and Water activity rows on flower - below, inside, both edges (0.55 and 0.65), above and Pass only, each row's text written out (§13, "Water activity against ASTM D8197"); and the row after Batch - Harvested, else Report dated, else none - with its age and the note under it, on a frozen clock in New York's time zone (§13, "Harvest date and age on the card"); `INPUT_PATHS_SHOTS=<folder>` saves a picture of each of those cards. Since 2026-10-14 also the smell words on a vote - thirteen toggle buttons reached by Tab, a fourth refused with a note, and the vote's POST taken before it leaves the page, carrying exactly the two words picked and no other new field (§13, "Smell words on a vote"). Needs Playwright; a gate, run after the build |
 | `b2b-compliance-kit-test.mjs` | `scripts/b2b-compliance-kit.js` (§14, "The compliance kit") in throwaway git worlds, each with release 1 recorded from its own commit: the test store's kit end to end - ten screens at phone and desktop, scroll pages, README.md, strings.md (every Florida string, every screen's strings traced, "Shown in" exactly where seen or read aloud) and data.md (every paragraph of the privacy page's dispensary section and every other mention) - a store's kit against a stand-in site (one feed request, the key alone, the store's origin), the tag and CSP of the stand-in page, sixteen refusals that write nothing, no time of day, no effect wording, no database or Blobs code loaded, this repository untouched. Needs Playwright; a gate, run after the build |
 
 The counts in section 2 are checked by `fixture-lint.js` against the corpus, so
@@ -2929,6 +2929,177 @@ scripts/score-spread.js --class flower`, read only, as `nose_writer`:
   yet about a market; with the fixtures, it agrees with the fixtures. How a
   score should read is the next decision, made with these numbers.
 
+### Smell words on a vote, 2026-10-14
+
+**A vote could say a score was wrong, not which smell it missed.** R7 in the
+2026-10-07 build prompts, from the r/FLMedicalTrees research: patients judge
+a jar by words like gas, fuel, funk and skunk, and a lab report measures
+terpenes. Skunk aroma was traced to a family of sulfur compounds, with little
+sign that terpenes make it (Oswald and colleagues, ACS Omega 2021,
+https://sciencedaily.com/releases/2021/12/211201085147.htm, read 2026-10-14).
+A 2023 study by the same group, on 31 rosin extracts rather than flower and
+funded by one of its authors' employers, Abstrax Tech, tied citrus and
+tropical notes to other sulfur compounds, savory and chemical notes to
+skatole and sweet notes to esters, and found terpene profiles much alike
+across cultivars that smelled very different (ACS Omega 2023,
+https://pmc.ncbi.nlm.nih.gov/articles/PMC10601067/, read 2026-10-14). None of
+those compounds is on a terpene panel. Now a vote can carry up to three smell
+words from a fixed list, so a word beside "Didn't match" says which smell
+the matching missed. No score moves: `js/match-math.*.js` and
+`match-golden.json` are as they were.
+
+```
+privacy/index.html                   the sentence about votes names the words; a sixth "What changed" entry, dated
+app.html                             the words' group above the two buttons: question, an empty container, a status line
+js/nose.*.js                         SMELL_NOTES, chosenNotes(); wireFeedback, resetFeedback and sendFeedback
+                                     (was js/nose.8c910815.js - build.sh renamed it; app.html, index.html, _redirects follow)
+css/shell.*.css                      the word buttons' styles (was css/shell.918a3d5e.css - renamed; app.html,
+                                     index.html and b2b/demo/index.html's <link> follow)
+netlify/functions/match-feedback.js  NOTES and MAX_NOTES; notes checked, stored in list order; the record v 2
+netlify/functions/feedback-read.js   the CSV's notes column, last
+test/match-feedback-test.js          69 checks, 42 before; the gate's line stays "match-feedback clean"
+test/input-paths-test.mjs            216 checks, 200 before; the gate's line stays "input-paths clean"
+```
+
+**The probe, before any edit**, on `37b04fe` - ALL GATES GREEN, 32 gates:
+
+1. The app sent seven fields - `score` (`shownScore()`), `band`
+   (`matchBand()[1]`), `palate`, `palateSize`, `candidate`, `ts`, `vote`;
+   `match-feedback.js` stored ten - `v: 1`, vote, band, score, candidate,
+   palate, palateSize, `ts`, `clientTs`, `ctx` - under
+   `votes/<slug>/<vote>/<YYYY-MM-DD>/<HHMMSSmmm>-<rand>`, all four bands
+   (above, "Every vote stored"). R1's test is `match-feedback-test.js`. The
+   privacy page's sentence listed the score, its band, the palate's size,
+   the built-in sample jars and a timestamp.
+2. The block: the question, then a `role="group"` named "Was this match
+   accurate?" holding two native `<button type="button">` with
+   `aria-pressed`, then a hidden `role="status"` line. Plain buttons in Tab
+   order, pressed by Enter or Space, with the site-wide `:focus-visible`
+   ring; after a vote both are disabled.
+3. The block's stylesheet, `css/shell.*.css`, is linked by `app.html`,
+   `index.html` and `b2b/demo/index.html`. A new rule renames it, so
+   `build.sh` rewrites that one `<link>` line on the dispensary demo page -
+   the only B2B line this change moves. No B2B test names the file.
+
+**The change.**
+
+- **Privacy first, in the same commit.** The sentence about votes now ends
+  "a timestamp, and up to three smell words you picked from a fixed list."
+  The sixth "What changed" entry says what the words are for, that they are
+  picked with buttons and nothing typed is sent, and that the page changed
+  in the same update, dated October 14, 2026 - the day this was built, on
+  the understanding it goes live that day (below, "Still open").
+  `check-trust` is clean: the page names what is kept.
+- **The words**, in this order (slug: label): gas: Gas or fuel, skunk:
+  Skunk, savory: Savory or garlic, chemical: Chemical, sweet: Sweet, fruity:
+  Fruity or tropical, hay: Hay, citrus: Citrus, earthy: Earthy, spice:
+  Spice, pine: Pine, floral: Floral, herbal: Herbal. They live in two
+  places: `SMELL_NOTES` in the bundle (slugs and labels) and `NOTES` in
+  `match-feedback.js` (slugs). The page holds an empty container and the
+  bundle draws the buttons from `SMELL_NOTES`, so the list has no third copy
+  in `app.html`. The test checks the two lists match, in order.
+- **The block**: above the two buttons, "What did you smell? Optional, up to
+  three." names a `role="group"`; then one native toggle button per word,
+  `aria-pressed`, its label never changing with its state - the WAI-ARIA
+  Authoring Practices' toggle button, pressed by Space or Enter
+  (https://www.w3.org/WAI/ARIA/apg/patterns/button/, read 2026-10-14). A
+  pressed word shows a tick (`aria-hidden`) as well as a green border, so
+  colour is not the only sign. A fourth press is refused: the word stays
+  unpicked, and "Up to three. Press a word you picked to remove it." appears
+  in a `role="status"` line that is on the page, empty, from the start - a
+  polite live region whose content changes are announced, its role in place
+  before its text (MDN, "ARIA: status role",
+  https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/status_role,
+  read 2026-10-14). Unpicking a word clears the note. After a vote the words
+  are disabled with the buttons, showing what was sent; a new result clears
+  them, as it re-enables the buttons. Nothing in the block can be typed in.
+- **The payload** adds `notes`: the chosen slugs in the list's order, `[]`
+  when none. Nothing else is new.
+- **`match-feedback.js`**: `notes` is optional. Present, it must be an array
+  of at most three distinct slugs from `NOTES` - a string, a label, another
+  case, a number, `null` or a nested list each refuse the whole vote with
+  `bad-notes`, and nothing is stored. Accepted words are kept in the list's
+  order, whatever order they came in. The record gains `notes`, its
+  eleventh field, and becomes `v: 2`. **A vote sent without `notes` is
+  stored with `null`**, not `[]`: it was never asked - a tab opened before
+  this deploy keeps the old bundle until it is reloaded - which is not the
+  same as asked and none picked. `ctx` does not read the words, so it still
+  groups votes on the same match. The key layout, the store and anonymity
+  are as they were.
+- **`feedback-read.js`**: the CSV gains `notes` as its last column, so every
+  other column keeps its place, space-separated like `palate`; it is empty
+  for a v1 record, for `null` and for `[]` - the JSON records, returned as
+  stored, tell them apart (no field, `null`, `[]`). The summary is still
+  read from the keys alone.
+
+**`test/match-feedback-test.js`** adds: `NOTES` against the prompt's list,
+and `MAX_NOTES` 3; votes with two words, three words out of order and none,
+each stored with eleven fields, `v` 2 and its words in list order; a vote
+without `notes` stored with `null`; the key layout for votes with words;
+`ctx` the same with and without words; fifteen refusals with `bad-notes` and
+nothing stored - an unknown word, a fourth, a duplicate, a typed string
+alone and in the list, `Gas`, a label, a bare string, `null`, an object, a
+number alone and in the list, a nested list, `null` in the list,
+`constructor`; no slug or label matching `analysis-test.js`'s
+`EFFECT_WORDS`, read from its source, nor the prompt's list; the CSV's
+header and each vote's notes cell, the JSON records' notes, the summary
+from keys alone with a v1 record planted; the bundle's `SMELL_NOTES` equal
+to `NOTES` and the prompt's labels; its vote on the default pair sending
+`notes` `[]`, Pine then Gas sending `["gas","pine"]` and stored so, and a new
+result sending `[]` again; the words' question above the buttons, the empty
+container, the status line, nothing to type, the note's text, no effect
+word in the block, labels and note included; the privacy sentence and the
+dated entry. On HEAD's `match-feedback.js`, `feedback-read.js`, bundle,
+`app.html` and privacy page it fails, each; so does each of seven broken
+handlers - duplicates kept, four words taken, the order kept as sent, `[]`
+for a missing field, case folded, `v` left at 1, the words in `ctx`.
+
+**`test/input-paths-test.mjs`** adds sixteen checks in headless Chromium,
+after the jars the run adds: thirteen buttons, the list's words in order,
+none pressed, each a button with `tabIndex` 0; the question naming the
+group; Tab walking every word in order and then Matched; Space and Enter
+pressing, and pressing again unpicking; a fourth refused with the note in
+the status line, cleared by unpicking one; Hay then Skunk picked, Didn't
+match pressed, and the POST to `match-feedback` taken by `page.route` before
+it leaves the page: its body carries exactly `["skunk","hay"]` and no new
+field but `notes`, sends the run's own jars as `custom` and no name typed in
+the run; the words disabled after the vote, still showing what was sent; a
+new candidate clearing them. Three broken bundles each fail it - the words
+sent in click order, no limit, the words left live after a vote.
+`INPUT_PATHS_SHOTS` also saves the block, picked and voted.
+
+**The strings**, shown to the owner and approved before the commit: the
+privacy sentence's new ending and the sixth entry; "What did you smell?
+Optional, up to three."; the thirteen labels; "Up to three. Press a word
+you picked to remove it."; the tick. The effect-word list (relax, calm,
+sleep, energ, focus, uplift, euphor, sedat, mood, high, buzz, stoned,
+pain, anxiety, stress, treat, relief, cure) finds nothing in them; across
+every line the change adds, its only hits are Playwright's `page.focus()`
+in the test, which is keyboard focus.
+
+**What did not move.** R1's bands; the key layout; the store; anonymity -
+no header, cookie, account or session read; every score -
+`js/match-math.*.js` and `match-golden.json`; the parser - `parse-coa.js`,
+`coa-dates.js`, `extract-text.js` - so no reparse is due; the archive and
+its migrations; everything B2B but the one `<link>` line `build.sh`
+rewrites on its demo page; every gate's expected line, still 32 gates. The
+dispensary widget's votes (`lib/b2b-votes.js`) carry no words.
+
+**How it was verified, 2026-10-14, in the cloud workspace.** npm, its
+mirrors and cdn.jsdelivr.net were refused by the egress policy, so the
+gates ran on stand-ins: unpdf 1.8.0's `getDocumentProxy` and
+`extractTextItems` from its source over pdfjs-dist 6.2.108's legacy build
+(parity 56 match / 0 differ); PGlite 0.5.8's `base.ts`, `parse.ts`,
+`types.ts` and its pg-protocol from their source at that tag, driving a
+throwaway PostgreSQL 16 server per instance over a Unix socket; the
+committed html5-qrcode in place of `build.sh`'s download; Playwright
+1.56.0's Chromium. ALL GATES GREEN on `37b04fe` before any edit, 32 gates,
+and on the change, 32, with `KAY-CAR-001` 4.124 and `KAY-PRR-001` 0.944
+each time. The block was looked at in Chromium at 1280 and 390 px. Nothing
+ran against Netlify or the live site. The Codespace run on the real
+packages is the one that counts. This record closes no "Still open" item;
+it adds three.
+
 ### After a deploy — check it
 
 1. `node scripts/archive-health.js` in the Codespace (reads as `nose_writer`;
@@ -3092,6 +3263,17 @@ schema comment if wanted.
 - **An `npm audit` warning** was seen in the Codespace (reported 2026-09-23)
 and has not been looked at: the cloud workspace cannot reach npm. Next step:
 `npm audit` in the Codespace, and bring its output.
+- **The privacy page dates the sixth change October 14, 2026** (above,
+  "Smell words on a vote"), the day it was built. If it went live on
+  another day (US Eastern), that date changes to the deploy day, in a
+  commit of its own.
+- **The first vote with words on the live site will be a deploy check**,
+  not a person's answer. Once it is made, `feedback-read.js`'s synthetic
+  records comment lists it by its `ts`, as it lists the Moderate check of
+  2026-10-14.
+- **The word buttons were watched in Chromium only**, at 1280 and 390 px:
+  their wrapping, the tick and the status line. Safari and Firefox have not
+  been looked at, nor a screen reader's reading of the note.
 
 ---
 

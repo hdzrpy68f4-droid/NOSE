@@ -192,6 +192,24 @@
        queued in memory and the UI still acknowledges — the loop degrades
        gracefully instead of throwing. */
     let feedbackContext=null;
+    /* Smell words a vote may carry: up to three, from this fixed list, in
+       this order (slug, then the button's label). A lab report measures
+       terpenes, and research ties gas, skunk, savory and many sweet notes to
+       compounds terpene panels do not include, so a word beside "Didn't
+       match" says which smell the matching missed. A vote sends the chosen
+       slugs in this list's order, [] when none - never anything typed, as
+       nothing here is typed. netlify/functions/match-feedback.js holds the
+       same slugs as NOTES, and test/match-feedback-test.js checks the two
+       lists match. PARSER-HANDOFF s13, "Smell words on a vote". */
+    const SMELL_NOTES=[
+      ['gas','Gas or fuel'],['skunk','Skunk'],['savory','Savory or garlic'],['chemical','Chemical'],
+      ['sweet','Sweet'],['fruity','Fruity or tropical'],['hay','Hay'],['citrus','Citrus'],['earthy','Earthy'],
+      ['spice','Spice'],['pine','Pine'],['floral','Floral'],['herbal','Herbal']
+    ];
+    const MAX_NOTES=3;
+    const NOTES_LIMIT='Up to three. Press a word you picked to remove it.';
+    const feedbackNotes=new Set();
+    function chosenNotes(){ return SMELL_NOTES.map(([slug])=>slug).filter(slug=>feedbackNotes.has(slug)); }
     /* Saved profile ids are built as `saved-<slugified user name>-<ts>`, so
        sending them raw would transmit text the user typed — breaking the
        promise that palate data stays in the browser. Only built-in sample ids
@@ -213,10 +231,14 @@
       const wrap=document.getElementById('matchFeedback');
       wrap.querySelectorAll('.feedback-btn').forEach(btn=>{ btn.setAttribute('aria-pressed','false'); btn.disabled=false; });
       const ack=document.getElementById('feedbackAck'); ack.hidden=true; ack.textContent='';
+      /* A new result starts with no words: they were about the last match. */
+      feedbackNotes.clear();
+      wrap.querySelectorAll('.note-btn').forEach(btn=>{ btn.setAttribute('aria-pressed','false'); btn.disabled=false; });
+      const limit=document.getElementById('feedbackNotesLimit'); if(limit) limit.textContent='';
     }
     function sendFeedback(vote){
       if(!feedbackContext) return;
-      const payload={...feedbackContext,vote};
+      const payload={...feedbackContext,vote,notes:chosenNotes()};
       try{
         const body=JSON.stringify(payload);
         if(navigator.sendBeacon){
@@ -228,10 +250,34 @@
     }
     function wireFeedback(){
       const wrap=document.getElementById('matchFeedback');
+      /* One toggle button per smell word, from SMELL_NOTES: native buttons,
+         so Tab reaches each one and Enter or Space presses it. A fourth word
+         is refused, and the note under the words says so. */
+      const notes=document.getElementById('feedbackNotes');
+      if(notes){
+        SMELL_NOTES.forEach(([slug,label])=>{
+          const btn=document.createElement('button');
+          btn.type='button'; btn.className='note-btn'; btn.dataset.note=slug; btn.setAttribute('aria-pressed','false');
+          const tick=document.createElement('span'); tick.className='note-tick'; tick.setAttribute('aria-hidden','true'); tick.textContent='✓';
+          btn.append(tick,document.createTextNode(label));
+          notes.append(btn);
+        });
+        notes.addEventListener('click',event=>{
+          const btn=event.target.closest('.note-btn');
+          if(!btn||btn.disabled) return;
+          const slug=btn.dataset.note, limit=document.getElementById('feedbackNotesLimit');
+          if(feedbackNotes.has(slug)){ feedbackNotes.delete(slug); btn.setAttribute('aria-pressed','false'); if(limit) limit.textContent=''; return; }
+          if(feedbackNotes.size>=MAX_NOTES){ if(limit) limit.textContent=NOTES_LIMIT; return; }
+          feedbackNotes.add(slug); btn.setAttribute('aria-pressed','true'); if(limit) limit.textContent='';
+        });
+      }
       wrap.querySelectorAll('.feedback-btn').forEach(btn=>{
         btn.addEventListener('click',()=>{
           const vote=btn.dataset.vote;
           wrap.querySelectorAll('.feedback-btn').forEach(b=>{ b.setAttribute('aria-pressed',String(b===btn)); b.disabled=true; });
+          /* The words went with the vote, so they are fixed with it. */
+          wrap.querySelectorAll('.note-btn').forEach(b=>{ b.disabled=true; });
+          const limit=document.getElementById('feedbackNotesLimit'); if(limit) limit.textContent='';
           sendFeedback(vote);
           const ack=document.getElementById('feedbackAck');
           ack.textContent = vote==='up'
