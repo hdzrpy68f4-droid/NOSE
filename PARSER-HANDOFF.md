@@ -216,7 +216,7 @@ someone to look.
 | `check-trust-test.js` | `scripts/check-trust.mjs` (§13, "The trust guard") on throwaway sites: every form of the old promise fails, true sentences pass; offline |
 | `b2b-release-test.js` | pinned widget releases (§14, "Pinned releases"): `scripts/b2b-release.js`'s build - the same bytes from one commit and version, every time, anywhere; the five files verbatim and in order but for the widget's two stylesheet lines; the stylesheet verbatim; the bundle running as a page runs it - its refusals, its publishing to a stand-in Blobs (never overwriting, going on after a stop, an ETag or a failure, the row last), `netlify/functions/b2b-release.js` (the switch, GET and HEAD, one path shape, the bytes with exactly their five headers, a 404 nothing caches, 503 and one line), `scripts/b2b-release-check.js` against each kind of mismatch, nothing built left in the repo, no effect wording, the integration guide's names; offline, in throwaway git repos; a gate, run after the build |
 | `b2b-widget-test.mjs` | `<nose-matches>` in headless Chromium (§14, "The widget"): the built files on a store's page from another origin, under the prompt's CSP, against a stand-in feed and vote; only the feed and the vote leave the page, and no request carries a purchase; consent, denied, control; each mode equal to `js/b2b-rank`'s answers; every bar `renderBar()`'s; keyboard reach; the demo page; one copy of the bar; `build.sh`'s load-order lines; since 2026-10-09 the vote by `fetch` with no cookie or referrer, and a pinned release - one tag with its hash under the integration guide's own CSP lines, the same rail and vote, its stylesheet checked by its hash, an altered file or a missing `crossorigin` refused. Needs Playwright; a gate, run after the build |
-| `input-paths-test.mjs` | the app's ways in, in headless Chromium: Scan QR (fake camera and QR image), COA link, Upload. The real `coa.js` and parser answer, with only the download and unpdf stood in for (§13, "The input paths"). Needs Playwright; a gate, run after the build |
+| `input-paths-test.mjs` | the app's ways in, in headless Chromium: Scan QR (fake camera and QR image), COA link, Upload. The real `coa.js` and parser answer, with only the download and unpdf stood in for (§13, "The input paths"). Since 2026-10-14 also the card's Moisture and Water activity rows on flower - below, inside, the 0.55 edge, above and Pass only, each row's text written out (§13, "Water activity against ASTM D8197"); `INPUT_PATHS_SHOTS=<folder>` saves a picture of each of those cards. Needs Playwright; a gate, run after the build |
 | `b2b-compliance-kit-test.mjs` | `scripts/b2b-compliance-kit.js` (§14, "The compliance kit") in throwaway git worlds, each with release 1 recorded from its own commit: the test store's kit end to end - ten screens at phone and desktop, scroll pages, README.md, strings.md (every Florida string, every screen's strings traced, "Shown in" exactly where seen or read aloud) and data.md (every paragraph of the privacy page's dispensary section and every other mention) - a store's kit against a stand-in site (one feed request, the key alone, the store's origin), the tag and CSP of the stand-in page, sixteen refusals that write nothing, no time of day, no effect wording, no database or Blobs code loaded, this repository untouched. Needs Playwright; a gate, run after the build |
 
 The counts in section 2 are checked by `fixture-lint.js` against the corpus, so
@@ -1638,7 +1638,7 @@ showed it. The fault predated `novelty`.
 - **`account/index.html`** no longer says to use the export button "in the
   meantime".
 - **`test/input-paths-test.mjs`** is the check: 65 checks in headless Chromium
-  (66 since 2026-09-24),
+  (66 since 2026-09-24, 120 since 2026-10-14),
   against a local copy of the site served with `_headers` (CSP included). Each
   POST to `/.netlify/functions/coa` is answered by the real `coa.js` handler and
   parser in the test's own process. Only the PDF download and unpdf are stood in
@@ -2524,6 +2524,92 @@ the two curl writes of 2026-08-01, with what the store actually holds of
 those (two `probe-test` records, none named `test-do-not-count`). Real votes
 to date, by that comment: one, the Good vote of 2026-08-01.
 
+### Water activity against ASTM D8197, 2026-10-14
+
+**The card gave water activity as a bare number, and "not printed" without
+one.** Dry flower is a live complaint among Florida patients (R3 in the
+2026-10-07 build prompts, from the r/FLMedicalTrees research, section 8), and
+the old project spec's "water activity under 0.65" has no dry side.
+
+```
+js/nose.*.js               waterActivityText(); the Moisture and Water activity rows of renderCoaConfirmation
+                           (was js/nose.bab857ad.js - build.sh renamed it; app.html, index.html, _redirects follow)
+test/input-paths-test.mjs  five freshness cases, in the input-paths gate: 120 checks, 66 before
+```
+
+**The probe, before any edit**, on `3b58274` - ALL GATES GREEN, 32 gates:
+
+- The two rows (lines 388-391), shown only when `freshnessApplies`, which the
+  parser sets for `productClass === 'flower'`. Nothing else shows a reading's
+  moisture or water activity to a person: `coa.js` sends them for flower only;
+  the archive, its analysis view (`p.moisture`, `p.water_activity`) and the B2B
+  store keep them, on no page; the widget does not read them.
+  `learn/how-to-read-a-coa/` shows a made-up example (11.2 %, 0.58 aw) and
+  cites D8197.
+- `coa-baseline.json`: 10 flower readings carry a water activity, as the
+  prompt expected. Below 0.55: TerpLife_GrpeBblGm_flower 0.49,
+  KF2025-046-PB-AU-COA 0.52, ACS-FLW-002 0.53, COA_GassiusClay_… 0.54,
+  KAY-PRR-001 0.54. Inside: ACS-PRR-001 0.55, KAY-FLW-001 0.56,
+  external-download 0.58, KAY-FLW-002 0.583, Kush_Creek 0.59. None above. The
+  other 15 flower readings carry none; 5 of them carry a moisture.
+- `input-paths-test.mjs` gets each reply from `handlerReply()`: the real
+  `coa.js` and parser on the fixture's extracted text, with only the download
+  and unpdf stood in for; `page.route` takes the next queued fixture.
+
+**The change.**
+
+- **Water activity**: the value as the reply carries it, then one phrase -
+  `0.54 — below ASTM D8197's 0.55–0.65 range for dried flower`, and the same
+  with `inside` or `above`. Both edges are inside: below is `aw < 0.55`,
+  above `aw > 0.65`. A word joiner (U+2060) follows the en dash: at 390 px
+  Chromium broke the line as "0.55–" / "0.65" without it, and keeps the range
+  whole with it (pictures taken 2026-10-14).
+- **Moisture**: the value with `%`, no verdict. No published moisture range
+  turned up, and the two measures disagree: KAY-FLW-002 prints 14.97 % and
+  0.583.
+- **Without a number**, both rows say `no number on this report` (was `not
+  printed`). A report that prints only Pass (MCL-FLW-001 prints PASS for both)
+  and one that prints nothing read the same to the parser, and the words are
+  true of both. Total terpenes keeps its `not printed`.
+- **"As printed" is the reply's number.** ACS-PRR-001 prints `0.550`; the card
+  shows `0.55`, as it did. Keeping the printed form would take a parser change.
+- **The range**: ASTM D8197-22, the active edition - its title gives 0.55 to
+  0.65 water activity for dry cannabis flower
+  (https://store.astm.org/d8197-22.html, read 2026-10-14). The card names no
+  edition; D8197-21's title gives the same range.
+
+**What did not move.** `parse-coa.js`, `coa-dates.js` and `extract-text.js`,
+so no reparse is due; `coa.js` and its replies; every other card row;
+`js/match-math.*.js` and `match-golden.json`; anything B2B; every gate's
+expected line. The new words - the three phrases and `no number on this
+report` - have no hit for the effect-word list.
+
+**`test/input-paths-test.mjs`** reads five flower cards on COA link, each
+through `cardChecks()` (the card, its panel, its message, its rows, total,
+warnings and novelty), then the two rows' exact text, then Discard:
+KAY-PRR-001, 0.54 below and 12%; KAY-FLW-002, 0.583 inside and 14.97%;
+ACS-PRR-001, the 0.55 edge, inside and 10%; KAY-FLW-002's real reply with
+only `waterActivity` set to 0.68, above (no fixture prints one); MCL-FLW-001,
+Pass only, both rows `no number on this report`. First the handler reads each
+real one as flower with that water activity. The 0.65 edge has no case.
+`INPUT_PATHS_SHOTS=<folder>` saves a picture of each card; unset, the test
+writes nothing. On the unchanged bundle the six row checks failed - the four
+water activity rows read 0.54, 0.583, 0.55 and 0.68, MCL-FLW-001's two `not
+printed` - and the other 114 passed. With the change, 120 of 120. The gate's
+line stays `input-paths clean`.
+
+**How it was verified, 2026-10-14, in the cloud workspace.** npm and
+cdn.jsdelivr.net were refused by the egress policy, so the gates ran on
+stand-ins: unpdf 1.8.0's `extractTextItems` and `getDocumentProxy` from its
+source over pdfjs-dist 6.2.108's legacy build (parity 56 match / 0 differ
+against the baseline); PGlite 0.5.8's `base.ts`, `parse.ts`, `types.ts` and
+its pg-protocol from its source at that tag, over a throwaway PostgreSQL 16.15
+server per instance; the committed html5-qrcode in place of `build.sh`'s
+download; Playwright 1.56.0's Chromium. ALL GATES GREEN on `3b58274` before any
+edit, 32 gates, and on the change, 32, with `KAY-CAR-001` 4.124 and
+`KAY-PRR-001` 0.944 each time. Nothing ran against Netlify or the live site.
+The Codespace run on the real packages is the one that counts.
+
 ### After a deploy — check it
 
 1. `node scripts/archive-health.js` in the Codespace (reads as `nose_writer`;
@@ -2601,6 +2687,13 @@ below, then add the jar." with nothing below it. Seen in Chromium, 2026-09-23.
 The reverse cannot happen: opening Scan QR restarts the camera, which replaces
 that tab's message. A fix would change what `fetchCoaReport()` says in the
 panel it takes the card from, on both paths, so it waits for its own prompt.
+- **`learn/how-to-read-a-coa/` links ASTM D8197-21's page**, which ASTM now
+  marks historical; D8197-22 is the active edition, with the same range
+  (store.astm.org, read 2026-10-14). R5 in the 2026-10-07 build prompts also
+  links the card's water activity row to a new article.
+- **The card's word joiner after the en dash** (above, "Water activity against
+  ASTM D8197") was watched in Chromium only, not Safari or Firefox; Unicode's
+  line-breaking rules (UAX #14) were not read in this session.
 - **The home page still offers "upload a report"** as a way to add a jar
 (`index.html`, "Add a jar you liked"). The Upload tab now says that isn't
 available yet.

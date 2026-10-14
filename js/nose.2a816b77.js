@@ -365,6 +365,21 @@
       renderCoaConfirmation(data,messageId);
     }
 
+    /* Water activity beside the range ASTM D8197 sets for dried flower, 0.55 to
+       0.65 - both edges inside - so a dry jar reads as below it rather than as a
+       bare number. The value is shown as the reply carries it. Moisture gets no
+       verdict: no published range for it was found, and the two measures can
+       disagree (KAY-FLW-002 prints 14.97% and 0.583). "No number on this report"
+       is true both of a report that prints only Pass and of one that prints
+       nothing, which the parser cannot tell apart. A word joiner after the
+       en dash keeps 0.55-0.65 on one line at phone width (PARSER-HANDOFF s13). */
+    const NO_NUMBER='no number on this report';
+    function waterActivityText(aw){
+      if(aw==null) return NO_NUMBER;
+      const side=aw<0.55?'below':aw>0.65?'above':'inside';
+      return `${aw} — ${side} ASTM D8197's 0.55–\u20600.65 range for dried flower`;
+    }
+
     function renderCoaConfirmation(data,messageId){
       const card=$id('coaConfirm');
       if(!card) return;
@@ -386,8 +401,8 @@
         ['Total terpenes',data.totalTerpenes!=null?`${data.totalTerpenes}% \u2014 intensity, not shape`:'not printed']
       ];
       if(data.freshnessApplies){
-        rows.push(['Moisture',data.moisture!=null?`${data.moisture}%`:'not printed']);
-        rows.push(['Water activity',data.waterActivity!=null?String(data.waterActivity):'not printed']);
+        rows.push(['Moisture',data.moisture!=null?`${data.moisture}%`:NO_NUMBER]);
+        rows.push(['Water activity',waterActivityText(data.waterActivity)]);
       }
       rows.forEach(([label,value])=>{
         const dt=document.createElement('dt'); dt.textContent=label;

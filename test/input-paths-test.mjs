@@ -31,6 +31,13 @@
  *     (PARSER-HANDOFF s7)
  *   - the card hides with its tab, and moves to the panel of the next request
  *   - a refused report shows its reasons and no card
+ *   - on flower, the card's Water activity row says whether the value sits
+ *     inside ASTM D8197's 0.55-0.65 for dried flower, edges inside, and its
+ *     Moisture row gives the value with no verdict; each says "no number on
+ *     this report" without one. Below (KAY-PRR-001, 0.54), inside (KAY-FLW-002,
+ *     0.583), the 0.55 edge (ACS-PRR-001), above (KAY-FLW-002's reply set to
+ *     0.68 - no fixture prints one) and Pass only (MCL-FLW-001). Since
+ *     2026-10-14; INPUT_PATHS_SHOTS=<folder> saves each card as a picture
  *   - Upload: the tab and the message after choosing a file say plainly that
  *     reading an uploaded file isn't available yet and point to Scan QR, COA
  *     link and Manual; the page makes no request, so the file goes nowhere
@@ -74,7 +81,26 @@ const NOVEL_BASE = 'ACS-FLW-002';
 const UNSEEN_HEADING = 'Conc. (ug/g)';
 const FIXTURES = { plain: 'KAY-CAR-001', warned: 'MCL-FLW-002', novel: `${NOVEL_BASE} + "${UNSEEN_HEADING}"`,
   refused: 'GreenRoadsFullSpectrumCBDOil750mgLot24007' };
-const FILES = [FIXTURES.plain, FIXTURES.warned, NOVEL_BASE, FIXTURES.refused];
+/* Water activity against ASTM D8197's 0.55-0.65 for dried flower, and moisture
+   as printed with no verdict (PARSER-HANDOFF s13). Real flower reports below,
+   inside and on the 0.55 edge, and one that prints only Pass for both. No
+   fixture prints a water activity above 0.65, so that case is KAY-FLW-002's
+   real reply with only waterActivity changed. Each row's text is written out;
+   the card puts a word joiner (U+2060) after the en dash, so the range never
+   breaks across two lines. */
+const RANGE = 'ASTM D8197\'s 0.55–\u20600.65 range for dried flower';
+const NO_NUMBER = 'no number on this report';
+const FRESHNESS = [
+  { name: 'KAY-PRR-001', fixture: 'KAY-PRR-001', aw: 0.54, moisture: '12%', water: `0.54 — below ${RANGE}` },
+  { name: 'KAY-FLW-002', fixture: 'KAY-FLW-002', aw: 0.583, moisture: '14.97%', water: `0.583 — inside ${RANGE}` },
+  { name: 'ACS-PRR-001', fixture: 'ACS-PRR-001', aw: 0.55, moisture: '10%', water: `0.55 — inside ${RANGE}` },
+  { name: 'KAY-FLW-002 at 0.68', fixture: 'KAY-FLW-002', aw: 0.583, set: { waterActivity: 0.68 }, moisture: '14.97%', water: `0.68 — above ${RANGE}` },
+  { name: 'MCL-FLW-001', fixture: 'MCL-FLW-001', aw: null, moisture: NO_NUMBER, water: NO_NUMBER }
+];
+/* INPUT_PATHS_SHOTS=<folder> saves a picture of the card for each of these;
+   unset, the test writes nothing. */
+const SHOTS = process.env.INPUT_PATHS_SHOTS || '';
+const FILES = [FIXTURES.plain, FIXTURES.warned, NOVEL_BASE, FIXTURES.refused, ...new Set(FRESHNESS.map(c => c.fixture))];
 /* The card's one novelty sentence, as js/nose.*.js publishes it (s7). */
 const NOVELTY_LINE = 'NOSE hasn\'t seen this lab\'s layout before — check the top three against the report.';
 
@@ -188,6 +214,14 @@ async function handlerReply(fixture, body) {
     JSON.stringify({ novelty: r.novel.data.novelty, totalTerpenes: r.novel.data.totalTerpenes }));
   check(`the handler refuses ${FIXTURES.refused}, with reasons`,
     r.refused.status === 422 && Array.isArray(r.refused.data.reasons) && r.refused.data.reasons.length > 0);
+  for (const c of FRESHNESS) {
+    if (c.set) continue;
+    const reply = await handlerReply(c.fixture, body);
+    const data = JSON.parse(reply.body);
+    check(`the handler reads ${c.fixture} as flower, water activity ${c.aw === null ? 'none' : c.aw}`,
+      reply.statusCode === 200 && data.usable === true && data.freshnessApplies === true && data.waterActivity === c.aw,
+      JSON.stringify({ status: reply.statusCode, freshnessApplies: data.freshnessApplies, waterActivity: data.waterActivity, moisture: data.moisture }));
+  }
 }
 
 /* --- the site, served as Netlify serves it -------------------------------- */
@@ -298,14 +332,20 @@ try {
     let url = null;
     try { url = JSON.parse(body).url; } catch {}
     sent.push(url);
-    const fixture = queue.shift();
-    if (!fixture) {
+    const next = queue.shift();
+    if (!next) {
       await route.fulfill({ status: 500, contentType: 'application/json', body: '{"error":"input-paths-test: no reply was expected"}' });
       return;
     }
+    /* A name is a fixture; a freshness case may also change fields of its
+       real reply ({ name, fixture, set }). */
+    const fixture = typeof next === 'string' ? next : next.fixture;
     const reply = await handlerReply(fixture, body);
-    last = { fixture, data: JSON.parse(reply.body) };
-    await route.fulfill({ status: reply.statusCode, headers: reply.headers, body: reply.body });
+    const data = JSON.parse(reply.body);
+    if (typeof next !== 'string' && next.set) Object.assign(data, next.set);
+    const sentBody = typeof next !== 'string' && next.set ? JSON.stringify(data) : reply.body;
+    last = { fixture: typeof next === 'string' ? next : next.name, data };
+    await route.fulfill({ status: reply.statusCode, headers: reply.headers, body: sentBody });
   });
 
   const text = async sel => ((await page.locator(sel).textContent()) || '').trim();
@@ -469,6 +509,39 @@ try {
     refused && reasons.length > 0 && (await text('#urlMessage')).includes(reasons[0]) && !(await visible('#coaConfirm')),
     `message "${await text('#urlMessage')}"`);
 
+  /* ---- moisture and water activity, on flower ------------------------------ */
+  const metaRow = label => page.evaluate(label => {
+    const dts = [...document.querySelectorAll('#coaConfirmMeta dt')].filter(d => d.textContent === label);
+    return dts.length === 1 && dts[0].nextElementSibling ? dts[0].nextElementSibling.textContent : `${dts.length} rows`;
+  }, label);
+  if (SHOTS) fs.mkdirSync(SHOTS, { recursive: true });
+  for (const c of FRESHNESS) {
+    await readLink(c);
+    await messageMatches('urlMessage', READ);
+    const shown = await cardChecks(`COA link, ${c.name}`, 'urlPanel', 'urlMessage', c.name);
+    const moisture = await metaRow('Moisture');
+    check(`COA link, ${c.name}: Moisture reads "${c.moisture}"`, shown && moisture === c.moisture, `it reads ${JSON.stringify(moisture)}`);
+    const water = await metaRow('Water activity');
+    check(`COA link, ${c.name}: Water activity reads "${c.water}"`, shown && water === c.water, `it reads ${JSON.stringify(water)}`);
+    if (SHOTS && shown) {
+      /* the card from its title to the line above "Jar name", scrolled clear
+         of the sticky site header - twice, as the header changes on scroll */
+      const settle = () => page.evaluate(() => {
+        const card = document.getElementById('coaConfirm');
+        const header = document.querySelector('.site-header');
+        window.scrollBy({ top: card.getBoundingClientRect().top - (header ? header.getBoundingClientRect().bottom : 0) - 16, behavior: 'instant' });
+      });
+      for (let i = 0; i < 2; i++) { await settle(); await page.waitForTimeout(500); }
+      const clip = await page.evaluate(() => {
+        const top = document.getElementById('coaConfirm').getBoundingClientRect();
+        const end = document.querySelector('label[for="coaConfirmName"]').getBoundingClientRect();
+        return { x: top.left, y: top.top, width: top.width, height: end.top - top.top };
+      });
+      await page.screenshot({ path: path.join(SHOTS, `${c.name.replace(/[^A-Za-z0-9.-]+/g, '-')}.png`), clip });
+    }
+    await discard(`COA link, ${c.name}`, 'urlMessage');
+  }
+
   /* ---- Upload -------------------------------------------------------------- */
   await page.click('#uploadTab');
   const intro = await text('#uploadPanel');
@@ -491,7 +564,7 @@ try {
   check('Upload: the page makes no request - the file goes nowhere', requests.length === 0, requests.join(', '));
 
   check('no uncaught error on the page', pageErrors.length === 0, pageErrors.join(' | '));
-  check('every request to the handler had a reply waiting', queue.length === 0 && sent.length === 8,
+  check('every request to the handler had a reply waiting', queue.length === 0 && sent.length === 8 + FRESHNESS.length,
     `${sent.length} requests, ${queue.length} replies unused`);
 } finally {
   await browser.close();
