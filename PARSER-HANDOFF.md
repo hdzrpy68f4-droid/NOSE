@@ -2767,6 +2767,13 @@ Playwright 1.56.0's Chromium. ALL GATES GREEN on `b91a2f7` before any edit,
 run on the real packages is the one that counts. This record closes no
 "Still open" item; it adds two.
 
+**In the Codespace and live, 2026-10-14** (US Eastern), on `5ec7d3b`: after
+`npm ci` and Playwright with its Chromium installed again, `bash
+scripts/gates.sh` ended ALL GATES GREEN, 32 gates, with `KAY-CAR-001` 4.124
+and `KAY-PRR-001` 0.944, `match clean` and `input-paths clean` - the real
+packages, no stand-ins. After Netlify deployed it, the owner scanned a Kaycha
+report on the live site and the card showed the Harvested row.
+
 ### After a deploy — check it
 
 1. `node scripts/archive-health.js` in the Codespace (reads as `nose_writer`;
