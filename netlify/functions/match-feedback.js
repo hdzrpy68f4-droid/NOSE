@@ -22,8 +22,12 @@ import {
   contextHash, dayKey, keySuffix, noContent, rejected,
 } from '../lib/beacon.js';
 
-// Fixed taxonomy. Anything else is not a band this app can produce.
-const BANDS = { Strong: 'strong', Good: 'good', Partial: 'partial', Weak: 'weak' };
+// matchBand()'s own four names (js/match-math.*.js), strongest first: the app
+// sends matchBand(score)[1]. Anything else is not a band this app can produce,
+// a lowercase name included. Until 2026-10-13 this held Partial and Weak,
+// names the app never sent, so every vote on a Moderate or Low match was
+// refused with bad-band and lost (PARSER-HANDOFF s13, "Every vote stored").
+const BANDS = { Strong: 'strong', Good: 'good', Moderate: 'moderate', Low: 'low' };
 const MAX_PALATE = 500;
 
 
@@ -59,11 +63,14 @@ function validate(d) {
   const vote = d.vote;
   if (vote !== 'up' && vote !== 'down') return { ok: false, reason: 'bad-vote' };
 
-  const bandSlug = BANDS[d.band];
+  // A string, and an own key: a plain lookup would take "constructor" as a
+  // band and file the vote under a function's source text, or ["Strong"] as
+  // Strong and store the array.
+  const bandSlug = typeof d.band === 'string' && Object.hasOwn(BANDS, d.band) ? BANDS[d.band] : null;
   if (!bandSlug) return { ok: false, reason: 'bad-band' };
 
   // NOTE: the previous stub used `Number(d.score) || null`, which silently
-  // turned a legitimate score of 0 (a real Weak match, and exactly the kind of
+  // turned a legitimate score of 0 (a real Low match, and exactly the kind of
   // vote worth having) into null. Validate the range instead of coercing.
   if (!isInt(d.score, 0, 100)) return { ok: false, reason: 'bad-score' };
 
