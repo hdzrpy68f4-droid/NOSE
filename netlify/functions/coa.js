@@ -234,6 +234,12 @@ exports.handler = async function(event){
     batch: result.batch,
     labId: result.labId,
     harvestDate: result.harvestDate,
+    /* The harvest and report days as ISO days, or null - lib/coa-dates.js
+       reads them from the printed dates after the reading (PARSER-HANDOFF
+       s7). The card shows one of them and how long ago it was; nothing
+       scores them (s4). */
+    harvestOn: result.harvestOn ?? null,
+    reportOn: result.reportOn ?? null,
     productClass: result.productClass,
     terps: result.terps,
     totalTerpenes: result.totalTerpenes,

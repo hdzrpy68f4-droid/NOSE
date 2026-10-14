@@ -380,6 +380,31 @@
       return `${aw} — ${side} ASTM D8197's 0.55–\u20600.65 range for dried flower`;
     }
 
+    /* When the jar was harvested - or, without that, when its report is
+       dated - and how long ago, so an old report reads as old. Shown only:
+       age never reaches the shape or the score (PARSER-HANDOFF s4). The reply's
+       harvestOn and reportOn are ISO days from lib/coa-dates.js, or null; a
+       value that is not a real calendar day shows no row. The age is whole
+       calendar days from that day to the person's own today, in their time
+       zone. A day after it shows the date alone: the parser bounds dates by
+       its UTC today, which a US evening has not reached yet. testedOn (the
+       2026-09-23 review, Prompt 7) does not exist; it would come between. */
+    const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const AGE_NOTE='A report describes the jar on test day. Terpenes keep evaporating after that, so an older jar can smell quieter than its numbers.';
+    function reportDateRow(data){
+      const pick=data.harvestOn?['Harvested',data.harvestOn]:data.reportOn?['Report dated',data.reportOn]:null;
+      const m=pick&&/^(\d{4})-(\d{2})-(\d{2})$/.exec(String(pick[1]));
+      if(!m) return null;
+      const y=Number(m[1]), mo=Number(m[2]), d=Number(m[3]);
+      const day=new Date(Date.UTC(y,mo-1,d));
+      if(day.getUTCFullYear()!==y||day.getUTCMonth()!==mo-1||day.getUTCDate()!==d) return null;
+      const now=new Date();
+      const days=Math.round((Date.UTC(now.getFullYear(),now.getMonth(),now.getDate())-day.getTime())/86400000);
+      const date=`${MONTHS[mo-1]} ${d}, ${y}`;
+      const ago=days===0?'today':days===1?'1 day ago':days>1?`${days} days ago`:'';
+      return [pick[0],ago?`${date} · ${ago}`:date];
+    }
+
     function renderCoaConfirmation(data,messageId){
       const card=$id('coaConfirm');
       if(!card) return;
@@ -404,9 +429,21 @@
         rows.push(['Moisture',data.moisture!=null?`${data.moisture}%`:NO_NUMBER]);
         rows.push(['Water activity',waterActivityText(data.waterActivity)]);
       }
-      rows.forEach(([label,value])=>{
+      const dated=reportDateRow(data);
+      if(dated) rows.splice(rows.findIndex(([label])=>label==='Batch')+1,0,[...dated,AGE_NOTE]);
+      rows.forEach(([label,value,note])=>{
         const dt=document.createElement('dt'); dt.textContent=label;
         const dd=document.createElement('dd'); dd.textContent=value;
+        /* The note sits under its row, in the row's own cell, in the card's
+           muted small type. Set through the style property, as the family
+           panels above do: the CSP's style-src 'self' does not block it. */
+        if(note){
+          const line=document.createElement('span');
+          line.id='coaConfirmAgeNote'; line.className='small';
+          line.style.display='block'; line.style.fontWeight='400'; line.style.marginTop='2px';
+          line.textContent=note;
+          dd.append(line);
+        }
         meta.append(dt,dd);
       });
 

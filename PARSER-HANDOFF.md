@@ -119,6 +119,24 @@ From the algorithm spec. Getting these wrong makes the product meaningless.
   substring match silently inflates the dominant family.
 - **Never silently assert scraped numbers.** Correct extraction or clear
   rejection. A believable wrong fingerprint is the one unacceptable outcome.
+- **Age never changes a jar's shape or its score.** The card shows when the
+  jar was harvested, or else when its report is dated, and how long ago (§13,
+  "Harvest date and age on the card"); nothing in `js/match-math.*.js` reads
+  either day, and `match-test.js` checks that a profile carrying them
+  normalises as one without them. A future decay curve may lower intensity -
+  total terpenes - only, never the share-of-total profile. Why: a 2020
+  storage study of dried flower kept up to a year at four temperatures saw
+  terpenoids fall under every condition, with the lighter monoterpenes and
+  the heavier sesquiterpenes on similar overall trends despite their
+  different volatility - not identical at every temperature, though: the
+  freezer was hardest on α-pinene (Milay et al., Frontiers in Plant Science,
+  https://www.frontiersin.org/articles/10.3389/fpls.2020.583605/full, read
+  2026-10-14). Hazekamp 2016 saw gamma irradiation lower some terpenes while
+  the profile stayed qualitatively the same (Frontiers in Pharmacology, doi
+  10.3389/fphar.2016.00108, read 2026-10-14). Loss spread broadly evenly
+  across a profile makes a jar quieter, not a different smell - what both
+  saw, one through storage and one through irradiation. How much quieter one
+  jar has become, no report can say.
 
 ---
 
@@ -199,7 +217,7 @@ someone to look.
 | `mutation-test.js <dir> <parser>` | corrupt fixtures; require identical-or-reject |
 | `resolver-test.js` | viewer-page resolution, offline, against saved portal pages |
 | `novelty-test.js` | the five `novelty` notes (§7) and the furniture the `unmapped` diagnostic skips; FAILS if an accepted fixture carries any novelty, and lists the refused ones that do, as information |
-| `match-test.js` | the matching maths has one home, `js/match-math.*.js`: the app takes it from there, nothing else holds a copy, and it returns every score in `test/fixtures/match-golden.json` to the last bit; every score is shown and sent through `shownScore()`, floored (§13, "The shown score"), and the worked examples on `learn/intensity-versus-character/` are the numbers the app shows |
+| `match-test.js` | the matching maths has one home, `js/match-math.*.js`: the app takes it from there, nothing else holds a copy, and it returns every score in `test/fixtures/match-golden.json` to the last bit; every score is shown and sent through `shownScore()`, floored (§13, "The shown score"), and the worked examples on `learn/intensity-versus-character/` are the numbers the app shows; since 2026-10-14, a profile carrying `harvestOn`, `reportOn` and `totalTerpenes` normalises exactly as without them (§4) |
 | `match-feedback-test.js` | the app's votes (§13, "Every vote stored"): `match-feedback.js` and `feedback-read.js` offline, `@netlify/blobs` stood in for - matchBand()'s four names each stored under its slug, every other band refused with `bad-band` and nothing stored, a score of 0 kept; the key layout, the store, the record's ten fields and anonymity unmoved; the summary, filters and CSV over the four, in matchBand()'s order, its caveat word for word; the bundle's own vote run on the default `/app` pair, 74 · Moderate, stored and counted; the question asks about smell and taste, no effect word in the block; the privacy page's sentence about votes |
 | `coa-dates-test.js` | `lib/coa-dates.js` and the parser's `harvestOn` / `reportOn` (§7): the three forms, the near misses, and every other field identical without it |
 | `analysis-test.js` | the analysis layer (§13) on PGlite: the two views, their grants |
@@ -216,7 +234,7 @@ someone to look.
 | `check-trust-test.js` | `scripts/check-trust.mjs` (§13, "The trust guard") on throwaway sites: every form of the old promise fails, true sentences pass; offline |
 | `b2b-release-test.js` | pinned widget releases (§14, "Pinned releases"): `scripts/b2b-release.js`'s build - the same bytes from one commit and version, every time, anywhere; the five files verbatim and in order but for the widget's two stylesheet lines; the stylesheet verbatim; the bundle running as a page runs it - its refusals, its publishing to a stand-in Blobs (never overwriting, going on after a stop, an ETag or a failure, the row last), `netlify/functions/b2b-release.js` (the switch, GET and HEAD, one path shape, the bytes with exactly their five headers, a 404 nothing caches, 503 and one line), `scripts/b2b-release-check.js` against each kind of mismatch, nothing built left in the repo, no effect wording, the integration guide's names; offline, in throwaway git repos; a gate, run after the build |
 | `b2b-widget-test.mjs` | `<nose-matches>` in headless Chromium (§14, "The widget"): the built files on a store's page from another origin, under the prompt's CSP, against a stand-in feed and vote; only the feed and the vote leave the page, and no request carries a purchase; consent, denied, control; each mode equal to `js/b2b-rank`'s answers; every bar `renderBar()`'s; keyboard reach; the demo page; one copy of the bar; `build.sh`'s load-order lines; since 2026-10-09 the vote by `fetch` with no cookie or referrer, and a pinned release - one tag with its hash under the integration guide's own CSP lines, the same rail and vote, its stylesheet checked by its hash, an altered file or a missing `crossorigin` refused. Needs Playwright; a gate, run after the build |
-| `input-paths-test.mjs` | the app's ways in, in headless Chromium: Scan QR (fake camera and QR image), COA link, Upload. The real `coa.js` and parser answer, with only the download and unpdf stood in for (§13, "The input paths"). Since 2026-10-14 also the card's Moisture and Water activity rows on flower - below, inside, both edges (0.55 and 0.65), above and Pass only, each row's text written out (§13, "Water activity against ASTM D8197"); `INPUT_PATHS_SHOTS=<folder>` saves a picture of each of those cards. Needs Playwright; a gate, run after the build |
+| `input-paths-test.mjs` | the app's ways in, in headless Chromium: Scan QR (fake camera and QR image), COA link, Upload. The real `coa.js` and parser answer, with only the download and unpdf stood in for (§13, "The input paths"). Since 2026-10-14 also the card's Moisture and Water activity rows on flower - below, inside, both edges (0.55 and 0.65), above and Pass only, each row's text written out (§13, "Water activity against ASTM D8197"); and the row after Batch - Harvested, else Report dated, else none - with its age and the note under it, on a frozen clock in New York's time zone (§13, "Harvest date and age on the card"); `INPUT_PATHS_SHOTS=<folder>` saves a picture of each of those cards. Needs Playwright; a gate, run after the build |
 | `b2b-compliance-kit-test.mjs` | `scripts/b2b-compliance-kit.js` (§14, "The compliance kit") in throwaway git worlds, each with release 1 recorded from its own commit: the test store's kit end to end - ten screens at phone and desktop, scroll pages, README.md, strings.md (every Florida string, every screen's strings traced, "Shown in" exactly where seen or read aloud) and data.md (every paragraph of the privacy page's dispensary section and every other mention) - a store's kit against a stand-in site (one feed request, the key alone, the store's origin), the tag and CSP of the stand-in page, sixteen refusals that write nothing, no time of day, no effect wording, no database or Blobs code loaded, this repository untouched. Needs Playwright; a gate, run after the build |
 
 The counts in section 2 are checked by `fixture-lint.js` against the corpus, so
@@ -348,12 +366,20 @@ usable  rejectReasons  warnings  novelty
   separates column-major from everything else, which left the three row-wise
   readers indistinguishable.
 
-**Additive fields, for the archive (§13) — the app does not read them and
-`coa.js` does not send them:**
+**Additive fields, for the archive (§13) — the app does not read the first
+three and `coa.js` does not send them; since 2026-10-14 it sends the last
+two, and the card reads them:**
 
 ```
 reportDate  client  parserVersion  harvestOn  reportOn
 ```
+
+- **`coa.js` sends `harvestOn` and `reportOn`** on a usable reply (since
+  2026-10-14), passed through as the parser gives them - an ISO day or null,
+  null when the field is absent. Nothing else in any reply changed; a refusal
+  carries neither. The confirmation card shows one of them on the row after
+  Batch, with how long ago it was (§13, "Harvest date and age on the card").
+  Nothing scores either (§4).
 
 - `reportDate` and `client` are read like `harvestDate`: a labelled row, the
   value inline or on the next line, first occurrence wins — except that the
@@ -1638,7 +1664,8 @@ showed it. The fault predated `novelty`.
 - **`account/index.html`** no longer says to use the export button "in the
   meantime".
 - **`test/input-paths-test.mjs`** is the check: 65 checks in headless Chromium
-  (66 since 2026-09-24, 130 since 2026-10-14),
+  (66 since 2026-09-24, 130 with water activity and 200 with the date row,
+  both 2026-10-14),
   against a local copy of the site served with `_headers` (CSP included). Each
   POST to `/.netlify/functions/coa` is answered by the real `coa.js` handler and
   parser in the test's own process. Only the PDF download and unpdf are stood in
@@ -2615,6 +2642,131 @@ edit, 32 gates, and on the change, 32, with `KAY-CAR-001` 4.124 and
 `KAY-PRR-001` 0.944 each time. Nothing ran against Netlify or the live site.
 The Codespace run on the real packages is the one that counts.
 
+### Harvest date and age on the card, 2026-10-14
+
+**The card did not say how old a report was.** Patients check a report's
+dates because flower dries and goes quieter after it is tested (R4 in the
+2026-10-07 build prompts, from the r/FLMedicalTrees research). The parser has
+read `harvestOn` and `reportOn` since 2026-09-23 (§7), but `coa.js` did not
+send them and the card showed neither.
+
+```
+netlify/functions/coa.js     the usable reply adds harvestOn and reportOn (s7)
+js/nose.*.js                 reportDateRow(); the row after Batch and its note, in renderCoaConfirmation
+                             (was js/nose.2a816b77.js - build.sh renamed it; app.html, index.html, _redirects follow)
+test/input-paths-test.mjs    seven date cases on a frozen clock, in the input-paths gate: 200 checks, 130 before
+test/match-test.js           one check: harvestOn, reportOn and totalTerpenes never reach normalize()
+```
+
+**The probe, before any edit**, on `b91a2f7` - ALL GATES GREEN, 32 gates:
+
+1. Tests that run `coa.js`'s handler and read its reply:
+   `archive-wiring-test.js` compares replies whole, but each against a
+   baseline from the same handler in the same run, and lists no reply's keys
+   (its two key lists are the PDF's metadata and the database payload); its
+   stand-in reading has no `harvestOn`, so both sides carry null.
+   `input-paths-test.mjs` reads fields by name. `b2b-coverage-test.js` reads
+   only `error` and `reasons`, from refusals, which do not change.
+   `resolver-test.js` and `duplicates-test.js` load only
+   `_resolvePdfFromPage`; `b2b-catalog`, `b2b-endpoints` and
+   `b2b-compliance-kit` only check that `coa.js` is not loaded. None breaks
+   on two new fields.
+2. Accepted fixtures: 19 carry `harvestOn` (3 ACS, 16 Kaycha), 1 only
+   `reportOn` (TerpLife_GrpeBblGm_flower), 36 neither - 20 of 56 dated, as on
+   the rehearsal archive. None carries both.
+3. `sanitizeTerps()` lowercases a key and keeps it only when `TERPENES` or
+   `TERP_ALIAS` names it. `harveston`, `reporton` and `totalterpenes` are in
+   neither and none contains `nerolidol`, so all three are dropped before
+   `normalize()` sums anything: through `scripts/lib/match.js`, a profile
+   with them normalised to the same object as one without.
+
+`testedOn` (Prompt 7 of the 2026-09-23 review) does not exist - no parser
+field, no reply field - so the card has no Tested row (below, "Still open").
+
+**The change.**
+
+- **`coa.js`**: `harvestOn: result.harvestOn ?? null` and `reportOn:
+  result.reportOn ?? null` on the usable reply, after `harvestDate`. A
+  refusal's reply is as it was.
+- **The row**, straight after Batch: `Harvested` with `harvestOn`; else
+  `Report dated` with `reportOn` - the report's day, not the harvest's; else
+  no row. Its value is the day as `Mon D, YYYY`, a middle dot, and how long
+  ago: `Jan 27, 2026 · 260 days ago`, `1 day ago` for one, `today` for none.
+  The month names are written out in the code, not taken from the browser's
+  locale, so every browser shows the same words. A value that is not an ISO
+  day the calendar has shows no row: the parser never sends one, and the card
+  does not guess.
+- **How long ago** counts whole calendar days from that day to the person's
+  own today, in their time zone - both as UTC midnights, so a daylight-saving
+  change cannot make a day 23 or 25 hours. The parser refuses a day after ITS
+  today, which is UTC's: from 8 pm Eastern in summer, a report dated the UTC
+  today is the person's tomorrow. That day shows alone, with no "ago".
+- **The note**, under the value in the same cell: "A report describes the jar
+  on test day. Terpenes keep evaporating after that, so an older jar can smell
+  quieter than its numbers." In the card's muted `.small` type at normal
+  weight (the cell is bold), set through the element's `style` property, as
+  the family panels in the same file already are: under `style-src 'self'` a
+  property set that way is not blocked, while a `style` attribute or `cssText`
+  would be (MDN, "CSP: style-src",
+  https://developer.mozilla.org/docs/Web/HTTP/Headers/Content-Security-Policy/style-src,
+  read 2026-10-14). No stylesheet changed: a new rule in `css/shell.*.css`
+  would rename it, and `b2b/demo/index.html` links that file.
+- **Nothing is stored with a jar.** "Use this jar" saves the name and the
+  rows' values, as before; the date lives on the card only. R4 settled this:
+  storing it would change what `palate-sync` keeps, so the privacy page would
+  come first.
+- **The rule** is in §4: age never changes the shape or the score; a decay
+  curve, if one is ever built, lowers intensity only.
+
+**The strings**, shown to the owner and approved before the commit: `Harvested`, `Report
+dated`, the twelve month abbreviations, `today`, `1 day ago`, `N days ago`,
+the middle dot, and the note. The effect-word list (relax, calm, sleep,
+energ, focus, uplift, euphor, sedat, mood, high, buzz, stoned, pain, anxiety,
+stress, treat, relief, cure) finds nothing in them, nor in any line the
+change adds to the bundle or to `coa.js`.
+
+**What did not move.** `parse-coa.js`, `coa-dates.js` and `extract-text.js`,
+so no reparse is due; every other card row, checked row by row on three real
+reports; `js/match-math.*.js` and `match-golden.json`; the archive; anything
+B2B; every gate's expected line - `match clean` and `input-paths clean` stay
+their lines.
+
+**`test/input-paths-test.mjs`** now opens its browser context in
+`America/New_York` (`timezoneId`, https://playwright.dev/docs/emulation) and,
+before the date cases, freezes the page's clock with
+`page.clock.setFixedTime('2026-10-15T02:30:00Z')`: `Date.now()` and `new
+Date()` return that time and timers keep running (https://playwright.dev/docs/clock,
+and `clock.setFixedTime`, added in v1.45,
+https://playwright.dev/docs/api/class-clock; both read 2026-10-14). That
+instant is 22:30 on 2026-10-14 in New York, so every age counts from the
+14th; counting from the UTC day would add one. Called on the open page, it
+takes effect, which the test checks first. Then the handler's own replies:
+KAY-FLW-001 carries `harvestOn` 2026-01-27, TerpLife_GrpeBblGm_flower
+`reportOn` 2025-11-17, MCL-FLW-001 neither. Then each card on COA link,
+through `cardChecks()`, then the row, then every row of the card in order,
+written out: `Harvested` `Jan 27, 2026 · 260 days ago`; `Report dated` `Nov
+17, 2025 · 331 days ago`; no row and no note. Then KAY-FLW-001's real reply
+with one field set: a report day as well (Harvested still wins), harvested
+2026-10-14 (`today`), 2026-10-13 (`1 day ago`) and 2026-10-15, the UTC today
+(`Oct 15, 2026` alone). On the unchanged bundle and `coa.js` the eleven checks
+that need the new fields failed - three replies, six rows, two whole cards -
+and the other 189 passed; with the change, 200 of 200. `INPUT_PATHS_SHOTS`
+also saves these seven cards, named `date …`.
+
+**How it was verified, 2026-10-14, in the cloud workspace.** npm, unpkg and
+cdn.jsdelivr.net were refused by the egress policy, so the gates ran on the
+same kinds of stand-in as the session before: unpdf 1.8.0's
+`getDocumentProxy` and `extractTextItems` from its source over pdfjs-dist
+6.2.108's legacy build (parity 56 match / 0 differ); PGlite 0.5.8's
+`base.ts`, `parse.ts` and `types.ts` and its pg-protocol, from their source at
+that tag, driving a throwaway PostgreSQL 16.15 server per instance over a
+Unix socket; the committed html5-qrcode in place of `build.sh`'s download;
+Playwright 1.56.0's Chromium. ALL GATES GREEN on `b91a2f7` before any edit,
+32 gates, and on the change, 32, with `KAY-CAR-001` 4.124 and `KAY-PRR-001`
+0.944 each time. Nothing ran against Netlify or the live site. The Codespace
+run on the real packages is the one that counts. This record closes no
+"Still open" item; it adds two.
+
 ### After a deploy — check it
 
 1. `node scripts/archive-health.js` in the Codespace (reads as `nose_writer`;
@@ -2701,6 +2853,15 @@ panel it takes the card from, on both paths, so it waits for its own prompt.
   says how WJ and an en dash behave, but the page read gave its class
   descriptions, not the rule lines themselves (LB11, LB21): the fetch stopped
   before its section 6.
+- **The card has no Tested row** (above, "Harvest date and age on the
+  card"): `testedOn`, Prompt 7 of the 2026-09-23 review, is not built. Once
+  the parser reads it, `coa.js` sends it like `harvestOn`, and
+  `reportDateRow()` takes it after the harvest day and before the report
+  day. Until then 36 of the 56 accepted fixtures show no date row.
+- **The date row's note was watched in Chromium only**, at 1280 and 390 px.
+  Its normal weight comes from the element's `style` property, which MDN
+  says `style-src` does not block; Safari and Firefox have not been looked
+  at.
 - **The home page still offers "upload a report"** as a way to add a jar
 (`index.html`, "Add a jar you liked"). The Upload tab now says that isn't
 available yet.

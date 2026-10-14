@@ -39,6 +39,11 @@
  *     (KAY-FLW-002's reply set to 0.65 and 0.68 - no fixture prints either)
  *     and Pass only (MCL-FLW-001). Since 2026-10-14;
  *     INPUT_PATHS_SHOTS=<folder> saves each card as a picture
+ *   - the row after Batch: "Harvested" and the harvest day with how long ago
+ *     (KAY-FLW-001), else "Report dated" (TerpLife_GrpeBblGm_flower), else no
+ *     row (MCL-FLW-001); the note under it; every other row as before; today,
+ *     yesterday and the person's tomorrow, on a frozen clock in New York's
+ *     time zone. Since 2026-10-14
  *   - Upload: the tab and the message after choosing a file say plainly that
  *     reading an uploaded file isn't available yet and point to Scan QR, COA
  *     link and Manual; the page makes no request, so the file goes nowhere
@@ -103,7 +108,42 @@ const FRESHNESS = [
 /* INPUT_PATHS_SHOTS=<folder> saves a picture of the card for each of these;
    unset, the test writes nothing. */
 const SHOTS = process.env.INPUT_PATHS_SHOTS || '';
-const FILES = [FIXTURES.plain, FIXTURES.warned, NOVEL_BASE, FIXTURES.refused, ...new Set(FRESHNESS.map(c => c.fixture))];
+/* When the jar was harvested, or else when its report is dated, and how long
+   ago (PARSER-HANDOFF s13, "Harvest date and age on the card"). The page's
+   clock is frozen at 02:30 UTC on 2026-10-15 - 22:30 on 2026-10-14 in New
+   York, the context's time zone - so every age counts from 2026-10-14, the
+   person's own today; a count from the UTC day would be one more. Playwright's
+   clock API, clock.setFixedTime() (https://playwright.dev/docs/clock and
+   https://playwright.dev/docs/api/class-clock, added in v1.45, read
+   2026-10-14): Date.now() and new Date() return that time, and timers keep
+   running. The context's time zone is timezoneId
+   (https://playwright.dev/docs/emulation, read 2026-10-14). Three real
+   reports: one with a harvest day, one with only a report day, one with
+   neither. Then KAY-FLW-001's real reply with one field set: a report day as
+   well (the harvest day still wins), harvested today, yesterday, and on the
+   UTC today, which is the person's tomorrow (the date alone). Each row's text
+   is written out. */
+const FROZEN = '2026-10-15T02:30:00Z';
+const TIME_ZONE = 'America/New_York';
+const AGE_NOTE = 'A report describes the jar on test day. Terpenes keep evaporating after that, so an older jar can smell quieter than its numbers.';
+const DATED = [
+  { name: 'KAY-FLW-001', fixture: 'KAY-FLW-001', harvestOn: '2026-01-27', reportOn: null,
+    row: ['Harvested', 'Jan 27, 2026 · 260 days ago'], moisture: '13.8%', water: `0.56 — inside ${RANGE}` },
+  { name: 'TerpLife_GrpeBblGm_flower', fixture: 'TerpLife_GrpeBblGm_flower', harvestOn: null, reportOn: '2025-11-17',
+    row: ['Report dated', 'Nov 17, 2025 · 331 days ago'], moisture: NO_NUMBER, water: `0.49 — below ${RANGE}` },
+  { name: 'MCL-FLW-001, no date', fixture: 'MCL-FLW-001', harvestOn: null, reportOn: null,
+    row: null, moisture: NO_NUMBER, water: NO_NUMBER },
+  { name: 'KAY-FLW-001 with a report day too', fixture: 'KAY-FLW-001', set: { reportOn: '2026-02-03' },
+    row: ['Harvested', 'Jan 27, 2026 · 260 days ago'] },
+  { name: 'KAY-FLW-001 harvested today', fixture: 'KAY-FLW-001', set: { harvestOn: '2026-10-14' },
+    row: ['Harvested', 'Oct 14, 2026 · today'] },
+  { name: 'KAY-FLW-001 harvested yesterday', fixture: 'KAY-FLW-001', set: { harvestOn: '2026-10-13' },
+    row: ['Harvested', 'Oct 13, 2026 · 1 day ago'] },
+  { name: 'KAY-FLW-001 harvested on the UTC today', fixture: 'KAY-FLW-001', set: { harvestOn: '2026-10-15' },
+    row: ['Harvested', 'Oct 15, 2026'] }
+];
+const FILES = [FIXTURES.plain, FIXTURES.warned, NOVEL_BASE, FIXTURES.refused,
+  ...new Set([...FRESHNESS, ...DATED].map(c => c.fixture))];
 /* The card's one novelty sentence, as js/nose.*.js publishes it (s7). */
 const NOVELTY_LINE = 'NOSE hasn\'t seen this lab\'s layout before — check the top three against the report.';
 
@@ -225,6 +265,14 @@ async function handlerReply(fixture, body) {
       reply.statusCode === 200 && data.usable === true && data.freshnessApplies === true && data.waterActivity === c.aw,
       JSON.stringify({ status: reply.statusCode, freshnessApplies: data.freshnessApplies, waterActivity: data.waterActivity, moisture: data.moisture }));
   }
+  for (const c of DATED) {
+    if (c.set) continue;
+    const reply = await handlerReply(c.fixture, body);
+    const data = JSON.parse(reply.body);
+    check(`the handler's reply for ${c.fixture} carries harvestOn ${c.harvestOn} and reportOn ${c.reportOn}`,
+      reply.statusCode === 200 && data.usable === true && data.harvestOn === c.harvestOn && data.reportOn === c.reportOn,
+      JSON.stringify({ status: reply.statusCode, harvestOn: data.harvestOn, reportOn: data.reportOn }));
+  }
 }
 
 /* --- the site, served as Netlify serves it -------------------------------- */
@@ -324,7 +372,7 @@ const queue = [];       // the fixture the next POST reads
 let last = null;        // the handler's last reply: { fixture, data }
 
 try {
-  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, timezoneId: TIME_ZONE });
   await context.grantPermissions(['camera'], { origin: BASE });
   const page = await context.newPage();
   page.setDefaultTimeout(8000);
@@ -518,6 +566,22 @@ try {
     return dts.length === 1 && dts[0].nextElementSibling ? dts[0].nextElementSibling.textContent : `${dts.length} rows`;
   }, label);
   if (SHOTS) fs.mkdirSync(SHOTS, { recursive: true });
+  /* the card from its title to the line above "Jar name", scrolled clear of
+     the sticky site header - twice, as the header changes on scroll */
+  async function shoot(name) {
+    const settle = () => page.evaluate(() => {
+      const card = document.getElementById('coaConfirm');
+      const header = document.querySelector('.site-header');
+      window.scrollBy({ top: card.getBoundingClientRect().top - (header ? header.getBoundingClientRect().bottom : 0) - 16, behavior: 'instant' });
+    });
+    for (let i = 0; i < 2; i++) { await settle(); await page.waitForTimeout(500); }
+    const clip = await page.evaluate(() => {
+      const top = document.getElementById('coaConfirm').getBoundingClientRect();
+      const end = document.querySelector('label[for="coaConfirmName"]').getBoundingClientRect();
+      return { x: top.left, y: top.top, width: top.width, height: end.top - top.top };
+    });
+    await page.screenshot({ path: path.join(SHOTS, `${name.replace(/[^A-Za-z0-9.-]+/g, '-')}.png`), clip });
+  }
   for (const c of FRESHNESS) {
     await readLink(c);
     await messageMatches('urlMessage', READ);
@@ -526,22 +590,48 @@ try {
     check(`COA link, ${c.name}: Moisture reads "${c.moisture}"`, shown && moisture === c.moisture, `it reads ${JSON.stringify(moisture)}`);
     const water = await metaRow('Water activity');
     check(`COA link, ${c.name}: Water activity reads "${c.water}"`, shown && water === c.water, `it reads ${JSON.stringify(water)}`);
-    if (SHOTS && shown) {
-      /* the card from its title to the line above "Jar name", scrolled clear
-         of the sticky site header - twice, as the header changes on scroll */
-      const settle = () => page.evaluate(() => {
-        const card = document.getElementById('coaConfirm');
-        const header = document.querySelector('.site-header');
-        window.scrollBy({ top: card.getBoundingClientRect().top - (header ? header.getBoundingClientRect().bottom : 0) - 16, behavior: 'instant' });
-      });
-      for (let i = 0; i < 2; i++) { await settle(); await page.waitForTimeout(500); }
-      const clip = await page.evaluate(() => {
-        const top = document.getElementById('coaConfirm').getBoundingClientRect();
-        const end = document.querySelector('label[for="coaConfirmName"]').getBoundingClientRect();
-        return { x: top.left, y: top.top, width: top.width, height: end.top - top.top };
-      });
-      await page.screenshot({ path: path.join(SHOTS, `${c.name.replace(/[^A-Za-z0-9.-]+/g, '-')}.png`), clip });
+    if (SHOTS && shown) await shoot(c.name);
+    await discard(`COA link, ${c.name}`, 'urlMessage');
+  }
+
+  /* ---- the harvest or report day, and how long ago ------------------------- */
+  await page.clock.setFixedTime(FROZEN);
+  check(`the page's clock reads ${FROZEN}, and its today is 2026-10-14 in ${TIME_ZONE}`,
+    JSON.stringify(await page.evaluate(() => { const d = new Date(); return [d.toISOString(), d.getFullYear(), d.getMonth() + 1, d.getDate()]; })),
+    JSON.stringify(['2026-10-15T02:30:00.000Z', 2026, 10, 14]));
+  /* every row of the card, in order: its label, its value - the date row's
+     value without the note under it - and whether a note is in it */
+  const allRows = () => page.evaluate(() => [...document.querySelectorAll('#coaConfirmMeta dt')].map(dt => {
+    const dd = dt.nextElementSibling;
+    const note = dd && dd.querySelector('#coaConfirmAgeNote');
+    return [dt.textContent, dd ? (note ? dd.firstChild.nodeValue : dd.textContent) : null, note ? note.textContent : null];
+  }));
+  for (const c of DATED) {
+    await readLink(c);
+    await messageMatches('urlMessage', READ);
+    const shown = await cardChecks(`COA link, ${c.name}`, 'urlPanel', 'urlMessage', c.name);
+    const data = last && last.data;
+    const want = [['Strain as printed', data.strain || 'not stated', null], ['Batch', data.batch || 'not stated', null],
+      ...(c.row ? [[...c.row, AGE_NOTE]] : []),
+      ['Lab ID', data.labId || 'not stated', null], ['Product', data.productClass || 'unknown', null],
+      ['Total terpenes', `${data.totalTerpenes}% — intensity, not shape`, null]];
+    if (c.moisture) want.push(['Moisture', c.moisture, null], ['Water activity', c.water, null]);
+    const rows = await allRows();
+    if (c.row) {
+      check(`COA link, ${c.name}: "${c.row[0]}" reads "${c.row[1]}", straight after Batch, with the note under it`,
+        shown && JSON.stringify(rows.find(r => r[0] === c.row[0])) === JSON.stringify([...c.row, AGE_NOTE])
+          && rows.findIndex(r => r[0] === c.row[0]) === rows.findIndex(r => r[0] === 'Batch') + 1,
+        `rows ${JSON.stringify(rows)}`);
+    } else {
+      check(`COA link, ${c.name}: no date row and no note`,
+        shown && !rows.some(r => ['Harvested', 'Report dated', 'Tested'].includes(r[0]) || r[2] !== null)
+          && !(await page.$('#coaConfirmAgeNote')), `rows ${JSON.stringify(rows)}`);
     }
+    if (!c.set) {
+      check(`COA link, ${c.name}: every row of the card, in order, as written out`,
+        shown && JSON.stringify(rows) === JSON.stringify(want), `rows ${JSON.stringify(rows)}\n      want ${JSON.stringify(want)}`);
+    }
+    if (SHOTS && shown) await shoot(`date ${c.name}`);
     await discard(`COA link, ${c.name}`, 'urlMessage');
   }
 
@@ -567,7 +657,7 @@ try {
   check('Upload: the page makes no request - the file goes nowhere', requests.length === 0, requests.join(', '));
 
   check('no uncaught error on the page', pageErrors.length === 0, pageErrors.join(' | '));
-  check('every request to the handler had a reply waiting', queue.length === 0 && sent.length === 8 + FRESHNESS.length,
+  check('every request to the handler had a reply waiting', queue.length === 0 && sent.length === 8 + FRESHNESS.length + DATED.length,
     `${sent.length} requests, ${queue.length} replies unused`);
 } finally {
   await browser.close();

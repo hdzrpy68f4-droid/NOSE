@@ -23,6 +23,8 @@
  *     scripts/drift.js; no golden score is shown outside its band; and the
  *     worked examples on learn/intensity-versus-character/ are the numbers
  *     the app shows for the jars that page describes
+ *   - a profile carrying harvestOn, reportOn and totalTerpenes normalises
+ *     exactly as it does without them: age never reaches the shape
  *
  * No database, no network.
  */
@@ -218,6 +220,14 @@ check('the home page hero, lemon-tart against cold-creek: 0.7452..., shown as 74
   [heroScore === golden.anchors.heroDefault.score, M.shownScore(heroScore), M.matchBand(heroScore)], [true, 74, ['Partial overlap', 'Moderate']]);
 check('three times the intensity is the same shape: 100', M.shownScore(golden.anchors.tripled), 100);
 check('THCA, THC and CBD never enter the vector: still 100', M.shownScore(golden.anchors.withCannabinoids), 100);
+
+/* Age never reaches the shape (PARSER-HANDOFF s4, since 2026-10-14): the card
+   shows a report's harvest or report day, and a profile that carried those
+   days and its total as keys would normalise exactly as it does without them -
+   sanitizeTerps() drops every key that is not a terpene. */
+const withDates = golden.profiles.map(p => M.normalize({ harvestOn: '2026-08-10', reportOn: '2026-08-17', totalTerpenes: 4.124, ...p.terps }));
+check(`normalize() ignores harvestOn, reportOn and totalTerpenes: all ${golden.profiles.length} profiles as without them, key order included`,
+  JSON.stringify(withDates), JSON.stringify(normalized.slice(0, golden.profiles.length)));
 
 if (failures) {
   console.error(`\nmatch-test: ${failures} failure${failures === 1 ? '' : 's'}`);
