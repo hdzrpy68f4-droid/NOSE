@@ -152,8 +152,8 @@ Also run `node test/resolver-test.js` - expect `resolver clean`, and
 
 **Or all at once:** `bash scripts/gates.sh` runs these, the Kaycha anchors,
 `novelty-test`, `coa-dates-test`, `store-test`, `probe-test`, `archive-wiring-test`,
-`archive-scripts-test`, `rerun-test`, `review-queue-test`,
-`analysis-test`, `duplicates-test`, `remove-copies-test`, `remove-document-test`, `b2b-coverage-test`, `b2b-store-test`, `b2b-catalog-test`, `b2b-endpoints-test`, `b2b-rank-test`, `b2b-strings-test`, `b2b-pilot-test`, `check-trust-test` and, after the build, `b2b-release-test`, `input-paths-test`, `b2b-widget-test` and `b2b-compliance-kit-test`.
+`archive-scripts-test`, `rerun-test`, `review-queue-test`, `match-test`,
+`match-feedback-test`, `analysis-test`, `duplicates-test`, `remove-copies-test`, `remove-document-test`, `b2b-coverage-test`, `b2b-store-test`, `b2b-catalog-test`, `b2b-endpoints-test`, `b2b-rank-test`, `b2b-strings-test`, `b2b-pilot-test`, `check-trust-test` and, after the build, `b2b-release-test`, `input-paths-test`, `b2b-widget-test` and `b2b-compliance-kit-test`.
 It prints the line each gate produced and ends with `ALL GATES GREEN`. It passes
 a gate only on its exact expected line, so when a session legitimately changes
 a count, update the script in the same commit.
@@ -200,6 +200,7 @@ someone to look.
 | `resolver-test.js` | viewer-page resolution, offline, against saved portal pages |
 | `novelty-test.js` | the five `novelty` notes (§7) and the furniture the `unmapped` diagnostic skips; FAILS if an accepted fixture carries any novelty, and lists the refused ones that do, as information |
 | `match-test.js` | the matching maths has one home, `js/match-math.*.js`: the app takes it from there, nothing else holds a copy, and it returns every score in `test/fixtures/match-golden.json` to the last bit; every score is shown and sent through `shownScore()`, floored (§13, "The shown score"), and the worked examples on `learn/intensity-versus-character/` are the numbers the app shows |
+| `match-feedback-test.js` | the app's votes (§13, "Every vote stored"): `match-feedback.js` and `feedback-read.js` offline, `@netlify/blobs` stood in for - matchBand()'s four names each stored under its slug, every other band refused with `bad-band` and nothing stored, a score of 0 kept; the key layout, the store, the record's ten fields and anonymity unmoved; the summary, filters and CSV over the four, in matchBand()'s order, its caveat word for word; the bundle's own vote run on the default `/app` pair, 74 · Moderate, stored and counted; the question asks about smell and taste, no effect word in the block; the privacy page's sentence about votes |
 | `coa-dates-test.js` | `lib/coa-dates.js` and the parser's `harvestOn` / `reportOn` (§7): the three forms, the near misses, and every other field identical without it |
 | `analysis-test.js` | the analysis layer (§13) on PGlite: the two views, their grants |
 | `duplicates-test.js` | `duplicates.js` and `download-twice.js` (§13, "One report, many documents"): on PGlite, and on fixture PDFs behind a stand-in fetch - a PDF rebuilt between downloads, the same file twice, a text that changes, a link that fails; offline |
@@ -1718,7 +1719,8 @@ above their own.
   cosine 0.8963 was stored as 90, and now as 89. A tab opened before the deploy
   keeps its old bundle until reloaded, so the first votes after it may still be
   rounded. Each vote carries the server's `ts`, which splits them. Only Strong
-  and Good votes are stored at all - see "Still open".
+  and Good votes were stored at all until 2026-10-13 (below, "Every vote
+  stored").
 - **The worked examples moved too.** `learn/intensity-versus-character/` says
   its scores are exactly what NOSE's matcher returns. Floored, the palate built
   from shares scores 85 against the loud jar (the page said 86), and the palate
@@ -2367,6 +2369,140 @@ ran on `6fbecdd` before any edit, and showed all three.
   1.56.0's Chromium. The probe's database was a plain local PostgreSQL 16. The
   Codespace run on the real packages is the one that counts.
 
+### Every vote stored, 2026-10-13
+
+**A vote on a Partial overlap or Different profile match was refused and
+lost.** The app sends `matchBand(score)[1]` as a vote's band - Strong, Good,
+Moderate or Low - and `match-feedback.js` took Strong, Good, Partial and Weak,
+so a Moderate or Low vote got a 400 `bad-band` that `sendBeacon` shows nobody.
+The default `/app` pair, 74 · Partial overlap, was one of them. Without those
+votes NOSE cannot learn whether a low score means a different flavor, which is
+half of testing the hypothesis. And the question asked "Did this match reflect
+your experience?", which invites an answer about effects.
+
+```
+netlify/functions/match-feedback.js  BANDS: matchBand()'s four names, to strong, good, moderate, low
+netlify/functions/feedback-read.js   BAND_SLUGS: the same four, in matchBand()'s order
+app.html                             the question: "Did the smell and taste match the score?"
+test/match-feedback-test.js          offline, Blobs stood in for, a gate: "match-feedback clean"
+scripts/gates.sh                     the gate, after match maths
+```
+
+**The probe, before any edit**, on `7150db8` - ALL GATES GREEN, 31 gates:
+
+- `resetFeedback()` in `js/nose.bab857ad.js` sends `band: matchBand(score)[1]`
+  and `score: shownScore(score)`; `sendFeedback()` posts `{...feedbackContext,
+  vote}` to `/.netlify/functions/match-feedback`, by `sendBeacon` or a
+  keepalive `fetch`. `BANDS` was `{ Strong, Good, Partial, Weak }` (line 26),
+  `BAND_SLUGS` `{ strong, good, partial, weak }` (line 35).
+- The handler offline, `@netlify/blobs` stood in for, one vote per
+  matchBand() name, Moderate on the hero pair (0.7452 → 74): Strong and Good
+  204 and stored, under `votes/strong/up/…` and `votes/good/up/…`; Moderate
+  and Low 400 `bad-band`, nothing stored.
+- The live summary from `feedback-read`, read in the Codespace on 2026-10-14
+  (US Eastern) with the token kept out of the shell's history and out of the
+  chat: 3 votes - Strong 1 up, Good 1 up, Partial 0, **Weak 1 down**. Not the
+  Strong-and-Good-only the prompt expected, so the work stopped there. The
+  three records, read the same way: Weak down, score 10, candidate
+  `probe-test`; Strong up, 95, `probe-test`; Good up, 84, `cold-creek` - all
+  dated 2026-08-01. No version of the app ever sent Weak: from the first
+  commit with a vote (`85fec5d`, 2026-07-22) it has sent `matchBand(score)[1]`,
+  whose names have always been Strong, Good, Moderate and Low. So the Weak
+  key is not in use; it is one of the curl writes `feedback-read.js`'s comment
+  calls synthetic. That comment names `test-do-not-count` and `probe-test`;
+  the store holds two `probe-test` records and none named
+  `test-do-not-count`. The owner chose to go ahead as built.
+- Nothing else sends a vote. The only sender that ships is `js/nose.*.js`;
+  `wip/nose-farnesene-wip.js` holds a copy, but `/wip/*` is a 404
+  (`_redirects`). Partial and Weak were named as vote bands only in those two
+  lines, besides the B2B mentions below.
+
+**The fix.**
+
+- `match-feedback.js` takes exactly `Strong`, `Good`, `Moderate` and `Low`,
+  stored under `strong`, `good`, `moderate` and `low`; Partial and Weak are
+  gone. A band must also be a string and one of the four as an own key: the
+  plain lookup took `"constructor"` as a band, which would have filed the vote
+  under the function's source text, and `["Strong"]` as Strong, storing the
+  array. Nothing else in the record or its key changes.
+- `feedback-read.js` reads, summarizes, filters and exports the same four, and
+  the summary lists them in matchBand()'s order: Strong, Good, Moderate, Low.
+  A key under any other slug is not read. Its caveat is word for word.
+  **So after the deploy the summary reads 2 records, not 3**: the
+  `probe-test` Weak vote stays in the store, untouched, under `votes/weak/`,
+  and is no longer read. Nothing deletes it. The Strong `probe-test` vote is
+  still counted, as before - filter on candidate id, as the comment says.
+- `app.html`: "Did this match reflect your experience?" became "Did the smell
+  and taste match the score?" The sentence before it, both buttons ("Matched",
+  "Didn't match") and the group's spoken name ("Was this match accurate?")
+  stay. A vote now says the score was right or wrong about smell and taste.
+
+**The question changes with the deploy of this change**; its day is recorded
+below once it is live. **Votes before it answered a different question** -
+"Did this match reflect your experience?" - and may speak about more than
+smell and taste, so analysis keeps them apart. A stored vote carries no
+question version (the record's fields did not move): its server `ts` against
+the deploy's time splits them. Every earlier vote is Strong or Good, since
+Moderate and Low were refused until the same deploy. A tab opened before the
+deploy keeps the old page until it is reloaded, and its votes reach the new
+function, so the first votes after the deploy - Moderate and Low included -
+may still have been asked the old question.
+
+**What did not move.** The key layout,
+`votes/<slug>/<vote>/<YYYY-MM-DD>/<HHMMSSmmm>-<rand>`; the store,
+`match-feedback`, strongly consistent; the record's ten fields; anonymity - no
+header, cookie, account or session is read; the privacy page, whose sentence
+on what a vote sends still holds word for word; every score - no file in `js/`
+changed, so `build.sh` renamed nothing and `match-golden.json` is as it was;
+the parser and everything B2B. `lib/b2b-votes.js`'s header still says
+`match-feedback.js` accepts Partial and Weak, and so does a check label in
+`b2b-endpoints-test.js`: both now describe the past, and B2B files were
+outside this prompt.
+
+**`test/match-feedback-test.js`**, a gate after `match maths`, drives both
+functions through their default exports with `@netlify/blobs` stood in for:
+one vote per matchBand() name - read from `js/match-math.*.js` - each stored
+under its slug; Partial, Weak, `moderate`, `low`, `STRONG`, `Medium`, the two
+labels, `constructor`, `toString`, an empty string, null, an array and a
+number each refused with `bad-band` and nothing stored; a score of 0 kept; the
+other refusals as before; the key layout, the store and the record's ten
+fields; nothing about the person read. Then `feedback-read`: 503 with no
+token, 401 with a wrong one, the summary over the four in matchBand()'s order
+and nothing else (a hand-planted `partial` and `weak` key are not read), from
+the keys alone, the caveat word for word, `?band=` for each of the four,
+`?band=Low&vote=down`, the CSV's columns and rows. Then the app: the bundle's
+source text sends `matchBand(score)[1]` and `shownScore(score)`; its own
+`PROFILES`, `profileById`, `palateProfiles`, `palateVector`, `reportableId`,
+`resetFeedback` and `sendFeedback`, run on the default pair with the maths
+file, send 74 · Moderate for lemon-tart against cold-creek, and that payload is
+stored under `votes/moderate/up/` and counted under Moderate; the question,
+both buttons, no effect word in the block, read or spoken, and the privacy
+page's sentence. With HEAD's `match-feedback.js` 16 checks fail; with HEAD's
+`feedback-read.js` it stops, finding no Moderate; with HEAD's `app.html` 2
+fail; with the bundle sending `matchBand(score)[0]` 3 fail. Clean on Node
+22.22 and 20.20 (`.nvmrc`).
+
+**How it was verified, 2026-10-13, in the cloud workspace.** npm and
+cdn.jsdelivr.net were refused by the egress policy, so the gates ran on
+stand-ins built from upstream source at the lockfile's versions: unpdf 1.8.0's
+text extraction from its source over pdfjs-dist 6.2.108, with unpdf's own
+eight literal PDF.js patches, every anchor matched; PGlite 0.5.8's query flow,
+parsers, serializers and result rules (`base.ts`, `parse.ts`, `types.ts` and
+its pg-protocol) from its source at that tag, over a throwaway PostgreSQL 16
+server per instance; the committed html5-qrcode in place of `build.sh`'s
+download; Playwright 1.56.0's Chromium 141. No gate needed `pg` itself. ALL
+GATES GREEN on `7150db8` before any edit, 31 gates, and after it with the new
+gate, 32 - `KAY-CAR-001` 4.124 and `KAY-PRR-001` 0.944 each time. Two
+full runs on the change failed once each, on files it does not touch: `b2b
+widget` (2 checks, in headless Chromium; their lines were not kept) and `b2b
+endpoints` (the stand-in PGlite connected before its server took sessions -
+fixed in the stand-in, which now retries). Both passed every time after,
+alone and in two more full runs, and the baseline was run again on the final
+stand-ins: 31, green. `parse-coa.js`, `coa-dates.js` and `extract-text.js` are
+untouched, so no reparse is due; no migration. Nothing ran against Netlify, a
+real store or the live site. The Codespace run on the real packages is the one
+that counts.
+
 ### After a deploy — check it
 
 1. `node scripts/archive-health.js` in the Codespace (reads as `nose_writer`;
@@ -2433,18 +2569,6 @@ Import reaches them. Moved verbatim, because the scores had to stay
 identical; `wip/nose-farnesene-wip.js` is an unfinished draft that removes
 them. Fixing it changes scores, so it needs its own prompt and a
 regenerated `match-golden.json` in the same commit.
-- **Votes on a Partial overlap or Different profile match are refused.** The
-  app sends `matchBand(score)[1]` as the vote's band - Strong, Good, Moderate
-  or Low - and `match-feedback.js` accepts Strong, Good, Partial and Weak. So
-  a vote on a Moderate or Low match gets a 400 `bad-band` and is never
-  stored, and `sendBeacon` drops the answer, so nobody sees it. The default
-  `/app` pair, 74 · Partial overlap, is one of them. Seen 2026-09-24 by
-  running the handler with a stand-in store: Strong and Good stored, Moderate
-  and Low refused. It predates the shown score. A fix changes which votes are
-  stored and the band slugs in their keys - map the names in the client, or
-  accept both on the server - so it waits for its own prompt. The
-  dispensary's votes do not repeat it: they take matchBand()'s four names,
-  read back from the maths file by their test (§14, "Feed and votes").
 - **The static preview keeps its own copy of the maths** (it is not in this
   repo, §13 above). `match-test.js` cannot see it; a preview built after
   today should load `js/match-math.<hash>.js` rather than carry a copy. Its

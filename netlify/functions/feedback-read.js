@@ -32,7 +32,12 @@ import { VOTES_STORE } from '../lib/beacon.js';
 // Real votes to date: 1 (candidate 'cold-creek', score 84, up).
 // That is not a finding. It is one vote.
 
-const BAND_SLUGS = { strong: 'Strong', good: 'Good', partial: 'Partial', weak: 'Weak' };
+// The key slugs match-feedback.js writes, for matchBand()'s own four names, in
+// matchBand()'s order: the summary lists the bands in this order. Until
+// 2026-10-13 they were Strong, Good, Partial and Weak, two names the app never
+// sends (PARSER-HANDOFF s13, "Every vote stored").
+const BAND_SLUGS = { strong: 'Strong', good: 'Good', moderate: 'Moderate', low: 'Low' };
+const isSlug = (s) => typeof s === 'string' && Object.hasOwn(BAND_SLUGS, s);
 const MAX_RECORDS = 1000;
 
 export default async (request) => {
@@ -109,7 +114,7 @@ function authorized(request, expected) {
 
 function prefixFor(band, vote) {
   const slug = band ? String(band).toLowerCase() : null;
-  if (!slug || !BAND_SLUGS[slug]) return 'votes/';
+  if (!isSlug(slug)) return 'votes/';
   if (vote === 'up' || vote === 'down') return `votes/${slug}/${vote}/`;
   return `votes/${slug}/`;
 }
@@ -127,7 +132,7 @@ async function listKeys(store, prefix) {
 function parseKey(key) {
   const p = key.split('/');
   if (p.length !== 5 || p[0] !== 'votes') return null;
-  if (!BAND_SLUGS[p[1]]) return null;
+  if (!isSlug(p[1])) return null;
   if (p[2] !== 'up' && p[2] !== 'down') return null;
   return { key, band: BAND_SLUGS[p[1]], vote: p[2], day: p[3] };
 }
