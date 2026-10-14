@@ -2900,6 +2900,35 @@ Playwright 1.56.1's Chromium. ALL GATES GREEN on `d06995f` before any edit,
 Codespace run on the real packages, and the run on the real archive, are the
 ones that count. This record closes no "Still open" item; it adds one.
 
+**In the Codespace and on the real archive, 2026-10-14** (US Eastern), on
+`d1ffb55`: `bash scripts/gates.sh` ended ALL GATES GREEN, 32 gates, with
+`KAY-CAR-001` 4.124, `KAY-PRR-001` 0.944 and `analysis clean` - the real
+packages, no stand-ins. Then `node scripts/score-spread.js` and `node
+scripts/score-spread.js --class flower`, read only, as `nose_writer`:
+
+- **65 usable samples: 9 from scans, 56 test fixtures.** The scans are 6
+  flower, 1 vape and 2 concentrate samples.
+- **Flower: 311 of 465 pairs Good or better (67%)**, 60 of 465 (13%) Low;
+  median 82, 10th percentile 49, 90th 94. The 6 scanned samples alone: 9 of
+  15 pairs (60%), median 83. A typical flower sample has 23 of its 30 others
+  at Good or better (fewest 6, most 26).
+- **Vape: 67 of 153 (44%)**, 56 of 153 (37%) Low, median 68. **Concentrate:
+  36 of 78 (46%)**, median 65; the one pair of scanned concentrates is Low,
+  at 51.
+- **Measured coverage**: median 100.0% (the scans' 99.7%); 3 of 65 under 95%,
+  all fixtures; no reading carries an unmapped name.
+- **Water activity on flower**: 13 of 31 readings print a number - Kaycha 8
+  of 9, ACS 3 of 4, ACT and TerpLife 1 each - 7 below 0.55, 6 inside, none
+  above. The 3 Kaycha scans: 2 below, 1 inside. Method Testing Labs prints
+  neither number on any of its 8 flower reports; Modern Canna prints moisture
+  on 5 of 8 and water activity on none.
+- **What it says, and what it does not.** On flower, two pairs in three land
+  at Good or better, so Good is what an arbitrary pair of these jars usually
+  scores. The scanned part is 6 flower samples - 15 pairs, and not
+  independent ones, each sample sitting in 5 - so on its own it says nothing
+  yet about a market; with the fixtures, it agrees with the fixtures. How a
+  score should read is the next decision, made with these numbers.
+
 ### After a deploy — check it
 
 1. `node scripts/archive-health.js` in the Codespace (reads as `nose_writer`;
@@ -2922,10 +2951,6 @@ under the cap.
 
 ### Still open
 
-- **`score-spread.js` has not run on the real archive** (above, "Score
-  spread, 2026-10-14"). How a score should read waits for its four tables:
-  `node scripts/score-spread.js`, then `node scripts/score-spread.js --class
-  flower`, from the Codespace.
 - **A scan made while the database is down is neither capped nor checked
   against `withheld`**: the database answers neither, so its PDF is written,
   for backfill (§13, "What gets kept"). `backfill-from-blobs.js` then refuses
