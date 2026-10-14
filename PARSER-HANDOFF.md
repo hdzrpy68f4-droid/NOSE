@@ -234,7 +234,7 @@ someone to look.
 | `check-trust-test.js` | `scripts/check-trust.mjs` (§13, "The trust guard") on throwaway sites: every form of the old promise fails, true sentences pass; offline |
 | `b2b-release-test.js` | pinned widget releases (§14, "Pinned releases"): `scripts/b2b-release.js`'s build - the same bytes from one commit and version, every time, anywhere; the five files verbatim and in order but for the widget's two stylesheet lines; the stylesheet verbatim; the bundle running as a page runs it - its refusals, its publishing to a stand-in Blobs (never overwriting, going on after a stop, an ETag or a failure, the row last), `netlify/functions/b2b-release.js` (the switch, GET and HEAD, one path shape, the bytes with exactly their five headers, a 404 nothing caches, 503 and one line), `scripts/b2b-release-check.js` against each kind of mismatch, nothing built left in the repo, no effect wording, the integration guide's names; offline, in throwaway git repos; a gate, run after the build |
 | `b2b-widget-test.mjs` | `<nose-matches>` in headless Chromium (§14, "The widget"): the built files on a store's page from another origin, under the prompt's CSP, against a stand-in feed and vote; only the feed and the vote leave the page, and no request carries a purchase; consent, denied, control; each mode equal to `js/b2b-rank`'s answers; every bar `renderBar()`'s; keyboard reach; the demo page; one copy of the bar; `build.sh`'s load-order lines; since 2026-10-09 the vote by `fetch` with no cookie or referrer, and a pinned release - one tag with its hash under the integration guide's own CSP lines, the same rail and vote, its stylesheet checked by its hash, an altered file or a missing `crossorigin` refused. Needs Playwright; a gate, run after the build |
-| `input-paths-test.mjs` | the app's ways in, in headless Chromium: Scan QR (fake camera and QR image), COA link, Upload. The real `coa.js` and parser answer, with only the download and unpdf stood in for (§13, "The input paths"). Since 2026-10-14 also the card's Moisture and Water activity rows on flower - below, inside, both edges (0.55 and 0.65), above and Pass only, each row's text written out (§13, "Water activity against ASTM D8197"); and the row after Batch - Harvested, else Report dated, else none - with its age and the note under it, on a frozen clock in New York's time zone (§13, "Harvest date and age on the card"); `INPUT_PATHS_SHOTS=<folder>` saves a picture of each of those cards. Since 2026-10-14 also the smell words on a vote - thirteen toggle buttons reached by Tab, a fourth refused with a note, and the vote's POST taken before it leaves the page, carrying exactly the two words picked and no other new field (§13, "Smell words on a vote"). Needs Playwright; a gate, run after the build |
+| `input-paths-test.mjs` | the app's ways in, in headless Chromium: Scan QR (fake camera and QR image), COA link, Upload. The real `coa.js` and parser answer, with only the download and unpdf stood in for (§13, "The input paths"). Since 2026-10-14 also the card's Moisture and Water activity rows on flower - below, inside, both edges (0.55 and 0.65), above and Pass only, each row's text written out (§13, "Water activity against ASTM D8197"); and the row after Batch - Harvested, else Report dated, else none - with its age and the note under it, on a frozen clock in New York's time zone (§13, "Harvest date and age on the card"); `INPUT_PATHS_SHOTS=<folder>` saves a picture of each of those cards. Since 2026-10-14 also the smell words on a vote - thirteen toggle buttons reached by Tab, a fourth refused with a note, and the vote's POST taken before it leaves the page, carrying exactly the two words picked and no other new field (§13, "Smell words on a vote"). Since 2026-10-14 (R8) also the Water activity row's link - the words it already showed, linking to `/learn/why-your-jar-is-drier-than-its-report/` in a new tab with `rel="noopener"`, the row's text unchanged, no other link on the card, and that guide served (§13, "Two guides from the research"). Needs Playwright; a gate, run after the build |
 | `b2b-compliance-kit-test.mjs` | `scripts/b2b-compliance-kit.js` (§14, "The compliance kit") in throwaway git worlds, each with release 1 recorded from its own commit: the test store's kit end to end - ten screens at phone and desktop, scroll pages, README.md, strings.md (every Florida string, every screen's strings traced, "Shown in" exactly where seen or read aloud) and data.md (every paragraph of the privacy page's dispensary section and every other mention) - a store's kit against a stand-in site (one feed request, the key alone, the store's origin), the tag and CSP of the stand-in page, sixteen refusals that write nothing, no time of day, no effect wording, no database or Blobs code loaded, this repository untouched. Needs Playwright; a gate, run after the build |
 
 The counts in section 2 are checked by `fixture-lint.js` against the corpus, so
@@ -3119,6 +3119,169 @@ of the morning, so the second "Still open" item is gone too. Real votes to
 date stay at one. The Codespace's gate run was not pasted into this
 session.
 
+### Two guides from the research, 2026-10-14
+
+**What a lab report can't smell, and why a jar is drier than its report,
+said once, in two guides.** R8 in the 2026-10-07 build prompts, from the
+r/FLMedicalTrees research; it takes the place of the report's #2 line under
+every bar. R1, R3, R4 and R7 were live, and the guides describe what they
+built. No score moves: `js/match-math.*.js` and `match-golden.json` are as
+they were.
+
+```
+learn/what-a-lab-report-cant-smell/index.html           new, Guide 05
+learn/why-your-jar-is-drier-than-its-report/index.html  new, Guide 06
+learn/intensity-versus-character/index.html  "Why a cutoff per terpene misleads", an In short line, pager next -> 05
+learn/how-to-read-a-coa/index.html           step 6 links Guide 06; ASTM D8197-21 -> D8197-22; pager prev -> 06
+learn/index.html                             two cards, two hasPart entries
+methodology/index.html                       two limitations link the guides; the enjoyment sentence reworded; dateModified added (it had none)
+sitemap.xml                                  the two guides; lastmod 2026-10-14 on learn/, the two changed guides, methodology
+js/nose.*.js                                 AW_RANGE, waterActivityLink(); the row renderer takes a link
+                                             (was js/nose.489f8bb3.js - build.sh renamed it; app.html, index.html, _redirects follow)
+test/input-paths-test.mjs                    229 checks, 216 before; the gate's line stays "input-paths clean"
+```
+
+**The probe, before any edit**, on `d42608a` - ALL GATES GREEN, 32 gates:
+
+1. `learn/how-to-read-a-coa/`: canonical and `og:url` on
+   `https://nose-app.com/...`, Article JSON-LD with `datePublished`,
+   `dateModified` and a `citation` list, BreadcrumbList, a "Guide 01" eyebrow
+   and meta line (read time, sources, last reviewed), `section.keypoints`,
+   made-up example values labelled as such, numbered sources with
+   `id="src-…"`, a pager cycling the guides. `learn/index.html` lists cards
+   and a `hasPart` list; the sitemap one `<url>` per guide.
+2. The method page's four limitations, as the prompt quotes them; step 6 and
+   the other guides give Milay as "under every condition tested, on average
+   by more than half within four months". The method page's JSON-LD had no
+   `dateModified` - one is added.
+3. `waterActivityText()`, `reportDateRow()` and `AGE_NOTE`, `SMELL_NOTES` and
+   the question "Did the smell and taste match the score?" as recorded above;
+   `input-paths-test.mjs` reads a row by `textContent`, so a link inside it
+   leaves the text the test compares unchanged.
+
+**What the sources say, read 2026-10-14**, and where the prompt was not
+followed:
+
+- Oswald et al. 2023 (https://pmc.ncbi.nlm.nih.gov/articles/PMC10601067/):
+  31 ice hash rosin samples; tropical and citrus notes in some cultivars
+  tied to 3-mercaptohexyl sulfur compounds, savory or chemical to
+  **skatole**, sweet to esters, the gassy note mainly to the prenylated
+  sulfur family; terpene profiles very similar across very different aromas.
+  **Indole** turned up widely at low levels and the authors took it as part
+  of the general cannabis smell, so the guide does not credit it with
+  savory notes, as the prompt asked. 9 of 14 authors are at a company that
+  sells terpene flavor blends (Food Business News, 2020-02-21,
+  https://www.foodbusinessnews.net/articles/15462-abstrax-tech-debuts-functional-terpene-flavor-blends),
+  which funded the work; eight authors have filed patents on the results.
+  The guide names neither company nor cultivar.
+- Oswald et al. 2021, through the ACS release on ScienceDaily
+  (https://sciencedaily.com/releases/2021/12/211201085147.htm): skunk tied
+  to prenylated volatile sulfur compounds, one most abundant in the samples
+  judged most pungent; little evidence terpenes give that smell.
+- "No lab measures gas" became "the reports NOSE reads don't measure it":
+  the studies' own labs did. None of the 59 fixtures' extracted texts names
+  a thiol, a mercapto compound, skatole, an ester or sulfur; the only
+  "Indole" is Indole-3 Butyric Acid on two pesticide panels.
+- ASTM D8197-22 (https://store.astm.org/d8197-22.html): active; D8197-21
+  marked historical. Its summary gives the lower edge as less breakage in
+  handling and storage - the guide says so beside the upper edge's mold.
+  ASTM's piece (https://sn.astm.org/node/2445/printable/print): above 0.65,
+  a risk of microorganism growth; below **0.50**, terpenes dry out and taste
+  and smell weaken; water activity reads the free water. The guide says that
+  figure is 0.50, not 0.55, and that neither source covers the gap.
+- Milay et al. 2020 (frontiersin.org): the "more than 50%" is an average
+  ratio across compounds and conditions at four months - the guide says so.
+- Hazekamp 2016: doi.org refused with a rate limit; read at
+  https://www.frontiersin.org/articles/10.3389/fphar.2016.00108/full. Four
+  dried flower varieties, gamma-irradiated; some terpenes fell, the profile
+  stayed qualitatively the same; the author works for the company that
+  supplied the flower, which the guide says.
+
+**The guides.** Each has an In short box, made-up values labelled as made
+up, every score through `scripts/lib/match.js` (the page says so), research
+linked and paraphrased with no quotation, and no product, brand, dispensary
+or Reddit name.
+
+- **Guide 05**: Jars D and E, nearly one mix, 99 · Close match; Jars F and G,
+  different mixes, 46 · Different profile - then a gassy note supposed on
+  one, or on both, that neither report shows. Matching should hold best
+  where terpenes lead and miss most for gas, savory and sweet, in either
+  direction - written as an expectation the votes test, not a finding. No
+  Gas family: an estimate drawn on the bar would look like a measurement.
+  The vote's question and the thirteen words as `SMELL_NOTES` has them;
+  nothing typed; the privacy page linked for what a vote keeps.
+- **Guide 06**: Reports X (12.8%, 0.53, below) and Y (10.4%, 0.61, inside);
+  the range and its two edges; Pass-only reports and numbers on a later
+  page, both read as "no number on this report"; the report as a snapshot,
+  Milay and Hazekamp as above, no storage advice; what the card shows - the
+  water activity verdict, moisture with no verdict, the harvest or report day
+  and how long ago when NOSE can read one (it does not read a test day yet),
+  none of it touching the score.
+- **The cutoff section**: Jar A and Jar B from the top of the page against
+  0.5% - none over against three, shares 40/30/20/10 in both, scored 100.
+
+**The card's link.** The words the Water activity row already shows link to
+Guide 06: `ASTM D8197's 0.55–⁠0.65 range for dried flower` when a number
+shows (`AW_RANGE`, the same string `waterActivityText()` builds from),
+`no number on this report` when none. The row is built as text, the link and
+text again, so its `textContent` is exactly what it was; Moisture's
+`no number on this report` stays plain. `target="_blank"`, so a card not yet
+added is not lost, and `rel="noopener"`, which leaves the new page no
+`window.opener` (MDN, "rel=noopener",
+https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Attributes/rel/noopener,
+read 2026-10-14; MDN adds that `_blank` implies it). The link takes the
+card's base `a { color: inherit }` and the browser's underline: no
+stylesheet changed, so no CSS file was renamed.
+
+**`test/input-paths-test.mjs`** adds thirteen checks: the guide served at
+its path with its heading; then on each of the six freshness cards, the
+Water activity row's one link - its `href`, `target="_blank"`,
+`rel="noopener"` and its words - and that it is the card's only link, with
+none in Moisture. The row's text is the check that was already there. On
+HEAD's bundle and pages the thirteen fail and the other 216 pass; three
+broken bundles each fail it - the link in the same tab (6), no `rel` (6),
+words added to the row (9). With the change, 229 of 229.
+
+**The method page's last limitation** stated as fact what is still open
+for enjoyment, the question the votes test. Proposed and, at the owner's
+word, changed: "Similarity does not predict medical benefit, impairment, or
+subjective effect. Whether it predicts enjoyment is still an open question,
+and the thumbs up and down on every result are there to test it." The rest
+of the sentence stays as firm as it was.
+
+**The strings**, shown to the owner and approved before the commit: both
+guides, the section, the In short line, the step 6 sentence, the two cards,
+the D8197-22 source, the method page's reworded limitation. The effect-word list (relax, calm, sleep, energ, focus,
+uplift, euphor, sedat, mood, high, buzz, stoned, pain, anxiety, stress,
+treat, relief, cure) finds one hit across every new word: "Two readings help
+you judge the cure.", step 6's existing sentence, in the paragraph that
+gained one - a plain use. "Irradiated" stands where "treated" would have hit.
+
+**What did not move.** Every other page, but for the bundle's file name on
+`app.html` and `index.html`, which `build.sh` rewrites; every card row's
+text; `js/match-math.*.js` and `match-golden.json`; the parser -
+`parse-coa.js`, `coa-dates.js`, `extract-text.js` - so no reparse is due;
+`check-trust`'s patterns; the CSP and the no-inline-script rule; anything
+B2B; every gate's expected line, still 32 gates.
+
+**How it was verified, 2026-10-14, in the cloud workspace.** npm was
+refused by the egress policy, so the gates ran on stand-ins: unpdf 1.8.0's
+`getDocumentProxy` and `extractTextItems` from its source over pdfjs-dist
+6.2.108's legacy build (parity 56 match / 0 differ); `pg` 8.23.0 and its
+dependencies from their GitHub sources at the locked versions (pg-protocol
+1.16.0 transpiled; `pgpass` a stub); PGlite 0.5.8's `base.ts`, `parse.ts`,
+`types.ts`, `templating.ts` and `errors.ts` over a throwaway PostgreSQL 16
+cluster per instance on a Unix socket; the committed html5-qrcode in place
+of `build.sh`'s download; Playwright 1.56.0's Chromium. ALL GATES GREEN on
+`d42608a` before any edit, 32 gates, and on the change, 32, with
+`KAY-CAR-001` 4.124 and `KAY-PRR-001` 0.944 each time. Every new or changed
+page was looked at in Chromium at 390 and 1280 px under the site's CSP: no
+console error, no sideways scroll; the card at both widths. Nothing ran
+against Netlify or the live site. The Codespace run on the real packages is
+the one that counts. This record closes two "Still open" items -
+how-to-read-a-coa's D8197-21 link, and the card's water activity row linking
+to a new article (called R5 there; it is R8) - and adds three.
+
 ### After a deploy — check it
 
 1. `node scripts/archive-health.js` in the Codespace (reads as `nose_writer`;
@@ -3196,10 +3359,6 @@ below, then add the jar." with nothing below it. Seen in Chromium, 2026-09-23.
 The reverse cannot happen: opening Scan QR restarts the camera, which replaces
 that tab's message. A fix would change what `fetchCoaReport()` says in the
 panel it takes the card from, on both paths, so it waits for its own prompt.
-- **`learn/how-to-read-a-coa/` links ASTM D8197-21's page**, which ASTM now
-  marks historical; D8197-22 is the active edition, with the same range
-  (store.astm.org, read 2026-10-14). R5 in the 2026-10-07 build prompts also
-  links the card's water activity row to a new article.
 - **The card's word joiner after the en dash** (above, "Water activity against
   ASTM D8197") was watched in Chromium only, not Safari or Firefox. UAX #14
   says how WJ and an en dash behave, but the page read gave its class
@@ -3285,6 +3444,22 @@ and has not been looked at: the cloud workspace cannot reach npm. Next step:
 - **The word buttons were watched in Chromium only**, at 1280 and 390 px:
   their wrapping, the tick and the status line. Safari and Firefox have not
   been looked at, nor a screen reader's reading of the note.
+- **The new guides' numbers are not under a gate** (§13, "Two guides from
+  the research"). `match-test.js` checks the worked examples at the top of
+  `learn/intensity-versus-character/` against the matcher; the cutoff
+  section's 100 and shares on that page, and the 99 and 46 on
+  `learn/what-a-lab-report-cant-smell/`, were computed through
+  `scripts/lib/match.js` once, on 2026-10-14. Adding them to `match-test.js`
+  needs its own prompt.
+- **The card's guide link opens a new tab without saying so.** WAI's
+  advisory technique G201 ("Giving users advanced warning when opening a new
+  window", https://www.w3.org/WAI/WCAG22/Techniques/general/G201, read
+  2026-10-14) suggests a warning; doing
+  it would add words to the row (or an `aria-label` a screen reader reads),
+  and R8 kept the row's text exactly as it was. The link was watched in
+  Chromium only, at 1280 and 390 px.
+- **`/app` and `/` keep their sitemap `lastmod`** (2026-07-20) although the
+  bundle they load has changed again (R3, R4, R7 and R8 all left it).
 
 ---
 

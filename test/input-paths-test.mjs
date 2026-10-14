@@ -38,7 +38,12 @@
  *     0.583), the 0.55 edge (ACS-PRR-001), the 0.65 edge and above
  *     (KAY-FLW-002's reply set to 0.65 and 0.68 - no fixture prints either)
  *     and Pass only (MCL-FLW-001). Since 2026-10-14;
- *     INPUT_PATHS_SHOTS=<folder> saves each card as a picture
+ *     INPUT_PATHS_SHOTS=<folder> saves each card as a picture. Also since
+ *     2026-10-14 (R8), the words the Water activity row already shows link to
+ *     /learn/why-your-jar-is-drier-than-its-report/ - the range phrase with a
+ *     number, "no number on this report" without - in a new tab with
+ *     rel="noopener", the row's text unchanged, no other link on the card,
+ *     and the guide served (PARSER-HANDOFF s13, "Two guides from the research")
  *   - the row after Batch: "Harvested" and the harvest day with how long ago
  *     (KAY-FLW-001), else "Report dated" (TerpLife_GrpeBblGm_flower), else no
  *     row (MCL-FLW-001); the note under it; every other row as before; today,
@@ -105,6 +110,9 @@ const FIXTURES = { plain: 'KAY-CAR-001', warned: 'MCL-FLW-002', novel: `${NOVEL_
    breaks across two lines. */
 const RANGE = 'ASTM D8197\'s 0.55–\u20600.65 range for dried flower';
 const NO_NUMBER = 'no number on this report';
+/* The guide the row's words link to, and its heading (R8, 2026-10-14). */
+const DRIER = '/learn/why-your-jar-is-drier-than-its-report/';
+const DRIER_H1 = '<h1>Why your jar is drier than its report</h1>';
 const FRESHNESS = [
   { name: 'KAY-PRR-001', fixture: 'KAY-PRR-001', aw: 0.54, moisture: '12%', water: `0.54 — below ${RANGE}` },
   { name: 'KAY-FLW-002', fixture: 'KAY-FLW-002', aw: 0.583, moisture: '14.97%', water: `0.583 — inside ${RANGE}` },
@@ -590,6 +598,17 @@ try {
     });
     await page.screenshot({ path: path.join(SHOTS, `${name.replace(/[^A-Za-z0-9.-]+/g, '-')}.png`), clip });
   }
+  /* every link in a row's cell, as the page holds it */
+  const rowLinks = label => page.evaluate(label => {
+    const dts = [...document.querySelectorAll('#coaConfirmMeta dt')].filter(d => d.textContent === label);
+    const dd = dts.length === 1 ? dts[0].nextElementSibling : null;
+    return dd ? [...dd.querySelectorAll('a')].map(a => ({ href: a.getAttribute('href'), target: a.target, rel: a.rel, text: a.textContent }))
+      : `${dts.length} rows`;
+  }, label);
+  const guide = await fetch(BASE + DRIER);
+  const guideHtml = await guide.text();
+  check(`the guide the Water activity row links to is served at ${DRIER}, with its heading`,
+    guide.status === 200 && guideHtml.includes(DRIER_H1), `status ${guide.status}`);
   for (const c of FRESHNESS) {
     await readLink(c);
     await messageMatches('urlMessage', READ);
@@ -598,6 +617,15 @@ try {
     check(`COA link, ${c.name}: Moisture reads "${c.moisture}"`, shown && moisture === c.moisture, `it reads ${JSON.stringify(moisture)}`);
     const water = await metaRow('Water activity');
     check(`COA link, ${c.name}: Water activity reads "${c.water}"`, shown && water === c.water, `it reads ${JSON.stringify(water)}`);
+    const words = c.water === NO_NUMBER ? NO_NUMBER : RANGE;
+    const links = await rowLinks('Water activity');
+    check(`COA link, ${c.name}: Water activity's "${words}" links to ${DRIER}, in a new tab, rel="noopener"`,
+      shown && JSON.stringify(links) === JSON.stringify([{ href: DRIER, target: '_blank', rel: 'noopener', text: words }]),
+      `links ${JSON.stringify(links)}`);
+    check(`COA link, ${c.name}: that is the card's only link - Moisture and every other row have none`,
+      shown && JSON.stringify(await rowLinks('Moisture')) === '[]'
+        && (await page.evaluate(() => document.querySelectorAll('#coaConfirmMeta a').length)) === 1,
+      `Moisture's links ${JSON.stringify(await rowLinks('Moisture'))}`);
     if (SHOTS && shown) await shoot(c.name);
     await discard(`COA link, ${c.name}`, 'urlMessage');
   }

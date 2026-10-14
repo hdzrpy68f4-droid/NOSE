@@ -420,11 +420,21 @@
        nothing, which the parser cannot tell apart. A word joiner after the
        en dash keeps 0.55-0.65 on one line at phone width (PARSER-HANDOFF s13). */
     const NO_NUMBER='no number on this report';
+    const AW_RANGE='ASTM D8197\'s 0.55–\u20600.65 range for dried flower';
     function waterActivityText(aw){
       if(aw==null) return NO_NUMBER;
       const side=aw<0.55?'below':aw>0.65?'above':'inside';
-      return `${aw} — ${side} ASTM D8197's 0.55–\u20600.65 range for dried flower`;
+      return `${aw} — ${side} ${AW_RANGE}`;
     }
+    /* Words the row already shows link to the guide on moisture, water
+       activity and dates: the range phrase when a number shows, "no number on
+       this report" when none. The row's text is unchanged. It opens in a new
+       tab, so a card not yet added is not lost; rel="noopener" leaves the new
+       page no window.opener (MDN, "rel=noopener",
+       https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Attributes/rel/noopener,
+       read 2026-10-14). PARSER-HANDOFF s13, "Two guides from the research". */
+    const DRIER_GUIDE='/learn/why-your-jar-is-drier-than-its-report/';
+    function waterActivityLink(aw){ return {text:aw==null?NO_NUMBER:AW_RANGE,href:DRIER_GUIDE}; }
 
     /* When the jar was harvested - or, without that, when its report is
        dated - and how long ago, so an old report reads as old. Shown only:
@@ -473,13 +483,20 @@
       ];
       if(data.freshnessApplies){
         rows.push(['Moisture',data.moisture!=null?`${data.moisture}%`:NO_NUMBER]);
-        rows.push(['Water activity',waterActivityText(data.waterActivity)]);
+        rows.push(['Water activity',waterActivityText(data.waterActivity),null,waterActivityLink(data.waterActivity)]);
       }
       const dated=reportDateRow(data);
       if(dated) rows.splice(rows.findIndex(([label])=>label==='Batch')+1,0,[...dated,AGE_NOTE]);
-      rows.forEach(([label,value,note])=>{
+      rows.forEach(([label,value,note,link])=>{
         const dt=document.createElement('dt'); dt.textContent=label;
-        const dd=document.createElement('dd'); dd.textContent=value;
+        const dd=document.createElement('dd');
+        const at=link?value.lastIndexOf(link.text):-1;
+        if(at<0) dd.textContent=value;
+        else{
+          const a=document.createElement('a');
+          a.href=link.href; a.target='_blank'; a.rel='noopener'; a.textContent=link.text;
+          dd.append(...[value.slice(0,at),a,value.slice(at+link.text.length)].filter(part=>part!==''));
+        }
         /* The note sits under its row, in the row's own cell, in the card's
            muted small type. Set through the style property, as the family
            panels above do: the CSP's style-src 'self' does not block it. */
