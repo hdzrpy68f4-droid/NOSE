@@ -2428,7 +2428,7 @@ scripts/gates.sh                     the gate, after match maths
 - `feedback-read.js` reads, summarizes, filters and exports the same four, and
   the summary lists them in matchBand()'s order: Strong, Good, Moderate, Low.
   A key under any other slug is not read. Its caveat is word for word.
-  **So after the deploy the summary reads 2 records, not 3**: the
+  **So the deploy took the summary from 3 records to 2**: the
   `probe-test` Weak vote stays in the store, untouched, under `votes/weak/`,
   and is no longer read. Nothing deletes it. The Strong `probe-test` vote is
   still counted, as before - filter on candidate id, as the comment says.
@@ -2437,8 +2437,8 @@ scripts/gates.sh                     the gate, after match maths
   "Didn't match") and the group's spoken name ("Was this match accurate?")
   stay. A vote now says the score was right or wrong about smell and taste.
 
-**The question changes with the deploy of this change**; its day is recorded
-below once it is live. **Votes before it answered a different question** -
+**The question changed on 2026-10-14 (US Eastern)**, with the deploy of
+this change (below, "Live"). **Votes before it answered a different question** -
 "Did this match reflect your experience?" - and may speak about more than
 smell and taste, so analysis keeps them apart. A stored vote carries no
 question version (the record's fields did not move): its server `ts` against
@@ -2446,7 +2446,9 @@ the deploy's time splits them. Every earlier vote is Strong or Good, since
 Moderate and Low were refused until the same deploy. A tab opened before the
 deploy keeps the old page until it is reloaded, and its votes reach the new
 function, so the first votes after the deploy - Moderate and Low included -
-may still have been asked the old question.
+may still have been asked the old question. On the live store the split is
+clean: every vote before the deploy is dated 2026-08-01, and the first after
+it is the deploy check.
 
 **What did not move.** The key layout,
 `votes/<slug>/<vote>/<YYYY-MM-DD>/<HHMMSSmmm>-<rand>`; the store,
@@ -2502,6 +2504,25 @@ stand-ins: 31, green. `parse-coa.js`, `coa-dates.js` and `extract-text.js` are
 untouched, so no reparse is due; no migration. Nothing ran against Netlify, a
 real store or the live site. The Codespace run on the real packages is the one
 that counts.
+
+**Live, 2026-10-14 (US Eastern).** While this waited for the probe, another
+session put `d450d70` (§14 only) on main, so the commit went in rebased on it,
+as `581883b`. In the Codespace on the real packages, ALL GATES GREEN, 32
+gates, `match feedback` among them, `KAY-CAR-001` 4.124 and `KAY-PRR-001`
+0.944 - run on the commit before the rebase, `ad62f41`; the rebase changed
+only §14's text, and the rebased commit was green in the cloud workspace.
+`git push` deployed `581883b`. On `/app` in a private window the owner
+pressed Matched once on the default pair. (The served page's question was
+not read back in this record; a page fetch from the cloud workspace does
+not show the hidden result panel.) `feedback-read` then gave Strong 1 up, Good 1 up,
+**Moderate 1 up**, Low 0, total 3 - the `probe-test` Weak vote no longer read
+- and the Moderate record: up, score 74, candidate `cold-creek`, palate
+`lemon-tart`, `ts` 2026-10-14T12:18:23.148Z. **That vote is a deploy check,
+not a person's answer**: its candidate is a real sample id, so
+`feedback-read.js`'s synthetic-records comment lists it by its `ts`, beside
+the two curl writes of 2026-08-01, with what the store actually holds of
+those (two `probe-test` records, none named `test-do-not-count`). Real votes
+to date, by that comment: one, the Good vote of 2026-08-01.
 
 ### After a deploy — check it
 

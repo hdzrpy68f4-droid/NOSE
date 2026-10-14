@@ -27,9 +27,20 @@ import { VOTES_STORE } from '../lib/beacon.js';
 // came from a person looking at a match result, so neither says anything about
 // whether the aroma-shape hypothesis holds. They are left in place rather than
 // deleted because there is no delete path and inventing one to remove two rows
-// would be worse than a comment. Filter on candidate id.
+// would be worse than a comment. Filter on candidate id. Read on 2026-10-14,
+// the store holds two 'probe-test' records - Strong up 95, and Weak down 10
+// under votes/weak/, which this function no longer reads - and none named
+// 'test-do-not-count'.
 //
-// Real votes to date: 1 (candidate 'cold-creek', score 84, up).
+//   ts 2026-10-14T12:18:23.148Z   the deploy check (PARSER-HANDOFF s13, "Every
+//                                 vote stored"): Moderate up, score 74,
+//                                 candidate 'cold-creek', palate 'lemon-tart'
+//
+// That one was pressed by the owner on /app to prove a Moderate vote is
+// stored. Its candidate is a real sample id, the same as any vote on the
+// default pair, so filter it on its ts, not its candidate.
+//
+// Real votes to date (2026-10-14): 1 (candidate 'cold-creek', score 84, up).
 // That is not a finding. It is one vote.
 
 // The key slugs match-feedback.js writes, for matchBand()'s own four names, in
