@@ -220,7 +220,7 @@ someone to look.
 | `match-test.js` | the matching maths has one home, `js/match-math.*.js`: the app takes it from there, nothing else holds a copy, and it returns every score in `test/fixtures/match-golden.json` to the last bit; every score is shown and sent through `shownScore()`, floored (§13, "The shown score"), and the worked examples on `learn/intensity-versus-character/` are the numbers the app shows; since 2026-10-14, a profile carrying `harvestOn`, `reportOn` and `totalTerpenes` normalises exactly as without them (§4) |
 | `match-feedback-test.js` | the app's votes (§13, "Every vote stored"): `match-feedback.js` and `feedback-read.js` offline, `@netlify/blobs` stood in for - matchBand()'s four names each stored under its slug, every other band refused with `bad-band` and nothing stored, a score of 0 kept; the key layout, the store, the record's ten fields and anonymity unmoved; the summary, filters and CSV over the four, in matchBand()'s order, its caveat word for word; the bundle's own vote run on the default `/app` pair, 74 · Moderate, stored and counted; the question asks about smell and taste, no effect word in the block; the privacy page's sentence about votes |
 | `coa-dates-test.js` | `lib/coa-dates.js` and the parser's `harvestOn` / `reportOn` (§7): the three forms, the near misses, and every other field identical without it |
-| `analysis-test.js` | the analysis layer (§13) on PGlite: the two views, their grants |
+| `analysis-test.js` | the analysis layer (§13) on PGlite: the two views, their grants; `drift.js`, `lab-stats.js` and, since 2026-10-14, `score-spread.js` |
 | `duplicates-test.js` | `duplicates.js` and `download-twice.js` (§13, "One report, many documents"): on PGlite, and on fixture PDFs behind a stand-in fetch - a PDF rebuilt between downloads, the same file twice, a text that changes, a link that fails; offline |
 | `remove-copies-test.js` | `remove-copies.js` (§13, "One report, many documents - the cleanup") on PGlite: copies made by the old `save_scan`, the copies it keeps and why, a Blobs failure, a second run, no text lost, nose_writer refused; and that only it, `remove-document.js` and the probe's refusals name a DELETE; offline |
 | `remove-document-test.js` | `remove-document.js` and `keep-rule.js` (§13, "What gets kept, and taking it back out") on PGlite: the probe finds the one-sign files and nothing else; dry runs change nothing; a removal takes rows, PDF and every copy of the report, records the day and the word, and withholds file and text so `save_scan` refuses them after; PDFs with no row; a Blobs failure finished by a second run; a database refusal that changes nothing; nothing private printed; offline |
@@ -252,6 +252,7 @@ a stale one fails the lint rather than misleading the next session.
 | `review-queue.js` | **what needs a look**: documents whose latest reading was refused or has `novelty` (§7), newest first, with reasons; reads only |
 | `drift.js "<strain>" [--lab X] [--client Y]` | one strain's usable batches - one per sample (§13) - in date order - total terpenes, top five as share of total - and the app's own score and band between consecutive batches; undated batches apart; reads only |
 | `lab-stats.js` | per lab: samples (and the documents they come from), accepted rate, median measured coverage, most common kind of warning; reads only |
+| `score-spread.js [--class X]` | how alike the usable lab reports look to the matching maths, one per sample, scans and fixtures apart, then together: every pair in a product class scored and banded as the app does, a typical jar's share of Good or better, measured coverage and unmapped names, freshness by lab for flower; X is flower, vape or concentrate; reads only |
 | `duplicates.js [--limit N]` | the reports the archive holds as more than one document: documents sharing an extraction text (the first stored is the report, the rest copies) and documents sharing a lab and lab ID; ends `duplicates already stored: N documents`; reads only |
 | `remove-copies.js [--apply]` | **admin, by hand**: removes duplicate copies of stored reports - PDF first, then rows in one transaction; a dry run without `--apply`; needs `NOSE_DB_ADMIN_URL` |
 | `keep-rule.js` | new documents per UTC day by how each arrived, today against the daily cap, the withheld count, and every document whose latest reading shows fewer than two of the three signs of a lab report, with the command that takes it out; reads only |
@@ -881,6 +882,7 @@ scripts/review-queue.js                               latest reading refused or 
 scripts/lib/rerun.js                                  what those share: the stamp-or-refuse helper, reads, comparison
 scripts/drift.js                                      one strain's batches over time, scored as the app scores a match
 scripts/lab-stats.js                                  per lab: documents, accepted, median coverage, commonest warning
+scripts/score-spread.js                               how alike the usable readings look to the maths: four tables, scans and fixtures apart
 scripts/duplicates.js                                 reports kept as more than one document: shared texts, shared lab IDs
 scripts/download-twice.js                             a link fetched twice: did the bytes or the text change?
 scripts/remove-copies.js                              admin cleanup: duplicate copies removed, PDF and rows; dry run by default
@@ -1480,11 +1482,21 @@ parser's readings, not any product. On the rehearsal archive: 7 labs, 59
 documents (all fixtures), 56 accepted; Modern Canna's one warning is
 MCL-FLW-002's 103.8% (§3).
 
+**`scripts/score-spread.js [--class flower|vape|concentrate]`** (since
+2026-10-14) - how alike the archive's usable readings look to the matching
+maths, one per sample from `batch_series`, real scans and seeded fixtures
+apart, then together: every pair inside a product class scored and banded
+as the app scores a match, how many of the others a typical sample has at
+Good or better, measured coverage and the unmapped names, and freshness by
+lab for flower. It describes lab reports, not experiences, prints no
+strain, batch or client, and changes no score (below, "Score spread,
+2026-10-14").
+
 **Run them, from the Codespace** (after the `db push` above; `NOSE_DB_URL`
-is enough - both read only, as `nose_writer`, and print no report text,
+is enough - all three read only, as `nose_writer`, and print no report text,
 address or secret): `node scripts/drift.js "Grease Monkey"`, `node
 scripts/drift.js "Grease Monkey" --lab "Kaycha Labs"`, `node
-scripts/lab-stats.js`.
+scripts/lab-stats.js`, `node scripts/score-spread.js`.
 
 **Privacy.** Nothing new is collected. `harvestOn` and `reportOn` restate
 dates the stored output already held as printed, and studying the collection
@@ -2774,6 +2786,120 @@ and `KAY-PRR-001` 0.944, `match clean` and `input-paths clean` - the real
 packages, no stand-ins. After Netlify deployed it, the owner scanned a Kaycha
 report on the live site and the card showed the Harvested row.
 
+### Score spread, 2026-10-14
+
+**Do most Florida jars look alike to the maths?** That has to be known
+before deciding how a score should read (the 2026-10-07 build prompts, from
+the r/FLMedicalTrees research). In the 56 accepted fixtures, 202 of the 300
+flower pairs (67%) score Good or better, but the fixtures are reports
+collected by hand, not a market. `scripts/score-spread.js` asks the same of
+the live archive. It changes no score: `js/match-math.*.js` and
+`match-golden.json` are as they were.
+
+```
+scripts/score-spread.js   four tables; reads only, as nose_writer; its maths from scripts/lib/match.js
+test/analysis-test.js     its checks on PGlite: 78 checks, 56 before
+```
+
+**The probe, before any edit**, on `d06995f` - ALL GATES GREEN, 32 gates:
+
+1. `lab-stats.js` reads `nose.latest_parses` keyed by `nose.sample_key(lab,
+   lab_id, document_id)`; `samplesOf()` keeps each sample's newest document,
+   refused or not, and a sample is a test fixture when any of its documents
+   has a parse with context `seed`. `nose.batch_series`, which `drift.js`
+   reads, keeps the newest *usable* document instead. The new script reads
+   `batch_series` joined to its parse, as `drift.js` does, and takes the
+   fixture flag the `lab-stats.js` way.
+2. `analysis-test.js`'s `EFFECT_WORDS` has `effects?` on it, and `potency`
+   and `potent`; it scans `drift.js`, `lab-stats.js`, `scripts/lib/match.js`,
+   `coa-dates.js`, the two analysis migrations and `js/match-math.*.js`.
+   `score-spread.js` joins that list, comments included, and its output is
+   checked against it too.
+3. The baseline agrees with the prompt: flower is 78 Strong and 124 Good of
+   300 pairs, over the 25 flower fixtures.
+
+**What it prints.** First, that it describes lab reports, not experiences;
+then the scope and the samples - one per sample, the newest usable document
+of each lab and lab ID, else of each document - and how many came from scans
+and how many are test fixtures. Every table has three columns, scans,
+fixtures and together, and every share is printed as `N of M (P%)`.
+
+1. **Score spread**, per product class: every pair inside the class,
+   `cosine(normalize(a), normalize(b))`, banded by `matchBand()`. Its four
+   bands, names and order are read from `matchBand()` itself, by walking the
+   score from 1 down to 0, so no edge is written in the script. Each band's
+   count and share, and Good or better's; the median and the 10th and 90th
+   percentiles, linear between ranked scores - R's default, type 7
+   (https://stat.ethz.ch/R-manual/R-devel/library/stats/html/quantile.html,
+   read 2026-10-14) - shown through `shownScore()`. Pairs never cross a
+   class. A usable reading with no terpene `normalize()` keeps is in no
+   pair, and a line says how many there are.
+2. **A typical jar**, per class: for each sample, how many of the others in
+   its class score Good or better against it - the median, the fewest and
+   the most, each over the number of others.
+3. **Dropped mass**, over the readings in scope: how many carry a
+   `measuredCoverage`, its median and how many fall under 95%; how many carry
+   an `unmapped` list, and each name in it by how many readings carry it,
+   most first.
+4. **Freshness by lab**, flower only: readings, how many print a moisture
+   number and how many a water activity number, and water activity below,
+   inside and above 0.55-0.65, both edges inside - the card's rule (above,
+   "Water activity against ASTM D8197"). Moisture is counted, never judged.
+   A reading whose lab was not recognised is listed last.
+
+`--class flower`, `vape` or `concentrate` narrows every table to that class;
+table 4 then appears only for flower. The query selects no text, address,
+strain, batch or client, so none can be printed.
+
+**The rehearsal**: the 59 fixtures saved as the seed saves them, read by
+today's parser, on the PGlite stand-in - 56 usable samples, all fixtures.
+Flower: 202 of 300 pairs Good or better (67%), the prompt's figure; median
+81, 10th percentile 49, 90th 93; a typical flower sample has 18 of its 24
+others at Good or better (fewest 4, most 21). Vape: 57 of 136 (42%), median
+66. Concentrate: 28 of 55 (51%), median 79. Measured coverage: median
+100.0%, 3 of 56 under 95%; no accepted fixture carries an unmapped name,
+since none carries novelty (§7). Water activity on 10 of the 25 flower
+readings: 5 below, 5 inside, none above, as recorded above.
+
+**`test/analysis-test.js`**, on PGlite, in one lab no other check uses and
+the only concentrate readings in its database: fixtures P and P at 3x - one
+sample, kept as a seeded document and a newer scan of the same lab ID - make
+one Strong pair at 100; scans Q, R and U (one sample kept as two documents,
+read from the newer), a refused reading, and one carrying only THCA. Tables
+1 to 3 are checked cell by cell against values worked out by hand, and table
+4 on six flower readings: 0.55 and 0.65 inside, 0.54 below, 0.68 above, one
+with neither number, one refused. Then every share with its denominator;
+scans, fixtures and together in every table; no pair crossing a class; no
+hidden strain, batch, client, text, address or fingerprint printed or
+selected; the quantile, the bands, the water activity edges and the
+arguments; the command line refusing without `NOSE_DB_URL` and printing its
+usage for a class it does not take; and `score-spread.js` in the
+no-effect-wording scan. Five broken copies each fail it: refused and
+repeated documents kept, a fixture judged by its newest document alone, the
+0.55 edge read as below, a rounded score, nearest-rank percentiles. The
+gate's line stays `analysis clean`.
+
+**What did not move.** `js/match-math.*.js` and `match-golden.json`; the
+parser - `parse-coa.js`, `coa-dates.js`, `extract-text.js` - so no reparse is
+due; `drift.js`, `lab-stats.js` and what they print; the views, the
+migrations and the grants - no migration; anything B2B; every gate's
+expected line. Nothing here writes.
+
+**How it was verified, 2026-10-14, in the cloud workspace.** npm, its
+mirrors and cdn.jsdelivr.net were refused, so the gates ran on stand-ins:
+`pg` 8.23.0 and its dependencies from their GitHub sources at their tags
+(pg-protocol transpiled from its TypeScript; `pgpass` a stub that finds no
+password); PGlite 0.5.8's query and exec steps and its type rules, from its
+source at that tag, over a throwaway PostgreSQL 16.15 server per instance on
+a Unix socket; unpdf 1.8.0's `getDocumentProxy` and `extractTextItems` from
+its source over pdfjs-dist 6.2.108's legacy build (parity 56 match / 0
+differ); the committed html5-qrcode in place of `build.sh`'s download;
+Playwright 1.56.1's Chromium. ALL GATES GREEN on `d06995f` before any edit,
+32 gates, and on the change, 32, with `KAY-CAR-001` 4.124 and `KAY-PRR-001`
+0.944 each time. Nothing ran against Supabase, Netlify or the live site. The
+Codespace run on the real packages, and the run on the real archive, are the
+ones that count. This record closes no "Still open" item; it adds one.
+
 ### After a deploy — check it
 
 1. `node scripts/archive-health.js` in the Codespace (reads as `nose_writer`;
@@ -2796,6 +2922,10 @@ under the cap.
 
 ### Still open
 
+- **`score-spread.js` has not run on the real archive** (above, "Score
+  spread, 2026-10-14"). How a score should read waits for its four tables:
+  `node scripts/score-spread.js`, then `node scripts/score-spread.js --class
+  flower`, from the Codespace.
 - **A scan made while the database is down is neither capped nor checked
   against `withheld`**: the database answers neither, so its PDF is written,
   for backfill (§13, "What gets kept"). `backfill-from-blobs.js` then refuses

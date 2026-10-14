@@ -15,8 +15,12 @@
  * and that both are read-only and security_invoker; then drives
  * scripts/drift.js over a strain with dated, same-day, undated, refused and
  * other-strain batches from two labs, checking every score against the app's
- * own maths and every line for effect wording, and scripts/lab-stats.js over
- * three labs. As in the other PGlite tests, the assertions live in run(db).
+ * own maths and every line for effect wording, scripts/lab-stats.js over
+ * three labs, and scripts/score-spread.js over one lab's concentrate and
+ * flower readings - known pairs, a profile and the same profile at 3x one
+ * Strong pair at 100, refused and repeated documents, scans and fixtures
+ * apart and together, every denominator. As in the other PGlite tests, the
+ * assertions live in run(db).
  */
 
 const crypto = require('crypto');
@@ -196,6 +200,7 @@ async function run(db, log = console.log) {
 
   await driftChecks(db, check);
   await labStatsChecks(db, save, check);
+  await scoreSpreadChecks(db, check);
   cliChecks(check);
   return failures;
 }
@@ -372,6 +377,173 @@ async function labStatsChecks(db, save, check) {
     [false, false, false]);
 }
 
+/* ======================================================= score-spread.js */
+async function scoreSpreadChecks(db, check) {
+  const count = check;
+  const { scoreSpread, parseArgs, UsageError, quantile, bandsOf, waterActivityPlace, SPREAD_SQL } =
+    require(path.join(ROOT, 'scripts/score-spread.js'));
+  const M = require(path.join(ROOT, 'scripts/lib/match.js')).load();
+
+  /* One lab no other check uses, and the only concentrate readings in this
+     database, so every figure below is these readings' alone. Names that must
+     never be printed ride along on every reading. */
+  const SP = 'Spread Lab';
+  const put = (name, output, context = 'production') =>
+    store.saveScan({ sha256: sha(name), byteSize: 1000, sourceUrl: context === 'seed' ? null : ADDRESS, fetchedAt: '2026-09-25T12:00:00Z',
+                     extractorVersion: 'x1', text: `${name} ${SECRET_TEXT}`, parserVersion: 'abc1234', context, output }, { client: db });
+  const hidden = { lab: SP, strain: 'HIDDEN-STRAIN-NAME', batch: 'HIDDEN-BATCH-ID', client: 'HIDDEN-CLIENT-NAME' };
+  const conc = (terps, extra) => reading({ ...hidden, productClass: 'concentrate', terps, ...extra });
+  const flower = extra => reading({ ...hidden, ...extra });
+  const P = { limonene: 1, myrcene: 0.5, caryophyllene: 0.25 };
+  const P3 = { limonene: 3, myrcene: 1.5, caryophyllene: 0.75 };
+  const Q = { limonene: 0.8, myrcene: 0.7, caryophyllene: 0.5, linalool: 0.3 };
+  const R = { myrcene: 1, limonene: 0.7, pinene_a: 0.6 };
+  const U = { myrcene: 1, terpinolene: 0.8, pinene_a: 0.5 };
+
+  /* Fixtures: P, and P at 3x - one sample, kept as a seeded document and a
+     newer scan of the same lab ID, so a fixture read from its newest
+     document. Scans: Q, R, and U - one sample kept as two documents, read
+     from the newer - a refused reading, and one carrying no terpene the
+     maths reads. */
+  await put('sp-F1', conc(P, { measuredCoverage: 1, unmapped: [], waterActivity: 0.5 }), 'seed');
+  await put('sp-F2a', conc(U, { labId: 'SP-2', measuredCoverage: 0.5, unmapped: ['Older Name'] }), 'seed');
+  await put('sp-F2b', conc(P3, { labId: 'SP-2', measuredCoverage: 0.99, unmapped: [] }));
+  await put('sp-S1', conc(Q, { measuredCoverage: 0.93, unmapped: ['Guaiol', 'Sabinene Hydrate'] }));
+  await put('sp-S2', conc(R, { measuredCoverage: 1.01, unmapped: ['Guaiol'] }));
+  await put('sp-S3a', conc(P, { labId: 'SP-3', measuredCoverage: 0.5, unmapped: ['Older Name'] }));
+  await put('sp-S3b', conc(U, { labId: 'SP-3', measuredCoverage: 0.96, unmapped: [] }));
+  await put('sp-S4', conc(P, { usable: false, rejectReasons: ['only 1 terpene found'], measuredCoverage: 0.4, unmapped: ['Refused Name'] }));
+  await put('sp-S5', conc({ thca: 21.3 }, { measuredCoverage: null }));
+  /* Flower, for the freshness table: both edges, below, above, neither
+     number, and a refused reading. */
+  await put('sp-W1', flower({ moisture: 11.2, waterActivity: 0.55 }), 'seed');
+  await put('sp-W2', flower({ moisture: null, waterActivity: 0.65 }));
+  await put('sp-W3', flower({ moisture: 14.97, waterActivity: 0.54 }));
+  await put('sp-W4', flower({ moisture: 9, waterActivity: 0.68 }));
+  await put('sp-W5', flower({}));
+  await put('sp-W6', flower({ usable: false, rejectReasons: ['only 1 terpene found'], moisture: 10, waterActivity: 0.3 }));
+
+  const run = async cls => {
+    const lines = [];
+    const result = await scoreSpread({ db, cls, log: l => lines.push(l) });
+    return { lines, result, text: lines.join('\n') };
+  };
+  const cells = l => l.trim().split(/\s{2,}/);
+  /* A table's rows from the line naming it to the first blank line. */
+  const block = (lines, name, from = 0) => {
+    const i = lines.findIndex((l, k) => k >= from && cells(l)[0] === name);
+    if (i < 0) return null;
+    const end = lines.findIndex((l, k) => k > i && l === '');
+    return lines.slice(i, end < 0 ? undefined : end).map(cells);
+  };
+  const heading = (lines, n) => lines.findIndex(l => l.startsWith(`${n}. `));
+
+  const pair = M.cosine(M.normalize(P), M.normalize(P3));
+  count('score-spread: a profile and the same profile at 3x are one Strong pair, shown as 100',
+    [M.matchBand(pair)[1], M.shownScore(pair)], ['Strong', 100]);
+
+  const c = await run('concentrate');
+  count('...its first line says it describes lab reports, not experiences', c.lines[0],
+    'score-spread describes lab reports, not experiences: how alike the matching maths finds the archive\'s usable readings, one per sample.');
+  count('...one row per usable sample: the refused reading left out, two documents of one sample counted once, scans and fixtures apart',
+    c.lines.slice(1, 3), ['scope: concentrate only (--class concentrate)',
+      '6 usable samples from 8 documents: 4 from scans, 2 test fixtures stored by the seed']);
+  count('table 1: every pair in the class, apart, then together - the fixtures\' one pair is the 3x pair, Strong at 100',
+    block(c.lines, 'concentrate', heading(c.lines, 1)), [
+      ['concentrate', 'scans', 'fixtures', 'together'],
+      ['samples', '3', '2', '5'],
+      ['pairs', '3', '1', '10'],
+      ['Close match (Strong)', '0 of 3 (0%)', '1 of 1 (100%)', '3 of 10 (30%)'],
+      ['Related profile (Good)', '1 of 3 (33%)', '0 of 1 (0%)', '3 of 10 (30%)'],
+      ['Partial overlap (Moderate)', '1 of 3 (33%)', '0 of 1 (0%)', '1 of 10 (10%)'],
+      ['Different profile (Low)', '1 of 3 (33%)', '0 of 1 (0%)', '3 of 10 (30%)'],
+      ['Good or better (Strong + Good)', '1 of 3 (33%)', '1 of 1 (100%)', '6 of 10 (60%)'],
+      ['median score', '69', '100', '76'],
+      ['10th percentile', '47', '100', '31'],
+      ['90th percentile', '75', '100', '92']]);
+  count('...a usable sample with no terpene the maths reads is in no pair, and it says so',
+    c.lines.includes('(1 usable sample carries no terpene the maths reads, so it is in no pair)'), true);
+  count('table 2: per sample, the share of the others in its class at Good or better - median, fewest, most',
+    block(c.lines, 'concentrate', heading(c.lines, 2)), [
+      ['concentrate', 'scans', 'fixtures', 'together'],
+      ['samples', '3', '2', '5'],
+      ['others per sample', '2', '1', '4'],
+      ['median', '1 of 2 (50%)', '1 of 1 (100%)', '3 of 4 (75%)'],
+      ['fewest', '0 of 2 (0%)', '1 of 1 (100%)', '0 of 4 (0%)'],
+      ['most', '1 of 2 (50%)', '1 of 1 (100%)', '3 of 4 (75%)']]);
+  count('table 3: measured coverage over the readings carrying one, under 95%, unmapped names by readings carrying each - the newest document\'s, never a refused one\'s',
+    block(c.lines, 'scans', heading(c.lines, 3)), [
+      ['scans', 'fixtures', 'together'],
+      ['readings', '4', '2', '6'],
+      ['carry a measured coverage', '3 of 4 (75%)', '2 of 2 (100%)', '5 of 6 (83%)'],
+      ['median measured coverage', '96.0%', '99.5%', '99.0%'],
+      ['under 95%', '1 of 3 (33%)', '0 of 2 (0%)', '1 of 5 (20%)'],
+      ['carry an unmapped list', '3 of 4 (75%)', '2 of 2 (100%)', '5 of 6 (83%)'],
+      ['unmapped names, by readings carrying each'],
+      ['Guaiol', '2 of 3 (67%)', '0 of 2 (0%)', '2 of 5 (40%)'],
+      ['Sabinene Hydrate', '1 of 3 (33%)', '0 of 2 (0%)', '1 of 5 (20%)']]);
+  count('table 4 is flower only, and says so in a concentrate run',
+    c.lines[heading(c.lines, 4) + 1], '(flower only, so not in a --class concentrate run)');
+
+  const f = await run('flower');
+  count('table 4: by lab, flower only - moisture and water activity printed, and water activity below, inside (both edges) and above 0.55-0.65',
+    block(f.lines, SP, heading(f.lines, 4)), [
+      [SP, 'scans', 'fixtures', 'together'],
+      ['flower readings', '4', '1', '5'],
+      ['print a moisture number', '2 of 4 (50%)', '1 of 1 (100%)', '3 of 5 (60%)'],
+      ['print a water activity number', '3 of 4 (75%)', '1 of 1 (100%)', '4 of 5 (80%)'],
+      ['below 0.55', '1 of 3 (33%)', '0 of 1 (0%)', '1 of 4 (25%)'],
+      ['inside 0.55-0.65', '1 of 3 (33%)', '1 of 1 (100%)', '2 of 4 (50%)'],
+      ['above 0.65', '1 of 3 (33%)', '0 of 1 (0%)', '1 of 4 (25%)']]);
+  count('...a flower run has no concentrate in it', f.lines.some(l => cells(l)[0] === 'concentrate'), false);
+
+  const every = await run(null);
+  const classHeads = every.lines.slice(heading(every.lines, 1), heading(every.lines, 2))
+    .filter(l => /^\S/.test(l) && cells(l)[1] === 'scans').map(l => cells(l)[0]);
+  count('every class, each on its own, flower, vape and concentrate in that order; pairs never cross a class',
+    [classHeads, block(every.lines, 'concentrate', heading(every.lines, 1)) !== null
+      && JSON.stringify(block(every.lines, 'concentrate', heading(every.lines, 1))) === JSON.stringify(block(c.lines, 'concentrate', heading(c.lines, 1)))],
+    [['flower', 'vape', 'concentrate'], true]);
+  const fixtureSamples = (await db.query(`
+    select count(distinct nose.sample_key(l.lab, l.lab_id, l.document_id))::int as n
+      from nose.latest_parses l
+     where nose.sample_key(l.lab, l.lab_id, l.document_id) in (
+             select nose.sample_key(o.lab, o.lab_id, o.document_id)
+               from nose.latest_parses o join nose.extractions x on x.document_id = o.document_id
+               join nose.parses s on s.extraction_id = x.id where s.context = 'seed')
+       and nose.sample_key(l.lab, l.lab_id, l.document_id) in (
+             select nose.sample_key(lab, lab_id, document_id) from nose.latest_parses where usable)`)).rows[0].n;
+  const usableSamples = (await db.query('select count(*)::int as n from nose.batch_series')).rows[0].n;
+  count('...the whole archive: every usable sample in batch_series, fixtures as the seed stored them',
+    [every.result.samples, every.result.fixtures], [usableSamples, fixtureSamples]);
+
+  const shares = t => [(t.match(/\(\d+%\)/g) || []).length, (t.match(/\b\d+(?:\.\d)? of \d+ \(\d+%\)/g) || []).length];
+  count('every share printed has its denominator beside it', [c, f, every].map(r => { const [a, b] = shares(r.text); return a > 0 && a === b; }),
+    [true, true, true]);
+  count('...and every table puts scans and fixtures apart, then together',
+    (heads => heads.length > 0 && heads.every(h => JSON.stringify(h.slice(-3)) === '["scans","fixtures","together"]'))(
+      every.lines.map(cells).filter(r => r.includes('scans'))), true);
+  count('no effect wording; no report text, address, fingerprint, strain, batch or client - not printed, not selected',
+    [EFFECT_WORDS.test(every.text), every.text.includes(SECRET_TEXT), every.text.includes('example.org'),
+     every.text.includes(sha('sp-S1').slice(0, 8)), /HIDDEN-/.test(every.text + c.text + f.text),
+     /\b(strain|client|sha256|first_source_url)\b|\.text\b|\bp\.batch\b/.test(SPREAD_SQL)],
+    [false, false, false, false, false, false]);
+
+  count('quantile: linear between ranked values (type 7), the median an ordinary median',
+    [quantile([4, 1, 3, 2], 0.5), quantile([10, 20, 30], 0.1), quantile([30, 10, 20], 0.9), quantile([5], 0.9), quantile([null, NaN], 0.5), quantile([], 0.5)],
+    [2.5, 12, 28, 5, null, null]);
+  count('the bands, their names and their order are matchBand()\'s own; Good or better is Strong and Good',
+    (({ bands, goodOrBetter }) => [bands.map(b => [b.label, b.band]), [...goodOrBetter]])(bandsOf(M)),
+    [[['Close match', 'Strong'], ['Related profile', 'Good'], ['Partial overlap', 'Moderate'], ['Different profile', 'Low']], ['Strong', 'Good']]);
+  count('water activity: both edges inside, as the card reads it',
+    [0.5499, 0.55, 0.6, 0.65, 0.6501].map(waterActivityPlace), ['below', 'inside', 'inside', 'inside', 'above']);
+  const usage = argv => { try { return parseArgs(argv); } catch (e) { return e instanceof UsageError; } };
+  count('arguments: none, or --class and one of the three',
+    [usage([]), usage(['--class', 'flower']), usage(['--class', 'vape']), usage(['--class', 'concentrate']),
+     usage(['--class']), usage(['--class', 'tincture']), usage(['flower']), usage(['--class', 'flower', '--class', 'vape'])],
+    [{ cls: null }, { cls: 'flower' }, { cls: 'vape' }, { cls: 'concentrate' }, true, true, true, true]);
+}
+
 /* ============================================ the command lines refuse */
 function cliChecks(check) {
   const count = check;
@@ -383,11 +555,19 @@ function cliChecks(check) {
     const res = cli(script, args);
     count(`${script} with no secrets refuses`, res.status === 1 && /^REFUSED: NOSE_DB_URL.* not set/.test(res.stderr), true);
   }
+  for (const args of [[], ['--class', 'vape']]) {
+    const res = cli('score-spread.js', args);
+    count(`score-spread.js${args.length ? ` ${args.join(' ')}` : ''} with no secrets refuses`,
+      res.status === 1 && /^REFUSED: NOSE_DB_URL.* not set/.test(res.stderr), true);
+  }
   const d = cli('drift.js', []);
   count('drift.js with no strain prints its usage', d.status === 2 && /usage: node scripts\/drift\.js/.test(d.stderr), true);
   const l = cli('lab-stats.js', ['--everything']);
   count('lab-stats.js with an argument prints its usage', l.status === 2 && /usage: node scripts\/lab-stats\.js/.test(l.stderr), true);
-  const sources = ['scripts/drift.js', 'scripts/lab-stats.js', 'scripts/lib/match.js', 'netlify/functions/lib/coa-dates.js',
+  const s = cli('score-spread.js', ['--class', 'tincture']);
+  count('score-spread.js with a class it does not take prints its usage, before any secret is asked for',
+    s.status === 2 && /usage: node scripts\/score-spread\.js \[--class flower\|vape\|concentrate\]/.test(s.stderr), true);
+  const sources = ['scripts/drift.js', 'scripts/lab-stats.js', 'scripts/score-spread.js', 'scripts/lib/match.js', 'netlify/functions/lib/coa-dates.js',
                    'supabase/migrations/20260923170000_nose_analysis_views.sql',
                    'supabase/migrations/20261002180000_nose_one_document_per_text.sql',
                    path.relative(ROOT, require(path.join(ROOT, 'scripts/lib/match.js')).matchFile())]
