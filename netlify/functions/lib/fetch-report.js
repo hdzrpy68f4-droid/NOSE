@@ -29,12 +29,18 @@
 
 const MAX_BYTES   = 12 * 1024 * 1024;   // COAs run to a few hundred KB; 12MB is generous
 /* One BUDGET for the whole chain, not per request. Each fetch used to start a
-   fresh 7500ms timer, so three hops could reach 22.5s against Netlify's 10s
-   ceiling - past which the platform kills the function and the person sees its
-   error page instead of ours, which is the failure this timeout exists to
-   prevent. TIMEOUT_MS still caps any single request; whichever is smaller wins. */
+   fresh 7500ms timer, so three hops could reach 22.5s against the 10s NOSE
+   keeps a reply within - its own budget, not a Netlify limit: the chain has
+   8s of it, and the archive what is left before 9s (coa.js). Netlify's
+   "Configuration for functions" gives a synchronous function 60s, and its
+   "Lambda compatibility for Functions" gives no limit for coa.js's
+   exports.handler format, only 10s for a streamed reply (both read
+   2026-10-15). A chain that runs on leaves the person waiting, and past the
+   platform's own limit shows them its error page instead of ours, which is
+   the failure this timeout exists to prevent. TIMEOUT_MS still caps any
+   single request; whichever is smaller wins. */
 const TOTAL_BUDGET_MS = 8000;
-const TIMEOUT_MS  = 7500;   // under Netlify's 10s function limit, so our message wins
+const TIMEOUT_MS  = 7500;   // under NOSE's own 10s budget for a reply, so our message wins
 const MAX_REDIRECTS = 3;
 const MAX_PAGE_HOPS = 2;   // a portal may put a listings page before the report page
 

@@ -578,8 +578,9 @@ not the parser's - it warns rather than refusing.
   from `coa.moderncanna.com` directly. Worth deciding whether to trust parsed
   content over URL origin. **Never allowlist `amazonaws.com`** — anyone can host
   anything there.
-- **7.5-second fetch budget**, deliberately under Netlify's 10s function limit.
-  Parsing runs ~10 ms, so it is not the constraint.
+- **7.5-second fetch budget** a request, inside 8s for the whole chain,
+  deliberately under the 10s NOSE keeps a reply within - its own budget, not
+  a Netlify limit (§12). Parsing runs ~10 ms, so it is not the constraint.
 
 - **A `Total Cannabinoids` row above a total label is unguarded.** Three
 fixtures - `ACT_AppleBurst_vape`, `KF2025-046-PB-AU-COA` and
@@ -830,9 +831,14 @@ set so a self-referencing page cannot loop.
   since `#` opens a fragment the resolved link refetched the page.
 
 **The fetch budget is for the whole chain**, not per request: `TOTAL_BUDGET_MS`
-is computed once and passed down, because three hops at 7.5s each would exceed
-Netlify's 10s ceiling and the person would see the platform's error page rather
-than ours. Not covered by any test — exercising it needs a slow server.
+(8s) is computed once and passed down, because three hops at 7.5s each would
+run far past the 10s NOSE keeps a reply within - its own budget, not a Netlify
+limit. Netlify's "Configuration for functions" gives a synchronous function
+60s, and its "Lambda compatibility for Functions" gives no limit for
+`coa.js`'s `exports.handler` format, only 10s for a streamed reply (both read
+2026-10-15; §13, "Comments that match the code"). A chain that runs on leaves
+the person waiting, and past the platform's own limit shows them its error
+page rather than ours. Not covered by any test — exercising it needs a slow server.
 
 **After every parse on the production deploy, `coa.js` hands the result to the
 archive (§13)**: one call site, bounded, and unable to change the reply.
@@ -1196,8 +1202,9 @@ or the reverse.
 - **The reply never depends on it.** The handler's response is byte-identical
 whether either write succeeds, fails, hangs, or is not configured. Every
 failure is swallowed. Both writes together get at most 2s of what is left
-under a 9s deadline (the 8s fetch chain plus 2s would pass Netlify's 10s) and
-are skipped below 0.3s; `store.js` bounds the connection itself, and a 50ms
+under a 9s deadline (the 8s fetch chain plus 2s would pass the 10s NOSE keeps
+a reply within - its own budget, not a Netlify limit; §12) and are skipped
+below 0.3s; `store.js` bounds the connection itself, and a 50ms
 backstop bounds `store.js`. Awaited, not `context.waitUntil`: this is a
 Lambda-style function, and Netlify freezes it the moment it returns.
 - **Unset `NOSE_DB_URL` makes the database half a no-op** — `store.js` and
@@ -3847,6 +3854,87 @@ docs/LAUNCH-CHECKLIST.md    item 1: build.sh checks the committed library rather
 - **After the deploy:** `curl -s https://nose-app.com/vendor/html5-qrcode.min.js
   | sha256sum` gives the pin, and the Scan QR tab on `/app` opens the camera.
 
+### Comments that match the code, 2026-10-15
+
+**Four comments called 10s Netlify's limit, and `b2b-vote.js`'s header still
+described the vote as it was before 2026-10-09.** Netlify's current docs give
+no 10s limit for a function like `coa.js`, and since 2026-10-09 the widget
+sends the vote by `fetch` (§14, "Pinned releases"), not `sendBeacon`. The
+fourth of the architecture review's extra-small cleanups (project document
+`claude/nose-architecture-review-2026-10-15.md`). Comments and handoff
+sentences only.
+
+```
+netlify/functions/coa.js               the archive's comment: 10s is NOSE's own budget; the two docs pages
+netlify/functions/lib/fetch-report.js  the chain budget's comment and TIMEOUT_MS's line-end comment, the same
+netlify/functions/lib/store.js         query_timeout's comment, the same
+netlify/functions/b2b-vote.js          header: the vote by fetch, palateSize counts batches, no cookie sent or read
+PARSER-HANDOFF.md                      s9's fetch budget, s12's whole-chain paragraph, s13's "The reply never
+                                       depends on it"; s14's found-on-the-way item
+```
+
+- **What Netlify's docs say**, read 2026-10-15 through WebFetch (this
+  workspace's shell cannot reach docs.netlify.com). "Configuration for
+  functions" (https://docs.netlify.com/build/functions/configuration/, last
+  updated Sep 17, 2026) lists 60 seconds as the synchronous execution limit
+  among the defaults every function deploys with, and names no 10s.
+  "Lambda compatibility for Functions"
+  (https://docs.netlify.com/functions/lambda-compatibility/, last updated
+  Jun 9, 2026) gives one execution limit, 10 seconds, for a streamed reply -
+  `coa.js` returns its reply whole - and none for a synchronous one. It also
+  says the mode is deprecated: from July 1, 2027, deploys holding functions in
+  it will no longer be accepted. So 10s is NOSE's own budget: the chain has
+  8s (`TOTAL_BUDGET_MS`), one request 7.5s (`TIMEOUT_MS`), the archive at most
+  2s of what is left before 9s (`ARCHIVE_DEADLINE_MS`, `ARCHIVE_BUDGET_MS`),
+  and a database query 4s unless told otherwise (`query_timeout`). Every
+  number stays as it was; using the time Netlify now allows needs the limit
+  for this format measured, which porting `coa.js` to the current format
+  settles.
+- **The vote, as the widget sends it**: `fetch(ORIGIN + VOTE_PATH, { method:
+  'POST', mode: 'cors', credentials: 'omit', referrerPolicy: 'no-referrer',
+  keepalive: true, body })` (`js/b2b-widget.8f17602f.js`, line 357).
+  `palateSize` is `palate.basis.used.length` in `js/b2b-rank.580a8c1b.js`'s
+  `voteScore()`, line 295: one entry per batch the palate used, the voted
+  batch left out. The header now cites MDN's CORS guide (simple requests: a
+  POST, with `text/plain` one of three Content-Types allowed;
+  https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS, last
+  modified Sep 4, 2026) and MDN's `RequestInit` (`credentials: "omit"` never
+  sends credentials, cookies among them;
+  https://developer.mozilla.org/en-US/docs/Web/API/RequestInit, last modified
+  Jun 26, 2026), both read 2026-10-15. Neither page says which Content-Type a
+  string body gets, and the Fetch Standard's page was cut off before "extract
+  a body" when read, so for that the header names `b2b-widget-test.mjs`, which
+  watches the vote go `text/plain;charset=utf-8` with no `OPTIONS` before it.
+- **The probe, before the edit.** 1: `git grep -n "10s" -- netlify` gave
+  four lines, `coa.js:53`, `fetch-report.js:32` and `:37`, `store.js:128`.
+  2: the two pages, above; neither names 10s as the limit for a function
+  like `coa.js`. 3: the header's lines 9-13 (the passage the prompt's 9-11
+  begins), 32 and 43-49 said `sendBeacon`, a no-cors POST, the page's
+  cookies (credentials `include`) and purchases; the widget's `fetch` and
+  `voteScore()`'s line are above.
+- **Found on the way, left as it is:** §12's "Not covered by any test" after
+  the whole-chain budget. Since 2026-10-05 `b2b-coverage-test` drives a slow
+  link through the chain - a page that takes 5 seconds, then a report that
+  never answers - and checks it ends at `TOTAL_BUDGET_MS`, not 5 + 7.5s.
+- **What did not move.** Every code line in the four files: with comments
+  stripped, each is what it was. `b2b-vote.js`'s replies, its 415 sentence
+  included, which still names `sendBeacon` (a reply, left for its own
+  prompt); every `js/` and `css/` file, so `build.sh` renamed nothing; every
+  gate's expected line; the parser, the maths, the archive and B2B; what NOSE
+  keeps or sends, so the privacy page.
+- **How it was verified, 2026-10-15, in the cloud workspace**, where npm's
+  registry and docs.netlify.com were refused: unpdf stood in for by its two
+  calls over pdfjs-dist 6.2.108 (parity still `56 match / 0 differ`), and
+  Playwright 1.56.0 with its Chromium from the workspace. 22 of the 32 gates
+  green before and after, with `KAY-CAR-001` 4.124 and `KAY-PRR-001` 0.944 -
+  archive wiring, b2b coverage, build, b2b release, b2b widget and b2b kit
+  among them. The other 10 need PGlite, which could not be installed.
+  `b2b-endpoints` is one of them; its checks on `b2b-vote.js`'s text - the
+  source with comments stripped, and none of its listed words in the whole
+  file - were run on their own with its own `codeOf` and word list, and pass.
+  The Codespace run on the real packages is the one that counts.
+- **After the deploy:** nothing to check. No visitor or store sees a comment.
+
 ### After a deploy — check it
 
 1. `node scripts/archive-health.js` in the Codespace (reads as `nose_writer`;
@@ -5842,6 +5930,8 @@ PARSER-HANDOFF.md           this record; Still open
   referrer, time and the request's own details - include no `Origin`
   ([Log Drains](https://docs.netlify.com/monitor-sites/log-drains), updated
   2026-09-25).
+  **The header's two are fixed, 2026-10-15**: it says `fetch`, no cookie, and
+  batches (§13, "Comments that match the code").
 
 **Where each claim on the page lives.** No test reads the section - Prompt 8
 adds no gate - so this table is how it stays true: change a row's code, and

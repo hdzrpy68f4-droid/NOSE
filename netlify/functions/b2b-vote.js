@@ -6,11 +6,14 @@
 //   Content-Type: text/plain;charset=UTF-8
 //   {"key":"npk_...","candidate":"<product_id>","score":74,"band":"Moderate","palateSize":3,"vote":"up"}
 //
-// A text/plain body is what navigator.sendBeacon sends a string as, and with
-// it the request is a no-cors POST that needs no preflight (W3C Beacon,
-// "Processing model": a CORS-safelisted Content-Type keeps the mode no-cors).
-// Any other Content-Type is refused: from a page it would need a preflight,
-// which this function never answers.
+// The widget sends the string by fetch - mode "cors", credentials "omit",
+// referrerPolicy "no-referrer", keepalive (js/b2b-widget.*.js). Its
+// text/plain body keeps it a simple request, a POST with no preflight (MDN,
+// "Cross-Origin Resource Sharing (CORS)", Simple requests: text/plain is one
+// of the three Content-Types allowed; read 2026-10-15), and
+// test/b2b-widget-test.mjs watches it go text/plain;charset=UTF-8 with no
+// OPTIONS before it. Any other Content-Type is refused: from a page it would
+// need a preflight, which this function never answers.
 //
 // OFF unless b2bEnabled() (lib/b2b-flag.js): B2B_ENABLED=1 in Netlify's
 // Production context AND a production build. Off, every request gets the same
@@ -29,7 +32,8 @@
 //               below a band's edge shows as the edge while matchBand() gives
 //               the band below (PARSER-HANDOFF s13, "The shown score"), and
 //               this function holds none of the maths
-//   palateSize  how many purchases made the palate, 1 to 1000
+//   palateSize  how many batches made the palate, 1 to 1000 - voteScore()'s
+//               palate.basis.used.length (js/b2b-rank.*.js)
 //   vote        up | down
 //
 // THE SAME ORIGIN RULE AS THE FEED: the request's Origin must be one the
@@ -41,12 +45,12 @@
 // default 100) the vote is dropped and the reply is the same.
 //
 // It reads nothing about the caller beyond the Origin header and the body: no
-// address, user agent, cookie, context, geography or time. A beacon carries
-// the page's cookies for this site (credentials "include"), and this function
-// never looks at them. Logs: nothing on success, one fixed line without detail
-// on a failure or a dropped vote. A valid vote is answered 204 with the origin
-// echoed, so a fetch() in cors mode with keepalive reads it as sent; a beacon
-// never reads a reply.
+// address, user agent, cookie, context, geography or time. No cookie is sent
+// and none is read: credentials "omit" never sends credentials, cookies among
+// them (MDN, "RequestInit", credentials; read 2026-10-15), and this function
+// reads no Cookie header. Logs: nothing on success, one fixed line without
+// detail on a failure or a dropped vote. A valid vote is answered 204 with
+// the origin echoed, so the widget's fetch in cors mode reads it as sent.
 //
 // Written as palate-sync.js and b2b-catalog.js are: one default export,
 // taking a Request and returning a Response, and nothing else exported. The

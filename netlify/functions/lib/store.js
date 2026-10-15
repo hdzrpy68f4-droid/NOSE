@@ -125,7 +125,9 @@ function clientConfig(url, { name = 'NOSE_DB_URL', timeoutMs = 1000, queryTimeou
     connectionString: checkUrl(url, name),
     ssl: { ca: loadCa() },
     connectionTimeoutMillis: timeoutMs,
-    /* A hung query must not outlive Netlify's 10s ceiling. */
+    /* A hung query must not outlive the 10s NOSE keeps a reply within - its
+       own budget, not a Netlify limit ("Configuration for functions" and
+       "Lambda compatibility for Functions", read 2026-10-15; coa.js says more). */
     query_timeout: queryTimeoutMs
   };
 }

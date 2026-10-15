@@ -49,11 +49,15 @@ const { parseCoa } = require('./lib/parse-coa');
 const { buildInfo } = require('./lib/version');
 const archive = require('./lib/archive');
 
-/* The archive (PARSER-HANDOFF s13). The whole handler must finish inside
-   Netlify's 10s ceiling and the fetch chain alone may spend 8s of it, so the
-   two writes together get at most 2s of whatever is left, and are skipped
-   outright when too little is left to be worth starting. A stored row is
-   worth less than a reply that arrives. */
+/* The archive (PARSER-HANDOFF s13). NOSE keeps the handler's reply within
+   10s - its own budget, not a Netlify limit. Netlify's "Configuration for
+   functions" gives a synchronous function 60s, and its "Lambda compatibility
+   for Functions" gives no limit for an exports.handler function like this
+   one, only 10s for a streamed reply, which this is not (both read
+   2026-10-15). The fetch chain alone may spend 8s of the 10, so the two
+   writes together get at most 2s of whatever is left before 9s, and are
+   skipped outright when too little is left to be worth starting. A stored
+   row is worth less than a reply that arrives. */
 const ARCHIVE_DEADLINE_MS = 9000;         // measured from the start of the handler
 const ARCHIVE_BUDGET_MS   = 2000;         // the PDF and database writes, together
 const ARCHIVE_MIN_MS      = 300;          // below this, do not start
