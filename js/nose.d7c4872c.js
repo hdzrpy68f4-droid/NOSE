@@ -436,19 +436,21 @@
     const DRIER_GUIDE='/learn/why-your-jar-is-drier-than-its-report/';
     function waterActivityLink(aw){ return {text:aw==null?NO_NUMBER:AW_RANGE,href:DRIER_GUIDE}; }
 
-    /* When the jar was harvested - or, without that, when its report is
-       dated - and how long ago, so an old report reads as old. Shown only:
-       age never reaches the shape or the score (PARSER-HANDOFF s4). The reply's
-       harvestOn and reportOn are ISO days from lib/coa-dates.js, or null; a
-       value that is not a real calendar day shows no row. The age is whole
-       calendar days from that day to the person's own today, in their time
-       zone. A day after it shows the date alone: the parser bounds dates by
-       its UTC today, which a US evening has not reached yet. testedOn (the
-       2026-09-23 review, Prompt 7) does not exist; it would come between. */
+    /* When the jar was harvested - or, without that, when the lab finished
+       testing it, or else when its report is dated - and how long ago, so an
+       old report reads as old. Shown only: age never reaches the shape or the
+       score (PARSER-HANDOFF s4). The reply's harvestOn, testedOn (since
+       2026-10-14, "When the lab finished") and reportOn are ISO days from
+       lib/coa-dates.js, or null; a value that is not a real calendar day
+       shows no row. The age is whole calendar days from that day to the
+       person's own today, in their time zone. A day after it shows the date
+       alone: the parser bounds dates by its UTC today, which a US evening has
+       not reached yet. */
     const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     const AGE_NOTE='A report describes the jar on test day. Terpenes keep evaporating after that, so an older jar can smell quieter than its numbers.';
     function reportDateRow(data){
-      const pick=data.harvestOn?['Harvested',data.harvestOn]:data.reportOn?['Report dated',data.reportOn]:null;
+      const pick=data.harvestOn?['Harvested',data.harvestOn]:data.testedOn?['Tested',data.testedOn]
+        :data.reportOn?['Report dated',data.reportOn]:null;
       const m=pick&&/^(\d{4})-(\d{2})-(\d{2})$/.exec(String(pick[1]));
       if(!m) return null;
       const y=Number(m[1]), mo=Number(m[2]), d=Number(m[3]);

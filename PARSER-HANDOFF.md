@@ -369,20 +369,21 @@ usable  rejectReasons  warnings  novelty
   readers indistinguishable.
 
 **Additive fields, for the archive (§13) — the app does not read the first
-three and `coa.js` does not send them; since 2026-10-14 it sends
-`harvestOn` and `reportOn`, and the card reads them. `testedOn` (also since
-2026-10-14) is stored and not sent:**
+three and `coa.js` does not send them; since 2026-10-14 it sends the last
+three, and the card reads them:**
 
 ```
 reportDate  client  parserVersion  harvestOn  reportOn  testedOn
 ```
 
-- **`coa.js` sends `harvestOn` and `reportOn`** on a usable reply (since
-  2026-10-14), passed through as the parser gives them - an ISO day or null,
+- **`coa.js` sends `harvestOn`, `testedOn` and `reportOn`** on a usable
+  reply (since 2026-10-14; `testedOn` since that day's "The Tested row on
+  the card"), passed through as the parser gives them - an ISO day or null,
   null when the field is absent. Nothing else in any reply changed; a refusal
-  carries neither. The confirmation card shows one of them on the row after
-  Batch, with how long ago it was (§13, "Harvest date and age on the card").
-  Nothing scores either (§4).
+  carries none of them. The confirmation card shows one of them on the row
+  after Batch - the harvest day, else the day the lab finished, else the
+  report day - with how long ago it was (§13, "Harvest date and age on the
+  card"). Nothing scores any of them (§4).
 
 - `reportDate` and `client` are read like `harvestDate`: a labelled row, the
   value inline or on the next line, first occurrence wins — except that the
@@ -1734,7 +1735,7 @@ showed it. The fault predated `novelty`.
   meantime".
 - **`test/input-paths-test.mjs`** is the check: 65 checks in headless Chromium
   (66 since 2026-09-24, 130 with water activity and 200 with the date row,
-  both 2026-10-14),
+  both 2026-10-14, and 260 with the Tested row, the same day),
   against a local copy of the site served with `_headers` (CSP included). Each
   POST to `/.netlify/functions/coa` is answered by the real `coa.js` handler and
   parser in the test's own process. Only the PDF download and unpdf are stood in
@@ -3430,8 +3431,9 @@ A later name needs no flag. Only this file conflicted; `probe-db.js` and
   Every terpene value, total, verdict, reason, warning, `readBy`, class,
   freshness figure, `harvestOn` and `reportOn` is the same. Dated accepted
   fixtures: **20 of 56 became 55 of 56** - Kaycha 22, Modern Canna 13, ACS 8,
-  ACT 3, Method 8 of 9, TerpLife 1. `coa.js` does not send `testedOn`, so
-  every reply and the card are unchanged. B2B is unchanged too:
+  ACT 3, Method 8 of 9, TerpLife 1. This change does not send `testedOn` -
+  every reply and the card stay as they were; the next record, "The Tested
+  row on the card", sends it. B2B is unchanged too:
   `b2b-store.js` keeps the parser's fields by name, `testedOn` is not among
   them, and `b2b.batch_reads` has no column for it (below, "Still open").
 - **The migration**, `20261015000000_nose_tested_on.sql`: `parses.tested_on`,
@@ -3514,7 +3516,59 @@ A later name needs no flag. Only this file conflicted; `probe-db.js` and
      probe clean, the tested_on check among it.
   4. `node scripts/reparse.js` - the same counts, written; then once more -
      every document unchanged.
-  5. `git push` - deploys. Then "After a deploy", below.
+  5. `git push` - deploys. Then "After a deploy", below, and the next
+     record's check: one Method jar scanned on the live site.
+
+### The Tested row on the card, 2026-10-14
+
+**A Method jar's card showed no date at all.** The card's date row (above,
+"Harvest date and age on the card") showed the harvest day, else the report
+day, and left room for `testedOn`. With the parser reading it (above, "When
+the lab finished"), the row now shows the harvest day, else **the day the lab
+finished**, else the report day.
+
+```
+netlify/functions/coa.js     the usable reply adds testedOn, between harvestOn and reportOn (s7)
+js/nose.*.js                 reportDateRow(): Harvested, else Tested, else Report dated
+                             (was js/nose.289536d5.js - build.sh renamed it; app.html, index.html, _redirects follow)
+test/input-paths-test.mjs    the date cases: 260 checks, 229 before
+```
+
+- **The row**, straight after Batch, as before: `Harvested` with
+  `harvestOn`; else **`Tested`** with `testedOn`; else `Report dated` with
+  `reportOn`; else no row. The value and the note under it are R4's, unchanged:
+  `Aug 31, 2026 · 44 days ago`, and "A report describes the jar on test
+  day...". `Tested` is the word R4's prompt named for this row; shown to the
+  owner on a Method card and approved before the commit, and the
+  effect-word list finds nothing in it.
+- **What it changes on the fixtures:** a date row on 55 of the 56 accepted
+  fixtures, where 20 had one - every Modern Canna, ACT and Method report
+  but Method_DulceDeUva now shows `Tested`, and so do the Kaycha and ACS
+  reports that print no harvest day. A harvest day still wins wherever one
+  is printed, and TerpLife keeps `Report dated`.
+- **`test/input-paths-test.mjs`**, on the frozen clock of R4 (22:30 on
+  2026-10-14 in New York): the handler's replies now carry `testedOn` too,
+  checked on five fixtures; the cards for MTL-FLW-002 (`Tested`, `Aug 31,
+  2026 · 44 days ago`) and MCL-FLW-001 (`Tested`, `Nov 8, 2024 · 705 days
+  ago`, the "no date" case until now), every row written out; KAY-FLW-001
+  still `Harvested` though it carries a finish day; TerpLife still `Report
+  dated`; no row on Method_DulceDeUva_flower, the one accepted fixture with
+  no readable day; and MTL-FLW-002's real reply with a report day set as
+  well, still `Tested`. 260 checks, 229 before. On the parser commit alone
+  (`coa.js` and the bundle unchanged) it fails 10 - the five replies and the
+  five Tested cards - and passes the other 250. `INPUT_PATHS_SHOTS` saves the
+  new cards as `date …` like the others.
+- **What did not move.** The parser and the archive (this change reads
+  nothing new); every other row of the card; `js/match-math.*.js` and
+  `match-golden.json`; B2B - the widget shows no dates and reads none of this
+  file; every gate's expected line.
+- **How it was verified, 2026-10-14, in the cloud workspace**, on the stand-ins
+  of the record above: ALL GATES GREEN, 32 gates, `KAY-CAR-001` 4.124 and
+  `KAY-PRR-001` 0.944; the cards looked at in headless Chromium under the
+  site's CSP. The Codespace run on the real packages is the one that counts.
+- **After the deploy:** scan one Method jar on the live site. Its card shows
+  `Tested`, the day its lab director signed it, and how long ago - unless the
+  report is in Method's older layout, which shows no date row.
 
 ### After a deploy — check it
 
@@ -3598,11 +3652,6 @@ panel it takes the card from, on both paths, so it waits for its own prompt.
   says how WJ and an en dash behave, but the page read gave its class
   descriptions, not the rule lines themselves (LB11, LB21): the fetch stopped
   before its section 6.
-- **The card has no Tested row** (above, "Harvest date and age on the
-  card"): the parser reads `testedOn` since 2026-10-14 (above, "When the lab
-  finished"), but `coa.js` does not send it yet. Once it does, like
-  `harvestOn`, `reportDateRow()` takes it after the harvest day and before
-  the report day. Until then 36 of the 56 accepted fixtures show no date row.
 - **Method's sign-off is a UTC day** (above, "When the lab finished"): a
   report signed after 8 PM Eastern carries the next day as its `testedOn`.
   Nothing on the 8 fixtures does. Converting it would mean guessing the

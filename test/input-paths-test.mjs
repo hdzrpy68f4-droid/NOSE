@@ -45,10 +45,12 @@
  *     rel="noopener", the row's text unchanged, no other link on the card,
  *     and the guide served (PARSER-HANDOFF s13, "Two guides from the research")
  *   - the row after Batch: "Harvested" and the harvest day with how long ago
- *     (KAY-FLW-001), else "Report dated" (TerpLife_GrpeBblGm_flower), else no
- *     row (MCL-FLW-001); the note under it; every other row as before; today,
- *     yesterday and the person's tomorrow, on a frozen clock in New York's
- *     time zone. Since 2026-10-14
+ *     (KAY-FLW-001), else "Tested" and the day the lab finished (MTL-FLW-002,
+ *     MCL-FLW-001), else "Report dated" (TerpLife_GrpeBblGm_flower), else no
+ *     row (Method_DulceDeUva_flower); the note under it; every other row as
+ *     before; today, yesterday and the person's tomorrow, on a frozen clock in
+ *     New York's time zone. Since 2026-10-14; "Tested" since the same day's
+ *     "When the lab finished" (PARSER-HANDOFF s13)
  *   - smell words on a vote: the result's thirteen word buttons, the prompt's
  *     list in its order, reached in order by Tab and pressed by Space or
  *     Enter; a fourth word refused with a note in a status line; two words
@@ -124,8 +126,9 @@ const FRESHNESS = [
 /* INPUT_PATHS_SHOTS=<folder> saves a picture of the card for each of these;
    unset, the test writes nothing. */
 const SHOTS = process.env.INPUT_PATHS_SHOTS || '';
-/* When the jar was harvested, or else when its report is dated, and how long
-   ago (PARSER-HANDOFF s13, "Harvest date and age on the card"). The page's
+/* When the jar was harvested, or else when the lab finished testing it, or
+   else when its report is dated, and how long ago (PARSER-HANDOFF s13,
+   "Harvest date and age on the card" and "The Tested row"). The page's
    clock is frozen at 02:30 UTC on 2026-10-15 - 22:30 on 2026-10-14 in New
    York, the context's time zone - so every age counts from 2026-10-14, the
    person's own today; a count from the UTC day would be one more. Playwright's
@@ -133,24 +136,32 @@ const SHOTS = process.env.INPUT_PATHS_SHOTS || '';
    https://playwright.dev/docs/api/class-clock, added in v1.45, read
    2026-10-14): Date.now() and new Date() return that time, and timers keep
    running. The context's time zone is timezoneId
-   (https://playwright.dev/docs/emulation, read 2026-10-14). Three real
-   reports: one with a harvest day, one with only a report day, one with
-   neither. Then KAY-FLW-001's real reply with one field set: a report day as
-   well (the harvest day still wins), harvested today, yesterday, and on the
-   UTC today, which is the person's tomorrow (the date alone). Each row's text
-   is written out. */
+   (https://playwright.dev/docs/emulation, read 2026-10-14). Five real
+   reports: one with a harvest day and a finish day (the harvest day wins),
+   two with only a finish day (Method's sign-off, Modern Canna's
+   "Completed:"), one with only a report day, one with none. Then a real reply
+   with one field set: a report day as well (the harvest day still wins on
+   KAY-FLW-001, the finish day on MTL-FLW-002), and KAY-FLW-001 harvested
+   today, yesterday, and on the UTC today, which is the person's tomorrow (the
+   date alone). Each row's text is written out. */
 const FROZEN = '2026-10-15T02:30:00Z';
 const TIME_ZONE = 'America/New_York';
 const AGE_NOTE = 'A report describes the jar on test day. Terpenes keep evaporating after that, so an older jar can smell quieter than its numbers.';
 const DATED = [
-  { name: 'KAY-FLW-001', fixture: 'KAY-FLW-001', harvestOn: '2026-01-27', reportOn: null,
+  { name: 'KAY-FLW-001', fixture: 'KAY-FLW-001', harvestOn: '2026-01-27', testedOn: '2026-02-03', reportOn: null,
     row: ['Harvested', 'Jan 27, 2026 · 260 days ago'], moisture: '13.8%', water: `0.56 — inside ${RANGE}` },
-  { name: 'TerpLife_GrpeBblGm_flower', fixture: 'TerpLife_GrpeBblGm_flower', harvestOn: null, reportOn: '2025-11-17',
+  { name: 'MTL-FLW-002', fixture: 'MTL-FLW-002', harvestOn: null, testedOn: '2026-08-31', reportOn: null,
+    row: ['Tested', 'Aug 31, 2026 · 44 days ago'], moisture: NO_NUMBER, water: NO_NUMBER },
+  { name: 'MCL-FLW-001', fixture: 'MCL-FLW-001', harvestOn: null, testedOn: '2024-11-08', reportOn: null,
+    row: ['Tested', 'Nov 8, 2024 · 705 days ago'], moisture: NO_NUMBER, water: NO_NUMBER },
+  { name: 'TerpLife_GrpeBblGm_flower', fixture: 'TerpLife_GrpeBblGm_flower', harvestOn: null, testedOn: null, reportOn: '2025-11-17',
     row: ['Report dated', 'Nov 17, 2025 · 331 days ago'], moisture: NO_NUMBER, water: `0.49 — below ${RANGE}` },
-  { name: 'MCL-FLW-001, no date', fixture: 'MCL-FLW-001', harvestOn: null, reportOn: null,
-    row: null, moisture: NO_NUMBER, water: NO_NUMBER },
+  { name: 'Method_DulceDeUva_flower, no date', fixture: 'Method_DulceDeUva_flower', harvestOn: null, testedOn: null, reportOn: null,
+    row: null },
   { name: 'KAY-FLW-001 with a report day too', fixture: 'KAY-FLW-001', set: { reportOn: '2026-02-03' },
     row: ['Harvested', 'Jan 27, 2026 · 260 days ago'] },
+  { name: 'MTL-FLW-002 with a report day too', fixture: 'MTL-FLW-002', set: { reportOn: '2026-09-02' },
+    row: ['Tested', 'Aug 31, 2026 · 44 days ago'] },
   { name: 'KAY-FLW-001 harvested today', fixture: 'KAY-FLW-001', set: { harvestOn: '2026-10-14' },
     row: ['Harvested', 'Oct 14, 2026 · today'] },
   { name: 'KAY-FLW-001 harvested yesterday', fixture: 'KAY-FLW-001', set: { harvestOn: '2026-10-13' },
@@ -285,9 +296,10 @@ async function handlerReply(fixture, body) {
     if (c.set) continue;
     const reply = await handlerReply(c.fixture, body);
     const data = JSON.parse(reply.body);
-    check(`the handler's reply for ${c.fixture} carries harvestOn ${c.harvestOn} and reportOn ${c.reportOn}`,
-      reply.statusCode === 200 && data.usable === true && data.harvestOn === c.harvestOn && data.reportOn === c.reportOn,
-      JSON.stringify({ status: reply.statusCode, harvestOn: data.harvestOn, reportOn: data.reportOn }));
+    check(`the handler's reply for ${c.fixture} carries harvestOn ${c.harvestOn}, testedOn ${c.testedOn} and reportOn ${c.reportOn}`,
+      reply.statusCode === 200 && data.usable === true && data.harvestOn === c.harvestOn && data.testedOn === c.testedOn
+        && data.reportOn === c.reportOn,
+      JSON.stringify({ status: reply.statusCode, harvestOn: data.harvestOn, testedOn: data.testedOn, reportOn: data.reportOn }));
   }
 }
 
@@ -630,7 +642,7 @@ try {
     await discard(`COA link, ${c.name}`, 'urlMessage');
   }
 
-  /* ---- the harvest or report day, and how long ago ------------------------- */
+  /* ---- the harvest, test or report day, and how long ago ------------------- */
   await page.clock.setFixedTime(FROZEN);
   check(`the page's clock reads ${FROZEN}, and its today is 2026-10-14 in ${TIME_ZONE}`,
     JSON.stringify(await page.evaluate(() => { const d = new Date(); return [d.toISOString(), d.getFullYear(), d.getMonth() + 1, d.getDate()]; })),
