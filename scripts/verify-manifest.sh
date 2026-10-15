@@ -69,10 +69,8 @@ section "Serverless functions"
 check netlify/functions/match-feedback.js "feedback votes discarded"
 check netlify/functions/client-error.js   "error beacons discarded"
 
-section "Vendored (build.sh fetches the .js — absent is fine pre-build)"
-[ -s vendor/html5-qrcode.min.js ] \
-  && { echo "  ok    vendor/html5-qrcode.min.js"; have=$((have+1)); } \
-  || echo "  note  vendor/html5-qrcode.min.js not vendored yet — build.sh curls it"
+section "Vendored (committed; build.sh checks the .js against its pinned SHA-256)"
+check vendor/html5-qrcode.min.js "build.sh HARD FAILS without this - see vendor/README.md"
 soft vendor/README.md
 
 section "Pre-launch"

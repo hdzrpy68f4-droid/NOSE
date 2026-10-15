@@ -256,7 +256,8 @@
   <!-- privacy now lives at /privacy/ as a real, crawlable page -->
 
   <!-- Self-hosted so no third-party origin runs JS on a camera-enabled page.
-     Populate vendor/html5-qrcode.min.js at build time (see vendor/README.md).
+     vendor/html5-qrcode.min.js is committed, and build.sh fails unless its
+     SHA-256 is the pinned one (see vendor/README.md).
      The scanner code guards on typeof Html5Qrcode, so if the file is missing
      the QR path degrades to a message and the rest of the app is unaffected. -->
 <script src="/vendor/html5-qrcode.min.js" defer></script>

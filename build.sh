@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # NOSE build — run before deploying.
-#   1. vendors the QR library (never committed, so it cannot go stale)
+#   1. fails unless the committed QR library matches its pinned SHA-256 (no download)
 #   2. re-fingerprints js/ and css/ bundles and rewrites all references
 #   3. fails the build if the CSP has been loosened or inline code crept back
 #   4. fails the build if an image the engine references is missing
@@ -58,11 +58,23 @@ mapfile -t HTML < <(
 [ ${#HTML[@]} -gt 0 ] || { echo "FAIL: no HTML files found"; exit 1; }
 echo "==> ${#HTML[@]} HTML files in scope"
 
-echo "==> vendoring html5-qrcode"
-mkdir -p vendor
-curl -fsSL https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js \
-  -o vendor/html5-qrcode.min.js
-test -s vendor/html5-qrcode.min.js || { echo "FAIL: QR library empty"; exit 1; }
+# The QR library is committed, and the build makes no request for it. It runs
+# on the page that holds camera permission, so the build fails unless the
+# committed file is html5-qrcode 2.3.8 byte for byte - the SHA-256 jsDelivr
+# publishes for it. vendor/README.md says how to restore it or upgrade it.
+QR_LIB=vendor/html5-qrcode.min.js
+QR_LIB_SHA256=660b12437b1d747e3e68b8be0685c08cb728140110ad213f167b14b66f8b1d8e
+echo "==> checking the committed html5-qrcode"
+if [ ! -f "$QR_LIB" ]; then
+  echo "FAIL: $QR_LIB is missing - expected html5-qrcode 2.3.8, SHA-256 $QR_LIB_SHA256 (see vendor/README.md)"
+  exit 1
+fi
+qr_got=$(sha256sum "$QR_LIB" | cut -d' ' -f1)
+if [ "$qr_got" != "$QR_LIB_SHA256" ]; then
+  echo "FAIL: $QR_LIB has SHA-256 $qr_got - expected html5-qrcode 2.3.8, SHA-256 $QR_LIB_SHA256 (see vendor/README.md)"
+  exit 1
+fi
+echo "    $QR_LIB matches its pinned SHA-256"
 
 # Content-hash a bundle and rewrite every reference to it.
 #   $1 = directory ("" for repo root)   $2 = filename stem   $3 = extension

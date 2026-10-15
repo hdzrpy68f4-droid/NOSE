@@ -3777,6 +3777,76 @@ docs/LAUNCH-CHECKLIST.md  item 2: bash scripts/verify-manifest.sh .
 - **After the deploy:** `curl -s -o /dev/null -w '%{http_code}\n'
   https://nose-app.com/brand-eq.css` answers 404.
 
+### The QR library, committed and pinned, 2026-10-15
+
+**`build.sh` downloaded html5-qrcode on every build and checked only that
+the file was not empty.** It fetched 2.3.8 from jsDelivr over the committed
+`vendor/html5-qrcode.min.js`, so whatever jsDelivr served that minute was
+what the page holding camera permission ran (security audit #11, project
+document `claude/nose-security-audit-2026-10-15.md`). Three places said the
+library was never committed; it was. The third of the architecture review's
+extra-small cleanups (project document
+`claude/nose-architecture-review-2026-10-15.md`).
+
+```
+build.sh                    no download: fails unless vendor/html5-qrcode.min.js exists and its
+                            SHA-256 is QR_LIB_SHA256, naming that hash and vendor/README.md; header item 1
+vendor/README.md            rewritten: committed, 2.3.8 from jsDelivr, its SHA-256, how to restore and upgrade
+app.html                    the comment above the script tag only
+scripts/verify-manifest.sh  the vendored file is required (MISS when absent), not "build.sh curls it"
+scripts/gates.sh            header: no network for build.sh's QR download
+docs/LAUNCH-CHECKLIST.md    item 1: build.sh checks the committed library rather than downloading it
+```
+
+- **The pin.** `QR_LIB_SHA256=660b12437b1d747e3e68b8be0685c08cb728140110ad213f167b14b66f8b1d8e`,
+  one named value in the block that replaced the download. Upgrading is one
+  commit that changes the file and the pin together, after checking the new
+  file against jsDelivr's record (`vendor/README.md`, "To upgrade").
+- **The probe, before the edit.** 1: `git ls-files vendor` lists
+  `vendor/html5-qrcode.min.js`. 2: its SHA-256 is the pin and it is 375364
+  bytes; in base64 the hash is `ZgsSQ3sddH4+aLi+BoXAjLcoFAEQrSE/FnsUtm+LHY4=`.
+  3: jsDelivr's own record of the package
+  (https://data.jsdelivr.com/v1/packages/npm/html5-qrcode@2.3.8?structure=flat,
+  read 2026-10-15 through WebFetch) gives entry `/html5-qrcode.min.js` that
+  hash and 375364 bytes. This workspace's shell cannot reach jsDelivr, so the
+  `curl … | sha256sum` of the file itself is the Codespace's. 4: `bash
+  build.sh`, its download stood in for by git's committed copy, then `git
+  status --short vendor/`: nothing.
+- **The guard by hand**, in a throwaway copy of the repository, not
+  committed: byte 100001 of the file changed from `m` to `Z`, same size;
+  `bash build.sh` stopped after "checking the committed html5-qrcode" with
+  `FAIL: vendor/html5-qrcode.min.js has SHA-256 e27cdc33…432e62 - expected
+  html5-qrcode 2.3.8, SHA-256 660b1243…8b1d8e (see vendor/README.md)`, exit 1.
+  With the file deleted: `FAIL: vendor/html5-qrcode.min.js is missing - …`,
+  exit 1. `verify-manifest.sh` on a copy without the file: `MISS`, `54
+  present, 1 missing, 18 warnings`, exit 1.
+- **No request.** `bash build.sh` with `curl` and `wget` replaced by
+  tripwires on `PATH` and `HTTP(S)_PROXY` pointed at a closed port, in a
+  workspace that refuses jsDelivr anyway: `OK — ready to deploy`, neither
+  tripwire called. `build.sh` names neither command now, so a build no
+  longer needs jsDelivr to be reachable.
+- **What did not move.** `vendor/html5-qrcode.min.js`, byte for byte;
+  `app.html`'s script tag, the CSP and `_headers`; every `js/` and `css/`
+  file, so `build.sh` renamed nothing; `verify-manifest.sh`'s counts on the
+  real tree (`55 present, 0 missing, 18 warnings`, only its section title
+  differs); every gate's expected line, `OK — ready to deploy` among them;
+  the parser, the maths, the archive and B2B; what NOSE keeps or sends, so
+  the privacy page. `docs/FIXES.md` and `docs/TIER*-CHANGES.md` still
+  describe the download: they are change logs, kept as history.
+- **How it was verified, 2026-10-15, in the cloud workspace**, where npm's
+  registry and jsDelivr were both refused: unpdf stood in for by its two
+  calls over pdfjs-dist 6.2.108 (parity still `56 match / 0 differ`), the
+  old `build.sh`'s download by the committed file (the new one needs none),
+  and Playwright 1.56.1 with its Chromium from the workspace. 22 of the 32
+  gates green before and after, with `KAY-CAR-001` 4.124 and `KAY-PRR-001`
+  0.944 - build, b2b release, input paths, b2b widget and b2b kit among
+  them. The other 10 need PGlite, which could not be installed; none of
+  them names `build.sh`, `vendor/`, `app.html`, `gates.sh`,
+  `verify-manifest.sh` or the checklist. The Codespace run on the real
+  packages is the one that counts.
+- **After the deploy:** `curl -s https://nose-app.com/vendor/html5-qrcode.min.js
+  | sha256sum` gives the pin, and the Scan QR tab on `/app` opens the camera.
+
 ### After a deploy — check it
 
 1. `node scripts/archive-health.js` in the Codespace (reads as `nose_writer`;

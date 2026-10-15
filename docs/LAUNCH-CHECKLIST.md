@@ -22,9 +22,9 @@ with a separate `palateSize` count. Verified by unit test.
 The privacy page documents exactly this, including the error beacon.
 
 ## Still required before you can launch (needs you, not code)
-1. **Run `./build.sh`** — vendors the QR library (deliberately uncommitted so it
-   cannot go stale) and re-fingerprints bundles. The scanner is inert until then;
-   it degrades to a message rather than breaking.
+1. **Run `./build.sh`** — checks the committed QR library against its pinned
+   SHA-256 rather than downloading it, failing on any other bytes
+   (`vendor/README.md`), and re-fingerprints bundles.
 2. ~~**Replace the placeholder domain**~~ — done 2026-10-08. Every canonical, Open Graph and
    JSON-LD URL, `robots.txt` and `sitemap.xml` name `https://nose-app.com`: 142 URLs in 22
    files, which had named the site's first address, `curious-crumble-352160.netlify.app`.
