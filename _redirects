@@ -35,9 +35,6 @@
 /supabase/*          /404.html   404!
 /wip/*               /404.html   404!
 /build.sh            /404.html   404!
-/setup.sh            /404.html   404!
-/verify-manifest.sh  /404.html   404!
-/dump-ordering.js    /404.html   404!
 /package.json        /404.html   404!
 /package-lock.json   /404.html   404!
 /PARSER-HANDOFF.md   /404.html   404!

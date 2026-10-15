@@ -213,6 +213,7 @@ someone to look.
 | `coa-gate-test.js <dir> <parser>` | accept/reject verdict per fixture |
 | `extraction-parity.js test/fixtures/pdf` | unpdf output vs the baseline, including readBy and productClass |
 | `extract-dump.js` | regenerate `test/fixtures/extracted/` from the PDFs |
+| `dump-ordering.js <pdf>` | read-only, not a gate: how unpdf and pdftotext order a report's terpene table, and what the parser makes of it |
 | `fixture-lint.js` | corpus hygiene: control bytes, shell-hostile names, baseline arithmetic |
 | `mutation-test.js <dir> <parser>` | corrupt fixtures; require identical-or-reject |
 | `resolver-test.js` | viewer-page resolution, offline, against saved portal pages |
@@ -3706,6 +3707,75 @@ js/nose.*.js    'use strict'; is the first statement inside the opening (() => {
 - **After the deploy:** the home page and `/app` read 74 · Partial overlap
   and draw their bars; each page's console shows no error and no `[NOSE] …
   skipped` line; one sample jar added on `/app` shows its match.
+
+### Leftovers at the repository root, 2026-10-15
+
+**Four files at the root were neither the site nor its config.** Netlify
+publishes the whole root (`publish = "."`), so a file left there is served
+unless `_redirects` forces it to 404. The second of the architecture review's
+extra-small cleanups (project document
+`claude/nose-architecture-review-2026-10-15.md`).
+
+```
+brand-eq.css              deleted - linked from no page; every rule of it is css/shell.*.css's
+                          "Equalizer wordmark" block; it was served at /brand-eq.css
+setup.sh                  deleted - unzipped an uploaded archive into the folder, from before git
+verify-manifest.sh     -> scripts/verify-manifest.sh   its usage line only
+dump-ordering.js       -> test/dump-ordering.js        its requires one folder up, its usage lines
+_redirects                the forced 404s for /setup.sh, /verify-manifest.sh, /dump-ordering.js gone
+docs/LAUNCH-CHECKLIST.md  item 2: bash scripts/verify-manifest.sh .
+```
+
+- **The probe, before the edit.** 1: `git grep`, this file aside -
+  `brand-eq` named nowhere; `setup.sh` in `_redirects` and itself;
+  `verify-manifest` in `_redirects`, `setup.sh`, `docs/LAUNCH-CHECKLIST.md`
+  line 31 and itself; `dump-ordering` in `_redirects` and itself. 2: comments
+  and whitespace stripped, every rule of `brand-eq.css` is in
+  `css/shell.d038fe79.css`. 3: the live `/brand-eq.css` served that
+  stylesheet, read through WebFetch; this workspace's shell cannot reach
+  nose-app.com, so the 200 itself is the Codespace's curl. 4: `bash
+  verify-manifest.sh .` ended `55 present, 0 missing, 18 warnings` and
+  `Manifest complete — safe to run: bash build.sh`; `node dump-ordering.js
+  test/fixtures/pdf/KAY-CAR-001.pdf` read Kaycha Labs, vape, row, usable,
+  4.124, coverage 0.8935499515033949, no reasons.
+- **After the edit** both tools, run from the root as `bash
+  scripts/verify-manifest.sh .` and `node test/dump-ordering.js …`, print
+  what they printed before, every line (the whole output diffed, not only the
+  tails). `verify-manifest.sh` changes into the folder it is given, so where
+  it lives moves nothing it checks; `require` resolves from the file's own
+  folder, hence `../netlify/functions/lib/`.
+- **How Netlify treats the paths** (read 2026-10-15): a rule does not shadow
+  a file that exists unless it ends in `!`, for a splat as for a single path
+  (https://docs.netlify.com/manage/routing/redirects/rewrites-proxies/,
+  "Shadowing"); a splat matches anything that follows it, nested paths
+  included, and a `404.html` is shown for any path that resolves to no file,
+  with no rule needed
+  (https://docs.netlify.com/manage/routing/redirects/redirect-options/). So
+  the moved two stay 404 under `/scripts/*` and `/test/*`, both forced, and
+  `/brand-eq.css`, with neither file nor rule, gets `404.html`.
+- **The guards' counts moved, not their verdicts.** `check-published.js`: 72
+  published files, blocked 7 dirs + 8 files before; 71, and 7 + 5, after -
+  `brand-eq.css` no longer published, three file rules gone.
+  `check-trust.mjs`: 72 to 71 published, 272 to 270 in git. Both pass, before
+  and after.
+- **What did not move.** `css/shell.d038fe79.css` and every other `js/` and
+  `css/` file, so `build.sh` renamed nothing; every page; what the two tools
+  print; every gate's expected line; the parser, the maths, the archive and
+  B2B; what NOSE keeps or sends, so the privacy page. The root's tracked files
+  go from 21 to 17.
+- **How it was verified, 2026-10-15, in the cloud workspace**, where npm's
+  registry, jsDelivr and nose-app.com were all refused: unpdf stood in for by
+  its two calls over pdfjs-dist 6.2.108 (parity still `56 match / 0 differ`),
+  `build.sh`'s download by the committed `vendor/html5-qrcode.min.js`, and
+  Playwright 1.56.0 with its Chromium from the workspace. 22 of the 32 gates
+  green before and after, with `KAY-CAR-001` 4.124 and `KAY-PRR-001` 0.944.
+  The other 10 need PGlite, which could not be installed; none of them names
+  the four files, `_redirects` or the checklist, and the one that runs a guard
+  on the real tree, `b2b-store`, asks only that `check-published.js` pass,
+  which it does. The Codespace run on the real packages is the one that
+  counts.
+- **After the deploy:** `curl -s -o /dev/null -w '%{http_code}\n'
+  https://nose-app.com/brand-eq.css` answers 404.
 
 ### After a deploy — check it
 

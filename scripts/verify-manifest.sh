@@ -5,7 +5,7 @@
 #   MISS  = build.sh fails, or the site visibly breaks
 #   warn  = build.sh warns; deploy still succeeds
 #
-# Usage: bash verify-manifest.sh /path/to/repo
+# Usage: bash scripts/verify-manifest.sh .
 # Exits 0 if every required file is present, 1 otherwise.
 
 set -uo pipefail

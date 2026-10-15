@@ -3,7 +3,7 @@
 /* Dump how unpdf orders a COA's terpene table, so a reader can be written for
  * that ordering.
  *
- *   node dump-ordering.js test/fixtures/pdf/<file>.pdf
+ *   node test/dump-ordering.js test/fixtures/pdf/<file>.pdf
  *
  * Prints the numbered line sequence around the terpene section, which is the
  * only thing the parser actually sees. Also prints poppler's ordering of the
@@ -14,7 +14,7 @@ const { execSync } = require('child_process');
 
 const file = process.argv[2];
 if (!file || !fs.existsSync(file)) {
-  console.error('usage: node dump-ordering.js <path-to.pdf>');
+  console.error('usage: node test/dump-ordering.js <path-to.pdf>');
   process.exit(1);
 }
 
@@ -53,7 +53,7 @@ function show(label, text) {
 
   // --- unpdf: what the serverless function actually sees ---
   try {
-    const { extractCoaText } = require('./netlify/functions/lib/extract-text');
+    const { extractCoaText } = require('../netlify/functions/lib/extract-text');
     const out = await extractCoaText(buf);
     const text = typeof out === 'string' ? out : (out && out.text);
     if (typeof text !== 'string') {
@@ -77,8 +77,8 @@ function show(label, text) {
 
   // --- what the parser currently makes of it ---
   try {
-    const { extractCoaText } = require('./netlify/functions/lib/extract-text');
-    const { parseCoa } = require('./netlify/functions/lib/parse-coa');
+    const { extractCoaText } = require('../netlify/functions/lib/extract-text');
+    const { parseCoa } = require('../netlify/functions/lib/parse-coa');
     const out = await extractCoaText(buf);
     const text = typeof out === 'string' ? out : (out && out.text);
     const r = parseCoa(text);
