@@ -168,7 +168,9 @@ Expect `56 accepted / 3 rejected`, `56 match / 0 differ`, and `corpus clean`.
 Also run `node test/resolver-test.js` - expect `resolver clean`, and
 `bash build.sh` - expect `OK - ready to deploy`.
 
-**Or all at once:** `bash scripts/gates.sh` runs these, the Kaycha anchors,
+**Or all at once:** `bash scripts/gates.sh` (or `npm run gates`, the same
+file) runs, first, `node-version-test` - the Node running the gates is
+`.nvmrc`'s, 24 since 2026-10-15 (§13, "Node 24 everywhere") - then these, the Kaycha anchors,
 `novelty-test`, `coa-dates-test`, `store-test`, `probe-test`, `archive-wiring-test`,
 `archive-scripts-test`, `rerun-test`, `review-queue-test`, `match-test`,
 `match-feedback-test`, `analysis-test`, `duplicates-test`, `remove-copies-test`, `remove-document-test`, `b2b-coverage-test`, `b2b-store-test`, `b2b-catalog-test`, `b2b-endpoints-test`, `b2b-rank-test`, `b2b-strings-test`, `b2b-pilot-test`, `check-trust-test` and, after the build, `b2b-release-test`, `input-paths-test`, `b2b-widget-test` and `b2b-compliance-kit-test`.
@@ -210,6 +212,7 @@ someone to look.
 
 | Command | Purpose |
 |---|---|
+| `node-version-test.js` | the first gate (since 2026-10-15): the running Node's major version is `.nvmrc`'s, and `package.json`'s `engines.node` and the lockfile's root entry are `"<that major>.x"`; prints e.g. `node v24.22.0, .nvmrc 24, engines 24.x`, else each mismatch and how to switch (§13, "Node 24 everywhere"); offline |
 | `coa-gate-test.js <dir> <parser>` | accept/reject verdict per fixture |
 | `extraction-parity.js test/fixtures/pdf` | unpdf output vs the baseline, including readBy and productClass |
 | `extract-dump.js` | regenerate `test/fixtures/extracted/` from the PDFs |
@@ -3934,6 +3937,103 @@ PARSER-HANDOFF.md                      s9's fetch budget, s12's whole-chain para
   file - were run on their own with its own `codeOf` and word list, and pass.
   The Codespace run on the real packages is the one that counts.
 - **After the deploy:** nothing to check. No visitor or store sees a comment.
+
+### Node 24 everywhere, 2026-10-15
+
+**`.nvmrc` said 20, so Netlify built on Node 20, and the gates ran on
+whatever the Codespace had - 20 so far - while the functions already ran on
+24.** Netlify runs functions on the build's Node only while AWS Lambda is not
+retiring that runtime within two months, and AWS deprecated `nodejs20.x` on
+2026-04-30, so the functions - `coa.js`, which feeds the archive, among them -
+ran on Netlify's fallback, Node 24, a Node no gate had run on. `unpdf` 1.8.0
+declares Node 22 or later. `package.json` was npm's template: `npm test`
+exited 1 and `main` named an `index.js` that does not exist. This closes the
+security audit's item 12 (project document
+`claude/nose-security-audit-2026-10-15.md`); the architecture review lists the
+same under "Project metadata" (`claude/nose-architecture-review-2026-10-15.md`).
+
+```
+.nvmrc                      20 -> 24
+package.json                "private": true; "main" and "directories" gone; scripts build (bash build.sh),
+                            gates and test (both bash scripts/gates.sh); "engines": { "node": "24.x" }
+package-lock.json           the root entry only, gaining the same "engines" - 3 lines
+test/node-version-test.js   new: the running Node is .nvmrc's, and both engines fields say "<it>.x"
+scripts/gates.sh            'node version' first, expecting node-version clean; header: npm run gates,
+                            the Node to use, how to switch the Codespace
+PARSER-HANDOFF.md           s5's gate list and harness table; this record
+```
+
+- **What the docs say**, each read 2026-10-15 through WebFetch.
+  Netlify, "Manage build dependencies"
+  (https://docs.netlify.com/build/configure-builds/manage-dependencies/,
+  last updated Oct 3, 2026): a `.node-version` or `.nvmrc` file in the
+  base directory chooses the build's Node, as "any released version of
+  Node.js or any valid string that nvm understands", a major version alone
+  meaning that major's latest; a `NODE_VERSION` variable, `.node-version`
+  or `.nvmrc` overrides the version chosen under Dependency management in
+  the UI. The page does not say which of `NODE_VERSION` and `.nvmrc` wins
+  when both are set. Netlify's "Optional configuration for functions"
+  (https://docs.netlify.com/build/functions/optional-configuration/) now
+  serves the page titled "Configuration for functions", last updated Sep
+  17, 2026, the same as https://docs.netlify.com/build/functions/configuration/;
+  its "Node.js version for runtime": a function deployed since 2023-05-15
+  runs on the build's Node when that is an AWS Lambda Node.js runtime "that isn't
+  set to be deprecated in the next two months", and otherwise on a fallback,
+  Node 24. `AWS_LAMBDA_JS_RUNTIME`, set in the UI, CLI or API and never in
+  `netlify.toml`, overrides that.
+  AWS, "Lambda runtimes"
+  (https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html, which
+  shows no updated date): `nodejs20.x` deprecated Apr 30, 2026, among the
+  deprecated runtimes; `nodejs22.x` Apr 30, 2027; `nodejs24.x` Apr 30, 2028,
+  blocked for new functions from Jun 1, 2028 and for updates from Jul 1, 2028.
+  So a build on 24 runs its functions on 24 by Netlify's own rule, until two
+  months before 2028-04-30.
+- **The probe, before the edit.** 1: `.nvmrc` held `20`; this workspace ran
+  Node v22.22.0. 2: the three pages, above, as the prompt expected. 3: of the
+  71 packages in `package-lock.json`, 49 declare `engines.node`; checked with
+  npm's own `semver` at 24.0.0, 24.22.0 and 24.99.0, none excludes 24, and
+  `unpdf` 1.8.0's `>=22` is the narrowest. 4: `git grep -n -E
+  "nvmrc|NODE_VERSION|AWS_LAMBDA_JS_RUNTIME"`, this file aside, found only
+  `scripts/verify-manifest.sh` line 31, which checks that `.nvmrc` exists.
+  No `.node-version`, `.devcontainer` or `.npmrc` is tracked.
+- **The lockfile, offline.** `npm install --package-lock-only --offline
+  --ignore-scripts` (npm 10.9.4, here) wrote the root entry's `"engines"` and
+  nothing else - first in a scratch copy holding only `package.json`,
+  `package-lock.json` and `.nvmrc`, then in the tree, the two results byte
+  for byte the same. No registry was reached; this workspace cannot reach
+  it.
+- **The new gate's refusals**, in a throwaway copy, not committed: with
+  `.nvmrc`, `engines` and the lockfile all saying 22, on Node 22, `node-version
+  clean`; the lockfile left at 24, `FAIL  package-lock.json's root
+  engines.node is "24.x", not "22.x"` with the command that rewrites it;
+  `engines` removed, both fields named; `.nvmrc` as `lts/*`, or missing,
+  each refused. On the real tree under Node 22 and Node 20: `FAIL  running
+  Node 22, .nvmrc says 24 - switch: nvm install, then nvm alias default 24,
+  then open a new terminal` (20 likewise), exit 1.
+- **What did not move.** Every dependency and its locked version; the
+  lockfile's other 71 entries; `netlify.toml`, which still runs `bash
+  build.sh`; the parser and `js/match-math.*.js`; every `js/` and `css/`
+  file, so `build.sh` renamed nothing; every other gate's expected line;
+  `extractorVersion`, which hashes `extract-text.js` and the installed
+  `unpdf`'s version, not Node, so no reparse is due; what NOSE keeps or
+  sends, so the privacy page. Nothing in the repository reads
+  `package.json` or the lockfile apart from npm and the new test.
+- **One gate more:** 33. `npm run gates` and `npm test` run `scripts/gates.sh`.
+- **How it was verified, 2026-10-15, in the cloud workspace**, which has
+  Node 22 and Node 20 but no Node 24, and where npm's registry and
+  nodejs.org were refused: unpdf stood in for by its two calls over
+  pdfjs-dist 6.2.108 (parity still `56 match / 0 differ`), and Playwright
+  1.56.0 with its Chromium from the workspace. Before the edit, 22 of the 32
+  gates green on Node 22, with `KAY-CAR-001` 4.124 and `KAY-PRR-001` 0.944;
+  after it, the same 22 of the 33, and `node version` failing as it should
+  on 22. The other 10 need PGlite, which could not be installed; none of
+  them reads `.nvmrc`, `package.json` or the lockfile. The Codespace run on
+  Node 24, on the real packages, is the one that counts - with the extracted
+  texts compared before and after the switch, so Node 24 is shown to give
+  the gates the text Node 20 did.
+- **After the deploy:** Netlify → Deploys → the newest → its Deploy log
+  names Node 24; the home page and `/app` read 74 · Partial overlap; one COA
+  link read on `/app` shows its card.
 
 ### After a deploy — check it
 

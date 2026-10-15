@@ -2,6 +2,14 @@
 # NOSE - run every standing gate and say plainly whether all are green.
 #
 #   bash scripts/gates.sh          ends with ALL GATES GREEN, or exits 1
+#   npm run gates                  the same file (so is npm test)
+#
+# Run it on the Node that .nvmrc names - Netlify builds on that Node and its
+# functions run on it (PARSER-HANDOFF.md section 13, "Node 24 everywhere").
+# The first gate checks; on any other Node it fails and says so. To switch
+# the Codespace, from the repository folder:
+#   nvm install                    reads .nvmrc and installs that Node
+#   nvm alias default 24           the number in .nvmrc; then open a new terminal
 #
 # Each gate passes only on its exact expected line - a crash, a missing
 # dependency or a changed count fails it. The expected counts are the ones in
@@ -48,6 +56,10 @@ anchors() {
   '
 }
 
+# First: the Node running these gates is .nvmrc's, and package.json and the
+# lockfile name the same one. Offline; reads only those three files.
+gate 'node version'   'node-version clean'       '^node-version clean$' \
+  node test/node-version-test.js
 gate 'coa gate'       '56 accepted / 3 rejected' '^56 accepted / 3 rejected$' \
   node test/coa-gate-test.js test/fixtures/extracted netlify/functions/lib/parse-coa.js
 gate 'parity'         '56 match / 0 differ'      '^56 match / 0 differ( |$)' \
