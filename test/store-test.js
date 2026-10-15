@@ -220,7 +220,8 @@ async function run(db, log = console.log) {
   const r = await save(payload({ sha256: sha('pdf-bytes-real'), text: 'REAL TEXT', output: real }));
   const row = await one(
     `select lab, strain, batch, lab_id, product_class, read_by, usable,
-            total_terpenes::text as total, moisture::text as moisture, water_activity::text as aw
+            total_terpenes::text as total, moisture::text as moisture, water_activity::text as aw,
+            harvest_on, tested_on
        from nose.parses where id = $1`, [r.parseId]);
   const num = v => (typeof v === 'number' ? String(v) : null);
   check('lab column equals output', row.lab, real.lab ?? null);
@@ -233,6 +234,7 @@ async function run(db, log = console.log) {
   check('total_terpenes column equals output exactly', row.total, num(real.totalTerpenes));
   check('moisture column equals output', row.moisture, num(real.moisture));
   check('water_activity column equals output', row.aw, num(real.waterActivity));
+  check('harvest_on and tested_on columns equal the output', [row.harvest_on, row.tested_on], [real.harvestOn ?? null, real.testedOn ?? null]);
 
   /* --- the view: one row per terpene -------------------------------------- */
   const keys = Object.keys(real.terps);
@@ -278,10 +280,16 @@ async function run(db, log = console.log) {
   check('a full timestamp keeps only the day', day.d, '2026-09-22');
   check('...in a date column', day.t, 'date');
 
-  const iso = await save(payload({ sha256: sha('iso'), text: 'ISO TEXT', output: { harvestOn: '2025-07-07', reportOn: '07/07/25' } }));
-  const dates = await one('select harvest_on, report_on from nose.parses where id = $1', [iso.parseId]);
+  const iso = await save(payload({ sha256: sha('iso'), text: 'ISO TEXT', output: { harvestOn: '2025-07-07', reportOn: '07/07/25', testedOn: '2025-07-11' } }));
+  const dates = await one('select harvest_on, report_on, tested_on from nose.parses where id = $1', [iso.parseId]);
   check('an ISO harvestOn is kept', dates.harvest_on, '2025-07-07');
   check('a lab-format date is left NULL, not stored wrong', dates.report_on, null);
+  check('an ISO testedOn is kept, as tested_on', dates.tested_on, '2025-07-11');
+  const notIso = await save(payload({ sha256: sha('not iso'), text: 'NOT ISO TEXT', output: { testedOn: '8/27/2026, 4:00:00 AM' } }));
+  const notString = await save(payload({ sha256: sha('not a string'), text: 'NOT A STRING TEXT', output: { testedOn: 20250711 } }));
+  check('...a printed testedOn, or one that is not a string, is left NULL',
+    [(await one('select tested_on from nose.parses where id = $1', [notIso.parseId])).tested_on,
+     (await one('select tested_on from nose.parses where id = $1', [notString.parseId])).tested_on], [null, null]);
 
   /* --- reparse_runs: a run is on record even when it changed nothing ------ */
   const lastDoc = (await one('select max(id)::int as n from nose.documents')).n;

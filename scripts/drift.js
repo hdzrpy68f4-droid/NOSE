@@ -6,7 +6,7 @@
  *   node scripts/drift.js "<strain>" --lab "Kaycha Labs"
  *   node scripts/drift.js "<strain>" --client "Sunburn"
  *
- * Reads nose.batch_series (supabase/migrations/20261002180000_nose_one_document_per_text.sql):
+ * Reads nose.batch_series (supabase/migrations/20261015000000_nose_tested_on.sql):
  * one row per SAMPLE - the lab and its lab ID, else the document - with the
  * latest reading of its newest document, usable ones only. A report kept as
  * several documents (a portal that builds its PDF on download, an amended
@@ -15,8 +15,9 @@
  * "banana  papaya" are one strain, "Banana Papaya #2" is another. --lab and
  * --client pick one lab or one client exactly (case and spacing aside).
  *
- * Dated batches - the harvest day, else the report day, as the parser read
- * them (lib/coa-dates.js) - are listed oldest first, each with the total
+ * Dated batches - the harvest day, else the day the lab finished, else the
+ * report day, as the parser read them (lib/coa-dates.js) and as the view's
+ * batch_date_from names them - are listed oldest first, each with the total
  * terpenes its report printed and its top five terpenes as share of total.
  * Then each batch is compared with the one before it: the cosine similarity
  * of the two share-of-total profiles, scored and banded exactly as the app
@@ -45,12 +46,12 @@ const TOP = 5;
 class UsageError extends Error {}
 
 /* The strain's usable batches, with what each needs: the parse's terps, its
- * class, the strain as printed, and which date the batch date is. Nothing
- * else is selected - no text, no address. */
+ * class, the strain as printed, and which date the batch date is - the view's
+ * own batch_date_from, never worked out again here. Nothing else is selected
+ * - no text, no address. */
 const SERIES_SQL = `
-  select b.lab, b.client, b.batch, b.batch_date, b.total_terpenes::text as total,
+  select b.lab, b.client, b.batch, b.batch_date, b.batch_date_from, b.total_terpenes::text as total,
          b.parse_id::text as parse_id, b.copies::int as copies, p.strain, p.product_class,
-         (b.batch_date is not null and b.batch_date = p.harvest_on) as by_harvest,
          p.output -> 'terps' as terps
     from nose.batch_series b
     join nose.parses p on p.id = b.parse_id
@@ -79,6 +80,15 @@ const NEAR_SQL = `
    limit 10`;
 
 const plural = (n, word, many = `${word}s`) => `${n} ${n === 1 ? word : many}`;
+
+/* How each kind of batch date is named: in the listing, padded to one width,
+ * and in the note on a series that mixes them. */
+const DATE_KINDS = {
+  harvest: { shown: 'harvest', named: 'harvest days' },
+  tested: { shown: 'tested ', named: 'days the lab finished testing' },
+  report: { shown: 'report ', named: 'report days' }
+};
+const listed = words => (words.length < 3 ? words.join(' and ') : `${words.slice(0, -1).join(', ')} and ${words[words.length - 1]}`);
 const batches = n => plural(n, 'batch', 'batches');
 const same = s => String(s == null ? '' : s).trim().replace(/\s+/g, ' ').toLowerCase();
 
@@ -196,11 +206,11 @@ async function drift({ db, strain, lab = null, client = null, log = console.log,
     for (const d of dayList) {
       for (const b of d.batches) {
         log('');
-        describe(b, `  ${b.label.padEnd(4)}${d.date}  ${b.by_harvest ? 'harvest' : 'report '}  `);
+        describe(b, `  ${b.label.padEnd(4)}${d.date}  ${(DATE_KINDS[b.batch_date_from] || { shown: '?      ' }).shown}  `);
       }
     }
   } else {
-    log('No batch under this key has a readable harvest or report date, so there is no series to follow.');
+    log('No batch under this key has a readable harvest, testing or report date, so there is no series to follow.');
   }
 
   if (pairs.length) {
@@ -221,7 +231,7 @@ async function drift({ db, strain, lab = null, client = null, log = console.log,
 
   if (undated.length) {
     log('');
-    log(`Undated - no readable harvest or report date, so not placed in the series and compared with nothing (${batches(undated.length)}):`);
+    log(`Undated - no readable harvest, testing or report date, so not placed in the series and compared with nothing (${batches(undated.length)}):`);
     for (const b of undated) { log(''); describe(b, '  -   '); }
   }
 
@@ -240,8 +250,10 @@ async function drift({ db, strain, lab = null, client = null, log = console.log,
     notes.push(`They mix product forms (${forms.join(', ')}): each form is a different product, and its report can differ for that reason alone.`);
   }
   const dated = dayList.flatMap(d => d.batches);
-  if (dated.some(b => b.by_harvest) && dated.some(b => !b.by_harvest)) {
-    notes.push('The dates mix harvest days and report days, and a report comes after its harvest, so order across the two is approximate.');
+  const kinds = Object.keys(DATE_KINDS).filter(k => dated.some(b => b.batch_date_from === k));
+  if (kinds.length > 1) {
+    notes.push(`The dates mix ${listed(kinds.map(k => DATE_KINDS[k].named))}, and a lab tests and reports after the harvest, ` +
+               `so order across ${kinds.length === 2 ? 'the two' : 'them'} is approximate.`);
   }
   const kept = rows.filter(r => r.copies > 1);
   if (kept.length) {
@@ -290,7 +302,7 @@ async function main(argv = process.argv.slice(2)) {
   }
 }
 
-module.exports = { drift, parseArgs, days, comparisons, topShares, SERIES_SQL, USAGE, UsageError };
+module.exports = { drift, parseArgs, days, comparisons, topShares, SERIES_SQL, DATE_KINDS, USAGE, UsageError };
 if (require.main === module) {
   main().catch(e => { console.error('drift failed:', e && e.message); process.exit(1); });
 }

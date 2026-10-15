@@ -5,12 +5,15 @@
  *
  * Saves readings through store.js exactly as a scan, the seed and a reparse
  * do, on PGlite with every migration applied, then checks the two views of
- * supabase/migrations/20260923170000_nose_analysis_views.sql:
+ * supabase/migrations/20260923170000_nose_analysis_views.sql, as
+ * 20261002180000_nose_one_document_per_text.sql and
+ * 20261015000000_nose_tested_on.sql replace them:
  *
  *   latest_parses   one row per document: the latest parse of its newest
  *                   extraction, as reparse.js and review-queue.js read it
- *   batch_series    usable latest readings, with the strain key and the
- *                   batch date (harvest, else report)
+ *   batch_series    usable latest readings, one per sample, with the strain
+ *                   key and the batch date (harvest, else the day the lab
+ *                   finished, else report) and which day it is
  *
  * and that both are read-only and security_invoker; then drives
  * scripts/drift.js over a strain with dated, same-day, undated, refused and
@@ -36,7 +39,7 @@ const sha = s => crypto.createHash('sha256').update(s).digest('hex');
 const reading = (extra = {}) => ({
   lab: 'Kaycha Labs', strain: 'Banana Papaya', batch: 'B-1', client: null, productClass: 'flower',
   readBy: 'forward', usable: true, totalTerpenes: 2, terps: { limonene: 1, myrcene: 0.6, caryophyllene: 0.4 },
-  measuredCoverage: 1, warnings: [], rejectReasons: [], novelty: [], harvestOn: null, reportOn: null, ...extra
+  measuredCoverage: 1, warnings: [], rejectReasons: [], novelty: [], harvestOn: null, reportOn: null, testedOn: null, ...extra
 });
 
 async function run(db, log = console.log) {
@@ -61,8 +64,10 @@ async function run(db, log = console.log) {
   /* ======================================================= the two views */
 
   /* One document per case, oldest first. */
-  await save('harvest', reading({ strain: '(I) Banana Papaya', harvestOn: '2026-01-10', reportOn: '2026-01-20' }));
+  await save('harvest', reading({ strain: '(I) Banana Papaya', harvestOn: '2026-01-10', testedOn: '2026-01-15', reportOn: '2026-01-20' }));
   await save('report', reading({ strain: '  banana   PAPAYA ', batch: 'B-2', reportOn: '2026-03-05' }));
+  await save('tested', reading({ strain: 'Banana Papaya', batch: 'B-6', testedOn: '2026-02-14', reportOn: '2026-02-20' }));
+  await save('lab format', reading({ strain: 'Banana Papaya', batch: 'B-7', testedOn: '02/14/26', reportOn: '2026-02-21' }));
   await save('undated', reading({ strain: 'Banana Papaya', batch: 'B-3' }));
   await save('refused', reading({ batch: 'B-4', usable: false, rejectReasons: ['only 1 terpene found'], harvestOn: '2026-02-01' }));
   await save('no verdict', (({ usable, ...o }) => o)(reading({ batch: 'B-5' })));
@@ -80,6 +85,11 @@ async function run(db, log = console.log) {
   const { parseCoa } = require(path.join(ROOT, 'netlify/functions/lib/parse-coa.js'));
   const acs = parseCoa(fs.readFileSync(acsText, 'utf8'));
   await save('ACS-FLW-002', acs, { text: fs.readFileSync(acsText, 'utf8') });
+  /* And one dated only by the day the lab finished: a Method report, by its
+     sign-off. */
+  const mtlText = path.join(ROOT, 'test/fixtures/extracted/MTL-FLW-002.txt');
+  const mtl = parseCoa(fs.readFileSync(mtlText, 'utf8'));
+  await save('MTL-FLW-002', mtl, { text: fs.readFileSync(mtlText, 'utf8') });
 
   const latest = await rows(`
     select l.document_id::text as doc, l.parse_id::text as parse, l.strain, l.usable, l.total_terpenes::float8 as total
@@ -102,21 +112,36 @@ async function run(db, log = console.log) {
     (await parseIdsOf('two texts')).slice(-1)[0] === two.parse, false);
 
   const series = await rows(`
-    select lab, client, strain_key, batch, batch_date, total_terpenes::float8 as total, parse_id::text as parse, copies
+    select lab, client, strain_key, batch, batch_date, batch_date_from, total_terpenes::float8 as total, parse_id::text as parse, copies
       from nose.batch_series order by parse_id`);
   const byBatch = Object.fromEntries(series.map(r => [r.batch, r]));
   check('batch_series: usable latest readings only - not the refused one, not one without a verdict',
-    series.map(r => r.batch).sort(), ['1006 1837 9110 9527', 'B-1', 'B-2', 'B-3', 'G-1', 'T-1']);
+    series.map(r => r.batch).sort(), ['1006 1837 9110 9527', '5637041429622699', 'B-1', 'B-2', 'B-3', 'B-6', 'B-7', 'G-1', 'T-1']);
   check('...and one row per document while every document is its own sample', series.every(r => r.copies === 1), true);
   check('the strain key: lowercase, whitespace collapsed, a leading (I) dropped',
     ['B-1', 'B-2', 'B-3'].map(b => byBatch[b].strain_key), ['banana papaya', 'banana papaya', 'banana papaya']);
-  check('batch_date: harvest when printed, else report, else null',
-    ['B-1', 'B-2', 'B-3'].map(b => byBatch[b].batch_date), ['2026-01-10', '2026-03-05', null]);
+  check('batch_date: harvest when printed, else the day the lab finished, else report, else null',
+    ['B-1', 'B-6', 'B-2', 'B-3'].map(b => byBatch[b].batch_date), ['2026-01-10', '2026-02-14', '2026-03-05', null]);
+  check('...and batch_date_from says which day it is, NULL for an undated batch',
+    ['B-1', 'B-6', 'B-2', 'B-3'].map(b => byBatch[b].batch_date_from), ['harvest', 'tested', 'report', null]);
+  check('a testedOn that is not an ISO day is left NULL, not stored wrong, and the report day dates the batch',
+    [(await rows(`select tested_on from nose.latest_parses where sha256 = $1`, [sha('lab format')]))[0].tested_on,
+     byBatch['B-7'].batch_date, byBatch['B-7'].batch_date_from], [null, '2026-02-21', 'report']);
+  check('latest_parses carries tested_on, last, as the parse holds it',
+    [(await rows(`select tested_on from nose.latest_parses where sha256 = $1`, [sha('harvest')]))[0].tested_on,
+     (await rows(`select column_name from information_schema.columns
+                   where table_schema = 'nose' and table_name = 'latest_parses' order by ordinal_position desc limit 1`))[0].column_name],
+    ['2026-01-15', 'tested_on']);
   check('each row names its parse: the one latest_parses stands by',
     series.every(r => latest.some(l => l.parse === r.parse)), true);
-  check('a real report: ACS-FLW-002 dated by its printed harvest day, its total as read',
-    [byBatch['1006 1837 9110 9527'].strain_key, byBatch['1006 1837 9110 9527'].batch_date, byBatch['1006 1837 9110 9527'].total],
-    ['sfv og', '2026-04-03', 2.008]);
+  check('a real report: ACS-FLW-002 dated by its printed harvest day, not the later day the lab finished, its total as read',
+    [byBatch['1006 1837 9110 9527'].strain_key, byBatch['1006 1837 9110 9527'].batch_date, byBatch['1006 1837 9110 9527'].batch_date_from,
+     acs.testedOn, byBatch['1006 1837 9110 9527'].total],
+    ['sfv og', '2026-04-03', 'harvest', '2026-05-04', 2.008]);
+  check('a real report with no harvest day: MTL-FLW-002 dated by its sign-off, the day the lab finished',
+    [byBatch['5637041429622699'].strain_key, byBatch['5637041429622699'].batch_date, byBatch['5637041429622699'].batch_date_from,
+     byBatch['5637041429622699'].total],
+    ['purple push pop', '2026-08-31', 'tested', 3.7]);
 
   /* One sample, several documents: the same lab and lab ID, saved under three
      fingerprints with three texts (downloaded again, amended). One row in
@@ -152,7 +177,7 @@ async function run(db, log = console.log) {
   check('batch_series has exactly the columns asked for',
     (await rows(`select column_name from information_schema.columns
                   where table_schema = 'nose' and table_name = 'batch_series' order by ordinal_position`)).map(r => r.column_name),
-    ['lab', 'client', 'strain_key', 'batch', 'batch_date', 'total_terpenes', 'parse_id', 'copies']);
+    ['lab', 'client', 'strain_key', 'batch', 'batch_date', 'total_terpenes', 'parse_id', 'copies', 'batch_date_from']);
   check('latest_parses carries neither the address nor the text',
     (await rows(`select column_name from information_schema.columns
                   where table_schema = 'nose' and table_name = 'latest_parses'
@@ -228,7 +253,7 @@ async function driftChecks(db, check) {
   const scan = (name, output) => store.saveScan({ sha256: sha(name), byteSize: 1000, sourceUrl: ADDRESS, fetchedAt: '2026-09-22T12:00:00Z',
     extractorVersion: 'x1', text: `${name} ${SECRET_TEXT}`, parserVersion: 'abc1234', context: 'production', output }, { client: db });
   await scan('d-K1', bp('K1', { harvestOn: '2026-01-10', reportOn: '2026-01-20', client: 'Grower A' }));
-  await scan('d-A1', bp('A1', { lab: 'ACS Laboratory', productClass: 'vape', harvestOn: '2026-02-01', client: 'Grower A' }));
+  await scan('d-A1', bp('A1', { lab: 'ACS Laboratory', productClass: 'vape', testedOn: '2026-02-01', client: 'Grower A' }));
   await scan('d-K2', bp('K2', { reportOn: '2026-03-05', client: 'Grower A' }));
   await scan('d-K3', bp('K3', { strain: 'gelato  DE limon', harvestOn: '2026-03-05', client: 'Grower B' }));
   await scan('d-K4', bp('K4', { harvestOn: '2026-05-01', client: 'Grower A', labId: 'MI60501001-001' }));
@@ -271,11 +296,13 @@ async function driftChecks(db, check) {
     all.lines.includes(`      top five, share of total: ${shares}`), true);
   count('...and each batch says which date it is and what its report printed',
     [all.lines.some(l => /^ {2}1 {3}2026-01-10 {2}harvest {2}Kaycha Labs · client Grower A · batch K1 · flower {3}parse #\d+$/.test(l)),
+     all.lines.some(l => /^ {2}2 {3}2026-02-01 {2}tested {3}ACS Laboratory · client Grower A · batch A1 · vape {3}parse #\d+$/.test(l)),
      all.lines.some(l => /^ {2}3a {2}2026-03-05 {2}report {3}Kaycha Labs/.test(l)),
-     all.lines.includes('      printed name "(I) Gelato de Limon" · total terpenes 2%')], [true, true, true]);
-  count('...the notes: two labs, two clients, two forms, mixed date kinds, one refusal',
+     all.lines.includes('      printed name "(I) Gelato de Limon" · total terpenes 2%')], [true, true, true, true]);
+  count('...the notes: two labs, two clients, two forms, three kinds of date, one refusal',
     [/reported by 2 labs \(Kaycha Labs, ACS Laboratory\)/.test(all.text), /2 clients \(Grower A, Grower B\)/.test(all.text),
-     /mix product forms \(flower, vape\)/.test(all.text), /mix harvest days and report days/.test(all.text),
+     /mix product forms \(flower, vape\)/.test(all.text),
+     all.text.includes('The dates mix harvest days, days the lab finished testing and report days, and a lab tests and reports after the harvest, so order across them is approximate.'),
      /1 sample under this strain key was refused/.test(all.text)], [true, true, true, true, true]);
   count('...a sample kept as two documents is one batch, and says so',
     [all.lines.filter(l => / · one sample, kept as 2 documents$/.test(l)).length,
@@ -289,9 +316,12 @@ async function driftChecks(db, check) {
     [EFFECT_WORDS.test(all.text), all.text.includes(SECRET_TEXT), all.text.includes('example.org'), all.text.includes(sha('d-K1').slice(0, 8))],
     [false, false, false, false]);
 
-  const kay = (await run({ strain: 'gelato de limon', lab: '  kaycha   LABS ' })).result;
+  const kayRun = await run({ strain: 'gelato de limon', lab: '  kaycha   LABS ' });
+  const kay = kayRun.result;
   count('--lab: one lab, matched whole, case and spacing aside',
     [kay.dated.flatMap(d => d.batches.map(b => b.label + b.batch)), kay.pairs.length], [['1K1', '2aK2', '2bK3', '3K4'], 5]);
+  count('...two kinds of date there, and the note says so',
+    kayRun.text.includes('The dates mix harvest days and report days, and a lab tests and reports after the harvest, so order across the two is approximate.'), true);
   const grower = (await run({ strain: 'gelato de limon', client: 'grower b' })).result;
   count('--client: one client', grower.dated.flatMap(d => d.batches.map(b => b.batch)), ['K3']);
   const partial = await run({ strain: 'gelato de limon', lab: 'Kaycha' });
@@ -570,6 +600,7 @@ function cliChecks(check) {
   const sources = ['scripts/drift.js', 'scripts/lab-stats.js', 'scripts/score-spread.js', 'scripts/lib/match.js', 'netlify/functions/lib/coa-dates.js',
                    'supabase/migrations/20260923170000_nose_analysis_views.sql',
                    'supabase/migrations/20261002180000_nose_one_document_per_text.sql',
+                   'supabase/migrations/20261015000000_nose_tested_on.sql',
                    path.relative(ROOT, require(path.join(ROOT, 'scripts/lib/match.js')).matchFile())]
     .map(f => [f, fs.readFileSync(path.join(ROOT, f), 'utf8')]);
   count('no effect wording in the analysis layer\'s own files', sources.filter(([, s]) => EFFECT_WORDS.test(s)).map(([f]) => f), []);

@@ -312,9 +312,13 @@ async function main() {
   /* The migration: additive, and immutable once pushed. */
   const migrationFiles = fs.readdirSync(MIGRATIONS).filter(f => f.endsWith('.sql')).sort();
   const sourceSql = fs.readFileSync(path.join(MIGRATIONS, READ_SOURCE_MIGRATION), 'utf8');
-  check('the reading-source migration sorts last, after the b2b one, and is byte-identical to its first push',
-    [migrationFiles[migrationFiles.length - 1], migrationFiles.indexOf('20261008020000_nose_b2b.sql') === migrationFiles.length - 2,
-     sha(sourceSql)], [READ_SOURCE_MIGRATION, true, READ_SOURCE_SHA256]);
+  /* Straight after the b2b one, not last: a later prompt's migration
+     (20261015000000_nose_tested_on.sql, PARSER-HANDOFF s13) sorts after
+     both, as every future one will. */
+  check('the reading-source migration sorts straight after the b2b one, and is byte-identical to its first push',
+    [migrationFiles.includes(READ_SOURCE_MIGRATION),
+     migrationFiles.indexOf(READ_SOURCE_MIGRATION) === migrationFiles.indexOf('20261008020000_nose_b2b.sql') + 1,
+     sha(sourceSql)], [true, true, READ_SOURCE_SHA256]);
   check('...it only adds: five columns, one CHECK and comments - no DROP, no grant, nothing in schema nose',
     [(sourceSql.match(/ADD COLUMN/g) || []).length, (sourceSql.match(/ADD CONSTRAINT/g) || []).length,
      /\b(DROP|GRANT|REVOKE|CREATE ROLE|ALTER ROLE)\b/.test(codeOf(sourceSql).replace(/--.*$/gm, '')), /\bnose\./.test(sourceSql)],

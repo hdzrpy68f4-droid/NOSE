@@ -219,7 +219,8 @@ someone to look.
 | `novelty-test.js` | the five `novelty` notes (§7) and the furniture the `unmapped` diagnostic skips; FAILS if an accepted fixture carries any novelty, and lists the refused ones that do, as information |
 | `match-test.js` | the matching maths has one home, `js/match-math.*.js`: the app takes it from there, nothing else holds a copy, and it returns every score in `test/fixtures/match-golden.json` to the last bit; every score is shown and sent through `shownScore()`, floored (§13, "The shown score"), and the worked examples on `learn/intensity-versus-character/` are the numbers the app shows; since 2026-10-14, a profile carrying `harvestOn`, `reportOn` and `totalTerpenes` normalises exactly as without them (§4) |
 | `match-feedback-test.js` | the app's votes (§13, "Every vote stored"): `match-feedback.js` and `feedback-read.js` offline, `@netlify/blobs` stood in for - matchBand()'s four names each stored under its slug, every other band refused with `bad-band` and nothing stored, a score of 0 kept; the key layout, the store, the record's ten fields and anonymity unmoved; the summary, filters and CSV over the four, in matchBand()'s order, its caveat word for word; the bundle's own vote run on the default `/app` pair, 74 · Moderate, stored and counted; the question asks about smell and taste, no effect word in the block; the privacy page's sentence about votes; since 2026-10-14 the smell words (§13, "Smell words on a vote") - the bundle's `SMELL_NOTES` and the handler's `NOTES` one list, up to three distinct words stored in list order in a v 2 record, every other shape refused with `bad-notes` and nothing stored, `null` when none was sent, the CSV's notes column, no word on the list an effect word |
-| `coa-dates-test.js` | `lib/coa-dates.js` and the parser's `harvestOn` / `reportOn` (§7): the three forms, the near misses, and every other field identical without it |
+| `coa-dates-test.js` | `lib/coa-dates.js` and the parser's `harvestOn` / `reportOn` / `testedOn` (§7): the four forms, a one-digit month or day, a time of day, the near misses, `testedOn` on every fixture and the rule behind each lab's row, and every other field identical without it |
+| `date-probe.js` | read-only, not a gate: for every accepted fixture, the lab, the dates the parser reads, and every line whose label ends in `Date:`, `Completed:` or `Created:` with the line after it; then per lab, how many are dated and on how many fixtures each label appears (`--labels`). Run it before choosing a date label for a new lab (§13, "When the lab finished") |
 | `analysis-test.js` | the analysis layer (§13) on PGlite: the two views, their grants; `drift.js`, `lab-stats.js` and, since 2026-10-14, `score-spread.js` |
 | `duplicates-test.js` | `duplicates.js` and `download-twice.js` (§13, "One report, many documents"): on PGlite, and on fixture PDFs behind a stand-in fetch - a PDF rebuilt between downloads, the same file twice, a text that changes, a link that fails; offline |
 | `remove-copies-test.js` | `remove-copies.js` (§13, "One report, many documents - the cleanup") on PGlite: copies made by the old `save_scan`, the copies it keeps and why, a Blobs failure, a second run, no text lost, nose_writer refused; and that only it, `remove-document.js` and the probe's refusals name a DELETE; offline |
@@ -368,11 +369,12 @@ usable  rejectReasons  warnings  novelty
   readers indistinguishable.
 
 **Additive fields, for the archive (§13) — the app does not read the first
-three and `coa.js` does not send them; since 2026-10-14 it sends the last
-two, and the card reads them:**
+three and `coa.js` does not send them; since 2026-10-14 it sends
+`harvestOn` and `reportOn`, and the card reads them. `testedOn` (also since
+2026-10-14) is stored and not sent:**
 
 ```
-reportDate  client  parserVersion  harvestOn  reportOn
+reportDate  client  parserVersion  harvestOn  reportOn  testedOn
 ```
 
 - **`coa.js` sends `harvestOn` and `reportOn`** on a usable reply (since
@@ -404,16 +406,38 @@ reportDate  client  parserVersion  harvestOn  reportOn
   identical (`test/coa-dates-test.js` proves it each run). Printed dates do
   not sort as text; ISO days do, and the archive's `harvest_on` / `report_on`
   columns read these two. Only the WHOLE value, in one of four forms a US lab
-  cannot mean two ways: `MM/DD/YYYY`, `MM/DD/YY` read as 20YY (Kaycha's
-  harvest dates, `"07/07/25"`; asked for on 2026-09-23), `YYYY-MM-DD`, `Mon D,
-  YYYY`. Anything else is null - a one-digit month or day, a one- or
-  three-digit year, a full month name, a time after the date - and so is a
-  day the calendar lacks, a day after today (UTC), or one before 2014-01-01.
-  With those two bounds a two-digit year reads only from 14 to the current
-  year, so 20YY is never a guess between centuries. On the corpus every
-  printed date reads: 19 harvest dates (3 ACS, printed ISO already; 16
-  Kaycha) and 2 TerpLife report dates. Widening the forms again needs a
-  prompt that asks for it.
+  cannot mean two ways: `M/D/YYYY`, `M/D/YY` read as 20YY (Kaycha's harvest
+  dates, `"07/07/25"`; asked for on 2026-09-23), `YYYY-MM-DD`, `Mon D, YYYY`.
+  Since 2026-10-14 (Prompt 7) the month and day of the two slashed forms may
+  have one digit (Method's `"8/27/2026"`), and any of the four may end in a
+  time of day after a space or a comma - `H:MM` or `H:MM:SS`, then `AM`,
+  `PM` or nothing (`", 4:00:00 AM"`, `" 11:59"`, `" 18:04"`). The time is
+  checked (hour 0-23, or 1-12 before AM/PM; minutes and seconds 00-59) and
+  dropped: the day is the one printed, never moved by the time. Anything
+  else is null - a one- or three-digit year, a full month name, a dotted or
+  day-first date, an ISO day with one digit (`2025-7-14`), a time with a
+  zone, a `T`, a fraction or words after it - and so is a day the calendar
+  lacks, a day after today (UTC), or one before 2014-01-01. With those two
+  bounds a two-digit year reads only from 14 to the current year, so 20YY is
+  never a guess between centuries. On the corpus every printed harvest and
+  report date reads: 19 harvest dates (3 ACS, printed ISO already; 16
+  Kaycha) and 2 TerpLife report dates - the widening moved none of them.
+  Widening the forms again needs a prompt that asks for it.
+- **`testedOn`** (since 2026-10-14) is the day the lab finished, as an ISO
+  day or null: `lib/coa-dates.js` applied to ONE row per lab, chosen from what
+  the fixtures print (`test/date-probe.js`; §13, "When the lab finished").
+  There is no printed twin: `finishedOn()` reads the row and keeps only the
+  day. Kaycha and Modern Canna `Completed:`, ACS `Completion Date:`, ACT
+  `Report Created:` (also when the label wraps after "Report"), Method its
+  sign-off - the line after "<name> - Lab Director" - and no row for
+  TerpLife (its "Date Reported:" is `reportOn`), Green Scientific or an
+  unrecognised lab. Colon labels only, so Modern Canna's bare "Completed"
+  status tile is never read. The first row with a value is read; a later row
+  never stands in for an unreadable one. Computed after the reading and read
+  by nothing in the parser: with `coa-dates.js` unavailable it is null and
+  every other field identical. On the corpus 54 of 59 fixtures carry one:
+  every accepted fixture but Method_DulceDeUva and TerpLife's, and none of
+  the three refusals.
 - None is in the baseline and parity compares named fields only, so none can
   DIFFER. The mutation harness compares terpenes and total only: still 35.
 
@@ -848,6 +872,7 @@ supabase/migrations/20260923140000_nose_reparse_runs.sql   one row per real repa
 supabase/migrations/20260923170000_nose_analysis_views.sql   latest_parses, batch_series, strain_key(): read-only
 supabase/migrations/20261002180000_nose_one_document_per_text.sql   save_scan finds a document by its bytes, else its text; batch_series per sample; sample_key()
 supabase/migrations/20261002230000_nose_removals_and_cap.sql   removals, withheld, the daily cap; save_scan checks both first
+supabase/migrations/20261015000000_nose_tested_on.sql   parses.tested_on; batch_series dated by harvest, else tested, else report, and says which
 supabase/config.toml                                  minimal, for the CLI
 netlify/functions/lib/store.js                        saveScan(payload, { client, timeoutMs }), touch()
 netlify/functions/lib/supabase-ca.js                  generated; Supabase's public root CA
@@ -858,7 +883,7 @@ netlify/functions/lib/version.js                      the one version helper
 netlify/functions/lib/build-info.json                 GENERATED by build.sh, gitignored
 netlify/functions/coa.js                              archiveScan(): the one call site
 netlify/functions/keep-awake.js                       scheduled read every 4 hours
-test/store-test.js                                    PGlite, in memory, 111 checks
+test/store-test.js                                    PGlite, in memory, 114 checks
 test/archive-wiring-test.js                           coa.js -> archive.js, offline, 54 checks
 test/archive-scripts-test.js                          version, pdf-store, health, seed, rerun helper; offline, 24 checks
 test/rerun-test.js                                    reparse, backfill, export on PGlite; offline, 92 checks
@@ -869,6 +894,7 @@ test/fixtures/match-golden.json                       those scores, from js/nose
 test/match-golden-make.js                             wrote them, once; never re-run to make a test pass
 test/novelty-test.js                                  the parser's novelty notes (s7); fails if an accepted fixture has any
 test/probe-test.js                                    the probe's pass/fail rules, offline
+test/date-probe.js                                    read-only: the dates each accepted fixture prints, and which the parser reads
 scripts/embed-supabase-ca.js                          writes supabase-ca.js from the download
 scripts/set-writer-password.js                        rotates nose_writer, prints NOSE_DB_URL once
 scripts/probe-db.js                                   checks the real project
@@ -907,7 +933,9 @@ distinct parse), the view `terpene_values`, `save_scan(payload)`, which is
 the only write path for scans, and `reparse_runs` (one row per real reparse
 run, inserted directly). The analysis layer adds two read-only views and one
 function (below, "The analysis layer"): `latest_parses`, `batch_series` and
-`strain_key()`, and `sample_key()` since 2026-10-02. Since 2026-10-02 too,
+`strain_key()`, and `sample_key()` since 2026-10-02; since 2026-10-14
+`parses.tested_on` and `batch_series.batch_date_from` (below, "When the lab
+finished"). Since 2026-10-02 too,
 `removals` (one row per removal made by hand: a UTC day and one word),
 `withheld` (the file and text fingerprints a removal took out, which
 `save_scan` refuses), `daily_document_cap()` and a trigger on `reparse_runs`
@@ -972,6 +1000,8 @@ parser also emits the ISO forms (§7, `lib/coa-dates.js`), so the columns fill
 wherever the printed date is one of the four accepted forms - Kaycha's
 two-digit years included. They fill for a stored document only once it is
 read again: `node scripts/reparse.js`. The `client` column fills too.
+`tested_on` (since 2026-10-14) reads `testedOn` the same way, with the same
+pattern, and fills the same way: once each document is read again.
 - **No `ON DELETE CASCADE`.** Deleting a document with parses must fail loudly.
 - **`reparse_runs.last_document_id` is a number, not a foreign key**, since
 2026-10-02. The key refused to delete any document a reparse run had walked
@@ -1344,6 +1374,18 @@ Rehearsed on a local copy of the seeded archive: `55 unchanged / 4 values
 changed`, then `59 unchanged`. On the real archive, run #7: `62 unchanged / 4
 values changed`, the same four, then `66 unchanged` (below, "Known ACS
 layouts, 2026-09-24").
+- **The first real reparse after `testedOn` (§7, 2026-10-14) changes every
+  document the same way**: each prints `also changed: testedOn (new)` and
+  nothing else - `usable`, `readBy`, `totalTerpenes` and every terpene the
+  same before and after. Rehearsed on a local copy of the seeded archive (the
+  59 fixtures read by `18520cc`, every migration applied): the dry run and a
+  real run of the change committed both said `0 unchanged / 59 values
+  changed / 0 accepted→rejected / 0 rejected→accepted / 0 failed`, with that
+  one name on all 59 and nothing else; a second run said `59 unchanged`. On
+  the real archive expect every document, fixture or scan, to show that one
+  line. Anything else - a terpene that moved, an accepted→rejected,
+  `harvestOn` or `reportOn` named beside it - is to be brought back before
+  the real run (below, "When the lab finished").
 - **Ids jump after a run.** `INSERT … ON CONFLICT DO NOTHING` takes an identity
 number even when it conflicts, so a reparse uses up one document id and one
 extraction id per document. Nothing is lost; count rows, never ids.
@@ -1375,13 +1417,18 @@ read by the analysis scripts. Nothing in it writes; nothing in it is UI.
   with the scripts rather than with the id. It carries the parse's columns
   and its output, and leaves out the document's address and text.
 - **`nose.batch_series`** - the usable ones, ONE ROW PER SAMPLE since
-  2026-10-02: `lab`, `client`, `strain_key`, `batch`, `batch_date` =
-  `coalesce(harvest_on, report_on)`, `total_terpenes`, `parse_id`, `copies`.
-  A sample is the lab and its lab ID where one was read, else the document
+  2026-10-02: `lab`, `client`, `strain_key`, `batch`, `batch_date`,
+  `total_terpenes`, `parse_id`, `copies`, and since 2026-10-14
+  `batch_date_from`. `batch_date` is `coalesce(harvest_on, tested_on,
+  report_on)` since 2026-10-14 - `coalesce(harvest_on, report_on)` until
+  then - and `batch_date_from` says which: `harvest`, `tested` or `report`,
+  NULL for an undated batch (below, "When the lab finished"). A sample is
+  the lab and its lab ID where one was read, else the document
   (`nose.sample_key()`); its row is the newest document's latest reading, and
   `copies` is how many usable documents hold it - 1 when it was kept once. A
   NULL `batch_date` is an undated batch. Refused readings, and outputs with
-  no boolean `usable`, are not in it.
+  no boolean `usable`, are not in it. `latest_parses` carries `tested_on`
+  too, as its last column.
 - **`nose.strain_key(text)`** - the one rule for "same strain": lowercase,
   whitespace runs collapsed and trimmed, a leading `(I)`, `(S)` or `(H)`
   dropped (any case). Nothing else: `GMO #2` is not `GMO`. The view uses it,
@@ -1400,11 +1447,15 @@ read by the analysis scripts. Nothing in it writes; nothing in it is UI.
   both views and holds nothing more on them. With `NOSE_DB_ADMIN_URL` set,
   its grant audit covers the function.
 - **Tested** by `test/analysis-test.js` on PGlite: A → B → A, two extractions,
-  refused and verdict-less readings, the strain key, the date fallback, a
-  real ACS report (dated 2026-04-03 by its own harvest line), the columns,
-  security_invoker in practice, and the grants. Rehearsed on a local copy of
-  the seeded archive: 59 documents, 56 in `batch_series`, 20 of them dated,
-  and `probe-db.js` against it passed every view and grant check.
+  refused and verdict-less readings, the strain key, the date fallback -
+  harvest, else tested, else report, and `batch_date_from` naming each - a
+  real ACS report (dated 2026-04-03 by its own harvest line, not by the
+  later day the lab finished), a real Method report dated only by its
+  sign-off (MTL-FLW-002, 2026-08-31), the columns, security_invoker in
+  practice, and the grants. Rehearsed on a local copy of the seeded archive:
+  59 documents, 56 in `batch_series`, 20 of them dated - 55 since the
+  reparse after 2026-10-14 - and `probe-db.js` against it passed every view
+  and grant check.
 
 **One copy of the maths: `js/match-math.<hash>.js`.** The app's `normalize`,
 `cosine` and `matchBand` lived inside `js/nose.*.js`'s closure, which Node
@@ -1442,10 +1493,12 @@ lab reports over time. The name is keyed with `nose.strain_key()` itself;
 `--lab` and `--client` match a whole name, case and spacing aside, never a
 substring, and list the names there are when nothing matches.
 
-- Dated batches, oldest first: the date and whether it is the harvest or the
-  report day, lab, client, batch, form, parse id, the name as printed, the
-  total terpenes the report printed, and the top five terpenes as share of
-  total (`normalize()`, so zeros and cannabinoids never appear).
+- Dated batches, oldest first: the date and which day it is - `harvest`,
+  `tested` (the day the lab finished, since 2026-10-14) or `report`, as the
+  view's `batch_date_from` names it - lab, client, batch, form, parse id, the
+  name as printed, the total terpenes the report printed, and the top five
+  terpenes as share of total (`normalize()`, so zeros and cannabinoids never
+  appear).
 - Then each batch against the one before: `cosine()` of the two
   share-of-total profiles, printed to three places, then as the app shows it
   (`shownScore()`, floored - `Math.round` until 2026-09-24) with
@@ -1453,20 +1506,24 @@ substring, and list the names there are when nothing matches.
   the same day have no order between them, so each is compared with every
   batch of the day before and with each other (`3a ~ 3b`).
 - Undated batches are listed apart and compared with nothing.
-- Notes when the series mixes labs, clients, product forms, or harvest and
-  report days, or when samples under the name were refused - each is a
-  reason two reports differ that is not the batch.
+- Notes when the series mixes labs, clients, product forms, or kinds of
+  date (harvest days, days the lab finished testing, report days), or when
+  samples under the name were refused - each is a reason two reports differ
+  that is not the batch.
 - One batch per sample (since 2026-10-02): a sample kept as several
   documents prints `one sample, kept as N documents` and a note says so;
   refused samples are counted by sample too.
 - It says, first and last, that drift is between lab reports, not between
   experiences. `test/analysis-test.js` drives it on PGlite and fails on any
   effect wording in its output or in the layer's files.
-- On the rehearsal archive 20 of the 56 usable batches are dated. "Grease
+- On the rehearsal archive 20 of the 56 usable batches were dated until
+  2026-10-14, and 55 after the reparse that added `testedOn`. "Grease
   Monkey" is a Kaycha cart and a Kaycha concentrate from one harvest day,
   2026-03-23 - `1a ~ 1b`, 0.997, shown as 99 since 2026-09-24 (100 while
-  the app rounded), Close match - and a Modern Canna flower report with no
-  date, listed apart.
+  the app rounded), Close match - and a Modern Canna flower report that was
+  undated and listed apart until 2026-10-14. Now it is batch 2, `tested`
+  2026-06-18: `1a → 2` 0.994 and `1b → 2` 0.996, both 99, Close match, and
+  a note that the dates mix harvest days and days the lab finished testing.
 
 **`scripts/lab-stats.js`** - per lab, from `latest_parses`, counted by
 sample since 2026-10-02 (`nose.sample_key()`, each sample from its newest
@@ -3282,6 +3339,183 @@ the one that counts. This record closes two "Still open" items -
 how-to-read-a-coa's D8197-21 link, and the card's water activity row linking
 to a new article (called R5 there; it is R8) - and adds three.
 
+### When the lab finished, 2026-10-14
+
+Prompt 7 of the 2026-09-23 review: **most reports could not be placed in
+time.** `batch_series` dated a sample by its harvest day, else its report day,
+and only 20 of the 56 accepted fixtures carried either - Kaycha 16 of 22, ACS
+3 of 8, TerpLife 1 of 1, and none of Modern Canna's 13, Method's 9 or ACT's 3.
+Every one of those labs prints when it finished. Prompt 2 had guessed the
+report-date labels (`Report Date`, `Date Reported`, `Date of Analysis`),
+which read on two documents; this time they were measured first.
+
+**Built 2026-10-05, landed 2026-10-14.** The work was done on `c337c70` as
+`6ab60ad` and handed over as a git bundle, which never reached main; main
+went on 30 commits without it (B2B, R1 to R8). On 2026-10-14 it was brought
+onto `18520cc` unchanged but for three things: this record, the counts
+below, and the migration's name. `20261005150000_nose_tested_on.sql` became
+**`20261015000000_nose_tested_on.sql`**: the real project has applied
+`20261008020000` and `20261008150000` since, and `supabase db push` refuses a
+local migration that sorts before the last one applied ("Found local
+migration files to be inserted before the last migration on remote
+database"; `--include-all` would push it anyway - CLI reference,
+https://supabase.com/docs/reference/cli/supabase-db-push, read 2026-10-14).
+A later name needs no flag. Only this file conflicted; `probe-db.js` and
+`analysis-test.js` merged on their own.
+
+- **The probe, before any edit**, on `c337c70` and again on `18520cc`:
+  `test/date-probe.js` (kept; read-only, not a gate) printed, for every
+  accepted fixture, the lab, `harvestDate`, `reportDate`, `harvestOn`,
+  `reportOn`, and every line whose label ends in `Date:`, `Completed:` or
+  `Created:` with the line after it. Both runs said `dated: 20 of 56`, split
+  as above, and their fixture-by-fixture tables are identical: neither the
+  parser nor the corpus changed between them. The row that says when each
+  lab finished - every repeat of it inside a file agreeing with the first:
+
+  | Lab | Row | Fixtures | As printed |
+  |---|---|---|---|
+  | Kaycha | `Completed:`, value on the next line | 22 of 22 | `07/11/25` |
+  | Modern Canna | `Completed:`, value on the next line | 13 of 13 | `11/27/24 09:40` |
+  | ACS | `Completion Date:`, value on the next line | 8 of 8 | `2026-06-24` |
+  | ACT | `Report Created:`, inline; on LAB-0425BSWS the label wraps after "Report" | 3 of 3 | `02/13/2025 18:18` |
+  | Method | no completion row: `Batch Date:` (inline on 8; on the ninth apart from its value), and an unlabelled sign-off on the line after "<name> - Lab Director" | sign-off 8 of 9 | `2/27/2025, 5:00:00 AM`; `3/3/2025, 7:11:00 PM` |
+  | TerpLife | `Date Reported:`, already read as `reportDate` | 1 of 1 | `11/17/2025` |
+
+- **The labels** - `FINISHED` and `finishedOn()` in `parse-coa.js`, each
+  named in its comment (§7, `testedOn`): Kaycha and Modern Canna
+  `Completed:`, ACS `Completion Date:`, ACT `Report Created:`, read also
+  when it wraps - a line ending "Report", the next starting "Created:" - which
+  is LAB-0425BSWS's layout, not another label. Colon labels only: Modern
+  Canna's summary prints a bare "Completed" status tile, and with the colon
+  taken off its header row nothing is read (`coa-dates-test`). A report
+  revised later keeps its completion day: KAY-FLW-003 completed 10/19/24 and
+  was revised 10/22/24, and `testedOn` is 2024-10-19.
+- **Method: the sign-off, not "Batch Date".** `testedOn` is when the lab
+  finished, and the sign-off is the only Method row that says so - the lab
+  director's dated signature, the same event as the other labs' completion
+  rows. "Batch Date" sits with `Batch Client #`, `Seed to Sale #` and
+  `Lot ID`: the batch's date, not the lab's, 3 to 5 days before the sign-off
+  on all 8 fixtures; on the older layout it is the sampling day. The
+  sign-off has no label, so it is read only from the line straight after one
+  ending " - Lab Director", and only as a whole date `lib/coa-dates.js`
+  reads; anything else on that line is null, and no later date stands in.
+  The parser never reads or keeps the name on the director's line. One
+  caveat: **Method prints its times in UTC.** Every batch date is midnight
+  Eastern, printed 4:00 or 5:00 AM by the season, so a sign-off after 8 PM
+  Eastern (7 PM in winter) prints the next day. On the 8 fixtures the
+  sign-offs fall between 2:47 and 9:46 PM UTC - the same day either way.
+  Method's older layout (Method_DulceDeUva) prints its labels apart from
+  their values and has no sign-off date: undated, as before.
+- **Method prints no harvest date** on any current-layout fixture, nor on the
+  saved portal pages (`test/fixtures/pages`), through both extractors and
+  on the rendered page - including the three signed in August 2026, after
+  rule 64-4.311 took effect on 2026-05-28. So the day the lab finished is the
+  only date a Method jar can carry today. Two tempting stand-ins are refused
+  on purpose: "Batch Date" (above), and the six digits in some clients'
+  seed-to-sale codes (`FLORA-40-F-121924-FF`), which are the client's own
+  unlabelled naming - a guess, however plausible.
+- **TerpLife: no `testedOn` row.** Its finish row is "Date Reported:", which
+  the parser already reads as `reportDate`; one row is not read into two
+  fields, so its batches stay dated by `report_on`. Green Scientific (no
+  working sample) and an unrecognised lab: none either.
+- **`lib/coa-dates.js`**: a one-digit month or day in the slashed forms, and a
+  time of day after any form (§7). Day-first, dotted and future dates are
+  still null - a day-first date whose day is over 12 has no month to be, and
+  one whose day is 12 or less still reads month-first, as before: that is
+  what "from a US lab" means. No printed harvest or report date in the
+  corpus reads differently.
+- **What moved, all 59 fixtures parsed before and after, every field
+  compared:** `testedOn`, new on all 59 - a day on 54, null on
+  Method_DulceDeUva, TerpLife and the three refusals - and nothing else.
+  Every terpene value, total, verdict, reason, warning, `readBy`, class,
+  freshness figure, `harvestOn` and `reportOn` is the same. Dated accepted
+  fixtures: **20 of 56 became 55 of 56** - Kaycha 22, Modern Canna 13, ACS 8,
+  ACT 3, Method 8 of 9, TerpLife 1. `coa.js` does not send `testedOn`, so
+  every reply and the card are unchanged. B2B is unchanged too:
+  `b2b-store.js` keeps the parser's fields by name, `testedOn` is not among
+  them, and `b2b.batch_reads` has no column for it (below, "Still open").
+- **The migration**, `20261015000000_nose_tested_on.sql`: `parses.tested_on`,
+  generated from `output->'testedOn'` exactly as `harvest_on` and
+  `report_on` are (an ISO day or NULL); `latest_parses` re-created with
+  `tested_on` added last; `batch_series` re-created with `batch_date =
+  coalesce(harvest_on, tested_on, report_on)` and `batch_date_from` added
+  last. CREATE OR REPLACE keeps both views' grants (re-stated anyway);
+  `nose_writer` gets nothing new, `nose_b2b` nothing at all, and the
+  generated column calls no function, so no EXECUTE grant is needed. Adding
+  a stored generated column rewrites `nose.parses` once, under a lock held
+  for as long as a few hundred rows take. No B2B object reads either view.
+- **`drift.js`** reads `batch_date_from` instead of working the kind out
+  again, prints `harvest`, `tested` or `report`, and its note names
+  whichever kinds a series mixes. **`probe-db.js`** checks the migration is
+  pushed: `parses.tested_on`, `latest_parses.tested_on` and
+  `batch_series.batch_date_from`, as `nose_writer` sees them.
+- **The tests.** `coa-dates-test` 48 checks (was 25): the new forms and the
+  near misses around them, `testedOn` on all 59 pinned, the rule behind each
+  lab's row on its own fixture changed in one place (the tile, the wrap, the
+  sign-off without its director line, the first row with a value, one row
+  per lab), and every other field identical without `coa-dates.js`. Against
+  main's own code it fails 21. `analysis-test` 83 (was 78): the three-way
+  fallback and `batch_date_from`, a printed `testedOn` left NULL,
+  `latest_parses`' new last column, ACS-FLW-002 still dated by its harvest
+  day, MTL-FLW-002 dated by its sign-off, drift's `tested` label and both
+  notes; without the migration it stops at the missing column. `store-test`
+  114 (was 111): `tested_on` keeps an ISO `testedOn` and leaves a printed or
+  non-string one NULL, and KAY-CAR-001's real harvest and finish days come
+  through the columns; without the migration it stops at the missing
+  column. No gate's expected line changed.
+- **One B2B check changed its wording, not what it guards.**
+  `b2b-catalog-test` asserted that `20261008150000_nose_b2b_read_source.sql`
+  "sorts last", which any later migration breaks - this one did. It now
+  asserts that it sorts straight after `20261008020000_nose_b2b.sql` and is
+  byte-identical to its first push, as `b2b-store-test`'s own ordering check
+  already does without "last". It still fails on a migration slipped
+  between the two and on an edited pushed file (both tried), passes on
+  `18520cc`'s tree, and keeps its 81 checks and `b2b-catalog clean`.
+- **Rehearsed on a local copy of the seeded archive** (the 59 fixtures read
+  by `18520cc`, every migration on main applied, PostgreSQL 16, as
+  `nose_writer`): `reparse.js --dry-run` said `59 documents: 0 unchanged /
+  59 values changed / 0 accepted→rejected / 0 rejected→accepted / 0 failed`,
+  each by `also changed: testedOn (new)` alone. The migration then applied
+  after the two B2B ones; `batch_series` held 19 harvest, 1 report and 36
+  undated. A real run of the change committed said the same counts, a second
+  run `59 unchanged`, and `batch_series` then held 19 harvest, 35 tested, 1
+  report and 1 undated - every lab's batches dated but Method_DulceDeUva's.
+  `probe-db.js` passed every archive, view, grant and B2B check, the new one
+  and "nose_b2b holds nothing in schema nose" among them, failing only the
+  four a local database cannot meet (pooler user, host and port; Enforce
+  SSL). `review-queue.js`: 0 to look at; `archive-health.js` ok;
+  `score-spread.js` and `lab-stats.js` ran as before; `drift.js "Grease
+  Monkey"` as in "The analysis layer" above.
+- **Privacy.** Nothing new is collected: `testedOn` is a day the laboratory
+  printed on its own report, read from text the archive has kept in full
+  since 2026-09-22, and the privacy page's list of what the parser finds
+  already names "the date the laboratory reported", which is what it is. The
+  page is unchanged; `check-trust` clean.
+- **How it was verified, 2026-10-14, in the cloud workspace.** npm was
+  blocked there (the registry answered 403), so as in earlier sessions the
+  gates ran on stand-ins: pdfjs-dist 6.2.108's legacy build behind unpdf's
+  two calls (the extractor stamp came out `2e793bebe82a`, the real one), a
+  throwaway PostgreSQL 16 cluster behind PGlite's API, the committed
+  html5-qrcode in place of `build.sh`'s download, and Playwright 1.56.0's
+  Chromium; the rehearsal used a `pg` over the same wire protocol (without
+  TLS) and a folder for Blobs. ALL GATES GREEN on `18520cc` before any edit,
+  32 gates, and on the change, 32, with `KAY-CAR-001` 4.124 and `KAY-PRR-001`
+  0.944; the mutation harness still 35. No file in `js/` changed, so
+  `build.sh` renamed nothing. The Codespace run on the real packages and the
+  real archive is the one that counts.
+- **In the Codespace, in this order:**
+  1. `bash scripts/gates.sh` - ALL GATES GREEN.
+  2. `node scripts/reparse.js --dry-run` - every document `also changed:
+     testedOn (new)` and nothing else; the last line `0 unchanged / N values
+     changed / 0 accepted→rejected / 0 rejected→accepted / 0 failed`.
+     Anything else: stop and bring the lines.
+  3. `npx supabase db push --db-url "$NOSE_DB_ADMIN_URL"` - one migration,
+     `20261015000000_nose_tested_on.sql` - then `node scripts/probe-db.js`:
+     probe clean, the tested_on check among it.
+  4. `node scripts/reparse.js` - the same counts, written; then once more -
+     every document unchanged.
+  5. `git push` - deploys. Then "After a deploy", below.
+
 ### After a deploy — check it
 
 1. `node scripts/archive-health.js` in the Codespace (reads as `nose_writer`;
@@ -3365,10 +3599,27 @@ panel it takes the card from, on both paths, so it waits for its own prompt.
   descriptions, not the rule lines themselves (LB11, LB21): the fetch stopped
   before its section 6.
 - **The card has no Tested row** (above, "Harvest date and age on the
-  card"): `testedOn`, Prompt 7 of the 2026-09-23 review, is not built. Once
-  the parser reads it, `coa.js` sends it like `harvestOn`, and
-  `reportDateRow()` takes it after the harvest day and before the report
-  day. Until then 36 of the 56 accepted fixtures show no date row.
+  card"): the parser reads `testedOn` since 2026-10-14 (above, "When the lab
+  finished"), but `coa.js` does not send it yet. Once it does, like
+  `harvestOn`, `reportDateRow()` takes it after the harvest day and before
+  the report day. Until then 36 of the 56 accepted fixtures show no date row.
+- **Method's sign-off is a UTC day** (above, "When the lab finished"): a
+  report signed after 8 PM Eastern carries the next day as its `testedOn`.
+  Nothing on the 8 fixtures does. Converting it would mean guessing the
+  lab's zone from its own document, so it is read as printed.
+- **`testedOn` has a row for five labs, each from fixtures.** A new lab, or
+  a new layout of a known one, gets one only with a fixture and
+  `test/date-probe.js` - until then its batches are dated by harvest or
+  report day, if it prints one the parser reads, or listed as undated.
+  TerpLife's finish day is in `report_on`, not `tested_on`, by choice: a
+  question about when labs finished reads `coalesce(tested_on, report_on)`.
+- **Method_DulceDeUva's layout stays undated.** It prints a completion date,
+  but apart from its label, among unlabelled values; matching it would be
+  fitting to one document (§6, "`unknown` is guarded").
+- **Store catalogs carry no `testedOn`.** `b2b.batch_reads` keeps
+  `harvest_on` and `report_on` only, and `b2b-store.js` keeps the parser's
+  fields by name, so a Method or Modern Canna batch in a store's catalog is
+  still undated there. Carrying it is a B2B migration and its own prompt.
 - **The date row's note was watched in Chromium only**, at 1280 and 390 px.
   Its normal weight comes from the element's `style` property, which MDN
   says `style-src` does not block; Safari and Firefox have not been looked

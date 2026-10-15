@@ -30,8 +30,8 @@ try {
 
 /* harvestDate and reportDate as ISO days, for the archive (s7): lib/coa-dates.js.
    Output only, computed from the two fields after they are read - nothing here
-   branches on it. Guarded like version.js, so this file still runs on its own;
-   both then read null. */
+   branches on it - and testedOn the same way (finishedOn, below). Guarded like
+   version.js, so this file still runs on its own; all three then read null. */
 let isoDate = () => null;
 try { ({ isoDate } = require('./coa-dates')); } catch { /* running without lib/coa-dates.js */ }
 
@@ -402,6 +402,66 @@ const ownValueOrNext = (inline, next) => {
   if (v) return v;
   return (next && !LOOKS_LIKE_LABEL.test(next) && !LABELLED_ROW.test(next)) ? next : null;
 };
+
+/* When the lab finished: testedOn (additive, s7), the ISO day of ONE row per
+   lab. The rows were measured, not guessed - test/date-probe.js over the 56
+   accepted fixtures, 2026-10-05 (PARSER-HANDOFF s13, "When the lab
+   finished") - after Prompt 2's report-date labels turned out to match two
+   documents:
+
+     Kaycha Labs          "Completed:", the value on the next line,
+                          "07/11/25" - 22 of 22
+     Modern Canna         "Completed:", the value on the next line,
+                          "11/27/24 09:40" - 13 of 13. Colon labels only: its
+                          summary also prints a bare "Completed" status tile
+     ACS Laboratory       "Completion Date:", then "2026-06-24" - 8 of 8
+     ACT Laboratories     "Report Created: 02/13/2025 18:18" - 3 of 3. One
+                          layout wraps the label: a line ending "..., Report",
+                          the next starting "Created: 07/31/2025 14:10". That
+                          is the same label, and is read as it
+     Method Testing Labs  no completion row, so the sign-off: the line after
+                          "<name> - Lab Director", "3/3/2025, 7:11:00 PM" - 8
+                          of 9; the older layout, which prints its labels
+                          apart from their values, has none. Not "Batch Date:",
+                          which sits with the client's batch number,
+                          seed-to-sale number and lot ID - the batch's date,
+                          not the lab's - and falls 3 to 5 days before the
+                          sign-off on all 8. Method prints its times in UTC
+                          (every batch date is midnight Eastern, shown as 4:00
+                          or 5:00 AM), so a sign-off after 8 PM Eastern prints
+                          the next day; on the 8 it is 2:47 to 9:46 PM UTC
+     TerpLife Labs        none: its finish row is "Date Reported:", already
+                          read as reportDate, and one row is not read twice
+
+   Any other lab, or none recognised: null. The first row with a value is
+   read, as the other metadata fields are, and that value is a date
+   lib/coa-dates.js reads, or null - a later row never stands in for it.
+   Computed after the reading, from the lines it saw; nothing branches on it. */
+const FINISHED = {
+  'Kaycha Labs':         { label: /^Completed\s*:\s*(.*)$/i },
+  'Modern Canna':        { label: /^Completed\s*:\s*(.*)$/i },
+  'ACS Laboratory':      { label: /^Completion Date\s*:\s*(.*)$/i },
+  'ACT Laboratories':    { label: /^Report Created\s*:\s*(.*)$/i,
+                           wrapped: { before: /(?:^|[\s,])Report$/i, label: /^Created\s*:\s*(.*)$/i } },
+  'Method Testing Labs': { signedAfter: /\s-\sLab Director$/i }
+};
+
+function finishedOn(lines, lab){
+  const rule = Object.prototype.hasOwnProperty.call(FINISHED, lab) ? FINISHED[lab] : null;
+  if (!rule) return null;
+  for (let i = 0; i < lines.length; i++){
+    if (rule.signedAfter){
+      if (i > 0 && rule.signedAfter.test(lines[i - 1])) return isoDate(lines[i]);
+      continue;
+    }
+    const m = rule.label.exec(lines[i]) ||
+              (rule.wrapped && i > 0 && rule.wrapped.before.test(lines[i - 1]) ? rule.wrapped.label.exec(lines[i]) : null);
+    if (!m) continue;
+    const value = ownValueOrNext(m[1], lines[i + 1]);
+    if (value) return isoDate(value);
+  }
+  return null;
+}
 
 /* ------------------------------------------------------------------- parser */
 
@@ -1252,6 +1312,7 @@ function parseCoa(text){
     /* Additive (s7): stored with every archived parse, not sent to the app. */
     reportDate, client,
     harvestOn: isoDate(harvestDate), reportOn: isoDate(reportDate),
+    testedOn: finishedOn(lines, lab),
     parserVersion: currentParserVersion()
   };
 }

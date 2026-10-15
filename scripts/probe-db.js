@@ -474,6 +474,19 @@ async function main() {
       }
     }
 
+    /* --- the day the lab finished (PARSER-HANDOFF s13, "When the lab
+       finished"): parses.tested_on, carried by latest_parses, and
+       batch_series' batch_date_from. Read through the catalogue, as
+       nose_writer sees it. -------------------------------------------------- */
+    const tested = (await w.query(`select table_name, column_name from information_schema.columns
+                                     where table_schema = 'nose'
+                                       and ((table_name in ('parses', 'latest_parses') and column_name = 'tested_on')
+                                         or (table_name = 'batch_series' and column_name = 'batch_date_from'))`)).rows
+      .map(r => `${r.table_name}.${r.column_name}`).sort();
+    ok('the tested_on migration is pushed: parses.tested_on, latest_parses.tested_on, batch_series.batch_date_from',
+      tested.join() === 'batch_series.batch_date_from,latest_parses.tested_on,parses.tested_on',
+      'push the migration: npx supabase db push --db-url "$NOSE_DB_ADMIN_URL"');
+
     /* --- removals, withheld and the daily cap (PARSER-HANDOFF s13, "What
        gets kept, and taking it back out"): nose_writer reads withheld,
        because save_scan checks it as the caller, and nothing more; removals
