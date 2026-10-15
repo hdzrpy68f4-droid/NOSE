@@ -119,10 +119,12 @@ const OPTIONAL_BATCH_FIELDS = Object.freeze(['brand', 'coa_url', 'product_url', 
    The last three since 2026-10-08: batch and labId, the identifiers the
    report printed (report_batch, report_lab_id), and novelty - sent only as
    whether the parser's notes were empty (new_layout); the notes themselves
-   are written for the review queue and never leave this module. */
+   are written for the review queue and never leave this module. testedOn
+   since 2026-10-14: the day the lab finished (tested_on), beside the harvest
+   and report days. */
 const READ_FIELDS = Object.freeze(['lab', 'productClass', 'usable', 'rejectReasons', 'terps', 'totalTerpenes',
-                                   'moisture', 'waterActivity', 'harvestOn', 'reportOn', 'readBy', 'warnings',
-                                   'batch', 'labId', 'novelty']);
+                                   'moisture', 'waterActivity', 'harvestOn', 'testedOn', 'reportOn', 'readBy',
+                                   'warnings', 'batch', 'labId', 'novelty']);
 
 /* A batch's lab report link as stored: https, the whole link without its "#"
    part - a fragment is never sent to a server, and the query names the report
@@ -186,7 +188,9 @@ function buildRead(output) {
     totalTerpenes: usable ? numberOrNull(output.totalTerpenes) : null,
     moisture: usable ? numberOrNull(output.moisture) : null,
     waterActivity: usable ? numberOrNull(output.waterActivity) : null,
+    /* The report's three days, whatever the verdict. */
     harvestOn: textOrNull(output.harvestOn),
+    testedOn: textOrNull(output.testedOn),
     reportOn: textOrNull(output.reportOn),
     readBy: textOrNull(output.readBy),
     warnings: strings(output.warnings),
@@ -229,27 +233,29 @@ const UPSERT_BATCHES_SQL = `
     from up`;
 
 /* $4 is the link the reading came from (read_url), since 2026-10-08: a reading
-   counts as the batch's current one only while that is still its coa_url. */
+   counts as the batch's current one only while that is still its coa_url.
+   tested_on since 2026-10-14, kept as harvest_on and report_on are. */
 const UPSERT_READ_SQL = `
   insert into b2b.batch_reads (store_id, batch_id, read_on, lab, product_class, usable, reject_reasons, terps,
-                               total_terpenes, moisture, water_activity, harvest_on, report_on, read_by, warnings,
-                               read_url, fetched, report_batch, report_lab_id, new_layout)
+                               total_terpenes, moisture, water_activity, harvest_on, tested_on, report_on, read_by,
+                               warnings, read_url, fetched, report_batch, report_lab_id, new_layout)
   select $1::bigint, $2::text, (now() at time zone 'UTC')::date, r."lab", r."productClass", r."usable",
          coalesce(array(select jsonb_array_elements_text(r."rejectReasons")), '{}'), r."terps",
-         r."totalTerpenes", r."moisture", r."waterActivity", r."harvestOn", r."reportOn", r."readBy",
+         r."totalTerpenes", r."moisture", r."waterActivity", r."harvestOn", r."testedOn", r."reportOn", r."readBy",
          coalesce(array(select jsonb_array_elements_text(r."warnings")), '{}'),
          $4::text, true, r."batch", r."labId", coalesce(r."novelty", false)
     from jsonb_to_record($3::jsonb) as r ("lab" text, "productClass" text, "usable" boolean, "rejectReasons" jsonb,
                                           "terps" jsonb, "totalTerpenes" numeric, "moisture" numeric,
-                                          "waterActivity" numeric, "harvestOn" date, "reportOn" date,
-                                          "readBy" text, "warnings" jsonb, "batch" text, "labId" text,
-                                          "novelty" boolean)
+                                          "waterActivity" numeric, "harvestOn" date, "testedOn" date,
+                                          "reportOn" date, "readBy" text, "warnings" jsonb, "batch" text,
+                                          "labId" text, "novelty" boolean)
   on conflict (store_id, batch_id) do update
      set read_on = excluded.read_on, lab = excluded.lab, product_class = excluded.product_class,
          usable = excluded.usable, reject_reasons = excluded.reject_reasons, terps = excluded.terps,
          total_terpenes = excluded.total_terpenes, moisture = excluded.moisture,
-         water_activity = excluded.water_activity, harvest_on = excluded.harvest_on, report_on = excluded.report_on,
-         read_by = excluded.read_by, warnings = excluded.warnings, read_url = excluded.read_url, fetched = true,
+         water_activity = excluded.water_activity, harvest_on = excluded.harvest_on, tested_on = excluded.tested_on,
+         report_on = excluded.report_on, read_by = excluded.read_by, warnings = excluded.warnings,
+         read_url = excluded.read_url, fetched = true,
          report_batch = excluded.report_batch, report_lab_id = excluded.report_lab_id,
          new_layout = excluded.new_layout
   returning read_on::text as read_on`;
@@ -265,8 +271,9 @@ const UPSERT_UNFETCHED_SQL = `
   on conflict (store_id, batch_id) do update
      set read_on = excluded.read_on, read_url = excluded.read_url, fetched = false, usable = false,
          reject_reasons = excluded.reject_reasons, lab = null, product_class = null, terps = null,
-         total_terpenes = null, moisture = null, water_activity = null, harvest_on = null, report_on = null,
-         read_by = null, warnings = '{}', report_batch = null, report_lab_id = null, new_layout = false
+         total_terpenes = null, moisture = null, water_activity = null, harvest_on = null, tested_on = null,
+         report_on = null, read_by = null, warnings = '{}', report_batch = null, report_lab_id = null,
+         new_layout = false
    where not (r.fetched and r.read_url is not distinct from excluded.read_url)
   returning read_on::text as read_on`;
 
@@ -380,6 +387,7 @@ const FEED_SQL = `
          b.thc_percent::text as thc_percent, b.cbd_percent::text as cbd_percent,
          case when cur.current then r.lab end as lab,
          case when cur.current then r.harvest_on::text end as harvest_on,
+         case when cur.current then r.tested_on::text end as tested_on,
          case when cur.current then r.report_on::text end as report_on,
          case when cur.current then r.usable end as usable,
          case when cur.current and r.usable then r.total_terpenes::text end as total_terpenes,
@@ -659,22 +667,24 @@ const originAllowed = (allowed, origin) =>
 /* The fields of one batch in the feed, in this order, and no other. */
 const FEED_FIELDS = Object.freeze(['batch_id', 'product_id', 'list_position', 'category', 'route', 'name', 'brand',
                                    'product_url', 'in_stock', 'thc_percent', 'cbd_percent', 'lab', 'harvest_on',
-                                   'report_on', 'usable', 'total_terpenes', 'terps']);
+                                   'tested_on', 'report_on', 'usable', 'total_terpenes', 'terps']);
 /* And of the store: what every visitor's widget reads - the window (how far
    back a purchase can count) and the guardrail (Prompt 5). */
 const FEED_STORE_FIELDS = Object.freeze(['window_months', 'guardrail_thc_points', 'guardrail_cbd_points']);
 
 /* usable: true or false for the reading NOSE stands by; null when there is
    none - not read yet, a link that gave no report, a link since corrected.
-   lab and the two days likewise come only from that reading, and terps and
-   total_terpenes only from an accepted one: FEED_SQL selects nothing else. */
+   lab and the three days (harvest, the day the lab finished, report) likewise
+   come only from that reading, and terps and total_terpenes only from an
+   accepted one: FEED_SQL selects nothing else. tested_on since 2026-10-14. */
 function feedBatch(r) {
   return {
     batch_id: r.batch_id, product_id: r.product_id, list_position: Number(r.list_position), category: r.category,
     route: r.route, name: r.name, brand: r.brand ?? null, product_url: r.product_url ?? null,
     in_stock: r.in_stock === true, thc_percent: numberOrNullText(r.thc_percent),
     cbd_percent: numberOrNullText(r.cbd_percent), lab: r.lab ?? null, harvest_on: r.harvest_on ?? null,
-    report_on: r.report_on ?? null, usable: typeof r.usable === 'boolean' ? r.usable : null,
+    tested_on: r.tested_on ?? null, report_on: r.report_on ?? null,
+    usable: typeof r.usable === 'boolean' ? r.usable : null,
     total_terpenes: numberOrNullText(r.total_terpenes), terps: r.terps ?? null
   };
 }

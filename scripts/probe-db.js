@@ -288,6 +288,17 @@ async function b2bAdminChecks(a) {
                                and column_name in ('read_url', 'fetched', 'report_batch', 'report_lab_id', 'new_layout')`);
   check('the reading-source migration is pushed: b2b.batch_reads keeps the link a reading came from, whether it gave a report, ' +
         'the report\'s batch and lab ID, and whether its layout was new', source.n === 5, B2B_PUSH);
+  /* 20261015010000_nose_b2b_tested_on.sql (2026-10-14): the day the lab
+     finished, a date on batch_reads, and the check of its own that keeps it
+     off a reading from a link that gave no report. */
+  const tested = await one(`select exists (select 1 from information_schema.columns
+                                            where table_schema = 'b2b' and table_name = 'batch_reads'
+                                              and column_name = 'tested_on' and data_type = 'date') as col,
+                                   exists (select 1 from pg_constraint
+                                            where conrelid = to_regclass('b2b.batch_reads') and contype = 'c'
+                                              and conname = 'tested_on_only_when_fetched') as chk`);
+  check('the b2b tested_on migration is pushed: b2b.batch_reads keeps the day the lab finished',
+    tested.col === true && tested.chk === true, B2B_PUSH);
 
   const role = await one(`select rolsuper, rolbypassrls, rolcreaterole, rolcreatedb, rolreplication, rolcanlogin
                             from pg_roles where rolname = 'nose_b2b'`);

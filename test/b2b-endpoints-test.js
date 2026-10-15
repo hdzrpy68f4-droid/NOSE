@@ -505,9 +505,13 @@ async function main() {
     { window_months: 12, guardrail_thc_points: 5, guardrail_cbd_points: null });
   check('...each batch: exactly the prompt\'s fields, in its order', [...new Set(F.batches.map(b => Object.keys(b).join(',')))],
     [b2b.FEED_FIELDS.join(',')]);
-  check('...those fields are batch_id, product_id, list_position, category, route, name, brand, product_url, in_stock, thc_percent, cbd_percent, lab, harvest_on, report_on, usable, total_terpenes and terps',
+  /* tested_on since 2026-10-14 (PARSER-HANDOFF s14, "The day the lab
+     finished, in a store's readings"): added, after harvest_on - never a
+     field renamed or removed, because the feed is not versioned and release
+     1 reads it by name. */
+  check('...those fields are batch_id, product_id, list_position, category, route, name, brand, product_url, in_stock, thc_percent, cbd_percent, lab, harvest_on, tested_on, report_on, usable, total_terpenes and terps',
     b2b.FEED_FIELDS, ['batch_id', 'product_id', 'list_position', 'category', 'route', 'name', 'brand', 'product_url', 'in_stock',
-                      'thc_percent', 'cbd_percent', 'lab', 'harvest_on', 'report_on', 'usable', 'total_terpenes', 'terps']);
+                      'thc_percent', 'cbd_percent', 'lab', 'harvest_on', 'tested_on', 'report_on', 'usable', 'total_terpenes', 'terps']);
   check('every batch the store listed within its window, in stock or not, in the store\'s order - not the one listed 400 days ago, nothing of another store',
     F.batches.map(b => [b.list_position, b.batch_id, b.in_stock]),
     [[1, 'B-ACC-OLD', false], [2, 'B-ACC', true], [3, 'B-REF', true], [4, 'B-UNF', true], [5, 'B-OLD', false], [6, 'B-NOLINK', true], [7, 'B-SOLD', false]]);
@@ -518,25 +522,27 @@ async function main() {
      ['P-NOLINK', 'pre-roll', 'smoking', 'Name of B-NOLINK', null, null, null, null],
      ['P-SOLD', 'flower', 'smoking', 'Name of B-SOLD', 'House Brand', `${SHOP}/menu/P-SOLD`, 19, 0]]);
   const acc = by('B-ACC');
-  check('an accepted reading: usable, its lab and days, the total the lab printed, and the terpenes exactly as the parser read them',
-    [acc.usable, acc.lab, acc.harvest_on, acc.report_on, acc.total_terpenes, JSON.stringify(sorted(acc.terps)) === JSON.stringify(sorted(KAY_CAR.terps)),
+  check('an accepted reading: usable, its lab and days - harvested 2025-07-07, tested 2025-07-11 - the total the lab printed, and the terpenes exactly as the parser read them',
+    [acc.usable, acc.lab, acc.harvest_on, acc.tested_on, acc.report_on, acc.total_terpenes, JSON.stringify(sorted(acc.terps)) === JSON.stringify(sorted(KAY_CAR.terps)),
      Object.keys(acc.terps).length],
-    [true, 'Kaycha Labs', '2025-07-07', null, 4.124, true, 15]);
+    [true, 'Kaycha Labs', '2025-07-07', '2025-07-11', null, 4.124, true, 15]);
   check('...out of stock too - a past purchase is still found: the earlier batch of the same product, and a batch long out of stock',
     [by('B-ACC-OLD').usable, by('B-ACC-OLD').total_terpenes, by('B-ACC-OLD').lab, by('B-SOLD').usable, by('B-SOLD').total_terpenes,
      JSON.stringify(sorted(by('B-SOLD').terps)) === JSON.stringify(sorted(KAY_PRR.terps))],
     [true, 2.008, 'ACS Laboratory', true, 0.944, true]);
   const ref = by('B-REF');
-  check('a refused reading: usable false, its lab and days, and no terpenes and no total - never a guess',
-    [ref.usable, ref.lab, ref.harvest_on, ref.report_on, ref.terps, ref.total_terpenes], [false, 'TerpLife Labs', null, '2024-11-11', null, null]);
-  const NOTHING = { lab: null, harvest_on: null, report_on: null, usable: null, total_terpenes: null, terps: null };
-  const readOf = b => ({ lab: b.lab, harvest_on: b.harvest_on, report_on: b.report_on, usable: b.usable, total_terpenes: b.total_terpenes, terps: b.terps });
+  check('a refused reading: usable false, its lab and days - TerpLife has no tested row, so its report day alone - and no terpenes and no total - never a guess',
+    [ref.usable, ref.lab, ref.harvest_on, ref.tested_on, ref.report_on, ref.terps, ref.total_terpenes], [false, 'TerpLife Labs', null, null, '2024-11-11', null, null]);
+  const NOTHING = { lab: null, harvest_on: null, tested_on: null, report_on: null, usable: null, total_terpenes: null, terps: null };
+  const readOf = b => ({ lab: b.lab, harvest_on: b.harvest_on, tested_on: b.tested_on, report_on: b.report_on, usable: b.usable,
+                         total_terpenes: b.total_terpenes, terps: b.terps });
   check('no reading NOSE stands by - a link that gave no report, a link the store has since corrected, no link at all: usable null, and nothing read',
     ['B-UNF', 'B-OLD', 'B-NOLINK'].map(id => readOf(by(id))), [NOTHING, NOTHING, NOTHING]);
-  const stale = await one(`select usable, total_terpenes::text as t, lab from b2b.batch_reads where batch_id = 'B-OLD'`);
-  check('...though the corrected batch\'s old reading is still held - accepted, with numbers - none of it reaches the feed',
-    [stale.usable, stale.t, stale.lab, by('B-OLD').total_terpenes, visitorA.text.includes('0.944') && by('B-SOLD').total_terpenes === 0.944],
-    [true, '0.944', 'Kaycha Labs', null, true]);
+  const stale = await one(`select usable, total_terpenes::text as t, lab, tested_on::text as tested from b2b.batch_reads where batch_id = 'B-OLD'`);
+  check('...though the corrected batch\'s old reading is still held - accepted, with numbers and a day - none of it reaches the feed',
+    [stale.usable, stale.t, stale.lab, stale.tested, by('B-OLD').total_terpenes, by('B-OLD').tested_on,
+     visitorA.text.includes('0.944') && by('B-SOLD').total_terpenes === 0.944],
+    [true, '0.944', 'Kaycha Labs', '2026-01-23', null, null, true]);
   check('no lab-report link, no query from one, no sale, quantity, reason, warning, form or freshness figure anywhere in the reply',
     /coa\.example|sample=|expires=|coa_url|read_url|reject|warning|moisture|water|product_class|read_by|read_on|listed_on|quantit|sales?\b|price|stock_level/i.test(visitorA.text),
     false);

@@ -226,9 +226,9 @@ someone to look.
 | `remove-copies-test.js` | `remove-copies.js` (§13, "One report, many documents - the cleanup") on PGlite: copies made by the old `save_scan`, the copies it keeps and why, a Blobs failure, a second run, no text lost, nose_writer refused; and that only it, `remove-document.js` and the probe's refusals name a DELETE; offline |
 | `remove-document-test.js` | `remove-document.js` and `keep-rule.js` (§13, "What gets kept, and taking it back out") on PGlite: the probe finds the one-sign files and nothing else; dry runs change nothing; a removal takes rows, PDF and every copy of the report, records the day and the word, and withholds file and text so `save_scan` refuses them after; PDFs with no row; a Blobs failure finished by a second run; a database refusal that changes nothing; nothing private printed; offline |
 | `b2b-coverage-test.js` | `scripts/b2b-coverage.js`, the dispensary coverage report (§14): the test catalog read end to end through the real chain, extractor and parser, only the network stood in for - every outcome, the three flags, the counts with their denominators, one link at a time with the pause, coa.js's own words and deadlines, a file refused for an unknown or a personal-looking column before any row is read, nothing reaching the archive, one copy of the fetch chain; offline |
-| `b2b-store-test.js` | the dispensary store (§14, "Schema, role, keys and the switch") on PGlite: schema `b2b` applied after every migration (those pinned byte for byte), its tables and columns, the person rule's three lists and two bodies identical, a personal key at any depth refused in both layers with the text asserted, `nose_b2b` upserting and refused DELETE, TRUNCATE, stores, keys and schema `nose`, `nose_writer`'s grants unchanged, `probe-db.js`'s b2b audit passing and failing on eight broken grants, every fixture's reading stored as read, keys hashed, `scripts/b2b-store.js`'s five commands, `lib/b2b-flag.js`, the `nsk_` build guard; offline |
-| `b2b-catalog-test.js` | the catalog upload, the batch reader and the report from the database (§14, "Catalog upload and the batch reader") on PGlite, the real function behind a stand-in `pg` that runs every statement as `nose_b2b`, the links served from fixture files: the switch, the key (one 401 for every wrong key, the hash compared in constant time), the 4 MB cap before and while reading, the coverage script's own reader and refusals, an upload as a whole snapshot (absent batches kept and marked out of stock, a refused row's batch untouched, nothing to keep changing nothing), counts-only replies, one fixed log line on failure; the reader's accepted, refused and unfetched readings, `--dry-run`, `--reread`, `--limit`, a corrected link read again, a fetch failure never replacing a reading, nothing from another batch or store; `--store` matching the CSV run row for row; schema `nose` and the archive untouched; offline |
-| `b2b-endpoints-test.js` | the widget's two calls (§14, "Feed and votes") on PGlite, both functions behind a stand-in `pg` that runs every statement as `nose_b2b` and a stand-in `@netlify/blobs`: the switch; the feed byte-identical for two visitors, every batch in the window in stock or not, the prompt's fields alone, a reading's figures only when it is the current one and accepted, no lab-report link; the origin rule (a foreign, missing, `null` or other store's origin gets no CORS header and no data), a revoked key, `public, max-age=60`; a vote's six fields and nothing else, matchBand()'s four bands all stored, no time of day in key or value, keys in no arrival order, the per-store daily cap with the same reply; one fixed log line on failure; `delete-store` removing a store's votes and only its own; schema `nose`, the archive and the consumer's store untouched; offline |
+| `b2b-store-test.js` | the dispensary store (§14, "Schema, role, keys and the switch") on PGlite: schema `b2b` applied after every migration (those pinned byte for byte), its tables and columns, the person rule's three lists and two bodies identical, a personal key at any depth refused in both layers with the text asserted, `nose_b2b` upserting and refused DELETE, TRUNCATE, stores, keys and schema `nose`, `nose_writer`'s grants unchanged, `probe-db.js`'s b2b audit passing and failing on eight broken grants, every fixture's reading stored as read, keys hashed, `scripts/b2b-store.js`'s five commands, `lib/b2b-flag.js`, the `nsk_` build guard; since 2026-10-14 `batch_reads.tested_on` - its migration pinned to its first push and only adding, every fixture's stored day the parser's `testedOn` (§14, "The day the lab finished, in a store's readings"); offline |
+| `b2b-catalog-test.js` | the catalog upload, the batch reader and the report from the database (§14, "Catalog upload and the batch reader") on PGlite, the real function behind a stand-in `pg` that runs every statement as `nose_b2b`, the links served from fixture files: the switch, the key (one 401 for every wrong key, the hash compared in constant time), the 4 MB cap before and while reading, the coverage script's own reader and refusals, an upload as a whole snapshot (absent batches kept and marked out of stock, a refused row's batch untouched, nothing to keep changing nothing), counts-only replies, one fixed log line on failure; the reader's accepted, refused and unfetched readings, `--dry-run`, `--reread`, `--limit`, a corrected link read again, a fetch failure never replacing a reading, nothing from another batch or store; `--store` matching the CSV run row for row; since 2026-10-14 each reading's `tested_on` as the parser gives it, refused on a link that gave no report by its own CHECK, and cleared when a link that gave none replaces a dated reading; schema `nose` and the archive untouched; offline |
+| `b2b-endpoints-test.js` | the widget's two calls (§14, "Feed and votes") on PGlite, both functions behind a stand-in `pg` that runs every statement as `nose_b2b` and a stand-in `@netlify/blobs`: the switch; the feed byte-identical for two visitors, every batch in the window in stock or not, the prompt's fields alone, a reading's figures only when it is the current one and accepted, no lab-report link; the origin rule (a foreign, missing, `null` or other store's origin gets no CORS header and no data), a revoked key, `public, max-age=60`; a vote's six fields and nothing else, matchBand()'s four bands all stored, no time of day in key or value, keys in no arrival order, the per-store daily cap with the same reply; one fixed log line on failure; `delete-store` removing a store's votes and only its own; since 2026-10-14 the feed's `tested_on`, after `harvest_on`, only from the current reading; schema `nose`, the archive and the consumer's store untouched; offline |
 | `b2b-rank-test.js` | `js/b2b-rank.<hash>.js`, the dispensary ranking engine (§14, "The ranking engine"): one file, loaded as a page loads it and in Node; no maths of its own, every number traced to NoseMatch; the 1830 golden pairs, 61 self-scores and 65 palates through `rank()` and `palateFrom()` to the last bit; 3x the intensity the same; unread batches last, with no number; routes, category, stock and the guardrail leaving batches out and never reordering; ties by `list_position`; each skip reason, a removed batch, one count per batch, the window as PostgreSQL counts it; `soldOut()` and `voteScore()`; no name or brand read; `build.sh`'s load-order rule, its own lines, on throwaway pages; offline |
 | `b2b-strings-test.js` | `js/b2b-strings.<hash>.js`, every word the dispensary widget shows (§14, "The widget"): two variants, default and florida, with the same keys and placeholders; no effect or recreational word - the prompt's list and their forms - in any string or anywhere in the file; Florida's says aroma and orders; the words shown from other files true to `matchBand()` and `renderBar()`; every key read by the widget and none written out in it; offline |
 | `b2b-pilot-test.js` | the pilot's plan, sample size and report (§14, "Pilot plan and report"): `scripts/b2b-sample-size.js` against published worked examples, never its own output - two means against the NCSS PASS chapter's (Chow, Shao and Wang's 63 a group, and 107 and 151), two proportions against R's `power.prop.test` documentation; the deciding difference of two means against NIST's raw-data example, Wilson's interval against NIST's, Newcombe's against his Table II, the split check against a published example, the delta method against the mean it must equal; synthetic exports - a known difference in inhalable orders per shopper found, the plan's alpha deciding, a null read as null, the mirror read as the mirror, a short run and a run still going showing only how far short, a personal column refused before any row, an unreadable row refusing the file without its value; the plan's block and its pre-registration by git in throwaway repositories; the votes by band; the vote store only listed, no file written, the command line end to end; offline |
@@ -438,7 +438,11 @@ reportDate  client  parserVersion  harvestOn  reportOn  testedOn
   by nothing in the parser: with `coa-dates.js` unavailable it is null and
   every other field identical. On the corpus 54 of 59 fixtures carry one:
   every accepted fixture but Method_DulceDeUva and TerpLife's, and none of
-  the three refusals.
+  the three refusals. **B2B keeps it too**, since 2026-10-14: a store's
+  reading holds it as `b2b.batch_reads.tested_on`, whatever the verdict, and
+  the feed carries it as `tested_on`, after `harvest_on`, from the current
+  reading only (§14, "The day the lab finished, in a store's readings").
+  Nothing on the B2B side shows it yet.
 - None is in the baseline and parity compares named fields only, so none can
   DIFFER. The mutation harness compares terpenes and total only: still 35.
 
@@ -3705,10 +3709,6 @@ panel it takes the card from, on both paths, so it waits for its own prompt.
 - **Method_DulceDeUva's layout stays undated.** It prints a completion date,
   but apart from its label, among unlabelled values; matching it would be
   fitting to one document (§6, "`unknown` is guarded").
-- **Store catalogs carry no `testedOn`.** `b2b.batch_reads` keeps
-  `harvest_on` and `report_on` only, and `b2b-store.js` keeps the parser's
-  fields by name, so a Method or Modern Canna batch in a store's catalog is
-  still undated there. Carrying it is a B2B migration and its own prompt.
 - **The date row's note was watched in Chromium only**, at 1280 and 390 px.
   Its normal weight comes from the element's `style` property, which MDN
   says `style-src` does not block; Safari and Firefox have not been looked
@@ -6315,6 +6315,232 @@ section and every other mention of dispensaries on it are
 `privacy/index.html`'s, word for word - the first time that comparison ran
 against the real site.
 
+### The day the lab finished, in a store's readings, 2026-10-14
+
+**Most of a store's readings carried no date.** Since "When the lab finished"
+(§13) the parser reads `testedOn`, and the archive and the card carry it;
+`b2b.batch_reads` kept `harvest_on` and `report_on` only, and
+`lib/b2b-store.js` keeps the parser's fields by name, so on the demo test
+store 15 of its 28 readings carried no day at all. Now a store's readings and
+its feed carry the day the lab finished beside the other two. This changes
+data, not screens: nothing on the B2B side shows a date yet.
+
+```
+supabase/migrations/20261015010000_nose_b2b_tested_on.sql  batch_reads.tested_on, and a CHECK of its own
+netlify/functions/lib/b2b-store.js   READ_FIELDS, buildRead, UPSERT_READ_SQL, UPSERT_UNFETCHED_SQL, FEED_SQL,
+                                     FEED_FIELDS, feedBatch: testedOn / tested_on after the harvest day
+netlify/functions/b2b-feed.js        its header's list of fields
+scripts/b2b-demo-feed.js             reading() carries tested_on; b2b/demo/test-store.json rewritten with it
+scripts/probe-db.js                  one admin check: "the b2b tested_on migration is pushed"
+privacy/index.html                   one phrase in the dispensary section; a seventh "What changed"
+test/b2b-store-test.js               155 checks (was 151)
+test/b2b-catalog-test.js             90 checks (was 81)
+test/b2b-endpoints-test.js           91 checks, as before: five of them check one field more
+test/b2b-compliance-kit-test.mjs     one count: four other mentions of dispensaries on the privacy page, not three
+```
+
+**The probe, before any edit**, on `e496d67` - ALL GATES GREEN, 32 gates:
+
+1. Where the parser's dates travel in B2B - `READ_FIELDS`, `buildRead`,
+   `UPSERT_READ_SQL`, `UPSERT_UNFETCHED_SQL`, `FEED_SQL`, `FEED_FIELDS` and
+   `feedBatch` in `lib/b2b-store.js`, the `nothing_read_unless_fetched`
+   constraint, `b2b-feed.js`'s header and `reading()` in
+   `scripts/b2b-demo-feed.js`: each carries the harvest and report days, and
+   `testedOn` / `tested_on` is in none of them. `LISTED_SQL` (the coverage
+   report's `--store`) reads no day at all.
+2. What reads the feed's `harvest_on` or `report_on`: nothing in `js/`. The
+   widget and the ranking engine read neither; the demo page reads, of a
+   batch's reading, its `lab` and verdict only. So no screen changes, and no
+   file in `js/` either.
+3. The demo test store, from `b2b/demo/test-store.json` and the fixtures -
+   28 readings of its 30 batches:
+
+   | Lab | Readings | By harvest | By report alone | Neither | Neither, with a `testedOn` |
+   |---|---|---|---|---|---|
+   | ACS | 5 | 2 | 0 | 3 | 3 |
+   | ACT | 2 | 0 | 0 | 2 | 2 |
+   | Kaycha | 10 | 9 | 0 | 1 | 1 |
+   | Method | 3 | 0 | 0 | 3 | 3 |
+   | Modern Canna | 6 | 0 | 0 | 6 | 6 |
+   | TerpLife | 2 | 0 | 2 | 0 | - |
+   | **All** | **28** | **11** | **2** | **15** | **15** |
+
+   §13's Still open item this closes ("Store catalogs carry no `testedOn`")
+   named Method and Modern Canna; the gap was wider - ACT's reports too, and
+   the Kaycha and ACS reports that print no harvest day.
+
+**Read 2026-10-14, where the design depends on it.** The PostgreSQL 16.15
+documentation, as installed with the workspace's PostgreSQL 16 (the same
+text as https://www.postgresql.org/docs/16/sql-altertable.html and
+https://www.postgresql.org/docs/16/sql-grant.html; the web pages themselves
+were not fetched - the request went unanswered):
+
+- ALTER TABLE, Notes: a column added with no DEFAULT is NULL for existing
+  rows, "In neither case is a rewrite of the table required"; adding a CHECK
+  scans the table to verify its rows, without a rewrite; several changes in
+  one ALTER TABLE take one pass, under the strictest lock any of them needs
+  (ACCESS EXCLUSIVE unless noted).
+- GRANT, Notes: a role may SELECT, INSERT and so on a column "if they hold
+  that privilege for either the specific column or its whole table". So
+  `nose_b2b`'s table grants on `batch_reads` cover the new column with no
+  GRANT - which `b2b-store-test` proves, writing every fixture's reading as
+  `nose_b2b`.
+- `supabase db push` refuses a local migration that sorts before the last one
+  the project applied (§13, "When the lab finished", CLI reference read
+  2026-10-14). The real project's last is `20261015000000_nose_tested_on.sql`,
+  so this one is `20261015010000`.
+
+**The migration** - `20261015010000_nose_b2b_tested_on.sql`, one ALTER TABLE
+and a comment:
+
+- `b2b.batch_reads.tested_on`, a `date`, NULL when the report gives none,
+  commented as the day the lab finished, about the product and never a person.
+- **`tested_on_only_when_fetched`**, a CHECK of its own: `fetched OR tested_on
+  IS NULL`. A link that gave no report read nothing, so it holds no day the
+  lab finished, as `nothing_read_unless_fetched` keeps the other two off it.
+  That constraint stays as pushed - widening it would have meant dropping and
+  re-adding it.
+- No DROP, no GRANT or REVOKE, nothing in schema `nose`. No time of day: the
+  column is a `date`, and `b2b-store-test`'s "every day is a date column"
+  now lists it.
+
+**`lib/b2b-store.js`.** `testedOn` joins `READ_FIELDS` after `harvestOn`, and
+`buildRead` keeps it as it keeps the other two days, whatever the verdict - a
+refusal keeps its days and no figure, as before. `UPSERT_READ_SQL` writes it
+on insert and on a reread; `UPSERT_UNFETCHED_SQL` clears it with the other two
+days, so a dated reading replaced by a link that gave no report keeps none
+(and the CHECK would refuse the row if it did not). `FEED_SQL` selects it
+from the current reading only (`case when cur.current`), so a corrected
+link's old day never leaves the database; `FEED_FIELDS` and `feedBatch` carry
+`tested_on` after `harvest_on`. The comments that spoke of a reading's two
+days now say three; the listing days' comments keep theirs.
+
+**The feed** gains one field, added and never renamed: `... lab, harvest_on,
+tested_on, report_on, usable, ...`. Release 1 reads the feed by name and reads
+none of the three days (§14, "The feed and the vote are not versioned"), so
+no release is needed, and `b2b-release-check` has nothing new to compare.
+`b2b-endpoints-test` pins the new list.
+
+**The demo test store** - `node scripts/b2b-demo-feed.js` rewrote
+`b2b/demo/test-store.json` with one new line per batch and nothing else (30
+added, 0 removed; every other field and the store identical). Readings with
+no day: 15 of 28 became 0 of 28. `tested_on` on 26 of its 30 batches - null on
+TerpLife's two readings, which keep their report day, and on the two batches
+with no reading. Dated readings by lab: ACS 2 to 5 of 5, ACT 0 to 2 of 2,
+Kaycha 9 to 10 of 10, Method 0 to 3 of 3, Modern Canna 0 to 6 of 6, TerpLife 2
+of 2.
+
+**The reader on the test catalog** (`b2b-catalog-test`): 14 of its 19
+readings carry `tested_on`, every accepted one; the refused GreenRoads report
+(TerpLife, no row) and the broken PDF carry none, nor do the 3 links that
+gave no report. Four accepted readings are dated for the first time, by
+`tested_on` alone: KAY-AIO-001 on two batches, the Method batch read through
+its portal and Modern Canna's. Its 19 readings and 14 accepted are as before.
+
+**`probe-db.js`**, as the admin, beside the reading-source check: "the b2b
+tested_on migration is pushed: b2b.batch_reads keeps the day the lab
+finished" - the column, a `date`, and the CHECK by name. Rehearsed on PGlite's
+stand-in: it fails before the migration, alone among the b2b admin checks,
+and passes after.
+
+**Privacy.** The dispensary section's "What we read and keep" said "the
+harvest and report dates"; it now says "the harvest date, the day the
+laboratory finished testing and the report date". The feed paragraph's "the
+report dates" already covers every date a report gives, so it stays. "What
+changed" gains a seventh change, one sentence:
+
+> **A seventh change:** since **October 15, 2026**, a dispensary's batch
+> readings also keep the day the laboratory finished testing - a date
+> printed on the lab report, about the product and not about anyone.
+
+Both names what is kept; `check-trust` clean. The compliance kit's data.md
+carries both: the phrase in the section, and the seventh change as one more
+paragraph outside it that names dispensaries. Both sentences were shown to
+the owner before the commit.
+
+**The tests.** Every gate keeps its expected line.
+
+- `b2b-store-test`, 155 checks (was 151): `batch_reads`' columns end in
+  `tested_on`; the date columns list it; `buildRead` keeps a refusal's three
+  days and its keys are still `READ_FIELDS`, `testedOn` between `harvestOn`
+  and `reportOn`; every fixture's stored `tested_on` is the parser's
+  `testedOn` - 54 of the 59 carry one; the new migration sorts after
+  `20261015000000_nose_tested_on.sql`, is pinned byte for byte to its first
+  push, only adds (one ADD COLUMN, one ADD CONSTRAINT, a comment, no DROP,
+  grant or `nose.`), and joins the no-effect-wording scan.
+- `b2b-catalog-test`, 90 checks (was 81): the 15 readings the parser read
+  keep its three days; MTL-FLW-002 through its portal 2026-08-31 with no
+  harvest or report day; MCL-FLW-002 2021-10-05; KAY-CAR-001 2025-07-11 beside
+  its harvest day 2025-07-07; 14 of 19 dated by it, every accepted one; the
+  four dated by it alone; a corrected link read again carrying KAY-FLW-003's
+  days, none of KAY-FLW-001's; the database refusing a link that gave no
+  report with a `tested_on`, by `tested_on_only_when_fetched`, on a row
+  `nothing_read_unless_fetched` passes; a dated reading replaced by a link
+  that gave none keeping no day.
+- `b2b-endpoints-test`, 91 checks: the pinned field list gains `tested_on`
+  after `harvest_on`; the accepted reading carries 2025-07-11; the refused
+  TerpLife one null; a link that gave no report, a corrected link (whose
+  stored old reading still holds 2026-01-23) and no link, null.
+- `b2b-compliance-kit-test`, 64 checks, as before - one count changed, in a
+  file the prompt did not list: data.md gives every paragraph of the privacy
+  page outside its dispensary section that names dispensaries, and the test
+  pinned three. The seventh change names them, so there are four, under the
+  same three headings. Found by the first full run of the gates; the kit,
+  run `--offline`, wrote `10 screens, 37 PNGs` with the seventh change under
+  "What changed, and when".
+- **Against main's own code** the three stop: `b2b-store-test` at the missing
+  migration, `b2b-catalog-test` at the missing column, `b2b-endpoints-test`
+  after 3 failures. **Against 16 broken copies**, one fault each - `testedOn`
+  dropped from `buildRead`, kept only on an accepted read, put after
+  `reportOn`; not written on insert, not written on a reread, not cleared by
+  a link that gave no report; the feed's day not limited to the current
+  reading, missing from `feedBatch`, after `report_on`; the migration without
+  its CHECK, edited by one space, sorting before the archive's, carrying an
+  effect word, missing, or with a `text` column; the demo feed without
+  `tested_on` (its `--check`, which `b2b-widget-test` runs) - each fails its
+  test. A scratch harness, not committed.
+
+**What did not move.** The parser, so no reparse; `coa.js` and its replies;
+schema `nose` and the archive; every pushed migration; `nose_b2b`'s grants;
+`js/match-math.*.js` and `match-golden.json`; every score, band and ranking;
+every other field of the feed and of `test-store.json`; every `js/` file, so
+`build.sh` renamed nothing and no release is needed; the compliance kit's 10
+screens and 37 PNGs; every gate's expected line.
+
+**How it was verified, 2026-10-14 to 15 (US Eastern), in the cloud
+workspace.** npm was unreachable there (registry.npmjs.org did not resolve, cdn.jsdelivr.net
+refused), so as in earlier sessions the gates ran on stand-ins built from
+upstream source at the lockfile's versions: pg 8.23.0 and the packages under
+it from their git tags, pg-protocol compiled with tsc; unpdf 1.8.0 built with
+esbuild from its source over pdfjs-dist 6.2.108, with its own eight literal
+PDF.js patches, every anchor matched; PGlite 0.5.8's type parsers and
+serializers, result rules and query flow ported from its source at that tag,
+over a throwaway PostgreSQL 16 server per instance; the committed
+html5-qrcode in place of `build.sh`'s download; Playwright 1.56.0's Chromium.
+ALL GATES GREEN on `e496d67` before any edit, 32 gates, and on the change, 32,
+with `KAY-CAR-001` 4.124 and `KAY-PRR-001` 0.944. Nothing ran against the real
+database, Netlify or a lab's server. The Codespace run on the real packages
+is the one that counts.
+
+**In the Codespace, in this order** (the migration adds a column to a table
+that should hold no row):
+
+1. `git pull --ff-only`, then `bash scripts/gates.sh` - ALL GATES GREEN, 32
+   gates.
+2. A read-only count as `nose_b2b`, counts only - stores, batches and
+   readings in b2b. Expect 0, 0 and 0: `test-shop` was deleted on 2026-10-09
+   with no reading. Any reading: stop - it would need `--reread`, which
+   fetches every report again from the labs.
+3. `npx supabase db push --db-url "$NOSE_DB_ADMIN_URL"` - one migration,
+   `20261015010000_nose_b2b_tested_on.sql` - then `node scripts/probe-db.js`:
+   probe clean, "the b2b tested_on migration is pushed" among it. Before the
+   deploy, because the feed and the reader read the new column.
+4. `git push` - deploys.
+5. Once the deploy is live: b2b-feed answers `400`, asked without a key; and
+   `node scripts/b2b-compliance-kit.js`, without `--offline`, ends
+   `compliance kit written: ... 10 screens, 37 PNGs` - it writes the kit only
+   when the live privacy page matches this checkout word for word.
+
 ### Still open
 
 - `scripts/download-twice.js` keeps its own looser fetch loop. Moving it onto
@@ -6568,6 +6794,13 @@ against the real site.
   no-panel screen; each is listed with why. A store wanting particular
   screens would need a purchase list of its own design, which no prompt has
   asked for.
+- **A store's three days are carried, not shown** (above, "The day the lab
+  finished, in a store's readings"). The feed has `harvest_on`, `tested_on`
+  and `report_on` on every batch with a current reading; the widget, the
+  ranking engine and the demo page read none of them, and nothing scores
+  them (§4). Showing one is a screen change - new words in `js/b2b-strings`,
+  a new release, and in Florida a new compliance kit - and needs its own
+  prompt.
 
 ### Later
 

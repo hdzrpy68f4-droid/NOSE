@@ -11,10 +11,11 @@
 // its window, in stock or not (a shopper's past purchases are usually out of
 // stock and must still be found), each with batch_id, product_id,
 // list_position, category, route, name, brand, product_url, in_stock,
-// thc_percent, cbd_percent, lab, harvest_on, report_on, usable,
-// total_terpenes and terps - plus the store's window and guardrail. No sales,
-// no quantities, no lab-report link (a catalog's link can carry a credential
-// in its query, s14). Of a batch's reading only the one NOSE stands by: lab,
+// thc_percent, cbd_percent, lab, harvest_on, tested_on (the day the lab
+// finished, since 2026-10-14), report_on, usable, total_terpenes and terps -
+// plus the store's window and guardrail. No sales, no quantities, no
+// lab-report link (a catalog's link can carry a credential in its query,
+// s14). Of a batch's reading only the one NOSE stands by: lab,
 // days and verdict from it, terps and total_terpenes only when it was
 // accepted - never another link's numbers, never a guess (lib/b2b-store.js,
 // FEED_SQL). usable is null when there is no such reading.

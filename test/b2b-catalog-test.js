@@ -357,7 +357,8 @@ async function main() {
                                              first_listed_on::text as first, last_listed_on::text as last
                                         from b2b.batches where store_id = $1::bigint order by list_position, batch_id`, [id]);
   const readsOf = async id => rows(`select batch_id, read_url, fetched, usable, lab, product_class, to_json(reject_reasons) as reasons,
-                                           terps, total_terpenes::text as total, report_batch, report_lab_id, new_layout, read_by
+                                           terps, total_terpenes::text as total, report_batch, report_lab_id, new_layout, read_by,
+                                           harvest_on::text as harvest, tested_on::text as tested, report_on::text as report
                                       from b2b.batch_reads where store_id = $1::bigint order by batch_id`, [id]);
 
   /* ======================================================== the function */
@@ -602,6 +603,34 @@ async function main() {
   const accepted = reads.filter(r => r.usable).map(r => r.batch_id).sort();
   check('...14 accepted, sold-out batches among them: what a shopper bought last month has values too',
     [accepted.length, accepted.includes('DA51107019-007'), accepted.includes('MI60618012-001')], [14, true, true]);
+  /* The day the lab finished (since 2026-10-14, PARSER-HANDOFF s14, "The day
+     the lab finished, in a store's readings"), kept as the parser gives it,
+     beside the harvest and report days, whatever the verdict. */
+  const FIXTURE_OF = {
+    '6650039866516120': 'Grease_Monkey_cart', '1006183791109527': 'ACS-FLW-002', 'MI60120007-011': 'KAY-PRR-001',
+    'hcb-269-gmo cr1': 'KAY-LRS-002', ID1600SPNPCRT1: 'KAY-CAR-001', TLGF0127202699HS: 'KAY-FLW-001',
+    'GR-24007': 'GreenRoadsFullSpectrumCBDOil750mgLot24007', 'MI60403006-004': 'KAY-AIO-001', 'MI60403006-005': 'KAY-AIO-001',
+    'DA51107019-007': 'KAY-LRS-001', 'MI60618012-001': 'Kush_Creek', 'MI60618012-002': 'Kush_Creek',
+    '9944038602845567': 'external-download', '5637041429622699': 'MTL-FLW-002', 'FJ02002-08': 'MCL-FLW-002'
+  };
+  const days = r => (r ? [r.harvest, r.tested, r.report] : null);
+  const notAsParsed = [];
+  for (const [batch, fixture] of Object.entries(FIXTURE_OF)) {
+    const o = await parsed(fixture);
+    if (JSON.stringify(days(byBatch.get(batch))) !== JSON.stringify([o.harvestOn ?? null, o.testedOn ?? null, o.reportOn ?? null])) notAsParsed.push(batch);
+  }
+  check('the reader keeps each reading\'s tested_on as the parser gives it, beside its harvest and report days: the 15 the parser read',
+    notAsParsed, []);
+  check('...the Method batch read through its portal (5637041429622699, MTL-FLW-002): tested 2026-08-31, with no harvest or report day',
+    days(byBatch.get('5637041429622699')), [null, '2026-08-31', null]);
+  check('...Modern Canna\'s (FJ02002-08, MCL-FLW-002): tested 2021-10-05', days(byBatch.get('FJ02002-08')), [null, '2021-10-05', null]);
+  check('...KAY-CAR-001\'s: tested 2025-07-11, beside its harvest day 2025-07-07', days(car), ['2025-07-07', '2025-07-11', null]);
+  check('...14 of the 19 readings carry one, every accepted one; a link that gave no report, none, nor any other day',
+    [reads.filter(r => r.tested !== null).length, reads.filter(r => r.usable).every(r => r.tested !== null),
+     reads.filter(r => !r.fetched).map(days)], [14, true, [[null, null, null], [null, null, null], [null, null, null]]]);
+  check('...four accepted readings dated by it alone, with no harvest or report day: KAY-AIO-001 on two batches, the Method batch and Modern Canna\'s',
+    reads.filter(r => r.usable && r.harvest === null && r.report === null).map(r => r.batch_id).sort(),
+    ['5637041429622699', 'FJ02002-08', 'MI60403006-004', 'MI60403006-005']);
   const green = byBatch.get('GR-24007');
   const greenParsed = await parsed('GreenRoadsFullSpectrumCBDOil750mgLot24007');
   check('a refusal keeps the parser\'s reasons word for word and no figure at all',
@@ -627,6 +656,14 @@ async function main() {
      await unfetchedRow('read_url, report_batch', `'https://coa.example/x.pdf', 'B-1'`), await unfetchedRow('read_url, new_layout', `'https://coa.example/x.pdf', true`),
      await unfetchedRow('lab', 'null')],
     ['refused', 'refused', 'refused', 'refused', 'refused']);
+  /* Its own CHECK, since 2026-10-14: nothing_read_unless_fetched stays as
+     pushed, and this row satisfies it - only tested_on_only_when_fetched
+     refuses it. */
+  const unfetchedTested = await asB2b.query(`insert into b2b.batch_reads (store_id, batch_id, usable, fetched, reject_reasons, read_url, tested_on)
+                                             values ($1::bigint, 'B-NOLINK-1', false, false, '{"The lab server returned 404 for that link."}',
+                                                     'https://coa.example/x.pdf', '2026-08-31')`, [storeId])
+    .then(() => 'written', e => (/"tested_on_only_when_fetched"/.test(e.message) ? 'refused by tested_on_only_when_fetched' : e.message));
+  check('...nor the day the lab finished: refused by its own CHECK, tested_on_only_when_fetched', unfetchedTested, 'refused by tested_on_only_when_fetched');
 
   /* A second run: only what gave no report is tried again. */
   const readsAfterFirst = JSON.stringify(reads.filter(r => r.fetched));
@@ -713,6 +750,10 @@ async function main() {
     [has(afterFix.out, 'read 4:'), requests.includes('https://coa.example/kaycha/KAY-FLW-003.pdf'), requests.includes('https://coa.example/kaycha/KAY-FLW-001.pdf'),
      banana.read_url, banana.total, banana.report_batch],
     [true, true, false, 'https://coa.example/kaycha/KAY-FLW-003.pdf', String(flw3.totalTerpenes), flw3.batch]);
+  check('...and KAY-FLW-003\'s days, the day its lab finished among them - none kept from the reading it replaced',
+    [days(banana), days(banana).join() === [flw3.harvestOn ?? null, flw3.testedOn ?? null, flw3.reportOn ?? null].join(),
+     flw3.testedOn !== (await parsed('KAY-FLW-001')).testedOn],
+    [[flw3.harvestOn ?? null, flw3.testedOn ?? null, flw3.reportOn ?? null], true, true]);
 
   /* Never from another store. */
   check('another store with the same batch IDs and links has no reading of its own until its own run - none copied across',
@@ -721,6 +762,15 @@ async function main() {
   const other = await runReader(['--store', 'other-shop', '--limit', '2']);
   check('...its own run fetches its own links and writes its own rows',
     [other.code, requests.length >= 2, (await readsOf(otherId)).length, (await readsOf(otherId)).every(r => r.read_url)], [0, true, 2, true]);
+
+  /* A dated reading replaced by a link that gave no report keeps no day:
+     the Method batch, its link corrected to one that answers 404. */
+  const methodBefore = days((await readsOf(storeId)).find(r => r.batch_id === '5637041429622699'));
+  const replaced = await b2b.upsertUnfetched(storeId, '5637041429622699', 'https://coa.example/gone.pdf', 'The lab server returned 404 for that link.', { client: asB2b });
+  const methodAfter = (await readsOf(storeId)).find(r => r.batch_id === '5637041429622699');
+  check('a dated reading replaced by one from a link that gave no report keeps none: no harvest, tested or report day',
+    [methodBefore, replaced.written, methodAfter.fetched, days(methodAfter), methodAfter.reasons],
+    [[null, '2026-08-31', null], true, false, [null, null, null], ['The lab server returned 404 for that link.']]);
 
   /* The command line, and the role. */
   const errs = [];

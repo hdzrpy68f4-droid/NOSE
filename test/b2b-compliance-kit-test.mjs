@@ -387,8 +387,11 @@ if (fs.existsSync(AK)) {
   const outside = [...html.slice(0, html.indexOf('id="dispensaries"')).matchAll(/<(p|li)>([\s\S]*?)<\/\1>/g), ...html.slice(html.indexOf('</article>', html.indexOf('id="dispensaries"'))).matchAll(/<(p|li)>([\s\S]*?)<\/\1>/g)]
     .map(m => plain(m[2])).filter(t => /dispensar/i.test(t));
   const elsewhere = data.slice(data.indexOf('## Elsewhere on the same page'));
+  /* Four since 2026-10-14, under the same three headings: "What changed" gained
+     a seventh change, a dispensary's readings keeping the day the lab finished
+     (PARSER-HANDOFF s14, "The day the lab finished, in a store's readings"). */
   check('...and every other paragraph or list item of the page that names dispensaries, under its own heading',
-    outside.length === 3 && outside.every(t => elsewhere.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/\*\*/g, '').replace(/\s+/g, ' ').includes(t))
+    outside.length === 4 && outside.every(t => elsewhere.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/\*\*/g, '').replace(/\s+/g, ' ').includes(t))
       && (elsewhere.match(/^### /gm) || []).length === 3, JSON.stringify(outside));
   check('...saying it is this checkout\'s page, not compared with the published one, under --offline',
     /^From `privacy\/index\.html` at NOSE commit `[0-9a-f]{7}`, the page this checkout deploys\. \*\*Not compared with the published page\*\* \(`--offline`\)/m.test(data));

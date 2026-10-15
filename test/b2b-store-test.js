@@ -23,7 +23,8 @@
  *     cannot reach b2b; nose_writer's grants are exactly as before
  *   - probe-db.js's b2b audit passes here, and fails on each broken grant
  *   - values only for an accepted reading: every fixture's parser output
- *     stored as read, KAY-CAR-001 4.124 exactly; a refusal keeps no figure
+ *     stored as read, KAY-CAR-001 4.124 exactly; a refusal keeps no figure;
+ *     every fixture's tested_on the parser's testedOn (since 2026-10-14)
  *   - coa_url: the whole link without its "#" part
  *   - keys: 32 random bytes behind nsk_ / npk_, only the SHA-256 stored
  *   - scripts/b2b-store.js: create, add-origin, rotate-keys, revoke,
@@ -48,6 +49,11 @@ const ROOT = path.resolve(__dirname, '..');
 const LIB = path.join(ROOT, 'netlify/functions/lib');
 const MIGRATIONS = path.join(ROOT, 'supabase/migrations');
 const B2B_MIGRATION = '20261008020000_nose_b2b.sql';
+/* The day the lab finished on batch_reads (PARSER-HANDOFF s14, "The day the
+   lab finished, in a store's readings", 2026-10-14), pinned to its first push
+   as b2b-catalog-test pins the reading-source one. */
+const TESTED_ON_MIGRATION = '20261015010000_nose_b2b_tested_on.sql';
+const TESTED_ON_SHA256 = '09fece77dd91702eefc972fa56a760273c610b37316593789f179c68cfa7ac79';
 
 /* Every migration applied before this one, as applied - and this one, as
    committed for its first push. An applied migration is never edited:
@@ -118,6 +124,19 @@ async function run(db, log = console.log) {
   check('every applied migration is byte-identical to the one pushed - and this one to its first push',
     Object.keys(PINNED).map(f => [f, fs.existsSync(path.join(MIGRATIONS, f)) ? sha(fs.readFileSync(path.join(MIGRATIONS, f))) : 'missing']),
     Object.entries(PINNED));
+  /* After the archive's tested_on migration, which the real project applied
+     first: db push refuses a local migration that sorts before the last one
+     it applied (PARSER-HANDOFF s13, "When the lab finished"). */
+  const testedSql = fs.existsSync(path.join(MIGRATIONS, TESTED_ON_MIGRATION)) ? fs.readFileSync(path.join(MIGRATIONS, TESTED_ON_MIGRATION), 'utf8') : '';
+  check('the b2b tested_on migration sorts after 20261015000000_nose_tested_on.sql, and is byte-identical to its first push',
+    [files.includes(TESTED_ON_MIGRATION), files.includes('20261015000000_nose_tested_on.sql') &&
+     files.indexOf(TESTED_ON_MIGRATION) > files.indexOf('20261015000000_nose_tested_on.sql'), sha(testedSql)], [true, true, TESTED_ON_SHA256]);
+  const testedCode = testedSql.replace(/--.*$/gm, '');
+  check('...it only adds: one column, one CHECK and a comment on b2b.batch_reads - no DROP, no grant, nothing in schema nose',
+    [(testedCode.match(/ADD COLUMN/g) || []).length, (testedCode.match(/ADD CONSTRAINT/g) || []).length,
+     testedCode.split(';').map(t => t.trim()).filter(Boolean).map(t => t.split(/\s+/).slice(0, 3).join(' ')),
+     /\b(DROP|GRANT|REVOKE|CREATE|ALTER ROLE|ALTER COLUMN|SET|RENAME|VALIDATE)\b/.test(testedCode), /\bnose\./.test(testedSql)],
+    [1, 1, ['ALTER TABLE b2b.batch_reads', 'COMMENT ON COLUMN'], false, false]);
 
   const SNAPSHOT_SQL = `
     select 'relation' as k, c.relname as name, coalesce(c.relacl::text, '') as acl
@@ -156,13 +175,15 @@ async function run(db, log = console.log) {
   check('batches: the catalog\'s columns, list_position and the two listing days', await columns('batches'),
     ['store_id', 'batch_id', 'product_id', 'list_position', 'category', 'route', 'name', 'brand', 'coa_url', 'product_url',
      'in_stock', 'thc_percent', 'cbd_percent', 'first_listed_on', 'last_listed_on']);
-  /* The last five since 20261008150000_nose_b2b_read_source.sql (Prompt 3,
+  /* Five since 20261008150000_nose_b2b_read_source.sql (Prompt 3,
      PARSER-HANDOFF s14): the link a reading came from, whether it gave a
-     report, the report's batch and lab ID, and whether its layout was new. */
+     report, the report's batch and lab ID, and whether its layout was new.
+     The last since 20261015010000_nose_b2b_tested_on.sql: the day the lab
+     finished. */
   check('batch_reads: one current reading - what the parser read, the day, and where it came from', await columns('batch_reads'),
     ['store_id', 'batch_id', 'read_on', 'lab', 'product_class', 'usable', 'reject_reasons', 'terps', 'total_terpenes',
      'moisture', 'water_activity', 'harvest_on', 'report_on', 'read_by', 'warnings',
-     'read_url', 'fetched', 'report_batch', 'report_lab_id', 'new_layout']);
+     'read_url', 'fetched', 'report_batch', 'report_lab_id', 'new_layout', 'tested_on']);
   const allColumns = (await rows(`select table_name || '.' || column_name as c, column_name as name, data_type as t
                                     from information_schema.columns where table_schema = 'b2b' order by 1`));
   check('no column for a person, a shopper, a purchase or an order, anywhere in b2b',
@@ -171,8 +192,9 @@ async function run(db, log = console.log) {
     allColumns.filter(c => /time|interval/.test(c.t)).map(c => c.c), []);
   check('...and every day is a date column',
     allColumns.filter(c => /_on$/.test(c.name)).map(c => `${c.c} ${c.t}`),
-    ['batch_reads.harvest_on date', 'batch_reads.read_on date', 'batch_reads.report_on date', 'batches.first_listed_on date',
-     'batches.last_listed_on date', 'store_keys.created_on date', 'store_keys.revoked_on date', 'stores.created_on date']);
+    ['batch_reads.harvest_on date', 'batch_reads.read_on date', 'batch_reads.report_on date', 'batch_reads.tested_on date',
+     'batches.first_listed_on date', 'batches.last_listed_on date', 'store_keys.created_on date', 'store_keys.revoked_on date',
+     'stores.created_on date']);
   const jsonb = await rows(`
     select c.table_name || '.' || c.column_name as col,
            exists (select 1 from pg_constraint k join pg_class t on t.oid = k.conrelid join pg_namespace n on n.oid = t.relnamespace
@@ -421,10 +443,14 @@ async function run(db, log = console.log) {
   const fk = await rejects(() => db.query(`insert into b2b.batch_reads (store_id, batch_id, usable) values ($1::bigint, 'NOT-LISTED', false)`, [storeId]));
   check('...and a reading of a batch the store has not listed', !!fk && /batch_reads_store_id_batch_id_fkey/.test(fk.message), true);
   const built = b2b._buildRead({ usable: false, rejectReasons: ['refused', 7, null], terps: { limonene: 1 }, totalTerpenes: 2,
-                                 moisture: 10, waterActivity: 0.5, harvestOn: '2026-01-01', lab: 'ACS Laboratory', client: 'Somebody', strain: 'X' });
-  check('lib/b2b-store.js sends a refusal with its reasons, its lab and days, and no figure - and only READ_FIELDS',
-    [built.terps, built.totalTerpenes, built.moisture, built.waterActivity, built.rejectReasons, built.lab, built.harvestOn, Object.keys(built)],
-    [null, null, null, null, ['refused'], 'ACS Laboratory', '2026-01-01', [...b2b.READ_FIELDS]]);
+                                 moisture: 10, waterActivity: 0.5, harvestOn: '2026-01-01', testedOn: '2026-01-09', reportOn: '2026-01-12',
+                                 lab: 'ACS Laboratory', client: 'Somebody', strain: 'X' });
+  check('lib/b2b-store.js sends a refusal with its reasons, its lab and its three days, and no figure - and only READ_FIELDS',
+    [built.terps, built.totalTerpenes, built.moisture, built.waterActivity, built.rejectReasons, built.lab,
+     built.harvestOn, built.testedOn, built.reportOn, Object.keys(built)],
+    [null, null, null, null, ['refused'], 'ACS Laboratory', '2026-01-01', '2026-01-09', '2026-01-12', [...b2b.READ_FIELDS]]);
+  check('...READ_FIELDS: testedOn after harvestOn, then reportOn',
+    b2b.READ_FIELDS.slice(b2b.READ_FIELDS.indexOf('harvestOn'), b2b.READ_FIELDS.indexOf('harvestOn') + 3), ['harvestOn', 'testedOn', 'reportOn']);
 
   /* Every fixture's reading, through the real parser and the store layer. */
   const extracted = path.join(ROOT, 'test/fixtures/extracted');
@@ -442,7 +468,8 @@ async function run(db, log = console.log) {
     }
   });
   check(`every fixture's reading is stored as the parser gave it: ${outputs.length} written, none refused by the schema`, failedReads, []);
-  const storedFx = await rows(`select batch_id, usable, terps, total_terpenes::text as total, harvest_on::text as harvest, read_by
+  const storedFx = await rows(`select batch_id, usable, terps, total_terpenes::text as total, harvest_on::text as harvest, read_by,
+                                      tested_on::text as tested
                                  from b2b.batch_reads where store_id = $1::bigint and batch_id like 'FX-%' order by batch_id`, [storeId]);
   const byId = new Map(outputs.map(([id, o]) => [`FX-${id}`, o]));
   const sorted = o => JSON.stringify(Object.keys(o || {}).sort().map(k => [k, o[k]]));
@@ -455,6 +482,13 @@ async function run(db, log = console.log) {
   }).map(r => r.batch_id);
   check('...accepted ones with exactly the parser\'s terpenes and total, refused ones with neither; days and reader as read',
     [storedFx.filter(r => r.usable).length, storedFx.filter(r => !r.usable).length, mismatch], [56, 3, []]);
+  /* The day the lab finished, as the parser read it (PARSER-HANDOFF s7):
+     a day on 54 of the 59, null on Method_DulceDeUva, TerpLife and the three
+     refusals - and nothing else in its place. */
+  check('every fixture\'s stored tested_on is the parser\'s testedOn: 54 of the 59 carry one',
+    [storedFx.filter(r => r.tested !== (byId.get(r.batch_id).testedOn ?? null)).map(r => r.batch_id),
+     storedFx.filter(r => r.tested !== null).length, storedFx.length],
+    [[], 54, 59]);
   const kay = storedFx.find(r => r.batch_id === 'FX-KAY-CAR-001');
   check('KAY-CAR-001: total 4.124 exactly, 15 terpene values (zeros kept as 0)',
     kay ? [kay.total, Object.keys(kay.terps).length] : null, ['4.124', 15]);
@@ -838,7 +872,8 @@ async function offline(log = console.log) {
                              /b2b-store|b2b-flag/.test(s)).map(([f]) => f),
      /\bnose\.[a-z_]+/.test(code.find(([f]) => f.endsWith(`lib${path.sep}b2b-store.js`))[1])],
     [[], false]);
-  const mine = ['supabase/migrations/' + B2B_MIGRATION, 'netlify/functions/lib/b2b-store.js', 'netlify/functions/lib/b2b-flag.js',
+  const mine = ['supabase/migrations/' + B2B_MIGRATION, 'supabase/migrations/' + TESTED_ON_MIGRATION,
+                'netlify/functions/lib/b2b-store.js', 'netlify/functions/lib/b2b-flag.js',
                 'scripts/b2b-store.js', 'scripts/set-b2b-password.js'];
   check('no effect wording in the dispensary store\'s own files', mine.filter(f => EFFECT_WORDS.test(fs.readFileSync(path.join(ROOT, f), 'utf8'))), []);
 

@@ -69,12 +69,12 @@ const ROWS = [
 ];
 
 function reading(fixture) {
-  if (fixture === null) return { lab: null, harvest_on: null, report_on: null, usable: null, total_terpenes: null, terps: null };
+  if (fixture === null) return { lab: null, harvest_on: null, tested_on: null, report_on: null, usable: null, total_terpenes: null, terps: null };
   const file = path.join(EXTRACTED, `${fixture}.txt`);
   if (!fs.existsSync(file)) throw new Error(`${path.relative(ROOT, file)} is missing - run: node test/extract-dump.js`);
   const o = parseCoa(fs.readFileSync(file, 'utf8'));
   const usable = o.usable === true;
-  return { lab: o.lab ?? null, harvest_on: o.harvestOn ?? null, report_on: o.reportOn ?? null, usable,
+  return { lab: o.lab ?? null, harvest_on: o.harvestOn ?? null, tested_on: o.testedOn ?? null, report_on: o.reportOn ?? null, usable,
            total_terpenes: usable ? o.totalTerpenes : null, terps: usable ? o.terps : null };
 }
 
