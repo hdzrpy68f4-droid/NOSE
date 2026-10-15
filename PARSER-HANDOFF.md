@@ -3570,6 +3570,46 @@ test/input-paths-test.mjs    the date cases: 260 checks, 229 before
   `Tested`, the day its lab director signed it, and how long ago - unless the
   report is in Method's older layout, which shows no date row.
 
+**In the Codespace and live, 2026-10-14 (US Eastern)**, on `bd4110f`, pulled
+from a git bundle (`18520cc..bd4110f`, a fast-forward), every step as written
+in "When the lab finished":
+
+- `bash scripts/gates.sh`: ALL GATES GREEN, 32 gates, on the real packages -
+  no stand-ins - with `KAY-CAR-001` 4.124 and `KAY-PRR-001` 0.944. The first
+  run's pasted output stopped after `b2b widget`; a second run showed
+  `b2b kit` clean and the line.
+- `reparse.js --dry-run`: `68 documents: 0 unchanged / 68 values changed / 0
+  accepted→rejected / 0 rejected→accepted / 0 failed`, each by `also changed:
+  testedOn (new)` alone - checked by a one-line `awk` filter that counts any
+  other kind of line, and it counted none.
+- `npx supabase db push --db-url "$NOSE_DB_ADMIN_URL"` (CLI 2.121.0):
+  `--dry-run` listed `20261015000000_nose_tested_on.sql` alone; then it was
+  applied. `probe-db.js`: probe clean - "the tested_on migration is pushed"
+  among it, every B2B audit, Enforce SSL on; the Data API checks skipped, no
+  `NOSE_PUBLISHABLE_KEY`.
+- `reparse.js`: run #20, parser `bd4110f`, 68 documents - `0 unchanged / 68
+  values changed / 0 accepted→rejected / 0 rejected→accepted / 0 failed`,
+  every one by `testedOn (new)` alone, with `usable`, `readBy` and
+  `totalTerpenes` the same before and after on all 68. Run #21: `68
+  unchanged`.
+- `git push`, `18520cc..bd4110f`, deployed. The live site serves
+  `js/nose.d7c4872c.js`, whose `reportDateRow()` carries the Tested row -
+  checked from the cloud workspace - and the owner read a Method report on
+  the live site: its card showed `Tested`, the day, and how long ago.
+- **The real archive's batches, by kind** - a read-only count of
+  `nose.batch_series` as `nose_writer`, counts only: 65 usable batches, one
+  per sample. The 56 test fixtures as rehearsed - harvest 19, tested 35,
+  report 1, undated 1 - and the 9 from scans all dated: harvest 5, tested 4.
+  By lab: ACS 8 of 8, ACT 3 of 3, Kaycha 27 of 27, Method 12 of 13, Modern
+  Canna 13 of 13, TerpLife 1 of 1. The four scans dated `tested` are the
+  archive's four Method scans, undated until this run; the one undated batch
+  is Method_DulceDeUva. 64 of the 65 are dated; by harvest and report days
+  alone, as before this change, 25 were.
+- `archive-health.js`: ok, 1 note - 68 documents, 68 extractions, 263
+  parses; 12.8 MB of the free plan's 500 MB, the archive's own tables 1.1 MB
+  of it; 66 PDFs, 50.9 MB; the two documents without a PDF are the expected
+  #3 and #184.
+
 ### After a deploy — check it
 
 1. `node scripts/archive-health.js` in the Codespace (reads as `nose_writer`;
