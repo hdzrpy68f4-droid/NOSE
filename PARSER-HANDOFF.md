@@ -6541,6 +6541,31 @@ that should hold no row):
    `compliance kit written: ... 10 screens, 37 PNGs` - it writes the kit only
    when the live privacy page matches this checkout word for word.
 
+**Live, 2026-10-15 (US Eastern)**, from the Codespace, every step as written:
+
+- `d72cef5` pulled from a git bundle (`e496d67..d72cef5`, a fast-forward, 12
+  files). `bash scripts/gates.sh`: ALL GATES GREEN, 32 gates, on the real
+  packages - no stand-ins - with `KAY-CAR-001` 4.124 and `KAY-PRR-001` 0.944.
+- The read-only count as `nose_b2b`, from a scratch script in `/tmp`, run and
+  deleted, never committed: `0 stores, 0 batches, 0 readings`. No reading to
+  read again, so no `--reread`.
+- `npx supabase db push --db-url "$NOSE_DB_ADMIN_URL"`: `--dry-run` listed
+  `20261015010000_nose_b2b_tested_on.sql` alone; then it was applied.
+  `probe-db.js`: probe clean - "the b2b tested_on migration is pushed:
+  b2b.batch_reads keeps the day the lab finished" among it, every other
+  archive and B2B check as before, Enforce SSL on; the Data API checks
+  skipped, no `NOSE_PUBLISHABLE_KEY`.
+- `git push`, `e496d67..d72cef5`, deployed. b2b-feed answered `400`, asked
+  without a key.
+- `node scripts/b2b-compliance-kit.js`, without `--offline`: `compliance kit
+  written: b2b-out/test-store/compliance-kit/ - 10 screens, 37 PNGs,
+  README.md, strings.md, data.md`, with the strings a screen of 2026-10-13's
+  live run - 2, 200, 187, 45, 4, 200, 199, 5, 5 and 16: no screen moved.
+  The kit writes nothing unless the published privacy page's dispensary
+  section and its other mentions of dispensaries are `privacy/index.html`'s
+  word for word, so the new phrase and the seventh change are live, dated
+  October 15, 2026 - the day the deploy went out.
+
 ### Still open
 
 - `scripts/download-twice.js` keeps its own looser fetch loop. Moving it onto
