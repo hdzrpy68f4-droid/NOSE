@@ -1,4 +1,5 @@
 (() => {
+  'use strict';
   /* ---- null-safe DOM helpers -------------------------------------------
      The home shell and the app shell now contain different markup, so a
      given element may legitimately be absent. These helpers make that a
@@ -48,7 +49,6 @@
 
   function step(name,fn){ try{ fn(); }catch(err){ if(window.console&&console.warn) console.warn('[NOSE] '+name+' skipped:',err&&err.message); if(window.__noseReport) window.__noseReport('init:'+name,{message:err&&err.message,source:err&&err.stack}); } }
 
-    'use strict';
 
     /* The six aroma families, a profile's share in each, and the bar that
        shows them - FAMILIES, FAMILY_ORDER, familyShares and renderBar - live

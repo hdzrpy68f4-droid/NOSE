@@ -3645,6 +3645,68 @@ The same day's security audit, read only, is the project document
 `claude/nose-security-audit-2026-10-15.md`; its other findings are not yet
 in this file.
 
+### Strict mode in the app bundle, 2026-10-15
+
+**`js/nose.*.js` ran in sloppy mode.** Its `'use strict'` sat at line 51,
+after the DOM helpers, the error reporter and `step()`, so it was an ordinary
+statement, not a directive, and none of the bundle ran in strict mode. MDN
+puts the exact statement "before any other statements" of a script or a
+function body (https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Strict_mode,
+read 2026-10-15). Found by the architecture review of 2026-10-15 (project
+document `claude/nose-architecture-review-2026-10-15.md`); the first of its
+extra-small cleanups.
+
+```
+js/nose.*.js    'use strict'; is the first statement inside the opening (() => {, line 51 is gone
+                (was js/nose.d7c4872c.js - build.sh renamed it; app.html, index.html, _redirects follow)
+```
+
+- **What it changes:** an assignment to a mistyped name, or a write to a
+  frozen or read-only property, now throws instead of passing silently
+  (MDN, the same page). Inside a `step()` that feature is skipped with
+  `[NOSE] <step> skipped` and `__noseReport` sends it; anywhere else the
+  bundle's `error` listener sends it. The wrapper is an arrow function with
+  no parameters, so the directive is allowed there (MDN: not in a function
+  with rest, default or destructured parameters).
+- **The probe, before the edit.** 1: one `'use strict'`, line 51. 2: a copy
+  with `var __strictProbe = 010;` after it passed `node --check`. 3: a copy
+  with the line moved to the top and the same octal line failed, "Octal
+  literals are not allowed in strict mode." 4: ESLint 10.1.0, `no-undef`,
+  with the browser's globals read from headless Chromium (the `globals`
+  package was not at hand), found 7 - every one a read of `Html5Qrcode` (4)
+  or `Html5QrcodeSupportedFormats` (3), at lines 343, 695, 716 and 784. They
+  are the two top-level `var`s of `vendor/html5-qrcode.min.js`, which
+  `app.html` loads before the bundle, and strict mode changes an assignment
+  to an undeclared name, not a read. With those two declared: 0 findings,
+  and a misspelling planted as a control still found. The prompt expected 0,
+  so the work stopped there; the owner said to go on.
+- **Also checked:** the bundle writes nothing into `NoseMatch` or `NoseBar`,
+  both `Object.freeze`d; `this` appears only in comments and strings; no
+  `arguments`, `delete` or `with`.
+- **After the edit:** probe step 2 run on `js/nose.2280eec5.js` fails `node
+  --check` with the octal error. `git diff -M` on the renamed file: one line
+  added, one removed. Nothing else was renamed - `js/match-math`,
+  `js/aroma-bar` and every other `js/` and `css/` file keep their hashes.
+- **What did not move.** Every other line of the bundle; `js/match-math.*.js`
+  and `match-golden.json`; every score, band and card; widget release 1,
+  which does not hold this bundle; the parser, the archive and B2B; what
+  NOSE keeps or sends, so the privacy page; every gate's expected line.
+- **How it was verified, 2026-10-15, in the cloud workspace**, where npm's
+  registry and jsDelivr were both refused: unpdf stood in for by its two
+  calls over pdfjs-dist 6.2.108 (parity still `56 match / 0 differ`), and
+  `build.sh`'s download by the committed `vendor/html5-qrcode.min.js`. 22 of
+  the 32 gates green before and after, with `KAY-CAR-001` 4.124 and
+  `KAY-PRR-001` 0.944 - match maths, match feedback, b2b coverage, build,
+  b2b release, input paths, b2b widget and b2b kit among them. The other 10
+  need PGlite, which could not be installed; none of them reads `js/nose`.
+  The home page and `/app` in headless Chromium, before and after: the home
+  page reads 74 · Partial overlap, both draw their bars, and neither logs an
+  error or a "skipped" line or sends an error report. The Codespace run on
+  the real packages is the one that counts.
+- **After the deploy:** the home page and `/app` read 74 · Partial overlap
+  and draw their bars; each page's console shows no error and no `[NOSE] …
+  skipped` line; one sample jar added on `/app` shows its match.
+
 ### After a deploy — check it
 
 1. `node scripts/archive-health.js` in the Codespace (reads as `nose_writer`;
@@ -3828,6 +3890,10 @@ schema comment if wanted.
   Chromium only, at 1280 and 390 px.
 - **`/app` and `/` keep their sitemap `lastmod`** (2026-07-20) although the
   bundle they load has changed again (R3, R4, R7 and R8 all left it).
+- **The bundle in strict mode was run in Chromium only** (above, "Strict
+  mode in the app bundle"), and its camera path only on Playwright's fake
+  camera. Strict mode is part of the language, but Safari and Firefox have
+  not been looked at.
 
 ---
 
