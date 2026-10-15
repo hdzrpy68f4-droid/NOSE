@@ -3614,6 +3614,37 @@ in "When the lab finished":
   of it; 66 PDFs, 50.9 MB; the two documents without a PDF are the expected
   #3 and #184.
 
+### npm audit, 2026-10-15
+
+`npm audit --omit=dev` in the Codespace, on `94e7c6a`: two high advisories,
+both in packages that `@netlify/blobs` 10.7.11 pulls in through
+`@netlify/dev-utils` 4.4.7, its local test server:
+
+- `@fastify/busboy` 3.2.0, through `@whatwg-node/server` and
+  `@whatwg-node/node-fetch`: GHSA-xjh9-v7x6-24jw, GHSA-x8mw-p69m-v3mx,
+  GHSA-gxm5-99cw-xjw9.
+- `image-size` 2.0.2: GHSA-5p2g-fcmc-qvqq, GHSA-w3rx-r6r6-pgpr.
+
+Neither reached a deployed function. The functions import `@netlify/blobs`
+itself, whose built `dist/main.js` and its one chunk import only
+`@netlify/runtime-utils` and `@netlify/otel`; only `dist/server.js` -
+`@netlify/blobs/server`, the local Blobs server - imports
+`@netlify/dev-utils`, and nothing in this repo imports that (read on
+unpkg, https://unpkg.com/@netlify/blobs@10.7.11/dist/, 2026-10-15).
+esbuild bundles what is imported, so neither package was in a function.
+
+`npm audit fix`, without `--force`: both moved to patched versions inside
+the ranges their parents already allowed. Only `package-lock.json` changed,
+7 lines each way; `package.json`, `unpdf` and `pg` did not, so
+`extractorVersion` is unchanged and no reparse is due. `npm audit
+--omit=dev` then: found 0 vulnerabilities. Like `npm ci`, `npm audit fix`
+removed Playwright (installed `--no-save`, §5), so the three browser gates
+failed until it was installed again; then ALL GATES GREEN.
+
+The same day's security audit, read only, is the project document
+`claude/nose-security-audit-2026-10-15.md`; its other findings are not yet
+in this file.
+
 ### After a deploy — check it
 
 1. `node scripts/archive-health.js` in the Codespace (reads as `nose_writer`;
@@ -3778,9 +3809,6 @@ a jar's QR code is printed for the batch, not the buyer.
 person** - the header of `20260922180000_nose_archive.sql` and its `COMMENT ON
 SCHEMA nose`. An applied migration is not edited; a later one can restate the
 schema comment if wanted.
-- **An `npm audit` warning** was seen in the Codespace (reported 2026-09-23)
-and has not been looked at: the cloud workspace cannot reach npm. Next step:
-`npm audit` in the Codespace, and bring its output.
 - **The word buttons were watched in Chromium only**, at 1280 and 390 px:
   their wrapping, the tick and the status line. Safari and Firefox have not
   been looked at, nor a screen reader's reading of the note.
@@ -6826,6 +6854,15 @@ that should hold no row):
   them (§4). Showing one is a screen change - new words in `js/b2b-strings`,
   a new release, and in Florida a new compliance kit - and needs its own
   prompt.
+- **`b2b-widget-test` can fail on a slow run.** Seen once in the Codespace,
+  2026-10-15, on Playwright 1.64.1: the check that the put-back button has
+  the focus after the basis is drawn again (`test/b2b-widget-test.mjs`,
+  line 617) reads the focus at once, without waiting. Read too early, it
+  fails; the Enter after it misses, and the wait for the second event times
+  out at 8 s, so "the browser cases ran to the end" fails too - 2 failures.
+  The next run was clean, as were four on Playwright 1.56. Waiting for the
+  focus before reading it, with the gate's line still `b2b-widget clean`,
+  needs its own prompt.
 
 ### Later
 
