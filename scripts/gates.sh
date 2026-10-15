@@ -123,6 +123,11 @@ gate 'trust guard'    'check-trust clean'        '^check-trust clean$' \
   node test/check-trust-test.js
 gate 'build'          'OK — ready to deploy'     '^OK — ready to deploy$' \
   bash build.sh
+# The family colours' one home, css/tokens.<hash>.css, linked first by every
+# page as built, and the copies that cannot read it (js/aroma-bar, js/hero,
+# favicon.svg, the aroma pages' theme-color) equal to it. Offline.
+gate 'colour tokens'  'colour-tokens clean'      '^colour-tokens clean$' \
+  node test/colour-tokens-test.js
 # Pinned widget releases (scripts/b2b-release.js), built from the files the
 # build has just left - offline, in throwaway git repos, Blobs stood in for.
 gate 'b2b release'    'b2b-release clean'        '^b2b-release clean$' \

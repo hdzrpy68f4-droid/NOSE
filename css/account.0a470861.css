@@ -155,7 +155,7 @@
 }
 
 .acct-message[data-tone="error"] {
-  border-left-color: #C25B2E;
+  border-left-color: var(--spice);
   background: rgba(194, 91, 46, 0.1);
 }
 

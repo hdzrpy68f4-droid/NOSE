@@ -173,7 +173,7 @@ file) runs, first, `node-version-test` - the Node running the gates is
 `.nvmrc`'s, 24 since 2026-10-15 (§13, "Node 24 everywhere") - then these, the Kaycha anchors,
 `novelty-test`, `coa-dates-test`, `store-test`, `probe-test`, `archive-wiring-test`,
 `archive-scripts-test`, `rerun-test`, `review-queue-test`, `match-test`,
-`match-feedback-test`, `analysis-test`, `duplicates-test`, `remove-copies-test`, `remove-document-test`, `b2b-coverage-test`, `b2b-store-test`, `b2b-catalog-test`, `b2b-endpoints-test`, `b2b-rank-test`, `b2b-strings-test`, `b2b-pilot-test`, `check-trust-test` and, after the build, `b2b-release-test`, `input-paths-test`, `b2b-widget-test` and `b2b-compliance-kit-test`.
+`match-feedback-test`, `analysis-test`, `duplicates-test`, `remove-copies-test`, `remove-document-test`, `b2b-coverage-test`, `b2b-store-test`, `b2b-catalog-test`, `b2b-endpoints-test`, `b2b-rank-test`, `b2b-strings-test`, `b2b-pilot-test`, `check-trust-test` and, after the build, `colour-tokens-test`, `b2b-release-test`, `input-paths-test`, `b2b-widget-test` and `b2b-compliance-kit-test`.
 It prints the line each gate produced and ends with `ALL GATES GREEN`. It passes
 a gate only on its exact expected line, so when a session legitimately changes
 a count, update the script in the same commit.
@@ -237,6 +237,7 @@ someone to look.
 | `b2b-strings-test.js` | `js/b2b-strings.<hash>.js`, every word the dispensary widget shows (§14, "The widget"): two variants, default and florida, with the same keys and placeholders; no effect or recreational word - the prompt's list and their forms - in any string or anywhere in the file; Florida's says aroma and orders; the words shown from other files true to `matchBand()` and `renderBar()`; every key read by the widget and none written out in it; offline |
 | `b2b-pilot-test.js` | the pilot's plan, sample size and report (§14, "Pilot plan and report"): `scripts/b2b-sample-size.js` against published worked examples, never its own output - two means against the NCSS PASS chapter's (Chow, Shao and Wang's 63 a group, and 107 and 151), two proportions against R's `power.prop.test` documentation; the deciding difference of two means against NIST's raw-data example, Wilson's interval against NIST's, Newcombe's against his Table II, the split check against a published example, the delta method against the mean it must equal; synthetic exports - a known difference in inhalable orders per shopper found, the plan's alpha deciding, a null read as null, the mirror read as the mirror, a short run and a run still going showing only how far short, a personal column refused before any row, an unreadable row refusing the file without its value; the plan's block and its pre-registration by git in throwaway repositories; the votes by band; the vote store only listed, no file written, the command line end to end; offline |
 | `check-trust-test.js` | `scripts/check-trust.mjs` (§13, "The trust guard") on throwaway sites: every form of the old promise fails, true sentences pass; offline |
+| `colour-tokens-test.js` | the six families' colours (§13, "One home for the family colours"), since 2026-10-15: one `css/tokens.<hash>.css` holding the twelve properties - `--citrus`, `--citrus-text` and so on to `--herbal-text` - in family order and nothing else; no other stylesheet or page defining one or writing a fill or ink as an opaque colour (`wip/` aside); every page outside `test/` linking the tokens once, before any other stylesheet; `js/aroma-bar`'s `FAMILIES` (loaded as Node loads it), `js/hero`'s `FILLS`, `favicon.svg`'s six bars and each aroma page's `theme-color` equal to the tokens; every ink 4.5:1 or more on white, `#F3F3EE`, its fill at 10% over white and at 11% over `#F3F3EE` (WCAG 2.2 AA); offline; a gate, run after the build |
 | `b2b-release-test.js` | pinned widget releases (§14, "Pinned releases"): `scripts/b2b-release.js`'s build - the same bytes from one commit and version, every time, anywhere; the five files verbatim and in order but for the widget's two stylesheet lines; the stylesheet verbatim; the bundle running as a page runs it - its refusals, its publishing to a stand-in Blobs (never overwriting, going on after a stop, an ETag or a failure, the row last), `netlify/functions/b2b-release.js` (the switch, GET and HEAD, one path shape, the bytes with exactly their five headers, a 404 nothing caches, 503 and one line), `scripts/b2b-release-check.js` against each kind of mismatch, nothing built left in the repo, no effect wording, the integration guide's names; offline, in throwaway git repos; a gate, run after the build |
 | `b2b-widget-test.mjs` | `<nose-matches>` in headless Chromium (§14, "The widget"): the built files on a store's page from another origin, under the prompt's CSP, against a stand-in feed and vote; only the feed and the vote leave the page, and no request carries a purchase; consent, denied, control; each mode equal to `js/b2b-rank`'s answers; every bar `renderBar()`'s; keyboard reach; the demo page; one copy of the bar; `build.sh`'s load-order lines; since 2026-10-09 the vote by `fetch` with no cookie or referrer, and a pinned release - one tag with its hash under the integration guide's own CSP lines, the same rail and vote, its stylesheet checked by its hash, an altered file or a missing `crossorigin` refused. Needs Playwright; a gate, run after the build |
 | `input-paths-test.mjs` | the app's ways in, in headless Chromium: Scan QR (fake camera and QR image), COA link, Upload. The real `coa.js` and parser answer, with only the download and unpdf stood in for (§13, "The input paths"). Since 2026-10-14 also the card's Moisture and Water activity rows on flower - below, inside, both edges (0.55 and 0.65), above and Pass only, each row's text written out (§13, "Water activity against ASTM D8197"); and the row after Batch - Harvested, else Report dated, else none - with its age and the note under it, on a frozen clock in New York's time zone (§13, "Harvest date and age on the card"); `INPUT_PATHS_SHOTS=<folder>` saves a picture of each of those cards. Since 2026-10-14 also the smell words on a vote - thirteen toggle buttons reached by Tab, a fourth refused with a note, and the vote's POST taken before it leaves the page, carrying exactly the two words picked and no other new field (§13, "Smell words on a vote"). Since 2026-10-14 (R8) also the Water activity row's link - the words it already showed, linking to `/learn/why-your-jar-is-drier-than-its-report/` in a new tab with `rel="noopener"`, the row's text unchanged, no other link on the card, and that guide served (§13, "Two guides from the research"). Needs Playwright; a gate, run after the build |
@@ -4035,6 +4036,147 @@ PARSER-HANDOFF.md           s5's gate list and harness table; this record
   names Node 24; the home page and `/app` read 74 · Partial overlap; one COA
   link read on `/app` shows its card.
 
+### One home for the family colours, 2026-10-15
+
+**Each family's fill and ink were written out in four stylesheets and two
+scripts, and three different sets of inks reached a screen.** The six fills
+agreed everywhere; the inks did not - the home page's family cards
+(`js/aroma-bar`'s `FAMILIES.text`), the six aroma pages (`body.theme-*`) and
+the cards on `/aromas/` (`.famcard-*`) each had their own, `css/shell` defined
+two more that nothing read, and no check held any of them equal. The
+architecture review proposed a home in `shell.css`, which cannot work: a page
+loads `shell.css` or `family.css`, never both. So the twelve colours now live
+in a stylesheet of their own that every page links first, and the copies that
+cannot read it are held to it by a new gate. The inks are the aroma pages'
+set, the highest-contrast of the three. The second of the architecture
+review's small cleanups (project document
+`claude/nose-s-cleanup-prompts-2026-10-15.md`, Prompt 2).
+
+```
+css/tokens.8fb6b363.css     new: one :root block - --citrus, --citrus-text ... --herbal-text - and a header
+                            naming the copies that cannot read it and the test that holds them to it
+all 23 pages                one <link rel="stylesheet" href="/css/tokens.<hash>.css"> before any other stylesheet
+build.sh                    fingerprint css tokens css, beside the other css lines
+css/shell.a26570a7.css      the twelve family lines out of its first :root; the second :root (one line) gone;
+                            .bg-* and .fam-* read the variables (was shell.d038fe79)
+family.8e3469b6.css         .famcard-*, .sw-*, .ink-*, body.theme-* and the wordmark's .bg-* read them (was dc8ed1ef)
+css/agegate.67a4ad39.css    the gradient and the six bars read them (was 451aca9a)
+css/account.0a470861.css    the error message's border reads --spice (was e3c8acd9)
+js/aroma-bar.4c8dc6b3.js    FAMILIES' earthy, spice, pine, floral and herbal text become the tokens' inks;
+                            color untouched; four header lines say it is a checked copy (was 94a27874)
+test/colour-tokens-test.js  new: the 'colour tokens' gate, after the build
+test/b2b-widget-test.mjs    the 31 moved lines' check pins their new SHA-256; its name says why
+scripts/verify-manifest.sh  css/tokens.<hash>.css required
+scripts/gates.sh            'colour tokens', expecting colour-tokens clean, after 'build'
+PARSER-HANDOFF.md           s5's gate list and harness table; this record; two Still open items
+```
+
+```
+            citrus   earthy   spice    pine     floral   herbal   lowest
+fill        #D19412  #9C6B3F  #C25B2E  #3E7A54  #8A6BBE  #4E8D99
+ink before, home cards (A)
+            #654700  #68431F  #833817  #28583A  #5B4386  #2E6671  5.18
+ink before, aroma pages (B) = every ink now
+            #654700  #5C3B20  #7E3417  #2A5439  #4E3878  #2C565E  6.49
+ink before, /aromas/ cards (C)
+            #7A5A0E  #6E4A2B  #8A3B1D  #2F5D40  #563F86  #316068  5.25
+```
+
+- **What WCAG 2.2 says**, read 2026-10-15 through WebFetch. The
+  Recommendation (https://www.w3.org/TR/WCAG22/, W3C Recommendation 12
+  December 2024): SC 1.4.3 Contrast (Minimum), Level AA, asks text for a
+  contrast ratio of at least 4.5:1, large text 3:1. Its glossary lies past the
+  part of the page WebFetch returns, so the two definitions were read in
+  "Understanding SC 1.4.3"
+  (https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html, updated
+  06 September 2026), whose Key Terms give them: contrast ratio
+  `(L1 + 0.05) / (L2 + 0.05)`, L1 the lighter colour's relative luminance;
+  relative luminance `L = 0.2126 R + 0.7152 G + 0.0722 B`, each channel
+  `c/12.92` when its sRGB value is at most 0.04045, else
+  `((c + 0.055)/1.055)^2.4`. The page notes the threshold was 0.03928 before
+  May 2021 and that the change makes no practical difference here.
+- **The probe, before the edit.** 1: 23 pages outside `test/`; 3 load
+  `css/shell` (`index.html`, `app.html`, `b2b/demo/`), 20 `family.css`, none
+  both; 20 load `css/agegate`, all but account, privacy and terms. 2: the six
+  fills, the same everywhere: `shell.css` (its two `:root` blocks, `.bg-*`,
+  `.fam-*`), `family.css` (`.famcard-*`, `.sw-*`, `body.theme-*`, the
+  wordmark's `.bg-*`), `agegate.css` (the gradient, six bars), `account.css`
+  (one border), `js/aroma-bar`'s `FAMILIES`, `js/hero`'s `FILLS`,
+  `favicon.svg`, the six aroma pages' `theme-color`, and `wip/`'s stale draft.
+  Translucent tints of the fills also exist (below, "Found on the way").
+  3: three sets on screen, as expected - with one difference in how. On the
+  home page `js/nose`'s `makeCard()` colours each "Learn more" with
+  `FAMILIES.text` (the cards' other `family.text` reads are for
+  `familyDetails`, an id on no page); the aroma pages' eyebrow, note pills and
+  pager read `body.theme-*`'s `--family-text`. On `/aromas/` the set reaches
+  the screen through each card's "Read the ... page" pill, a `.note` reading
+  `.famcard-*`'s `--family-text`: the `.ink-*` rules lose to `.card p`, so the
+  anchor-terpene line is `--muted`, `rgb(83, 96, 87)` in Chromium's computed
+  style, before and after (Still open). Nothing reads `shell.css`'s
+  `--<family>-text`, and no page or script uses `.fam-*`. 4: the table above,
+  each set's lowest over white, `#F3F3EE`, the fill at 10% over white (the
+  pills) and at 11% over `#F3F3EE` (the aroma page header) - every lowest on
+  that header, herbal for A and B, citrus for C. The prompt's 5.18, 6.49 and
+  5.25 come out when a mixed background's channels are rounded to whole
+  numbers, as a screen paints them: the header and pill pixels Chromium
+  painted on the six aroma pages, read from screenshots, are those whole
+  numbers. Unrounded, the three are 5.17, 6.48 and 5.23.
+- **The new gate's refusals**, in a scratch harness, not committed, each in a
+  fresh copy of the built tree: an ink changed in `js/aroma-bar` alone; a fill
+  hardcoded back into `family.css`; a page without the link; a page with it
+  after `shell.css`; a second `:root` defining `--pine`; an ink below 4.5:1
+  with the tokens and every copy agreeing (2.53:1); an ink written as an
+  opaque `rgb()`; a second tokens file; a thirteenth property; two families
+  swapped; a fill changed in `js/hero`, in `favicon.svg`, in one aroma page's
+  `theme-color`, or in the tokens alone. Each fails it, naming the file and
+  line; the unbroken copy prints `colour-tokens clean`. It scores a mixed
+  background both unrounded and rounded and keeps the lower, so on the tree
+  it reports 6.48:1, herbal on its header.
+- **The widget test's pin.** The check of the 31 lines moved into
+  `js/aroma-bar` on 2026-10-08 now pins
+  `3efc9c39d77fbbe4f8b0d42074f25a25a523ca084728287883cad0b827627f05`, was
+  `9b31dc3bb29040d768b978706546f690abcb88f8c977e03b784dc0b925301f81`; the only
+  difference is the five `text` values. Its name says so; its gate line is
+  still `b2b-widget clean`. The 2026-10-08 record (s14, "The widget") still
+  quotes the old hash as the one pinned; it is history.
+- **Pictures**, in headless Chromium at 1280 and 390 px, the age gate answered,
+  reduced motion on and the hero's `Math.random` seeded so two runs of one
+  tree match: every page outside `test/`, before and after, compared pixel by
+  pixel. Identical but for the home page's family cards (five "Learn more"
+  links, 2209 pixels at 1280), `/aromas/` (its six pills, 5576 pixels) and 14
+  pixels on `b2b/demo/` at 1280 that also differ between two runs of the old
+  tree. `/aromas/earthy/` and the other five aroma pages: identical. The age
+  gate on `/` and `/about/`: identical. The account error message's border:
+  `rgb(194, 91, 46)` before and after.
+- **What did not move.** Every fill; every aroma bar (`renderBar()` reads
+  `color`, never `text`); the widget, its stylesheet and release 1 - no
+  release cut; every score and band; every page's text and layout; the
+  privacy page's words (its only change is the one `<link>`); `js/nose`,
+  `js/hero` and `js/match-math`, so `build.sh` renamed only the four
+  stylesheets and `js/aroma-bar`; every other gate's expected line; the
+  parser, the maths, both schemas; what NOSE keeps or sends.
+- **Found on the way, left as it is.** Three translucent tints of the fills
+  are written as `rgba()`: `account.css`'s error message (spice at .1) and
+  danger zone border (spice at .4), and `shell.css`'s `.hero:before` glow
+  (all six at .10 to .16). A tint is a different colour, so the gate does not count it,
+  and reading the tokens there needs `color-mix()`, a changed rule (Still
+  open).
+- **One gate more:** 34. Each page makes one more stylesheet request, cached
+  for a year by `_headers`' `/css/*` rule.
+- **How it was verified, 2026-10-15, in the cloud workspace**, Node 22, where
+  npm's registry was refused: unpdf stood in for by its two calls over
+  pdfjs-dist 6.2.108 (parity still `56 match / 0 differ`), and Playwright
+  1.56.0 with its Chromium from the workspace. Before the edit 22 of the 33
+  gates green, after it 23 of the 34 - `colour tokens` the new one - with
+  `KAY-CAR-001` 4.124 and `KAY-PRR-001` 0.944; `node version` fails on Node
+  22 as it should, and the other 10 need PGlite, which could not be
+  installed; none of them reads a stylesheet, a page or `js/aroma-bar`. The
+  Codespace run on Node 24 is the one that counts.
+- **After the deploy:** the home page's family cards, `/aromas/` and
+  `/aromas/earthy/` look as in the after pictures, with no console error;
+  `curl -s https://nose-app.com/ | grep -o '/css/tokens\.[0-9a-f]*\.css'`
+  prints one name.
+
 ### After a deploy — check it
 
 1. `node scripts/archive-health.js` in the Codespace (reads as `nose_writer`;
@@ -4222,6 +4364,16 @@ schema comment if wanted.
   mode in the app bundle"), and its camera path only on Playwright's fake
   camera. Strict mode is part of the language, but Safari and Firefox have
   not been looked at.
+- **The `/aromas/` cards' anchor-terpene line is grey, not its family's
+  ink** (above, "One home for the family colours"). `.ink-<family>` sets the
+  colour, but `.card p` in `family.css` is more specific, so "Limonene" and
+  the rest show `--muted`. Letting the ink win changes how six lines look, so
+  it needs its own prompt.
+- **Three translucent tints of the fills do not read the tokens**:
+  `account.css`'s error message (spice at .1) and danger zone border (spice
+  at .4), and `shell.css`'s `.hero:before` glow (all six at .10 to .16), each written as
+  `rgba()`. Pointing them at the tokens means `color-mix()`, and the gate
+  does not count a tint as the colour.
 
 ---
 

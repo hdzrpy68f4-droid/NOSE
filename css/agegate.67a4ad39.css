@@ -10,17 +10,17 @@
   border-radius:26px;padding:44px 38px;text-align:center;position:relative;overflow:hidden;
   box-shadow:0 50px 110px -30px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.04)}
 #nose-ag .ag-card:before{content:"";position:absolute;left:0;right:0;top:0;height:6px;
-  background:linear-gradient(90deg,#D19412 0 16.66%,#9C6B3F 16.66% 33.33%,#C25B2E 33.33% 50%,
-  #3E7A54 50% 66.66%,#8A6BBE 66.66% 83.33%,#4E8D99 83.33% 100%)}
+  background:linear-gradient(90deg,var(--citrus) 0 16.66%,var(--earthy) 16.66% 33.33%,var(--spice) 33.33% 50%,
+  var(--pine) 50% 66.66%,var(--floral) 66.66% 83.33%,var(--herbal) 83.33% 100%)}
 #nose-ag .ag-bars{display:flex;gap:4px;justify-content:center;align-items:flex-end;margin:6px 0 24px}
 #nose-ag .ag-bars i{width:9px;border-radius:4px;display:block}
 /* colours live here, not in a style="" attribute — CSP is style-src 'self' */
-#nose-ag .ag-bars i.ag-citrus{height:16px;background:#D19412}
-#nose-ag .ag-bars i.ag-earthy{height:28px;background:#9C6B3F}
-#nose-ag .ag-bars i.ag-spice {height:11px;background:#C25B2E}
-#nose-ag .ag-bars i.ag-pine  {height:34px;background:#3E7A54}
-#nose-ag .ag-bars i.ag-floral{height:22px;background:#8A6BBE}
-#nose-ag .ag-bars i.ag-herbal{height:26px;background:#4E8D99}
+#nose-ag .ag-bars i.ag-citrus{height:16px;background:var(--citrus)}
+#nose-ag .ag-bars i.ag-earthy{height:28px;background:var(--earthy)}
+#nose-ag .ag-bars i.ag-spice {height:11px;background:var(--spice)}
+#nose-ag .ag-bars i.ag-pine  {height:34px;background:var(--pine)}
+#nose-ag .ag-bars i.ag-floral{height:22px;background:var(--floral)}
+#nose-ag .ag-bars i.ag-herbal{height:26px;background:var(--herbal)}
 /* same level-meter motion as the nav wordmark */
 #nose-ag .ag-bars i{transform-origin:bottom;animation:nose-eq-ag 2.4s ease-in-out infinite}
 @keyframes nose-eq-ag{

@@ -11,18 +11,6 @@
       --green:#2F6144;
       --green-dark:#214A33;
       --dark:#141C17;
-      --citrus:#D19412;
-      --citrus-text:#654700;
-      --earthy:#9C6B3F;
-      --earthy-text:#68431F;
-      --spice:#C25B2E;
-      --spice-text:#833817;
-      --pine:#3E7A54;
-      --pine-text:#28583A;
-      --floral:#8A6BBE;
-      --floral-text:#5B4386;
-      --herbal:#4E8D99;
-      --herbal-text:#2E6671;
       --shadow:0 20px 55px -34px rgba(19,35,25,.42);
       --radius:18px;
       --max:1160px;
@@ -656,19 +644,18 @@
 
 /* ---- Tier 3: utility classes replacing inline style attributes ----
    Lets Content-Security-Policy drop style-src 'unsafe-inline'. ---- */
-:root{--citrus:#D19412;--citrus-text:#654700;--earthy:#9C6B3F;--earthy-text:#5C3B20;--spice:#C25B2E;--spice-text:#7E3417;--pine:#3E7A54;--pine-text:#2A5439;--floral:#8A6BBE;--floral-text:#4E3878;--herbal:#4E8D99;--herbal-text:#2C565E;}
-.bg-citrus{background:#D19412}
-.fam-citrus{--family:#D19412;--family-text:#654700}
-.bg-earthy{background:#9C6B3F}
-.fam-earthy{--family:#9C6B3F;--family-text:#5C3B20}
-.bg-spice{background:#C25B2E}
-.fam-spice{--family:#C25B2E;--family-text:#7E3417}
-.bg-pine{background:#3E7A54}
-.fam-pine{--family:#3E7A54;--family-text:#2A5439}
-.bg-floral{background:#8A6BBE}
-.fam-floral{--family:#8A6BBE;--family-text:#4E3878}
-.bg-herbal{background:#4E8D99}
-.fam-herbal{--family:#4E8D99;--family-text:#2C565E}
+.bg-citrus{background:var(--citrus)}
+.fam-citrus{--family:var(--citrus);--family-text:var(--citrus-text)}
+.bg-earthy{background:var(--earthy)}
+.fam-earthy{--family:var(--earthy);--family-text:var(--earthy-text)}
+.bg-spice{background:var(--spice)}
+.fam-spice{--family:var(--spice);--family-text:var(--spice-text)}
+.bg-pine{background:var(--pine)}
+.fam-pine{--family:var(--pine);--family-text:var(--pine-text)}
+.bg-floral{background:var(--floral)}
+.fam-floral{--family:var(--floral);--family-text:var(--floral-text)}
+.bg-herbal{background:var(--herbal)}
+.fam-herbal{--family:var(--herbal);--family-text:var(--herbal-text)}
 .u-mt-14{margin-top:14px}
 .u-mt-18{margin-top:18px;display:inline-block}
 .u-mt-22{margin-top:22px}

@@ -963,8 +963,8 @@ check('one copy of the bar: only js/aroma-bar defines FAMILIES, FAMILY_ORDER, fa
   const bar = lines.indexOf('    function renderBar(target,values){');
   let end = bar; while (end >= 0 && end < lines.length && lines[end] !== '    }') end++;
   const moved = [...lines.slice(from, order + 1), lines[shares], ...lines.slice(bar, end + 1)].join('\n');
-  check('...moved there verbatim: its 31 lines are, byte for byte, the ones js/nose.593b2c1b.js held (SHA-256 9b31dc3b...)',
-    from >= 0 && crypto.createHash('sha256').update(moved).digest('hex') === '9b31dc3bb29040d768b978706546f690abcb88f8c977e03b784dc0b925301f81');
+  check('...moved there verbatim on 2026-10-08, five inks changed to css/tokens\' on 2026-10-15: its 31 lines are, byte for byte, the ones js/nose.593b2c1b.js held but for FAMILIES\' earthy, spice, pine, floral and herbal text (SHA-256 3efc9c39..., 9b31dc3b... before)',
+    from >= 0 && crypto.createHash('sha256').update(moved).digest('hex') === '3efc9c39d77fbbe4f8b0d42074f25a25a523ca084728287883cad0b827627f05');
 }
 check('...js/nose reads all four from window.NoseBar, and the widget draws with NoseBar.renderBar',
   /const \{ FAMILIES, FAMILY_ORDER, familyShares, renderBar \} = window\.NoseBar;/.test(SRC.nose) && /BAR\.renderBar\(bar, b\.terps\)/.test(SRC.widget)

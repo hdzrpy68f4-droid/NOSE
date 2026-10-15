@@ -165,6 +165,7 @@ grep -q "'/${widget_css[0]}'" js/b2b-widget*.js \
 fingerprint js  b2b-widget js
 fingerprint js  b2b-demo js
 fingerprint css b2b-demo css
+fingerprint css tokens  css
 fingerprint css shell   css
 fingerprint css hero    css
 fingerprint js  hero    js

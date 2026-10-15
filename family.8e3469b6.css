@@ -14,24 +14,24 @@
 }
 
 /* Tier 3: classes replacing the last inline style attributes */
-.famcard-citrus{--family:#D19412;--family-text:#7A5A0E}
-.sw-citrus{background:#D19412}
-.ink-citrus{color:#7A5A0E}
-.famcard-earthy{--family:#9C6B3F;--family-text:#6E4A2B}
-.sw-earthy{background:#9C6B3F}
-.ink-earthy{color:#6E4A2B}
-.famcard-spice{--family:#C25B2E;--family-text:#8A3B1D}
-.sw-spice{background:#C25B2E}
-.ink-spice{color:#8A3B1D}
-.famcard-pine{--family:#3E7A54;--family-text:#2F5D40}
-.sw-pine{background:#3E7A54}
-.ink-pine{color:#2F5D40}
-.famcard-floral{--family:#8A6BBE;--family-text:#563F86}
-.sw-floral{background:#8A6BBE}
-.ink-floral{color:#563F86}
-.famcard-herbal{--family:#4E8D99;--family-text:#316068}
-.sw-herbal{background:#4E8D99}
-.ink-herbal{color:#316068}
+.famcard-citrus{--family:var(--citrus);--family-text:var(--citrus-text)}
+.sw-citrus{background:var(--citrus)}
+.ink-citrus{color:var(--citrus-text)}
+.famcard-earthy{--family:var(--earthy);--family-text:var(--earthy-text)}
+.sw-earthy{background:var(--earthy)}
+.ink-earthy{color:var(--earthy-text)}
+.famcard-spice{--family:var(--spice);--family-text:var(--spice-text)}
+.sw-spice{background:var(--spice)}
+.ink-spice{color:var(--spice-text)}
+.famcard-pine{--family:var(--pine);--family-text:var(--pine-text)}
+.sw-pine{background:var(--pine)}
+.ink-pine{color:var(--pine-text)}
+.famcard-floral{--family:var(--floral);--family-text:var(--floral-text)}
+.sw-floral{background:var(--floral)}
+.ink-floral{color:var(--floral-text)}
+.famcard-herbal{--family:var(--herbal);--family-text:var(--herbal-text)}
+.sw-herbal{background:var(--herbal)}
+.ink-herbal{color:var(--herbal-text)}
 .famcard{text-decoration:none;display:flex;flex-direction:column;align-items:flex-start;gap:8px}
 .famcard .note.u-mt-18{margin-top:8px}
 
@@ -49,12 +49,12 @@
 .u-summary{margin:0 0 10px;font-size:0.875rem;color:var(--muted)}
 
 /* Family page theming (replaces the per-page inline <style> block) */
-body.theme-citrus{--family:#D19412;--family-text:#654700}
-body.theme-earthy{--family:#9C6B3F;--family-text:#5C3B20}
-body.theme-spice{--family:#C25B2E;--family-text:#7E3417}
-body.theme-pine{--family:#3E7A54;--family-text:#2A5439}
-body.theme-floral{--family:#8A6BBE;--family-text:#4E3878}
-body.theme-herbal{--family:#4E8D99;--family-text:#2C565E}
+body.theme-citrus{--family:var(--citrus);--family-text:var(--citrus-text)}
+body.theme-earthy{--family:var(--earthy);--family-text:var(--earthy-text)}
+body.theme-spice{--family:var(--spice);--family-text:var(--spice-text)}
+body.theme-pine{--family:var(--pine);--family-text:var(--pine-text)}
+body.theme-floral{--family:var(--floral);--family-text:var(--floral-text)}
+body.theme-herbal{--family:var(--herbal);--family-text:var(--herbal-text)}
 
 /* Family pager: turns leaf pages into a loop instead of dead ends */
 .family-pager{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:center;padding:26px 0 46px}
@@ -91,12 +91,12 @@ body.theme-herbal{--family:#4E8D99;--family-text:#2C565E}
 }
 
 /* Wordmark bar colours — family pages don't load the shell stylesheet. */
-.bg-citrus{background:#D19412}
-.bg-earthy{background:#9C6B3F}
-.bg-spice{background:#C25B2E}
-.bg-pine{background:#3E7A54}
-.bg-floral{background:#8A6BBE}
-.bg-herbal{background:#4E8D99}
+.bg-citrus{background:var(--citrus)}
+.bg-earthy{background:var(--earthy)}
+.bg-spice{background:var(--spice)}
+.bg-pine{background:var(--pine)}
+.bg-floral{background:var(--floral)}
+.bg-herbal{background:var(--herbal)}
 
 /* ---- Footer -------------------------------------------------------------
    The footer markup was reworked into a statement plus grouped links, and the

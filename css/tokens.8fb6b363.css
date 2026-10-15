@@ -1,0 +1,34 @@
+/* NOSE - the six aroma families' colours, defined here and nowhere else in CSS.
+ *
+ * --<family> is the family's fill, --<family>-text its ink: the colour its
+ * words take on a light background. Every page links this file before any
+ * other stylesheet, so css/shell, family.css, css/agegate and css/account all
+ * read these variables. build.sh fingerprints it: css/tokens.<hash>.css.
+ *
+ * Four copies cannot read this file, and test/colour-tokens-test.js (the
+ * 'colour tokens' gate) fails unless each equals it:
+ *   js/aroma-bar's FAMILIES   color and text; it also runs inside the
+ *                             dispensary widget on a store's page, where this
+ *                             file is not loaded
+ *   js/hero's FILLS           the home page's canvas, drawn by script
+ *   favicon.svg               an image file
+ *   the six aroma pages'      <meta name="theme-color">, an attribute the
+ *   theme-color               browser reads before any stylesheet
+ * The same test holds every ink to 4.5:1 or more (WCAG 2.2 AA for text) on
+ * white, #F3F3EE, and the family's fill at 10% over white and at 11% over
+ * #F3F3EE. PARSER-HANDOFF.md s13, "One home for the family colours".
+ */
+:root{
+  --citrus:#D19412;
+  --citrus-text:#654700;
+  --earthy:#9C6B3F;
+  --earthy-text:#5C3B20;
+  --spice:#C25B2E;
+  --spice-text:#7E3417;
+  --pine:#3E7A54;
+  --pine-text:#2A5439;
+  --floral:#8A6BBE;
+  --floral-text:#4E3878;
+  --herbal:#4E8D99;
+  --herbal-text:#2C565E;
+}

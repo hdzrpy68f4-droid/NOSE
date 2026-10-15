@@ -34,12 +34,15 @@ check favicon.svg "build.sh HARD FAILS without this"
 section "Fingerprinted bundles — build.sh globs js/ and css/, not root"
 js=$(ls js/nose.*.js 2>/dev/null | head -1)
 mm=$(ls js/match-math.js js/match-math.*.js 2>/dev/null | head -1)   # the maths the app reads (window.NoseMatch)
+tok=$(ls css/tokens.*.css 2>/dev/null | head -1)   # the family colours, linked first by every page
 css=$(ls css/shell.*.css 2>/dev/null | head -1)
 fam=$(ls family.css family.*.css 2>/dev/null | head -1)   # build.sh accepts either name
 [ -n "$js" ]  && { echo "  ok    $js"; have=$((have+1)); } \
               || { echo "  MISS  js/nose.<hash>.js      fingerprint() exits 1"; missing=$((missing+1)); }
 [ -n "$mm" ]  && { echo "  ok    $mm"; have=$((have+1)); } \
               || { echo "  MISS  js/match-math.<hash>.js fingerprint() exits 1"; missing=$((missing+1)); }
+[ -n "$tok" ] && { echo "  ok    $tok"; have=$((have+1)); } \
+              || { echo "  MISS  css/tokens.<hash>.css  every page's family colours are unset"; missing=$((missing+1)); }
 [ -n "$css" ] && { echo "  ok    $css"; have=$((have+1)); } \
               || { echo "  MISS  css/shell.<hash>.css   fingerprint() exits 1"; missing=$((missing+1)); }
 [ -n "$fam" ] && { echo "  ok    $fam"; have=$((have+1)); } \
