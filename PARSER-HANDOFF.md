@@ -4425,6 +4425,13 @@ pins        actions/checkout   3d3c42e5aac5ba805825da76410c181273ba90b1  v7.0.1
   rules `deletion` and `non_fast_forward` alone, nobody to bypass it. This
   record's own push is step 5: its run green, `live` moved on, and a
   production deploy that Netlify starts by itself.
+- **Live, 2026-10-16 (US Eastern): step 5.** The push of `34a246e` started
+  run 38903503722 at 12:51:35 UTC; both jobs green, and promote moved `live`
+  from `4a6e081` to `34a246e`, a fast-forward, by 12:55:58 UTC. Netlify then
+  started a production deploy of `live` at `34a246e` with nobody pressing a
+  button, and the home page read 74 · Partial overlap - both seen by the
+  owner. So a push by GitHub's token reaches Netlify even though it starts
+  no workflow run (Still open, below, no longer asks).
 
 ### After a deploy — check it
 
@@ -4646,10 +4653,12 @@ schema comment if wanted.
   Codespace - `git fetch origin`, then `git push origin origin/main:live` -
   a fast-forward the ruleset allows. A token that can do it is a secret,
   which this workflow has none of: its own prompt.
-- **Whether Netlify hears a push made by GitHub's token is not documented.**
-  GitHub's pages say such a push starts no workflow run, and nothing about
-  other apps. Step 5 of the record above watches for it on the first real
-  push; if no deploy starts, the record says what to bring.
+- **That Netlify hears a push made by GitHub's token is seen, not
+  documented.** GitHub's pages say such a push starts no workflow run, and
+  nothing about other apps; on 2026-10-16 Netlify deployed `live` by itself
+  after promote moved it (above, "Live ... step 5"). If a later green run
+  moves `live` and no deploy follows, that has changed: Deploys → Trigger
+  deploy → Deploy project builds `live` by hand meanwhile.
 - **The actions are pinned by hand.** Nothing proposes a newer release of
   `actions/checkout` or `actions/setup-node`; moving a pin means reading its
   releases page and changing the commit and the comment together.
