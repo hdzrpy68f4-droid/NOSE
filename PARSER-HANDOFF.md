@@ -4573,6 +4573,20 @@ PARSER-HANDOFF.md                     s12; this record; one line in s14's covera
      green, and `live` at the commit.
   3. Once Netlify's deploy of `live` is done: on `/app`, COA link, read one
      report - its card shows as before.
+- **Live, 2026-10-16 (US Eastern).** `816b510` pulled from a git bundle
+  into the Codespace (`cfc292e..816b510`, a fast-forward). The link read on
+  both sides of the deploy was Method Testing Labs' Purple Push Pop report on
+  `coaportal.com` (the report behind `MTL-FLW-002`), its `pdf=` address. Read
+  on `/app` while the site still ran `cfc292e`, its card was the fixture's:
+  Method Testing Labs, Purple Push Pop, flower, 3.7% total, caryophyllene,
+  limonene and myrcene on top. The Codespace's `git push` (`cfc292e..816b510
+  main -> main`, about 14:40 UTC) started the run; promote moved `live` from
+  `cfc292e` to `816b510` by 14:45:08 UTC - seen through `git ls-remote` from
+  the cloud workspace, every 30 s, since GitHub's API refused it there, so
+  the run's own page was not read here. Promote moves `live` only after the
+  gates job passes, so every gate, on Node 24 and the real packages, was
+  green. Netlify then deployed `live` by itself, and the same link read on
+  `/app` gave the same card - checked by the owner.
 
 ### After a deploy — check it
 
