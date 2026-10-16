@@ -584,14 +584,27 @@ async function main() {
   });
 
   await test('the call site: after parseCoa, before the refusals, production only, connectBlobs first, once', async () => {
+    /* Since 2026-10-16 the steps up to the verdict are lib/read-report.js,
+       where `parsed` turns true only once parseCoa has returned, before the
+       unsafe-layout check; coa.js returns before the archive unless it did,
+       and replies with a refusal only after it. */
+    const rr = fs.readFileSync(path.join(FN, 'lib/read-report.js'), 'utf8');
+    const rrParse = rr.indexOf('output = parse(text);');
+    const rrParsed = rr.indexOf('read.parsed = true;');
+    const rrUnsafe = rr.indexOf('const unsafe = UNSAFE_UNDER_UNPDF');
+    assert.ok(rrParse > 0 && rrParsed > rrParse && rrUnsafe > rrParsed,
+      `read-report: parse ${rrParse}, parsed ${rrParsed}, unsafe ${rrUnsafe}`);
+    assert.ok(!/archiveScan|storeScan|lib\/archive|pdf-store/.test(rr.replace(/\/\*[\s\S]*?\*\//g, '')), 'read-report reaches the archive');
     const src = fs.readFileSync(path.join(FN, 'coa.js'), 'utf8');
-    const parsed = src.indexOf('result = parseCoa(text)');
+    const read = src.indexOf('const read = await readReport(payload.url);');
+    const parsed = src.indexOf('if (!read.parsed) return json(422, { error: read.sentence });', read);
     const gate = src.indexOf('if (archiveOn()){');
     const connect = src.indexOf('connectBlobs(event);', gate);
-    const call = src.indexOf('await archiveScan(fetched.buffer, fetched.finalUrl, text, result, archiveDeadline);');
-    const refusals = src.indexOf('const unsafe = UNSAFE_UNDER_UNPDF');
-    assert.ok(parsed > 0 && gate > parsed && connect > gate && call > connect && refusals > call,
-      `parse ${parsed}, gate ${gate}, connect ${connect}, call ${call}, refusals ${refusals}`);
+    const call = src.indexOf('await archiveScan(read.buffer, read.finalUrl, read.text, result, archiveDeadline);');
+    const refusals = src.indexOf('if (read.stage === STAGES.unsafe){');
+    assert.ok(read > 0 && parsed > read && gate > parsed && connect > gate && call > connect && refusals > call,
+      `read ${read}, parsed ${parsed}, gate ${gate}, connect ${connect}, call ${call}, refusals ${refusals}`);
+    assert.strictEqual(src.split('readReport(').length - 1, 1, 'more than one read');
     assert.strictEqual(src.split('await archiveScan(').length - 1, 1, 'more than one call site');
     assert.ok(/const archiveOn = \(\) => buildInfo\(\)\.deployContext === 'production';/.test(src), 'the production gate changed');
     assert.ok(/exports\.handler = async function\(event\)/.test(src), 'coa.js is no longer a Lambda-style handler');

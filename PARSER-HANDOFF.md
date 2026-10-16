@@ -818,6 +818,21 @@ through the same guards without loading `coa.js`, and the archive wiring with
 it. `scripts/download-twice.js` still takes only the resolver, through
 `coa.js`, inside its own looser loop (§13, "One report, many documents").
 
+**One path from a link to a verdict, since 2026-10-16:
+`netlify/functions/lib/read-report.js`.** `readReport(link)` runs the steps
+once, in order - `validateUrl`, `fetchPdf`, the text, the 200-character
+floor, `parseCoa`, the unsafe-layout check - and says where it stopped:
+`link`, `fetch`, `extract`, `text` or `parse`, or once parsed `unsafe`,
+`refused` or `accepted`, with the person's sentence or the parser's reasons
+and the pieces a caller needs. The four sentences, `MIN_TEXT` and
+`UNSAFE_UNDER_UNPDF` (still empty) are its own. `coa.js` turns each stage
+into its reply and keeps the archive call where it was, between the parse
+and the refusals; `scripts/b2b-coverage.js`'s `readFetched()`, and through
+it `scripts/b2b-read-catalog.js`, turns each into an outcome. It loads
+neither `lib/archive.js` nor `lib/pdf-store.js`. A sentence changed there
+reaches the scanner and the dispensary reports together (§13, "One way to
+read a report").
+
 **There is deliberately NO domain allowlist.** COAs reach people through
 whoever sold the jar. The SSRF guard is layered instead: https only, no
 private or link-local destinations re-checked after every redirect, bounded
@@ -4433,6 +4448,132 @@ pins        actions/checkout   3d3c42e5aac5ba805825da76410c181273ba90b1  v7.0.1
   owner. So a push by GitHub's token reaches Netlify even though it starts
   no workflow run (Still open, below, no longer asks).
 
+### One way to read a report, 2026-10-16
+
+**The steps from a link to a verdict were written twice**: in `coa.js`'s
+handler, and again in `scripts/b2b-coverage.js`'s `readFetched()`, with the
+handler's four sentences copied in - and `scripts/b2b-read-catalog.js` writes
+a store's production readings through that report script. A test kept the
+two aligned by reading `coa.js` as text. Now the steps are written once,
+`netlify/functions/lib/read-report.js` (§12), and both read by it. The first
+of the architecture review's medium cleanups (project document
+`claude/nose-m-cleanup-prompts-2026-10-15.md`, M1).
+
+```
+netlify/functions/lib/read-report.js  new: readReport(link, { fetch, extract, parse }) and STAGES; SCANNER (the four
+                                      sentences), MIN_TEXT 200, UNSAFE_UNDER_UNPDF (empty) and the unsafe sentence
+netlify/functions/coa.js              the handler reads through it; each stage its reply, as before; the archive call
+                                      where it was, after the parse and before the refusals, the same values
+scripts/b2b-coverage.js               readFetched() a thin wrapper, its name and { outcome, reasons, output } kept;
+                                      SCANNER and MIN_TEXT read-report's own, re-exported
+scripts/b2b-read-catalog.js           unchanged: it reads through readFetched(), and takes OUTCOMES and PAUSE_MS from
+                                      the report script, as before
+test/b2b-coverage-test.js             the source check re-pointed: both files read by read-report, neither restating a
+                                      sentence, the floor or the list; read-report keeps out of the archive; 61 -> 62 checks
+test/archive-wiring-test.js           the call-site check re-pointed to coa.js's new lines and read-report's order; 54 checks
+PARSER-HANDOFF.md                     s12; this record; one line in s14's coverage report; Still open
+```
+
+- **The probe, before the edit**, on `cfc292e`. 1: the two copies side by
+  side - the same order, the same 200-character floor, the same four
+  sentences, and the one difference the prompt named: `coa.js` hands the
+  report to the archive between the parse and the refusals, `readFetched()`
+  keeps nothing. Four smaller ones, none of which any input reached: (a)
+  `readFetched()` starts after `validateUrl`, because its two callers check
+  the link first, so that a refused link is never paused for; (b) it had no
+  unsafe-layout check - the test pinned the list empty instead; (c) it
+  accepted on `usable === true`, where `coa.js` refused on `!usable`, the
+  same on every parser output, a boolean; (d) a refusal with no reasons
+  gives the report the sentence as its reason, where `coa.js` sends the
+  reasons as they are. 2: as the prompt listed - `b2b-coverage-test` reads
+  the source (517-521) and calls the handler with the same links (390-406);
+  `archive-wiring-test` reads it (586-597) and calls the handler throughout;
+  `input-paths-test` calls the handler; `resolver-test`, `duplicates-test`
+  and `scripts/download-twice.js` take `_resolvePdfFromPage`. Three more
+  name it only to check it is never loaded: `b2b-catalog-test`,
+  `b2b-endpoints-test`, `b2b-compliance-kit-test`. 3: the before-run, below.
+- **What `readReport` returns**: `stage` - `link`, `fetch`, `extract`,
+  `text` or `parse` for a step that failed; once parsed, `unsafe`, `refused`
+  or `accepted` - and `parsed`, `sentence`, `reasons` (the parser's, on
+  `refused`), `url`, `buffer`, `finalUrl`, `viaPage`, `text`, `output`,
+  every field present. Accepted means `usable === true`, the stricter of the
+  two rules: fails closed (§6). `readFetched()` turns `link` and `fetch` into
+  "fetch failed", `accepted` and `refused` into theirs as before, and the
+  scanner's own refusals - `extract`, `text`, `parse` and, were the list
+  ever not empty, `unsafe` - into "refused" with the sentence and no
+  reading, so the reader would store such a batch as refused with no
+  figure. It passes the link already checked, and read-report checks it
+  again: `validateUrl` is pure and asks no server anything.
+- **Before and after, line for line**, with a scratch harness (not
+  committed, like earlier probes) run on `cfc292e` and on the edit, the
+  real extractor and parser behind the coverage test's own stand-in fetch:
+  the coverage report on the test catalog whole, with `--limit 3`, and on
+  the slow link (8 s) - every printed line, `report.md` (121 lines) and
+  `report.csv` (26), the requests and the pauses; `coa.js`'s handler on 45
+  cases - every address either test serves or refuses, a page with no
+  report, not a PDF, `localhost`, `10.1.2.3`, `[fd00::1]`, `ftp:`, not a
+  link, and OPTIONS, GET, not JSON, no body, `{}`, a string, a number, an
+  array, `null` (a TypeError on `.url`, before and after), a number and an
+  object as `url` - status, headers and body, and the 31 requests made;
+  `readFetched()` on the same links and on ten stand-in extracts and parses;
+  and `readStore()` over the test catalog with the store stood in - "read
+  19: 14 accepted, 2 refused, 3 gave no report", "written: 19 readings",
+  every write's arguments. All identical (SHA-256 of each, before and
+  after: `7ae44c04…`, `cdea980a…`, `5d1943cd…`, `fb86672d…`, `a140b2ea…`,
+  `faecd02f…`). With the archive-wiring test's stand-ins, in production, 19
+  more cases: 17 identical, reply and archive call alike - usable, refused
+  with reasons, with none, without the field, not a report, the extractor
+  throwing, a bare string, no text, 199 and 200 characters, the parser
+  throwing, dev and a deploy preview (no archive), a private and a plain
+  link. Every archive call identical in all 19: its arguments, its timeout,
+  after the parse and before the reply, `connectLambda` first. Two replies
+  differ, on outputs `parseCoa` cannot give - it returns one object, with
+  `usable: rejectReasons.length === 0`: a parse returning `null` still
+  throws after the archive, its TypeError naming `lab` rather than
+  `usable`; and `usable: 1` is now refused, where it was shown.
+- **Against broken copies**, one at a time in a throwaway copy, each fails
+  its test: the old `coa.js` and the old script (2 checks); read-report
+  requiring `lib/archive.js`; the archive call moved above `if
+  (!read.parsed)`; a refusal replied to before the archive (4 checks of the
+  wiring test); a sentence written into `coa.js`; the script's own `MIN_TEXT
+  = 200`; `parsed` set before `parseCoa` runs; the floor at 300 in
+  read-report. And with `SCANNER.unreadable` edited in read-report alone,
+  the scanner's reply, the coverage report's row 9 and the reader's stored
+  reading all carried the new sentence.
+- **Netlify**: "Get started with functions"
+  (https://docs.netlify.com/build/functions/get-started/, last updated May
+  31, 2026, read 2026-10-16): "if you use a subdirectory, the entry file
+  must be named `index` or match the subdirectory name". So
+  `lib/read-report.js`, like every `lib/` file, is never a function of its
+  own. "Functions configuration"
+  (https://docs.netlify.com/build/functions/configuration/, last updated
+  Sep 17, 2026, read 2026-10-16) names `node_bundler = "esbuild"` and does
+  not say how a required file is followed; `coa.js` requires read-report at
+  its top, as it requires `lib/fetch-report.js`, the way every `lib/` file
+  reaches a function today. Step 3 below is where that shows.
+- **What did not move.** Every reply above; every line of the coverage
+  report; the reader's 19 readings and 14 accepted; the archive's call site,
+  its arguments, its 9 s deadline, 2 s budget and 300 ms floor;
+  `lib/fetch-report.js`, the parser and the maths; every `js/` and `css/`
+  file, so `build.sh` renamed nothing; every gate's expected line, and their
+  number, 34; what NOSE keeps or sends, so the privacy page.
+- **How it was verified, 2026-10-16, in the cloud workspace**, Node 22,
+  where npm's registry was refused: unpdf stood in for by its two calls
+  over pdfjs-dist 6.2.108 (parity still `56 match / 0 differ`), Playwright
+  1.56.0 with its Chromium. Before the edit 23 of the 34 gates green, with
+  `KAY-CAR-001` 4.124 and `KAY-PRR-001` 0.944; after it, the same 23 with
+  the same lines - `node version` failing on Node 22 as it should, the other
+  10 needing PGlite, `b2b catalog` among them (its 19 and 14 checked by the
+  harness instead). The Codespace run on Node 24 and the real packages is
+  the one that counts, then GitHub's.
+- **In the Codespace, then on GitHub and the live site:**
+  1. `git pull --ff-only` from the bundle, then `npm run gates` - ALL
+     GATES GREEN, 34 gates.
+  2. `git push`; on GitHub, Actions → gates → the newest run, both jobs
+     green, and `live` at the commit.
+  3. Once Netlify's deploy of `live` is done: on `/app`, COA link, read one
+     report - its card shows as before.
+
 ### After a deploy — check it
 
 First, the run on GitHub is green and `live` has moved: Actions → gates → the
@@ -4662,6 +4803,17 @@ schema comment if wanted.
 - **The actions are pinned by hand.** Nothing proposes a newer release of
   `actions/checkout` or `actions/setup-node`; moving a pin means reading its
   releases page and changing the commit and the comment together.
+- **The archive's re-run tools keep their own text floor**: `scripts/lib/rerun.js`
+  has `MIN_TEXT = 200`, its comment saying `coa.js` refuses below it, and
+  `reparse.js`, `backfill-from-blobs.js` and `seed-from-fixtures.js` read it
+  (above, "One way to read a report"). The same number as
+  `lib/read-report.js`'s, not the same constant; M1 named only `coa.js` and
+  the coverage report, so it waits for its own prompt.
+- **`lib/fetch-report.js`'s header still names its callers as `coa.js` and
+  `scripts/b2b-coverage.js`**; since 2026-10-16 `fetchPdf` is called from
+  `lib/read-report.js` alone, `validateUrl` from it and from the two
+  dispensary scripts, and `coa.js` takes only the resolver. M1 kept that
+  file unchanged, comment and all.
 
 ---
 
@@ -4793,6 +4945,8 @@ was silent:
   The test pins each against coa.js's source, and fails if
   `UNSAFE_UNDER_UNPDF` is ever not empty: the report would then count as
   readable what the scanner refuses.
+  **Since 2026-10-16 they are not restated**: both read by
+  `lib/read-report.js` (§12; §13, "One way to read a report").
 - One link at a time; a 1000 ms pause before every request but the first. A
   link `validateUrl` refuses is never requested, so nothing waits for it.
   `--limit N` tries the first N links; the rest are "not fetched (--limit)",

@@ -31,8 +31,10 @@
  *   - storeScan, saveScan and archiveScan never reached; coa.js, lib/archive.js,
  *     lib/pdf-store.js, pg and @netlify/blobs never loaded; nothing written
  *     outside the report folder
- *   - one copy of the fetch chain, and the scanner's steps restated in the
- *     script still matching coa.js
+ *   - one copy of the fetch chain, and one of the steps from a link to a
+ *     verdict: lib/read-report.js, read by the script and coa.js alike, its
+ *     sentences in neither (since 2026-10-16) - and coa.js's handler, given
+ *     the same links, giving the same words
  *
  * Needs `npm install` (unpdf) and the committed fixture PDFs. Nothing it does
  * reaches the network, a database or Netlify.
@@ -384,6 +386,10 @@ async function main() {
   /* The scanner itself, given the same links by the same stand-in fetch, says
      the same words. coa.js is loaded only now, with the real archive module,
      pinned to dev so nothing is stored. */
+  /* Everything loaded until now - the script, lib/read-report.js through it,
+     and the report's run on the test catalog - for the check below that none
+     of it loaded the archive. */
+  const loadsBeforeCoa = loads.slice();
   delete require.cache[ARCHIVE];
   delete require.cache[PDF_STORE];
   version.pin({ parserVersion: 'dev', extractorVersion: 'dev', deployContext: 'dev' });
@@ -514,11 +520,26 @@ async function main() {
     }
   })(path.join(ROOT, 'scripts'));
   check('the fetch chain has one home: only lib/fetch-report.js defines it, under netlify/ and scripts/', holders, ['netlify/functions/lib/fetch-report.js']);
+  /* One path from a link to a verdict, since 2026-10-16: lib/read-report.js.
+     The run of the same links through coa.js's handler, above, is the proof
+     that the scanner and this report say the same words; this checks that
+     both read by that file and that neither holds a copy of its steps. */
+  const READ_REPORT = path.join(LIB, 'read-report.js');
+  const rr = require(READ_REPORT);
   const coaSrc = fs.readFileSync(COA, 'utf8');
-  check('coa.js requires the chain, and still applies the steps this script restates: the 200-character floor, the three sentences, an empty UNSAFE_UNDER_UNPDF',
-    [/require\('\.\/lib\/fetch-report'\)/.test(coaSrc), coaSrc.includes(`text.length < ${cov.MIN_TEXT})`),
-     [cov.SCANNER.unreadable, cov.SCANNER.noText, cov.SCANNER.unparsed, cov.SCANNER.refused].every(s => coaSrc.includes(`'${s}'`)),
-     /const UNSAFE_UNDER_UNPDF = \[\s*\];/.test(coaSrc)], [true, true, true, true]);
+  const scriptSrc = fs.readFileSync(SCRIPT, 'utf8');
+  const sentences = [...Object.values(rr.SCANNER), ...rr.unsafeSentence('').split(/\s+(?=Enter|this tool)/).map(s => s.replace(/^ /, ''))];
+  check('coa.js and the script both read by lib/read-report.js, and neither restates a sentence, the text floor or the unsafe list',
+    [/require\('\.\/lib\/read-report'\)/.test(coaSrc), /require\(path\.join\(LIB, 'read-report\.js'\)\)/.test(scriptSrc),
+     cov.SCANNER === rr.SCANNER && cov.MIN_TEXT === rr.MIN_TEXT, rr.MIN_TEXT, sentences.length,
+     [coaSrc, scriptSrc].map(src => sentences.filter(s => src.includes(s)).length),
+     [coaSrc, scriptSrc].map(src => /text\.length\s*</.test(src) || /\bMIN_TEXT\s*=/.test(src) || /UNSAFE_UNDER_UNPDF\s*=/.test(src))],
+    [true, true, true, 200, 7, [0, 0], [false, false]]);
+  const rrCode = fs.readFileSync(READ_REPORT, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+  check('lib/read-report.js keeps out of the archive: it requires neither lib/archive.js nor lib/pdf-store.js, and nothing before coa.js loaded either; its UNSAFE_UNDER_UNPDF still empty, as parity\'s 0 differ has it',
+    [/archive|pdf-store|storeScan|saveScan/i.test(rrCode),
+     loadsBeforeCoa.filter(f => [COA, ARCHIVE, PDF_STORE].includes(f) || /node_modules[\\/](pg|@netlify[\\/]blobs)[\\/]/.test(f)),
+     loadsBeforeCoa.includes(READ_REPORT), rr.UNSAFE_UNDER_UNPDF.length], [false, [], true, 0]);
   const bundle = fs.readdirSync(path.join(ROOT, 'js')).filter(f => /^nose\.[0-9a-f]{8}\.js$/.test(f));
   check('the novelty line is the one the app\'s card publishes', bundle.length === 1 &&
     fs.readFileSync(path.join(ROOT, 'js', bundle[0]), 'utf8').includes(cov.NOVELTY_LINE.replace(/'/g, '\\\'')), true);

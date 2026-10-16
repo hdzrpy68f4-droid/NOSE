@@ -38,14 +38,18 @@
  * so the dispensary coverage report (scripts/b2b-coverage.js) fetches through
  * the same guards without loading this file. 5 is the parser.
  *
+ * The steps from the link to a verdict - those checks, the text, the parser
+ * and the layouts this tool refuses - are lib/read-report.js since
+ * 2026-10-16, the one path the dispensary reports read by too. This file
+ * turns each stage into its reply, and keeps the report.
+ *
  * On the production deploy, every lab report fetched is also kept in the
  * archive (archiveScan, below): the PDF and what was read from it, never
  * anything about the person who scanned it.
  */
 
-const { validateUrl, fetchPdf, resolvePdfFromPage } = require('./lib/fetch-report');
-const { extractCoaText } = require('./lib/extract-text');
-const { parseCoa } = require('./lib/parse-coa');
+const { resolvePdfFromPage } = require('./lib/fetch-report');
+const { readReport, STAGES } = require('./lib/read-report');
 const { buildInfo } = require('./lib/version');
 const archive = require('./lib/archive');
 
@@ -68,13 +72,6 @@ const ARCHIVE_MIN_MS      = 300;          // below this, do not start
    scan, comes from build-info.json, which build.sh writes and esbuild bundles
    (lib/version.js); a missing file reads as 'dev', and dev stores nothing. */
 const archiveOn = () => buildInfo().deployContext === 'production';
-
-/* Labs whose text ordering under unpdf does not match the committed fixtures.
- * test/extraction-parity.js reports these as DIFFER. A DIFFER is not a near
- * miss — the parser may read a different column — so these are refused until
- * a handler for that ordering exists and the harness reports MATCH. */
-const UNSAFE_UNDER_UNPDF = [
-];
 
 function json(statusCode, body){
   return {
@@ -166,31 +163,14 @@ exports.handler = async function(event){
   try { payload = JSON.parse(event.body || '{}'); }
   catch { return json(400, { error: 'Could not read that request.' }); }
 
-  const checked = validateUrl(payload.url);
-  if (checked.error) return json(400, { error: checked.error });
-
-  const fetched = await fetchPdf(checked.url);
-  if (fetched.error) return json(502, { error: fetched.error });
-
-  let text;
-  try {
-    /* extractCoaText returns { text, pages }, not a bare string. Passing the
-       object straight to parseCoa finds no terpenes in it and yields a
-       confident, wrong refusal — the failure hides behind a sensible message. */
-    const extracted = await extractCoaText(fetched.buffer);
-    text = typeof extracted === 'string' ? extracted : (extracted && extracted.text);
-  } catch {
-    return json(422, { error: 'That PDF could not be read. It may be a scan rather than a text document.' });
-  }
-  if (typeof text !== 'string' || text.length < 200)
-    return json(422, { error: 'That PDF has no readable text. Scanned reports are not supported.' });
-
-  let result;
-  try {
-    result = parseCoa(text);
-  } catch {
-    return json(422, { error: 'That report could not be parsed.' });
-  }
+  /* The link to a verdict, in lib/read-report.js: each step that fails stops
+     the read, with the sentence the person is shown. A stage before the parse
+     is replied to at once and never reaches the archive. */
+  const read = await readReport(payload.url);
+  if (read.stage === STAGES.link) return json(400, { error: read.sentence });
+  if (read.stage === STAGES.fetch) return json(502, { error: read.sentence });
+  if (!read.parsed) return json(422, { error: read.sentence });
+  const result = read.output;
 
   /* One call site, covering every outcome below: a usable read, an unusable
      one, and a layout this tool refuses. All three are parses that happened,
@@ -201,28 +181,24 @@ exports.handler = async function(event){
      a reply late. */
   if (archiveOn()){
     connectBlobs(event);
-    await archiveScan(fetched.buffer, fetched.finalUrl, text, result, archiveDeadline);
+    await archiveScan(read.buffer, read.finalUrl, read.text, result, archiveDeadline);
   }
 
-  /* Known-unsafe extraction ordering: refuse rather than risk reading the
-     wrong column. This is a limitation of this tool, not a fault in the
-     report, and it says so. */
-  const unsafe = UNSAFE_UNDER_UNPDF.some(rule =>
-    rule.lab.test(result.lab || '') && rule.productClass === result.productClass);
-  if (unsafe){
+  /* Known-unsafe extraction ordering (read-report's UNSAFE_UNDER_UNPDF):
+     refused rather than risk reading the wrong column, in a sentence that
+     says the fault is this tool's, not the report's. */
+  if (read.stage === STAGES.unsafe){
     return json(422, {
-      error: `${result.lab} reports of this type are not yet supported by the scanner. ` +
-             'Enter the terpene values manually — the numbers on the report are correct, ' +
-             'this tool just cannot read that layout reliably yet.',
+      error: read.sentence,
       lab: result.lab,
       manualEntry: true
     });
   }
 
-  if (!result.usable){
+  if (read.stage === STAGES.refused){
     return json(422, {
-      error: 'That report could not be read reliably.',
-      reasons: result.rejectReasons,
+      error: read.sentence,
+      reasons: read.reasons,
       lab: result.lab,
       productClass: result.productClass,
       manualEntry: true
@@ -268,8 +244,8 @@ exports.handler = async function(event){
     waterActivity: result.freshnessApplies ? result.waterActivity : null,
     freshnessApplies: result.freshnessApplies,
     layout: result.layout,
-    source: fetched.finalUrl,
-    viaPage: fetched.viaPage || null
+    source: read.finalUrl,
+    viaPage: read.viaPage
   });
 };
 exports._resolvePdfFromPage = resolvePdfFromPage;

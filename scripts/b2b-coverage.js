@@ -8,10 +8,10 @@
  * The catalog is the CSV a dispensary exports, one row per listed batch, in
  * the format docs/B2B-CATALOG-FORMAT.md defines. Every row is an inhalable
  * (flower, pre-roll, vape or concentrate). For each in-stock row the coa_url
- * is fetched as NOSE's scanner fetches a link - lib/fetch-report.js, the
- * scanner's own chain, guards and deadlines - one link at a time with a pause
- * between, then extracted with lib/extract-text.js and read by parseCoa, as
- * coa.js reads it.
+ * is read as NOSE's scanner reads a link - lib/read-report.js, the one path
+ * from a link to a verdict, which coa.js reads by too: the scanner's own
+ * chain, guards and deadlines (lib/fetch-report.js), lib/extract-text.js and
+ * parseCoa - one link at a time with a pause between.
  *
  * The report says how many in-stock batches have a terpene panel NOSE can
  * read, by category and by lab, with the denominator beside every share, and
@@ -56,7 +56,8 @@ const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
 const LIB = path.join(ROOT, 'netlify/functions/lib');
-const { validateUrl, fetchPdf } = require(path.join(LIB, 'fetch-report.js'));
+const { validateUrl } = require(path.join(LIB, 'fetch-report.js'));
+const reportReader = require(path.join(LIB, 'read-report.js'));
 const format = require(path.join(LIB, 'b2b-catalog-format.js'));
 /* The format, docs/B2B-CATALOG-FORMAT.md: the columns, the three lists, the
    personal rule and the reader, shared with the upload (2026-10-08). */
@@ -72,18 +73,10 @@ const FAMILY = Object.freeze({ flower: 'flower', 'pre-roll': 'flower', vape: 'va
 const PAUSE_MS = 1000;        // between one fetch and the next: a lab's portal is someone else's server
 const TOP = 3;
 
-/* What coa.js's handler does between the download and the parser, restated
-   here because this script must not load coa.js (and the archive wiring with
-   it). test/b2b-coverage-test.js checks each one against coa.js's own source,
-   so the report and the scanner cannot drift apart: the same text floor, the
-   same sentences, and UNSAFE_UNDER_UNPDF still empty. */
-const MIN_TEXT = 200;
-const SCANNER = Object.freeze({
-  unreadable: 'That PDF could not be read. It may be a scan rather than a text document.',
-  noText: 'That PDF has no readable text. Scanned reports are not supported.',
-  unparsed: 'That report could not be parsed.',
-  refused: 'That report could not be read reliably.'
-});
+/* The scanner's text floor and its four sentences are lib/read-report.js's
+   own, re-exported here: one copy, read by coa.js and this report alike, so
+   the two cannot drift apart (since 2026-10-16). */
+const { MIN_TEXT, SCANNER, STAGES } = reportReader;
 /* The card's one line for a usable reading with novelty (PARSER-HANDOFF s7);
    the test checks js/nose.*.js still publishes exactly this. */
 const NOVELTY_LINE = 'NOSE hasn\'t seen this lab\'s layout before — check the top three against the report.';
@@ -142,24 +135,22 @@ function parseArgs(argv) {
 
 /* -------------------------------------------------------------- reading */
 
-/* A link validateUrl has passed, exactly as coa.js's handler takes it from
-   there: fetchPdf, the text, parseCoa. Nothing is kept but the reading. */
-async function readFetched(url, { extract, parse }) {
-  const fetched = await fetchPdf(url);
-  if (fetched.error) return { outcome: OUTCOMES.fetchFailed, reasons: [fetched.error] };
-  let text;
-  try {
-    const got = await extract(fetched.buffer);
-    text = typeof got === 'string' ? got : got && got.text;
-  } catch {
-    return { outcome: OUTCOMES.refused, reasons: [SCANNER.unreadable] };
+/* A link validateUrl has passed, read as the scanner reads it: readReport,
+   lib/read-report.js (which checks the link again - a pure check that asks
+   no server anything - and stops where coa.js's handler would). Its stage
+   becomes the report's outcome. Nothing is kept but the reading. */
+async function readFetched(url, { extract, parse, fetch }) {
+  const read = await reportReader.readReport(url, { extract, parse, fetch });
+  if (read.stage === STAGES.link || read.stage === STAGES.fetch) return { outcome: OUTCOMES.fetchFailed, reasons: [read.sentence] };
+  if (read.stage === STAGES.accepted) return { outcome: OUTCOMES.accepted, reasons: [], output: read.output };
+  if (read.stage === STAGES.refused) {
+    /* The parser's reasons, or the scanner's sentence for a refusal that came with none. */
+    const reasons = Array.isArray(read.reasons) && read.reasons.length ? read.reasons.map(String) : [read.sentence];
+    return { outcome: OUTCOMES.refused, reasons, output: read.output || null };
   }
-  if (typeof text !== 'string' || text.length < MIN_TEXT) return { outcome: OUTCOMES.refused, reasons: [SCANNER.noText] };
-  let output;
-  try { output = parse(text); } catch { return { outcome: OUTCOMES.refused, reasons: [SCANNER.unparsed] }; }
-  if (output && output.usable === true) return { outcome: OUTCOMES.accepted, reasons: [], output };
-  const reasons = output && Array.isArray(output.rejectReasons) && output.rejectReasons.length ? output.rejectReasons.map(String) : [SCANNER.refused];
-  return { outcome: OUTCOMES.refused, reasons, output: output || null };
+  /* Refused by the scanner itself - an unreadable PDF, no text, a parse that
+     threw, or a layout it does not read yet: its own sentence, and no reading. */
+  return { outcome: OUTCOMES.refused, reasons: [read.sentence] };
 }
 
 /* Spaces and letter case aside: "1006 1837 9110 9527" holds 1006183791109527. */
