@@ -1,0 +1,99 @@
+# NOSE - every gate, on GitHub's machines, for every push to main and every
+# pull request; by hand from Actions -> gates -> Run workflow.
+#
+# The site deploys from the branch "live", not main: live is Netlify's
+# production branch. When every gate passes on a push to main, the job
+# "promote" moves live forward to that commit - a fast-forward, never forced -
+# and Netlify builds it. A red run moves nothing: the site stays at the last
+# green commit, and a later green commit carrying the fix takes it forward.
+#
+# No secrets: the gates run offline on stand-ins (PARSER-HANDOFF.md s5), and
+# the only token is GitHub's own, read-only but for promote's one push.
+# Each action is pinned to the commit of its release, read from its releases
+# page on 2026-10-16; the version is in the comment beside it.
+name: gates
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# One run per branch at a time; a newer push cancels the older run.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      # The whole history: check-trust-test reads commit da5a6cf.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      # The Node .nvmrc names - the first gate checks it.
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      # Playwright is not a project dependency; this is the Codespace's version
+      # (scripts/gates.sh's header names the same one).
+      - run: npm install --no-save playwright@1.64.1
+      - run: npx playwright install --with-deps chromium
+      - run: node test/extract-dump.js
+      - run: bash scripts/gates.sh
+      - name: check-trust-test read the history
+        run: |
+          out=$(node test/check-trust-test.js)
+          printf '%s\n' "$out" | tail -2
+          if ! grep -q '(history checked)' <<<"$out"; then
+            echo '::error::check-trust-test did not read commit da5a6cf - the checkout needs the whole history (fetch-depth: 0)'
+            exit 1
+          fi
+      - name: the commit is as build.sh leaves it
+        run: |
+          changed=$(git status --porcelain)
+          if [ -n "$changed" ]; then
+            printf '%s\n' "$changed"
+            echo '::error::the gates changed the tree - run bash build.sh in the Codespace, then commit the files it renamed'
+            exit 1
+          fi
+          echo 'the tree is as committed'
+
+  promote:
+    needs: gates
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: move live to this commit
+        run: |
+          if git rev-parse --verify --quiet refs/remotes/origin/live >/dev/null; then
+            if git merge-base --is-ancestor "$GITHUB_SHA" refs/remotes/origin/live; then
+              echo "live already contains $GITHUB_SHA - nothing to move"
+              exit 0
+            fi
+            echo "live is at $(git rev-parse refs/remotes/origin/live); moving it to $GITHUB_SHA"
+          else
+            echo "there is no branch live yet; making it at $GITHUB_SHA"
+          fi
+          # Never forced: git refuses unless live is behind this commit, and
+          # then this job fails and nothing moves.
+          git push origin "$GITHUB_SHA:refs/heads/live"

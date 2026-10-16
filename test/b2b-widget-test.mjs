@@ -431,12 +431,26 @@ const drawBars = (page, list) => page.evaluate(list => list.map(terps => {
 const barsOk = page => page.evaluate(prefix => [...document.querySelector('nose-matches').shadowRoot.querySelectorAll('.profile-bar')]
   .map(b => b.getAttribute('role') === 'img' && b.getAttribute('aria-label').startsWith(prefix) && b.getAttribute('aria-label').length > prefix.length),
   S.SHOWN_FROM_OTHER_FILES.barPrefix);
-const deepFocus = page => page.evaluate(() => {
+/* The focused element, through shadow roots, named as stops() names it - or
+   null; given `want`, whether that is the name. Runs in the page; deepFocus()
+   and focusLands() both pass it as a function, which the store's CSP allows
+   (a string would be eval, which it refuses). */
+const FOCUSED = want => {
   let a = document.activeElement;
   while (a && a.shadowRoot && a.shadowRoot.activeElement) a = a.shadowRoot.activeElement;
-  if (!a || a === document.body) return null;
-  return `${a.localName}${a.getAttribute('href') ? ` ${a.getAttribute('href')}` : ''}|${(a.getAttribute('aria-label') || a.textContent).trim()}`;
-});
+  const name = !a || a === document.body ? null
+    : `${a.localName}${a.getAttribute('href') ? ` ${a.getAttribute('href')}` : ''}|${(a.getAttribute('aria-label') || a.textContent).trim()}`;
+  return want === undefined ? name : name === want;
+};
+const deepFocus = page => page.evaluate(FOCUSED);
+/* A wait that, at its timeout, returns without failing: the check after it
+   decides, as it did before the wait. Any error but the timeout is thrown. */
+const orTimeout = wait => wait.catch(e => { if (!(e instanceof playwright.errors.TimeoutError)) throw e; });
+/* A redraw gives the focus back after the event the test has waited for, so a
+   read at once can come too early (seen once on a slow run, 2026-10-15).
+   Waits at most 2 s for FOCUSED to name `want`; a focus that never lands is
+   left to the check after it, which fails. */
+const focusLands = (page, want) => orTimeout(page.waitForFunction(FOCUSED, want, { timeout: 2000 }));
 const stops = page => page.evaluate(() => [...document.querySelector('nose-matches').shadowRoot.querySelectorAll('a[href], button:not([disabled]), summary')]
   .filter(n => n.getClientRects().length && (n.localName === 'summary' || !n.closest('details:not([open])')))
   .map(a => `${a.localName}${a.getAttribute('href') ? ` ${a.getAttribute('href')}` : ''}|${(a.getAttribute('aria-label') || a.textContent).trim()}`));
@@ -578,8 +592,20 @@ try {
     const linkStops = (await stops(page));
     const tabbed = await tabThrough(page, linkStops.length);
     check(`rail: Tab reaches every link and the basis, in order (${linkStops.length} stops)`, same(tabbed, linkStops), differs(tabbed, linkStops));
+    /* The widget keeps the basis open across a redraw once the browser has
+       fired the basis's toggle event, around the next frame. The keys below
+       come faster than any shopper's, and a remove sent before that event drew
+       the basis closed, where no button can have the focus (seen 2026-10-16).
+       So the test waits for the event, at most 2 s, before tabbing on; this
+       listener runs after the widget's own. */
+    await page.evaluate(() => {
+      window.__basisToggled = false;
+      document.querySelector('nose-matches').shadowRoot.querySelector('.nm-basis')
+        .addEventListener('toggle', () => { window.__basisToggled = true; }, { once: true });
+    });
     await page.keyboard.press('Enter');
     await page.waitForFunction(() => document.querySelector('nose-matches').shadowRoot.querySelector('.nm-basis').open);
+    await orTimeout(page.waitForFunction(() => window.__basisToggled, undefined, { timeout: 2000 }));
     const basis = await page.evaluate(() => {
       const r = document.querySelector('nose-matches').shadowRoot;
       return [...r.querySelectorAll('.nm-basis-item')].map(li => [li.querySelector('.nm-basis-name').textContent, li.querySelector('button') ? li.querySelector('button').getAttribute('aria-label') : null]);
@@ -614,6 +640,7 @@ try {
     check('...the basis lists it as taken out, with its put-back button, and counts two products',
       same(putBack, [S.default.removedTitle, S.default.notUsedTitle, expectSummary(S.default, after.palate, 'flower')]), JSON.stringify(putBack));
     const putBackStop = `button|${fill(S.default.putBackAria, { name: 'Cold Creek Kush' })}`;
+    await focusLands(page, putBackStop);
     check('...drawn again, the basis is still open and its put-back button has the focus, so the keyboard keeps its place',
       (await page.evaluate(() => document.querySelector('nose-matches').shadowRoot.querySelector('.nm-basis').open)) && (await deepFocus(page)) === putBackStop,
       await deepFocus(page));
@@ -622,6 +649,7 @@ try {
     const restored = await page.evaluate(() => [window.__events[1], localStorage.getItem('nose-matches-removed')]);
     await page.waitForFunction(n => document.querySelector('nose-matches').shadowRoot.querySelector('.nm-basis summary').textContent === n,
       expectSummary(S.default, want.palate, 'flower'));
+    await focusLands(page, wanted);
     check('rail: putting it back, by Enter, fires nose:palate-restored, empties the list, and the rail is as before - its remove button focused',
       same(restored, [['nose:palate-restored', { batchId: 'DB-1106', removed: [] }], '[]'])
         && same((await readCards(page)).map(k => k.name), cards.map(k => k.name)) && (await deepFocus(page)) === wanted,

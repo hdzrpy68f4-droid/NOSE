@@ -178,9 +178,18 @@ It prints the line each gate produced and ends with `ALL GATES GREEN`. It passes
 a gate only on its exact expected line, so when a session legitimately changes
 a count, update the script in the same commit.
 
+**GitHub runs the same file on every push to main**, and on every pull request,
+since 2026-10-16 (`.github/workflows/gates.yml`): a fresh machine, no secrets,
+every gate - and that run decides what deploys. Netlify builds the branch
+`live`, and only a green run on a push to main moves `live` forward to that
+commit; a red run moves nothing, so the site stays at the last green commit
+(§13, "Every gate on every push"). A cloud session that can run only some of
+the gates is checked there by all of them.
+
 **The input-paths, b2b-widget and b2b kit gates need Playwright and its Chromium**, which are not
 project dependencies. Install them once per Codespace, and again after any
-`npm ci`, which removes Playwright: `npm install --no-save playwright`, then
+`npm ci`, which removes Playwright: `npm install --no-save playwright@1.64.1`
+(the version the workflow pins; change both together), then
 `npx playwright install --with-deps chromium`. Without them the gate fails and
 prints that command. It runs after the build, so it tests the pages as they
 deploy (§13, "The input paths").
@@ -4177,7 +4186,237 @@ ink before, /aromas/ cards (C)
   `curl -s https://nose-app.com/ | grep -o '/css/tokens\.[0-9a-f]*\.css'`
   prints one name.
 
+### Every gate on every push, 2026-10-16
+
+**The gates ran only when someone ran them, a cloud session could run 23 of
+the 34, and Netlify deployed whatever reached main.** Now GitHub runs every
+gate on every push to main and every pull request, on a fresh machine with no
+secrets, and the site deploys a branch, `live`, that only a green run on a
+push to main moves forward. A red commit stays on main and reaches the site
+only through a later green commit that carries its fix. The third of the
+architecture review's small cleanups (project document
+`claude/nose-s-cleanup-prompts-2026-10-15.md`, Prompt 3).
+
+```
+.github/workflows/gates.yml  new: job gates - every gate on a fresh ubuntu-latest, then check-trust-test's
+                             history and a clean tree; job promote - on a green push to main, live
+                             fast-forwarded to that commit
+test/b2b-widget-test.mjs     three waits, each at most 2 s, in the rail case: for the basis's toggle event after
+                             Enter opens it, and for the focus before each of the two checks after a redraw;
+                             FOCUSED is deepFocus()'s in-page test, read by both
+_redirects                   /.github/* forced 404
+scripts/gates.sh             header: GitHub runs this file; a red run keeps the site at the last green commit;
+                             the Playwright install line names 1.64.1
+PARSER-HANDOFF.md            s5; this record; "After a deploy" starts with the run; Still open here and in s14
+```
+
+```
+on          a push to main, any pull request, workflow_dispatch (by hand: Actions -> gates -> Run workflow)
+concurrency one run per branch - ${{ github.workflow }}-${{ github.ref }}; a newer push cancels the older run
+gates       ubuntu-latest, 30 minutes, contents: read. Checkout with the whole history and
+            persist-credentials: false; Node from .nvmrc with npm's cache; npm ci; npm install --no-save playwright@1.64.1;
+            npx playwright install --with-deps chromium; node test/extract-dump.js; bash scripts/gates.sh;
+            check-trust-test must print "(history checked)"; git status --porcelain must list nothing
+promote     after gates, on a push to main only, contents: write. Checkout with the whole history. If live
+            already holds the commit, it says so and stops; else git push origin <sha>:refs/heads/live,
+            never forced - a live that is not behind the commit refuses it, the job fails, nothing moves
+pins        actions/checkout   3d3c42e5aac5ba805825da76410c181273ba90b1  v7.0.1
+            actions/setup-node 820762786026740c76f36085b0efc47a31fe5020  v7.0.0
+```
+
+- **What the docs say**, each read through WebFetch on the day given, US
+  Eastern; GitHub's pages show no date of their own.
+  GitHub, "GitHub Actions billing"
+  (https://docs.github.com/en/billing/concepts/product-billing/github-actions,
+  read 2026-10-15): "GitHub Actions usage is free for self-hosted runners and
+  for public repositories that use standard GitHub-hosted runners."
+  GitHub, "GITHUB_TOKEN"
+  (https://docs.github.com/en/actions/concepts/security/github_token, read
+  2026-10-15), and "Triggering a workflow" in the same words
+  (https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow):
+  "events triggered by the `GITHUB_TOKEN` will not create a new workflow
+  run", except that "`workflow_dispatch` and `repository_dispatch` events
+  always create workflow runs" - because "this behavior prevents you from
+  accidentally creating recursive workflow runs". So promote's push to `live`
+  starts no run. Neither page says whether other apps, Netlify's among them,
+  still hear of such a push; step 5 below is where that shows.
+  GitHub, "Workflow syntax for GitHub Actions"
+  (https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax,
+  read 2026-10-15, its last part 2026-10-16): `permissions` at the top or
+  per job, and "If you specify the access for any of these permissions, all
+  of those that are not specified are set to none"; "contents: read permits
+  an action to list the commits"; the list of permissions names no
+  `workflows`. `concurrency`: "there can be at most one running job or
+  workflow in a concurrency group at any time", and `cancel-in-progress:
+  true` cancels the one running; its example group is `${{ github.workflow
+  }}-${{ github.ref }}`. `timeout-minutes`: "The maximum number of minutes
+  to let a job run before GitHub automatically cancels it", 360 if unset.
+  `shell: bash` runs `bash --noprofile --norc -eo pipefail {0}`; with no
+  shell named it is `bash -e {0}`, without pipefail - so the workflow names
+  bash.
+  actions/checkout v7.0.1, its README, read from the release's own files
+  (2026-10-15): "Only a single commit is fetched by default ... Set
+  `fetch-depth: 0` to fetch all history for all branches and tags"; its
+  source fetches `+refs/heads/*:refs/remotes/origin/*` then, so promote sees
+  `origin/live`. "The auth token is persisted in the local git config ...
+  Set `persist-credentials: false` to opt-out": gates opts out, promote keeps
+  it to push.
+  actions/setup-node v7.0.0, `docs/advanced-usage.md`, from the release's
+  own files (2026-10-16): "The `node-version-file` input accepts a path to a
+  file containing the version of Node.js to be used by a project, for
+  example `.nvmrc`"; `cache`: "Supported values: npm, yarn, pnpm."
+  Playwright, "Continuous Integration" (https://playwright.dev/docs/ci,
+  read 2026-10-15): its GitHub Actions example, on `ubuntu-latest`, runs `npx
+  playwright install --with-deps`, "Install Playwright browsers and
+  dependencies". The page does not show the one-browser form the gates have
+  always used, `install --with-deps chromium`.
+  Netlify, "Deploy overview" (https://docs.netlify.com/deploy/deploy-overview,
+  last updated Oct 8, 2026, read 2026-10-15): "To change the production
+  branch name, go to Project configuration > Developer settings > Continuous
+  deployment > Branches and deploy contexts, and select Configure"; "By
+  default, Netlify will not generate a branch deploy unless a Developer or
+  Owner has set up branch deploys for your site", and None under Branch
+  deploys turns them off; "By default, Netlify deploys your site's
+  production branch after every merge to the production branch." Netlify,
+  "Manage deploys"
+  (https://docs.netlify.com/deploy/manage-deploys/manage-deploys-overview/,
+  last updated Sep 30, 2026, read 2026-10-16): "To trigger a deploy at will
+  on your production branch, go to your site's Deploys page and select
+  Trigger deploy".
+  GitHub, "About rulesets"
+  (https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/about-rulesets,
+  read 2026-10-15): "Rulesets are available in public repositories with
+  GitHub Free and GitHub Free for organizations". "Available rules for
+  rulesets" (same folder, `available-rules-for-rulesets`, read 2026-10-16):
+  Restrict deletions - "only users with bypass permissions can delete
+  branches or tags whose name matches the pattern you specify", and "This
+  rule is selected by default"; Block force pushes "is enabled by default".
+  "Creating rulesets for a repository" (same folder, read 2026-10-16):
+  Settings, then Rules and Rulesets in the sidebar, New ruleset, New branch
+  ruleset; Enforcement status; Target branches, Add a target; Create.
+  The releases pages (https://github.com/actions/checkout/releases and
+  https://github.com/actions/setup-node/releases, read 2026-10-16):
+  checkout's Latest is v7.0.1, commit
+  `3d3c42e5aac5ba805825da76410c181273ba90b1`; setup-node's Latest is v7.0.0,
+  `8207627` on the page, `820762786026740c76f36085b0efc47a31fe5020` by `git
+  ls-remote`. A `v7.1.0` tag of setup-node exists (`949feb2`, 2026-10-07)
+  with no release marked Latest; the pin is the release.
+  npm 10.9.4's own `docs/content/using-npm/config.md`, `save`: "Will also
+  prevent writing to `package-lock.json` if set to `false`" - so `--no-save`
+  leaves the lockfile as committed, and the clean-tree step can hold.
+  GitHub, "Security in GitHub Codespaces"
+  (https://docs.github.com/en/codespaces/reference/security-in-github-codespaces,
+  read 2026-10-16): a codespace's token is "scoped for read/write access to
+  the repository". Neither it nor "Troubleshooting authentication to a
+  repository" says anything about pushing a file under `.github/workflows/`
+  (below, Still open).
+- **The probe, before the edit.** 1: the two reads, at lines 618 and 627,
+  as the prompt said; the widget gate 10 of 10 clean here, on Playwright
+  1.56.0. 2: a fresh machine needs `npm ci` (unpdf, PGlite, pg, Blobs),
+  Playwright with its Chromium, and `test/fixtures/extracted` written by
+  `test/extract-dump.js`. No gate reads a secret: every secret-named
+  variable a test names (`NOSE_DB_URL`, `NOSE_DB_ADMIN_URL`,
+  `NOSE_B2B_DB_URL`, `NOSE_PUBLISHABLE_KEY`, `FEEDBACK_READ_TOKEN`,
+  `NETLIFY_SITE_ID`, `NETLIFY_AUTH_TOKEN`) is deleted at its top or set to
+  a stand-in. None reaches the network: `build.sh` downloads nothing since
+  b4b2356, and git runs in throwaway repositories that set their own
+  identity, or reads this checkout. 3: on the full clone `check-trust: 17
+  checks (history checked)`; on `git clone --depth 1`, `check-trust: 17
+  checks (history skipped: da5a6cf is not in this clone)`, then `check-trust
+  clean`, exit 0. 4: the pages above, none saying otherwise. 5: the
+  Codespace runs Playwright 1.64.1.
+- **The flake had two causes.** The first is the one Still open named: after
+  a remove or a put-back the widget gives the focus back when it has drawn
+  again, and the test read it at once. With the widget's `focus()` delayed
+  600 ms in a scratch copy, the old test failed exactly as the Codespace
+  run did (the same two failures) and the new one passed; with the
+  `focus()` taken out, the new one still failed. With the two waits in, 20
+  runs in a row on an idle machine were clean, but in two loops run while
+  other work went on, 3 of 32 failed, the focus on the page's body for the
+  whole 2 s. A trace taken from the test alone,
+  the widget untouched, showed why: the widget learns that the shopper
+  opened the basis from its `toggle` event (`_basisOpen`), which Chromium
+  fired about 11 ms after the click, around the next frame, while the test
+  tabbed three times and pressed Remove within 24 ms. When Remove came
+  first, the redraw drew the basis closed - `open: false`, the put-back
+  button inside it - and a button in a closed `<details>` cannot have the
+  focus. No shopper presses keys that fast, so the widget stays as it is
+  (s14, Still open); the third wait holds the test to a shopper's pace. The
+  prompt named two waits; the owner chose the third on 2026-10-16.
+  Each wait gives up at 2 s without failing, and the check after it decides,
+  as before; any other error is thrown. A string predicate is no use here:
+  Playwright evaluates it, and the store's CSP refuses eval, so `FOCUSED` is
+  passed as a function, which it allows. The gate's line is still
+  `b2b-widget clean`, its 181 checks the same, by name and in order.
+- **Promote, rehearsed** in throwaway repositories with promote's own
+  script, read out of the YAML: no `live` - made at the commit; the same
+  commit again - "live already contains ..."; main one commit on - `live`
+  fast-forwarded; a run for an older commit after `live` moved on -
+  "already contains"; a commit `live` is not behind - `! [rejected] ...
+  (non-fast-forward)`, exit 1, `live` where it was. The history step fails
+  on a shallow clone with its own message and passes on the full one; the
+  tree step lists a rename left uncommitted and fails, and passes on a clean
+  tree.
+- **Lint:** actionlint 1.7.12, its release file checked against the
+  release's published SHA-256, with ShellCheck 0.11.0 reading the `run:`
+  scripts - 0 errors. Read as YAML by Python: two jobs, gates and promote.
+- **What did not move.** Every gate's expected line, and their number, 34.
+  Every other check in `b2b-widget-test`. The site: `_redirects` gains one
+  forced 404, for a folder that did not exist before this commit -
+  `check-published.js` counts 72 published files with it, 73 without. Netlify's
+  environment variables and their Production context, which apply to builds
+  of `live` once it is the production branch - `B2B_ENABLED`, `NOSE_DB_URL`
+  and the rest - and `build-info.json`'s `deployContext`, which is Netlify's
+  `$CONTEXT`, `production` for the production branch whatever its name.
+  `scripts/b2b-release.js` and the pilot report, which read `origin/main`.
+  No `js/` or `css/` file, so `build.sh` renamed nothing. The parser, the
+  maths, both schemas; what NOSE keeps or sends, so the privacy page.
+- **What changes.** A push to main reaches the site only after its gates
+  pass on GitHub, some minutes later (here the gates took about 4 minutes,
+  before any install). A run by hand, or for a pull request, never moves
+  `live`. Branch deploys are None, so no other branch builds a site.
+- **How it was verified, 2026-10-16, in the cloud workspace**, Node 22,
+  where npm's registry was refused: unpdf stood in for by its two calls over
+  pdfjs-dist 6.2.108 (parity still `56 match / 0 differ`), and Playwright
+  1.56.0 with its Chromium from the workspace. Before the edit 23 of the 34
+  gates green, with `KAY-CAR-001` 4.124 and `KAY-PRR-001` 0.944; after it,
+  the same 23 - `node version` failing on Node 22 as it should, the other 10
+  needing PGlite. The widget gate with all three waits: 20 of 20 clean
+  while a second copy ran beside it, and that copy 20 of 20 too, its
+  `toggle` as late as 23 ms after the click; with two waits, in like
+  conditions, 3 of 32 had failed. The first run on
+  GitHub, on Node 24 and the real packages, is the one that counts, and from
+  now on it is every push's.
+- **In the Codespace, then on GitHub and Netlify, in this order:**
+  1. `git pull --ff-only`, then `npm run gates` - ALL GATES GREEN, 34 gates.
+     Then `node test/b2b-widget-test.mjs | tail -1` five times - `b2b-widget
+     clean` each time.
+  2. `git push`. On GitHub: the repository, then Actions, then gates, then
+     the newest run; both jobs green. The Code tab's branch menu lists
+     `live`.
+  3. Netlify: Project configuration → Developer settings → Continuous
+     deployment → Branches and deploy contexts → Configure; production
+     branch `live`, branch deploys None; Save. Then Deploys → Trigger deploy
+     → Deploy project. The deploy log names the branch `live`; the home page
+     still reads 74 · Partial overlap.
+  4. GitHub: Settings → Rules → Rulesets → New ruleset → New branch ruleset.
+     Name `protect`, enforcement Active, targets `main` and `live`; Restrict
+     deletions and Block force pushes on (both are by default) and nothing
+     else; Create.
+  5. The next push - the Live record for this one - is the real test: its run
+     goes green, `live` moves, and Netlify starts a production deploy from
+     `live` with nobody pressing a button. If none starts within a few
+     minutes of `live` moving: stop and bring it.
+  6. A red run, ever: the site stays as it was. The run's gates step holds
+     the failing gate's lines; fix it on main and push again.
+
 ### After a deploy — check it
+
+First, the run on GitHub is green and `live` has moved: Actions → gates → the
+newest run shows both jobs, gates and promote, green; the Code tab's branch
+menu lists `live`, at that commit. Netlify then builds `live` by itself, and
+its deploy log names the branch `live` (§13, "Every gate on every push").
+Then:
 
 1. `node scripts/archive-health.js` in the Codespace (reads as `nose_writer`;
 `archive-status.js` still works for the database half alone).
@@ -4374,6 +4613,31 @@ schema comment if wanted.
   at .4), and `shell.css`'s `.hero:before` glow (all six at .10 to .16), each written as
   `rgba()`. Pointing them at the tokens means `color-mix()`, and the gate
   does not count a tint as the colour.
+- **A push that changes `.github/workflows/` may stop promote** (above,
+  "Every gate on every push"). GitHub's token takes no `workflows`
+  permission - the workflow syntax page lists none - and two reports show
+  GitHub refusing a push by an app's token that brings in a change to a
+  workflow file: "refusing to allow a GitHub App to create or update workflow
+  `.github/workflows/release.yml` without `workflows` permission" (Panther's
+  help centre, "When trying to sync panther-analysis, I see the Github error
+  'Failed to push some refs'"), and a MongoDB ticket of 2026-09-03, PYTHON-6076,
+  fixed by giving its token that permission (both read 2026-10-15). GitHub's
+  own pages do not say which pushes it checks. If promote fails that way, the
+  site stays where it was; after a green run, move `live` by hand from the
+  Codespace - `git fetch origin`, then `git push origin origin/main:live` -
+  a fast-forward the ruleset allows. A token that can do it is a secret,
+  which this workflow has none of: its own prompt.
+- **Whether Netlify hears a push made by GitHub's token is not documented.**
+  GitHub's pages say such a push starts no workflow run, and nothing about
+  other apps. Step 5 of the record above watches for it on the first real
+  push; if no deploy starts, the record says what to bring.
+- **The actions are pinned by hand.** Nothing proposes a newer release of
+  `actions/checkout` or `actions/setup-node`; moving a pin means reading its
+  releases page and changing the commit and the comment together.
+- **The Codespace pushes the workflow file** with its own token, "scoped for
+  read/write access to the repository" (above); GitHub's Codespaces pages say
+  nothing of workflow files. If that `git push` is refused with "refusing to
+  allow", nothing has moved: stop and bring the lines.
 
 ---
 
@@ -7402,15 +7666,15 @@ that should hold no row):
   them (§4). Showing one is a screen change - new words in `js/b2b-strings`,
   a new release, and in Florida a new compliance kit - and needs its own
   prompt.
-- **`b2b-widget-test` can fail on a slow run.** Seen once in the Codespace,
-  2026-10-15, on Playwright 1.64.1: the check that the put-back button has
-  the focus after the basis is drawn again (`test/b2b-widget-test.mjs`,
-  line 617) reads the focus at once, without waiting. Read too early, it
-  fails; the Enter after it misses, and the wait for the second event times
-  out at 8 s, so "the browser cases ran to the end" fails too - 2 failures.
-  The next run was clean, as were four on Playwright 1.56. Waiting for the
-  focus before reading it, with the gate's line still `b2b-widget clean`,
-  needs its own prompt.
+- **The widget learns that the basis is open from its `toggle` event**
+  (`_basisOpen`), which the browser fires a little after the click - about
+  11 ms, around the next frame, in Chromium on 2026-10-16 (§13, "Every gate
+  on every push"). A remove or put-back pressed before then draws the basis
+  closed, so its button cannot have the keyboard focus. That is faster than
+  any shopper; `b2b-widget-test` now waits for the event before tabbing on.
+  Reading the open state from the page when drawing again would end it, but
+  that changes `js/b2b-widget` - a new file, and a new release for a pinned
+  page - so it needs its own prompt.
 
 ### Later
 
