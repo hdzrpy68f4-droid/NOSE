@@ -7,10 +7,10 @@
  *
  * Each link - the address a jar's QR code opens, or a PDF's own address - is
  * fetched the way the scanner fetches it (a viewer or listings page is read
- * for its report link by coa.js's own resolver), then fetched again after a
- * wait (65 seconds unless --wait says otherwise; every link is downloaded
- * once before the wait, so each pair is at least that far apart). For each
- * pair it prints:
+ * for its report link by the scanner's own resolver, lib/fetch-report.js's
+ * resolvePdfFromPage), then fetched again after a wait (65 seconds unless
+ * --wait says otherwise; every link is downloaded once before the wait, so
+ * each pair is at least that far apart). For each pair it prints:
  *
  *   bytes   the SHA-256 of each download, as the archive keys a document;
  *           the PDF's creation and modification stamps and its file ID
@@ -217,9 +217,9 @@ async function main(argv = process.argv.slice(2)) {
   }
   const { extractCoaText } = require(path.join(LIB, 'extract-text.js'));
   const { parseCoa } = require(path.join(LIB, 'parse-coa.js'));
-  const { _resolvePdfFromPage } = require(path.join(LIB, '..', 'coa.js'));
+  const { resolvePdfFromPage } = require(path.join(LIB, 'fetch-report.js'));
   try {
-    const tally = await downloadTwice({ links: opts.links, wait: opts.wait, resolvePage: _resolvePdfFromPage,
+    const tally = await downloadTwice({ links: opts.links, wait: opts.wait, resolvePage: resolvePdfFromPage,
                                         extract: extractCoaText, parse: parseCoa });
     if (tally.textDiffers || tally.failed) process.exitCode = 1;
   } catch (e) {

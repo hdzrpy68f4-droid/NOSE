@@ -1,4 +1,3 @@
-'use strict';
 /* NOSE — COA fetch + parse endpoint.
  *
  *   POST /.netlify/functions/coa   { "url": "https://…/report.pdf" }
@@ -44,124 +43,65 @@
  * turns each stage into its reply, and keeps the report.
  *
  * On the production deploy, every lab report fetched is also kept in the
- * archive (archiveScan, below): the PDF and what was read from it, never
- * anything about the person who scanned it.
+ * archive (lib/archive.js, archiveScan): the PDF and what was read from it,
+ * never anything about the person who scanned it.
+ *
+ * WRITTEN AS EVERY OTHER FUNCTION IS, since 2026-10-16: one default export,
+ * taking a Request and returning a Response, and nothing else exported. Until
+ * then this was the one exports.handler function - Netlify's "Lambda
+ * compatibility" format, whose deploys Netlify stops accepting on July 1, 2027
+ * (PARSER-HANDOFF s13, "coa.js in the current format"). The lib/ files are
+ * CommonJS, so each is imported whole (Netlify, "Configuration for
+ * functions", Module format: no named imports from a CommonJS module).
+ *
+ * Netlify's Context - the caller's IP address, location and cookies among it
+ * - is never taken: the handler has one parameter, the request, and reads
+ * only its method and its body. The archive is handed neither.
+ *
+ * A request this cannot read gets a 400; anything else that goes wrong, a
+ * fixed 500 and one fixed log line - never the platform's crash page, which
+ * shows the error and its stack trace (security audit #5).
  */
 
-const { resolvePdfFromPage } = require('./lib/fetch-report');
-const { readReport, STAGES } = require('./lib/read-report');
-const { buildInfo } = require('./lib/version');
-const archive = require('./lib/archive');
+import report from './lib/read-report.js';
+import archive from './lib/archive.js';
 
-/* The archive (PARSER-HANDOFF s13). NOSE keeps the handler's reply within
-   10s - its own budget, not a Netlify limit. Netlify's "Configuration for
-   functions" gives a synchronous function 60s, and its "Lambda compatibility
-   for Functions" gives no limit for an exports.handler function like this
-   one, only 10s for a streamed reply, which this is not (both read
-   2026-10-15). The fetch chain alone may spend 8s of the 10, so the two
-   writes together get at most 2s of whatever is left before 9s, and are
-   skipped outright when too little is left to be worth starting. A stored
-   row is worth less than a reply that arrives. */
-const ARCHIVE_DEADLINE_MS = 9000;         // measured from the start of the handler
-const ARCHIVE_BUDGET_MS   = 2000;         // the PDF and database writes, together
-const ARCHIVE_MIN_MS      = 300;          // below this, do not start
+const { readReport, STAGES } = report;
+const { ARCHIVE_DEADLINE_MS } = archive.ARCHIVE_LIMITS;
 
-/* ONLY the production deploy stores anything. Deploy previews and branch
-   deploys share the site's Blobs store, so a preview scan would write into the
-   real archive. The context, like the two version stamps stored with every
-   scan, comes from build-info.json, which build.sh writes and esbuild bundles
-   (lib/version.js); a missing file reads as 'dev', and dev stores nothing. */
-const archiveOn = () => buildInfo().deployContext === 'production';
+const UNREADABLE = 'Could not read that request.';
+const FAILED = 'The report reader failed. Try again, or enter the values manually.';
+/* The one line a failure logs: nothing of the request or of the error, so
+   it can never carry a link, a fingerprint or anything about the person. */
+const FAILED_LINE = 'coa: the report reader failed - a fixed 500 sent, no detail logged';
 
-function json(statusCode, body){
-  return {
-    statusCode,
+function json(status, body){
+  return new Response(JSON.stringify(body), {
+    status,
     headers: {
       'Content-Type': 'application/json',
       'Cache-Control': 'no-store',
       'X-Content-Type-Options': 'nosniff'
-    },
-    body: JSON.stringify(body)
-  };
+    }
+  });
 }
 
-/* Lambda compatibility: a function written as exports.handler is not handed
-   the Blobs context the way a (Request, Context) function is, and without it
-   every Blobs write fails. connectLambda reads event.blobs and the site and
-   deploy ids Netlify adds as headers - which site, never who is asking - and
-   keeps nothing else. A failure here only means the PDF write fails and says
-   so; the database write does not depend on it. */
-function connectBlobs(event){
-  try { require('./lib/pdf-store').connect(event); }
-  catch { /* reported by the PDF write itself */ }
-}
+/* A body JSON.parse reads but that is not a plain object - null, an array, a
+   string, a number, true - is as unreadable as one it cannot parse. Until
+   2026-10-16 null threw on .url, and an array or a string reached the link
+   check as no link at all. */
+const isPlainObject = v => v !== null && typeof v === 'object' && !Array.isArray(v);
 
-/* Keep the report and what was read from it, without ever changing what the
- * person is told. The storage path itself is lib/archive.js, shared with the
- * seed script so a seed run proves this code.
- *
- * WHAT IS PASSED: the PDF bytes, the address they came from, the extracted
- * text and the parser's output. Nothing about the person - no IP, no header,
- * no user agent, no session, no account. `event` is deliberately not in scope
- * here, and test/archive-wiring-test.js fails if this function ever names it.
- *
- * WHAT IS KEPT: a lab report, known by two of its three signs - a laboratory
- * the parser recognised, "Certificate of Analysis" in the text, a terpene
- * panel (archive.labReportSigns) - refusals included. One sign is not enough:
- * a receipt or a label can name a lab. What was read goes to Postgres first,
- * then the PDF to Netlify Blobs - unless the database recognised the scan as
- * a copy of a report it already holds, by its text (a portal that builds its
- * PDF at the moment of download), or answered that it keeps nothing: the file
- * was removed by hand and is withheld, or today's cap on new documents is
- * reached. Either write can fail; a failed database still leaves the PDF
- * written, for backfill.
- *
- * HOW IT STAYS OUT OF THE WAY:
- *   - production only (archiveOn): previews and local runs store nothing
- *   - NOSE_DB_URL unset: the database half is a no-op, store.js never loaded
- *   - both writes together get at most ARCHIVE_BUDGET_MS of what is left
- *     before the deadline, and are skipped when less than ARCHIVE_MIN_MS
- *     remains
- *   - every failure is swallowed; the reply never depends on this
- *
- * NOTHING IS LOGGED ON SUCCESS, and a failure logs no detail of the document.
- * Netlify timestamps every log line, and a line naming the report would line
- * a stored scan up with the request logs - the thing the day-only dates in the
- * archive exist to prevent. A withheld file logs nothing at all: a line saying
- * one was scanned again would tie a removed report to a request in those logs.
- * Reaching the daily cap logs one fixed line, with nothing about the report,
- * so a day the archive stopped filling can be seen.
- */
-async function archiveScan(buffer, finalUrl, text, result, deadline){
-  const left = deadline - Date.now();
-  if (left < ARCHIVE_MIN_MS) return { kept: false, reason: 'no time left' };
-  try {
-    const { parserVersion, extractorVersion } = buildInfo();
-    const outcome = await archive.storeScan(
-      { buffer, finalUrl, text, output: result, context: 'production', parserVersion, extractorVersion },
-      { timeoutMs: Math.min(ARCHIVE_BUDGET_MS, left) });
-    if (outcome.failed && outcome.failed.length)
-      console.error('coa: archive incomplete, reply unaffected:', outcome.failed.join('; '));
-    if (outcome.db === archive.DAILY_CAP)
-      console.error('coa: archive at its daily cap - nothing kept, reply unaffected');
-    return outcome;
-  } catch (err) {
-    console.error('coa: archive skipped, reply unaffected:', archive.reason(err));
-    return { kept: false, reason: 'failed' };
-  }
-}
-
-exports.handler = async function(event){
-  if (event.httpMethod === 'OPTIONS')
-    return { statusCode: 204, headers: { 'Allow': 'POST' }, body: '' };
-  if (event.httpMethod !== 'POST')
+async function reply(request, archiveDeadline){
+  if (request.method === 'OPTIONS')
+    return new Response(null, { status: 204, headers: { 'Allow': 'POST' } });
+  if (request.method !== 'POST')
     return json(405, { error: 'Send a POST request with a url.' });
 
-  const archiveDeadline = Date.now() + ARCHIVE_DEADLINE_MS;
-
   let payload;
-  try { payload = JSON.parse(event.body || '{}'); }
-  catch { return json(400, { error: 'Could not read that request.' }); }
+  try { payload = JSON.parse((await request.text()) || '{}'); }
+  catch { return json(400, { error: UNREADABLE }); }
+  if (!isPlainObject(payload)) return json(400, { error: UNREADABLE });
 
   /* The link to a verdict, in lib/read-report.js: each step that fails stops
      the read, with the sentence the person is shown. A stage before the parse
@@ -175,14 +115,12 @@ exports.handler = async function(event){
   /* One call site, covering every outcome below: a usable read, an unusable
      one, and a layout this tool refuses. All three are parses that happened,
      and the refusals are how parser faults get found. Production only.
-     connectBlobs first, or the PDF write fails. Awaited, because this is a
-     Lambda-style function and Netlify freezes it the moment it returns, so an
-     unawaited write would be cut off; bounded, so it can never be what makes
-     a reply late. */
-  if (archiveOn()){
-    connectBlobs(event);
-    await archiveScan(read.buffer, read.finalUrl, read.text, result, archiveDeadline);
-  }
+     Awaited before the reply, as it always was, so the reply still never
+     comes before the archive has finished or given up; bounded, so it can
+     never be what makes a reply late. Handed what was read, never the
+     request. */
+  if (archive.archiveOn())
+    await archive.archiveScan(read.buffer, read.finalUrl, read.text, result, archiveDeadline);
 
   /* Known-unsafe extraction ordering (read-report's UNSAFE_UNDER_UNPDF):
      refused rather than risk reading the wrong column, in a sentence that
@@ -247,8 +185,17 @@ exports.handler = async function(event){
     source: read.finalUrl,
     viaPage: read.viaPage
   });
+}
+
+/* The 9s archive deadline is measured from here, the handler's start. Any
+   throw at all becomes the fixed 500: the reply and the log line say nothing
+   of the request or of the error. */
+export default async (request) => {
+  const archiveDeadline = Date.now() + ARCHIVE_DEADLINE_MS;
+  try {
+    return await reply(request, archiveDeadline);
+  } catch {
+    console.error(FAILED_LINE);
+    return json(500, { error: FAILED });
+  }
 };
-exports._resolvePdfFromPage = resolvePdfFromPage;
-exports._archiveScan = archiveScan;
-exports._archiveOn = archiveOn;
-exports._ARCHIVE_LIMITS = { ARCHIVE_DEADLINE_MS, ARCHIVE_BUDGET_MS, ARCHIVE_MIN_MS };

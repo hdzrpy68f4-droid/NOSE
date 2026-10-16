@@ -13,11 +13,16 @@
  *     configured
  *   - the PDF write and the database write are independent: either one
  *     failing or hanging leaves the other done, within the 2000ms budget
- *   - connectLambda runs before the PDF write
  *   - exactly what is sent: the PDF under its SHA-256 with { sourceUrl,
  *     fetchedAt } and nothing else, the fixed database payload keys, the
  *     address without its query string, a UTC day and never a time, context
- *     "production", nothing from the request, and nothing logged on success
+ *     "production", nothing from the request or Netlify's Context, and
+ *     nothing logged on success
+ *   - coa.js is one default export taking a Request (since 2026-10-16), and
+ *     nothing else: driven here as Netlify calls it, with a Request and a
+ *     Context it must never read; the archive is handed neither; a body that
+ *     is not a JSON object gets the 400, and a throw the fixed 500, with
+ *     nothing of the error in the reply or the one log line
  *   - only lab reports are kept - two of their three signs, never one - and
  *     every real report in the corpus counts, by the signs pinned for it
  *   - the PDF obeys the database: nothing is written for a withheld file or
@@ -36,6 +41,7 @@ const EventEmitter = require('events');
 const fs = require('fs');
 const Module = require('module');
 const path = require('path');
+const { pathToFileURL } = require('url');
 
 const ROOT = path.resolve(__dirname, '..');
 const FN = path.join(ROOT, 'netlify/functions');
@@ -101,6 +107,7 @@ const utcDay = () => new Date().toISOString().slice(0, 10);
 const realParseCoa = require(PARSE).parseCoa;   // kept for the corpus check
 const version = require(path.join(FN, 'lib/version.js'));
 const archive = require(path.join(FN, 'lib/archive.js'));
+const { ARCHIVE_DEADLINE_MS, ARCHIVE_BUDGET_MS, ARCHIVE_MIN_MS } = archive.ARCHIVE_LIMITS;
 
 const PDF = Buffer.concat([Buffer.from('%PDF-1.4\n'), Buffer.alloc(700, 0x20)]);
 const PDF_SHA = crypto.createHash('sha256').update(PDF).digest('hex');
@@ -109,12 +116,18 @@ const NOT_A_REPORT_TEXT = 'Dinner menu. Soup of the day, bread, a glass of water
 const PHRASE_ONLY_TEXT = 'CERTIFICATE OF ANALYSIS - offline wiring test text, no laboratory named. '.repeat(6);
 const SOURCE = 'https://lab.example.com/reports/KAY-TEST-001.pdf?token=abc123&order=98765#page=2';
 const STRIPPED = 'https://lab.example.com/reports/KAY-TEST-001.pdf';
-const EVENT = {
-  httpMethod: 'POST',
-  body: JSON.stringify({ url: SOURCE }),
-  headers: { 'x-nf-client-connection-ip': '203.0.113.9', 'user-agent': 'WiringTestAgent/1.0', cookie: 'nose_session=s3ss10n' }
-};
-const FROM_REQUEST = ['203.0.113.9', 'WiringTestAgent', 's3ss10n', 'abc123', '98765'];
+/* What Netlify hands a function about the person: the request's headers,
+   and a Context carrying their IP address, location and cookies. */
+const REQUEST_HEADERS = { 'content-type': 'application/json', 'x-nf-client-connection-ip': '203.0.113.9',
+                          'user-agent': 'WiringTestAgent/1.0', cookie: 'nose_session=s3ss10n' };
+const FROM_REQUEST = ['203.0.113.9', 'WiringTestAgent', 's3ss10n', 'abc123', '98765', '198.51.100.24', 'Exampleton', 'c00k1e'];
+/* A Context as Netlify hands one, every property read recorded: the handler
+   takes the request alone, so nothing may ever read it. */
+const contextReads = [];
+const CONTEXT = new Proxy({
+  ip: '198.51.100.24', geo: { city: 'Exampleton', country: { code: 'US' } }, requestId: '01REQUEST',
+  cookies: { get: () => 'c00k1e' }, waitUntil: () => {}, site: { id: 'site-id' }, deploy: { context: 'production' }
+}, { get: (t, k) => { contextReads.push(String(k)); return t[k]; }, has: (t, k) => { contextReads.push(String(k)); return k in t; } });
 const USABLE = {
   lab: 'Kaycha Labs', strain: 'Test Strain', batch: 'B-1', labId: 'L-1', harvestDate: null,
   productClass: 'flower', totalTerpenes: 2.1, moisture: 11.2, waterActivity: 0.55, freshnessApplies: true,
@@ -136,33 +149,70 @@ globalThis.fetch = async (url) => { fetchUrl = url; return new Response(PDF, { s
 const PRODUCTION = { parserVersion: 'c0ffee1', extractorVersion: '0123456789ab', deployContext: 'production' };
 version.pin({ ...PRODUCTION, deployContext: 'dev' });
 
-const coa = require(path.join(FN, 'coa.js'));
-const { ARCHIVE_BUDGET_MS, ARCHIVE_MIN_MS } = coa._ARCHIVE_LIMITS;
-const eventFor = url => ({ ...EVENT, body: JSON.stringify({ url }) });
+/* coa.js is ES module syntax in a CommonJS package, as every other function
+   is; Netlify's esbuild bundler compiles it (netlify.toml, node_bundler).
+   Node has to be told, so a one-file hook loads it as a module, as
+   b2b-catalog-test loads b2b-catalog.js. Its lib/ imports are the same
+   CommonJS modules this test holds, stand-ins included. */
+const COA = path.join(FN, 'coa.js');
+let coaModule = null;
+let handler = null;
+async function loadCoa() {
+  const url = pathToFileURL(COA).href;
+  Module.register('data:text/javascript,' + encodeURIComponent(`
+    export async function load(url, context, next) {
+      if (url === ${JSON.stringify(url)}) {
+        const r = await next(url, { ...context, format: 'module' });
+        return { ...r, format: 'module', shortCircuit: true };
+      }
+      return next(url, context);
+    }`));
+  coaModule = await import(url);
+  handler = coaModule.default;
+}
 
-/* Stand-ins that record every call. */
+/* One request as Netlify sends it - a Request, and the Context - and the
+   reply as plain data, so two replies compare whole: status, headers, body. */
+const requestFor = (body, method = 'POST') =>
+  new Request('https://nose-app.com/.netlify/functions/coa',
+              { method, headers: REQUEST_HEADERS, ...(body === undefined ? {} : { body }) });
+async function send(body, method) {
+  const res = await handler(requestFor(body, method), CONTEXT);
+  return { status: res.status, headers: Object.fromEntries(res.headers), body: await res.text() };
+}
+const scan = () => send(JSON.stringify({ url: SOURCE }));
+const scanOf = url => send(JSON.stringify({ url }));
+
+/* Stand-ins that record every call. The PDF store has only what the real one
+   has; anything else asked of it - a connect() the old format needed - is
+   recorded, and nothing may ask. */
 const pdfCalls = [];
-const connects = [];
+const pdfStoreOther = [];
 let pdfBehaviour = () => Promise.resolve({ written: true });
-let connectBehaviour = () => {};
-const fakePdfStore = {
+const fakePdfStore = new Proxy({
   STORE_NAME: 'coa-pdf',
-  connect: event => { connects.push({ event, pdfCallsBefore: pdfCalls.length }); connectBehaviour(event); },
   open: () => ({ fakeBlobStore: true }),
-  put: (store, sha256, bytes, meta) => { pdfCalls.push({ store, sha256, bytes, meta, connectsBefore: connects.length }); return pdfBehaviour(); }
-};
+  put: (store, sha256, bytes, meta) => { pdfCalls.push({ store, sha256, bytes, meta }); return pdfBehaviour(); }
+}, { get: (t, k) => { if (!(k in t) && typeof k === 'string') pdfStoreOther.push(k); return t[k]; } });
 const calls = [];
 let saveBehaviour = () => Promise.resolve({ parseWritten: true });
 const fakeStore = { saveScan: (payload, opts) => { calls.push({ payload, opts }); return saveBehaviour(); } };
 
 const reset = () => {
-  pdfCalls.length = 0; connects.length = 0; calls.length = 0;
+  pdfCalls.length = 0; calls.length = 0;
   pdfBehaviour = () => Promise.resolve({ written: true });
-  connectBehaviour = () => {};
   saveBehaviour = () => Promise.resolve({ parseWritten: true });
 };
 
+/* The three headers every JSON reply carries, and the two fixed bodies. */
+const JSON_HEADERS = { 'cache-control': 'no-store', 'content-type': 'application/json', 'x-content-type-options': 'nosniff' };
+const UNREADABLE = { status: 400, headers: JSON_HEADERS, body: '{"error":"Could not read that request."}' };
+const FAILED = { status: 500, headers: JSON_HEADERS, body: '{"error":"The report reader failed. Try again, or enter the values manually."}' };
+const FAILED_LINE = 'coa: the report reader failed - a fixed 500 sent, no detail logged';
+
 async function main() {
+  await loadCoa();
+
   /* --- only production stores anything ------------------------------------- */
 
   let baseline, baselineUnusable;
@@ -170,27 +220,28 @@ async function main() {
   /* 'dev' is pinned here; test/archive-scripts-test.js proves that a missing
      or broken build-info.json reads as 'dev' in the first place. */
   await test('dev context: a normal reply, nothing stored, no storage code loaded, nothing logged', async () => {
-    const { value, lines } = await quietly(() => coa.handler(EVENT));
+    const { value, lines } = await quietly(() => scan());
     baseline = value;
-    assert.strictEqual(value.statusCode, 200);
-    assert.strictEqual(coa._archiveOn(), false);
+    assert.strictEqual(value.status, 200);
+    assert.deepStrictEqual(value.headers, JSON_HEADERS);
+    assert.strictEqual(archive.archiveOn(), false);
     assert.ok(!(PDF_STORE in require.cache), 'pdf-store.js was loaded');
     assert.ok(!(STORE in require.cache), 'store.js was loaded');
     assert.ok(!loaded('pg'), 'pg was loaded');
     assert.ok(!loaded(path.join('@netlify', 'blobs')), '@netlify/blobs was loaded');
     assert.deepStrictEqual(lines, []);
     parseResult = UNUSABLE;
-    baselineUnusable = (await quietly(() => coa.handler(EVENT))).value;
+    baselineUnusable = (await quietly(() => scan())).value;
     parseResult = USABLE;
-    assert.strictEqual(baselineUnusable.statusCode, 422);
+    assert.strictEqual(baselineUnusable.status, 422);
   });
 
   await test('deploy previews and branch deploys store nothing - they share the site\'s Blobs store', async () => {
     for (const deployContext of ['deploy-preview', 'branch-deploy']) {
       version.pin({ ...PRODUCTION, deployContext });
-      const { value, lines } = await quietly(() => coa.handler(EVENT));
+      const { value, lines } = await quietly(() => scan());
       assert.deepStrictEqual(value, baseline, deployContext);
-      assert.strictEqual(coa._archiveOn(), false, deployContext);
+      assert.strictEqual(archive.archiveOn(), false, deployContext);
       assert.deepStrictEqual(lines, [], deployContext);
     }
     assert.ok(!(PDF_STORE in require.cache) && !(STORE in require.cache), 'storage code was loaded');
@@ -201,7 +252,7 @@ async function main() {
 
   await test('production without NOSE_DB_URL: the PDF is kept, the database half is a no-op, store.js never loads', async () => {
     reset();
-    const { value, lines } = await quietly(() => coa.handler(EVENT));
+    const { value, lines } = await quietly(() => scan());
     assert.deepStrictEqual(value, baseline);
     assert.strictEqual(pdfCalls.length, 1);
     assert.ok(!(STORE in require.cache), 'store.js was loaded');
@@ -218,15 +269,13 @@ async function main() {
   process.env.NOSE_DB_URL = fakeUrl.toString();
 
   let pdfSent, sent;
-  await test('both writes succeed: the same reply, one PDF write, one save, connectLambda first, nothing logged', async () => {
+  await test('both writes succeed: the same reply, one PDF write, one save, no connect step, nothing logged', async () => {
     reset();
-    const { value, lines } = await quietly(() => coa.handler(EVENT));
+    const { value, lines } = await quietly(() => scan());
     assert.deepStrictEqual(value, baseline);
     assert.strictEqual(pdfCalls.length, 1);
     assert.strictEqual(calls.length, 1);
-    assert.strictEqual(connects.length, 1);
-    assert.strictEqual(connects[0].pdfCallsBefore, 0, 'the PDF write started before connectLambda');
-    assert.strictEqual(pdfCalls[0].connectsBefore, 1);
+    assert.deepStrictEqual(pdfStoreOther, [], 'the PDF store was asked for more than open and put');
     assert.deepStrictEqual(lines, [], 'a successful write logged something');
     pdfSent = pdfCalls[0];
     sent = calls[0];
@@ -259,15 +308,30 @@ async function main() {
     assert.strictEqual(ARCHIVE_BUDGET_MS, 2000);
   });
 
-  await test('nothing from the request reaches either write; only connectLambda sees the event', async () => {
+  /* The archive never sees the person: not the old format's `event`, and,
+     since 2026-10-16, not the request and not Netlify's Context either. A
+     scan's own `context` field is the deploy context, 'production' here, and
+     the one way the word may appear in lib/archive.js: as a field, never a
+     parameter, never something read from. */
+  await test('nothing from the request or the Context reaches either write; the archive is handed neither, and never names the event', async () => {
     const all = JSON.stringify({ pdf: { ...pdfSent, bytes: undefined }, db: sent });
     for (const s of FROM_REQUEST) assert.ok(!all.includes(s), `"${s}" was sent`);
-    assert.strictEqual(connects[0].event, EVENT, 'connectLambda did not get the event');
-    const src = coa._archiveScan.toString();
-    assert.ok(!/\bevent\b/.test(src), 'archiveScan names `event`');
-    assert.ok(!/headers|cookie|user-?agent/i.test(src), 'archiveScan reads request details');
-    const lib = fs.readFileSync(path.join(FN, 'lib/archive.js'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
-    assert.ok(!/\bevent\b|headers|cookie|user-?agent/i.test(lib), 'lib/archive.js reads request details');
+    const src = archive.archiveScan.toString();
+    assert.match(src, /^async function archiveScan\(buffer, finalUrl, text, result, deadline\)\{/, 'archiveScan takes something new');
+    assert.ok(!/\b(event|request|req|ctx)\b/.test(src), 'archiveScan names the event or the request');
+    assert.ok(!/\bcontext\b/.test(src.replace("context: 'production'", '')), 'archiveScan names a context other than its field');
+    assert.ok(!/headers|cookie|user-?agent|\bgeo\b|\.ip\b|waitUntil/i.test(src), 'archiveScan reads request details');
+    const lib = fs.readFileSync(path.join(FN, 'lib/archive.js'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+    assert.ok(!/\b(event|request|req|ctx)\b|headers|cookie|user-?agent|\bgeo\b|\.ip\b|waitUntil/i.test(lib), 'lib/archive.js reads request details');
+    assert.ok(!/\bcontext\s*[.[(]|\[\s*['"]context/.test(lib), 'lib/archive.js reads something off a context');
+    const params = [];
+    for (const m of lib.matchAll(/\bfunction\s*\w*\s*\(([^)]*)\)/g)) params.push(...m[1].split(','));
+    for (const m of lib.matchAll(/(?:^|[=(,:]\s*)(?:async\s*)?\(([^()]*)\)\s*=>/gm)) params.push(...m[1].split(','));
+    for (const m of lib.matchAll(/(?:^|[=(,:]\s*)(?:async\s+)?(\w+)\s*=>/gm)) params.push(m[1]);
+    const names = params.map(p => p.replace(/[{}[\]]/g, '').split('=')[0].trim()).filter(Boolean);
+    for (const n of ['buffer', 'finalUrl', 'deadline', 'output', 'err', 'signs']) assert.ok(names.includes(n), `the parameter scan missed "${n}"`);
+    assert.deepStrictEqual(names.filter(n => /^(event|request|req|context|ctx)$/.test(n)), [], 'a function in lib/archive.js takes the person\'s request or context');
+    assert.deepStrictEqual(contextReads, [], `the Context was read: ${contextReads.join(', ')}`);
   });
 
   await test('a presigned link: X-Amz-*, Signature and Expires are gone from both writes', async () => {
@@ -279,7 +343,7 @@ async function main() {
     ];
     for (const url of signed) {
       reset();
-      await quietly(() => coa.handler(eventFor(url)));
+      await quietly(() => scanOf(url));
       assert.strictEqual(fetchUrl, url, 'the fetch itself must use the full link');
       const u = new URL(url);
       assert.strictEqual(pdfCalls[0].meta.sourceUrl, u.origin + u.pathname);
@@ -300,7 +364,7 @@ async function main() {
   await test('the PDF write fails: the same reply, the database write still made, one log line with no detail', async () => {
     reset();
     pdfBehaviour = () => Promise.reject(new Error(`Netlify Blobs refused ${PDF_SHA} from ${SOURCE}`));
-    const { value, lines } = await quietly(() => coa.handler(EVENT));
+    const { value, lines } = await quietly(() => scan());
     assert.deepStrictEqual(value, baseline);
     assert.strictEqual(calls.length, 1, 'the database write depended on the PDF write');
     assert.strictEqual(lines.length, 1, `logged: ${JSON.stringify(lines)}`);
@@ -311,7 +375,7 @@ async function main() {
   await test('the database write fails: the same reply, the PDF still kept, one log line with no detail', async () => {
     reset();
     saveBehaviour = () => Promise.reject(new Error('connect ECONNREFUSED 10.1.2.3:6543 aws-0-us-east-1.pooler.supabase.com'));
-    const { value, lines } = await quietly(() => coa.handler(EVENT));
+    const { value, lines } = await quietly(() => scan());
     assert.deepStrictEqual(value, baseline);
     assert.strictEqual(pdfCalls.length, 1, 'the PDF write depended on the database write');
     assert.strictEqual(lines.length, 1, `logged: ${JSON.stringify(lines)}`);
@@ -324,7 +388,7 @@ async function main() {
     reset();
     pdfBehaviour = () => Promise.reject(new Error('blobs down'));
     saveBehaviour = () => Promise.reject(new Error('database down'));
-    const { value, lines } = await quietly(() => coa.handler(EVENT));
+    const { value, lines } = await quietly(() => scan());
     assert.deepStrictEqual(value, baseline);
     assert.strictEqual(lines.length, 1, `logged: ${JSON.stringify(lines)}`);
     assert.match(lines[0], /pdf:.*database:/);
@@ -342,7 +406,7 @@ async function main() {
         pdfBehaviour = () => Promise.resolve({ written: true }).then(r => { otherDone = true; return r; });
       }
       const t0 = Date.now();
-      const { value, lines } = await quietly(() => coa.handler(EVENT), ARCHIVE_BUDGET_MS + 1500);
+      const { value, lines } = await quietly(() => scan(), ARCHIVE_BUDGET_MS + 1500);
       const took = Date.now() - t0;
       assert.deepStrictEqual(value, baseline);
       assert.ok(took < ARCHIVE_BUDGET_MS + 400, `the reply took ${took}ms`);
@@ -357,7 +421,7 @@ async function main() {
     pdfBehaviour = () => new Promise(() => {});
     saveBehaviour = () => new Promise(() => {});
     const t0 = Date.now();
-    const { value, lines } = await quietly(() => coa.handler(EVENT), 2 * ARCHIVE_BUDGET_MS + 1500);
+    const { value, lines } = await quietly(() => scan(), 2 * ARCHIVE_BUDGET_MS + 1500);
     const took = Date.now() - t0;
     assert.deepStrictEqual(value, baseline);
     assert.ok(took < ARCHIVE_BUDGET_MS + 400, `the reply took ${took}ms - were the writes run one after the other?`);
@@ -369,7 +433,7 @@ async function main() {
     pdfBehaviour = () => new Promise(() => {});
     saveBehaviour = () => new Promise(() => {});
     const t0 = Date.now();
-    const { value } = await quietly(() => coa._archiveScan(PDF, SOURCE, TEXT, USABLE, t0 + 800), 3000);
+    const { value } = await quietly(() => archive.archiveScan(PDF, SOURCE, TEXT, USABLE, t0 + 800), 3000);
     const took = Date.now() - t0;
     assert.ok(took < 800 + 300, `took ${took}ms with 800ms left`);
     assert.strictEqual(calls.length, 1);
@@ -381,7 +445,7 @@ async function main() {
     reset();
     pdfBehaviour = () => Promise.resolve({ written: false });
     saveBehaviour = () => Promise.resolve({ parseWritten: false });
-    const { value, lines } = await quietly(() => coa.handler(EVENT));
+    const { value, lines } = await quietly(() => scan());
     assert.deepStrictEqual(value, baseline);
     assert.deepStrictEqual(lines, []);
   });
@@ -394,7 +458,7 @@ async function main() {
     saveBehaviour = () => new Promise(r => setTimeout(() => { answered = true; r({ documentId: 5, documentWritten: true, matchedBy: 'new', parseWritten: true }); }, 40));
     let answeredAtPut = null;
     pdfBehaviour = () => { answeredAtPut = answered; return Promise.resolve({ written: true }); };
-    const { value, lines } = await quietly(() => coa.handler(EVENT));
+    const { value, lines } = await quietly(() => scan());
     assert.deepStrictEqual(value, baseline);
     assert.strictEqual(answeredAtPut, true, 'the PDF write started before the database answered');
     assert.deepStrictEqual(lines, []);
@@ -403,12 +467,12 @@ async function main() {
   await test('a copy - the database matched an earlier document by its text: no PDF written, the same reply, nothing logged', async () => {
     reset();
     saveBehaviour = () => Promise.resolve({ documentId: 7, documentWritten: false, matchedBy: 'text', parseWritten: false });
-    const { value, lines } = await quietly(() => coa.handler(EVENT));
+    const { value, lines } = await quietly(() => scan());
     assert.deepStrictEqual(value, baseline);
     assert.strictEqual(calls.length, 1);
     assert.strictEqual(pdfCalls.length, 0, 'the copy\'s PDF was kept');
     assert.deepStrictEqual(lines, [], 'a copy is not a failure');
-    const out = (await quietly(() => coa._archiveScan(PDF, SOURCE, TEXT, USABLE, Date.now() + 5000))).value;
+    const out = (await quietly(() => archive.archiveScan(PDF, SOURCE, TEXT, USABLE, Date.now() + 5000))).value;
     assert.deepStrictEqual([out.kept, out.pdf, out.db, out.copyOf, out.failed], [true, 'copy, not kept', 'copy, nothing new', 7, []]);
   });
 
@@ -419,7 +483,7 @@ async function main() {
     await test(`the database stored ${what}: the PDF is written`, async () => {
       reset();
       saveBehaviour = () => Promise.resolve(answer);
-      const out = (await quietly(() => coa._archiveScan(PDF, SOURCE, TEXT, USABLE, Date.now() + 5000))).value;
+      const out = (await quietly(() => archive.archiveScan(PDF, SOURCE, TEXT, USABLE, Date.now() + 5000))).value;
       assert.strictEqual(pdfCalls.length, 1);
       assert.strictEqual(pdfCalls[0].sha256, PDF_SHA);
       assert.deepStrictEqual([out.pdf, out.copyOf, out.failed], ['written', null, []]);
@@ -429,7 +493,7 @@ async function main() {
   await test('the database down: the PDF is still written, for backfill to save later', async () => {
     reset();
     saveBehaviour = () => Promise.reject(new Error('database down'));
-    const out = (await quietly(() => coa._archiveScan(PDF, SOURCE, TEXT, USABLE, Date.now() + 5000))).value;
+    const out = (await quietly(() => archive.archiveScan(PDF, SOURCE, TEXT, USABLE, Date.now() + 5000))).value;
     assert.strictEqual(pdfCalls.length, 1);
     assert.deepStrictEqual([out.kept, out.pdf, out.db], [true, 'written', 'failed']);
   });
@@ -440,24 +504,26 @@ async function main() {
     const t0 = Date.now();
     let startedAt = null;
     pdfBehaviour = () => { startedAt = Date.now() - t0; return Promise.resolve({ written: true }); };
-    const out = (await quietly(() => coa._archiveScan(PDF, SOURCE, TEXT, USABLE, t0 + 5000))).value;
+    const out = (await quietly(() => archive.archiveScan(PDF, SOURCE, TEXT, USABLE, t0 + 5000))).value;
     assert.ok(calls[0].opts.timeoutMs === ARCHIVE_BUDGET_MS * archive.DATABASE_SHARE, `database timeoutMs ${calls[0].opts.timeoutMs}`);
     assert.ok(startedAt !== null && startedAt < ARCHIVE_BUDGET_MS * archive.DATABASE_SHARE + 150, `the PDF write started at ${startedAt}ms`);
     assert.deepStrictEqual([out.pdf, out.db], ['written', 'failed']);
   });
 
-  await test('connectLambda throwing does not stop the database write or change the reply', async () => {
+  await test('no connect step: a production scan asks the PDF store for open and put alone, the database write as before', async () => {
     reset();
-    connectBehaviour = () => { throw new Error('no blobs context in this event'); };
-    const { value } = await quietly(() => coa.handler(EVENT));
+    const { value } = await quietly(() => scan());
     assert.deepStrictEqual(value, baseline);
     assert.strictEqual(calls.length, 1);
+    assert.strictEqual(pdfCalls.length, 1);
+    assert.deepStrictEqual(pdfStoreOther, [], `the PDF store was asked for ${pdfStoreOther.join(', ')}`);
+    assert.ok(!('connect' in require(PDF_STORE)), 'the stand-in grew a connect()');
   });
 
   await test('an unusable read is still kept in both places, and its reply is unchanged', async () => {
     reset();
     parseResult = UNUSABLE;
-    const { value } = await quietly(() => coa.handler(EVENT));
+    const { value } = await quietly(() => scan());
     parseResult = USABLE;
     assert.deepStrictEqual(value, baselineUnusable);
     assert.strictEqual(pdfCalls.length, 1);
@@ -471,7 +537,7 @@ async function main() {
     assert.strictEqual(plain.usable, true);
     assert.deepStrictEqual(plain.novelty, [], 'a result with no novelty field must reply []');
     parseResult = { ...USABLE, novelty: ['heading not known: "Conc."'] };
-    const { value } = await quietly(() => coa.handler(EVENT));
+    const { value } = await quietly(() => scan());
     parseResult = USABLE;
     assert.deepStrictEqual(JSON.parse(value.body).novelty, ['heading not known: "Conc."']);
     assert.ok(!('novelty' in JSON.parse(baselineUnusable.body)), 'a refusal is not a card, so it carries no novelty');
@@ -481,7 +547,7 @@ async function main() {
     reset();
     parseResult = NOT_A_REPORT;
     textResult = NOT_A_REPORT_TEXT;
-    await quietly(() => coa.handler(EVENT));
+    await quietly(() => scan());
     parseResult = USABLE;
     textResult = TEXT;
     assert.strictEqual(pdfCalls.length, 0, 'the PDF was kept');
@@ -500,7 +566,7 @@ async function main() {
       reset();
       parseResult = output;
       textResult = text;
-      const { lines } = await quietly(() => coa.handler(EVENT));
+      const { lines } = await quietly(() => scan());
       parseResult = USABLE;
       textResult = TEXT;
       assert.strictEqual(pdfCalls.length, 0, 'the PDF was kept');
@@ -518,7 +584,7 @@ async function main() {
       reset();
       parseResult = output;
       textResult = text;
-      await quietly(() => coa.handler(EVENT));
+      await quietly(() => scan());
       parseResult = USABLE;
       textResult = TEXT;
       assert.strictEqual(pdfCalls.length, 1);
@@ -553,12 +619,12 @@ async function main() {
     reset();
     saveBehaviour = () => Promise.resolve({ withheld: true, documentId: null, documentWritten: false, matchedBy: null,
                                             extractionId: null, extractionWritten: false, parseId: null, parseWritten: false });
-    const { value, lines } = await quietly(() => coa.handler(EVENT));
+    const { value, lines } = await quietly(() => scan());
     assert.deepStrictEqual(value, baseline);
     assert.strictEqual(calls.length, 1);
     assert.strictEqual(pdfCalls.length, 0, 'the PDF of a withheld file was written');
     assert.deepStrictEqual(lines, [], 'a withheld file was logged - that would tie a removed report to a request');
-    const out = (await quietly(() => coa._archiveScan(PDF, SOURCE, TEXT, USABLE, Date.now() + 5000))).value;
+    const out = (await quietly(() => archive.archiveScan(PDF, SOURCE, TEXT, USABLE, Date.now() + 5000))).value;
     assert.deepStrictEqual([out.kept, out.reason, out.pdf, out.db, out.copyOf, out.failed], [false, 'withheld', 'not kept', 'withheld', null, []]);
   });
 
@@ -566,12 +632,12 @@ async function main() {
     reset();
     saveBehaviour = () => Promise.resolve({ capped: true, documentId: null, documentWritten: false, matchedBy: null,
                                             extractionId: null, extractionWritten: false, parseId: null, parseWritten: false });
-    const { value, lines } = await quietly(() => coa.handler(EVENT));
+    const { value, lines } = await quietly(() => scan());
     assert.deepStrictEqual(value, baseline);
     assert.strictEqual(pdfCalls.length, 0, 'the PDF was written above the cap');
     assert.deepStrictEqual(lines, ['coa: archive at its daily cap - nothing kept, reply unaffected']);
     noDetail(lines[0]);
-    const out = (await quietly(() => coa._archiveScan(PDF, SOURCE, TEXT, USABLE, Date.now() + 5000))).value;
+    const out = (await quietly(() => archive.archiveScan(PDF, SOURCE, TEXT, USABLE, Date.now() + 5000))).value;
     assert.deepStrictEqual([out.kept, out.reason, out.pdf, out.db, out.failed], [false, 'daily cap', 'not kept', 'daily cap', []]);
   });
 
@@ -583,11 +649,12 @@ async function main() {
     assert.strictEqual(pdfCalls.length, 0);
   });
 
-  await test('the call site: after parseCoa, before the refusals, production only, connectBlobs first, once', async () => {
+  await test('the call site: after parseCoa, before the refusals, production only, once, the deadline from the handler\'s start', async () => {
     /* Since 2026-10-16 the steps up to the verdict are lib/read-report.js,
        where `parsed` turns true only once parseCoa has returned, before the
        unsafe-layout check; coa.js returns before the archive unless it did,
-       and replies with a refusal only after it. */
+       and replies with a refusal only after it. archiveScan, archiveOn and
+       their limits are lib/archive.js's since the same day. */
     const rr = fs.readFileSync(path.join(FN, 'lib/read-report.js'), 'utf8');
     const rrParse = rr.indexOf('output = parse(text);');
     const rrParsed = rr.indexOf('read.parsed = true;');
@@ -595,26 +662,98 @@ async function main() {
     assert.ok(rrParse > 0 && rrParsed > rrParse && rrUnsafe > rrParsed,
       `read-report: parse ${rrParse}, parsed ${rrParsed}, unsafe ${rrUnsafe}`);
     assert.ok(!/archiveScan|storeScan|lib\/archive|pdf-store/.test(rr.replace(/\/\*[\s\S]*?\*\//g, '')), 'read-report reaches the archive');
-    const src = fs.readFileSync(path.join(FN, 'coa.js'), 'utf8');
+    const src = fs.readFileSync(COA, 'utf8');
+    const start = src.indexOf('export default async (request) => {\n  const archiveDeadline = Date.now() + ARCHIVE_DEADLINE_MS;\n  try {\n    return await reply(request, archiveDeadline);');
     const read = src.indexOf('const read = await readReport(payload.url);');
     const parsed = src.indexOf('if (!read.parsed) return json(422, { error: read.sentence });', read);
-    const gate = src.indexOf('if (archiveOn()){');
-    const connect = src.indexOf('connectBlobs(event);', gate);
-    const call = src.indexOf('await archiveScan(read.buffer, read.finalUrl, read.text, result, archiveDeadline);');
+    const gate = src.indexOf('if (archive.archiveOn())', parsed);
+    const call = src.indexOf('await archive.archiveScan(read.buffer, read.finalUrl, read.text, result, archiveDeadline);', gate);
     const refusals = src.indexOf('if (read.stage === STAGES.unsafe){');
-    assert.ok(read > 0 && parsed > read && gate > parsed && connect > gate && call > connect && refusals > call,
-      `read ${read}, parsed ${parsed}, gate ${gate}, connect ${connect}, call ${call}, refusals ${refusals}`);
+    assert.ok(start > 0 && read > 0 && parsed > read && gate > parsed && call > gate && refusals > call,
+      `start ${start}, read ${read}, parsed ${parsed}, gate ${gate}, call ${call}, refusals ${refusals}`);
     assert.strictEqual(src.split('readReport(').length - 1, 1, 'more than one read');
-    assert.strictEqual(src.split('await archiveScan(').length - 1, 1, 'more than one call site');
-    assert.ok(/const archiveOn = \(\) => buildInfo\(\)\.deployContext === 'production';/.test(src), 'the production gate changed');
-    assert.ok(/exports\.handler = async function\(event\)/.test(src), 'coa.js is no longer a Lambda-style handler');
+    assert.strictEqual(src.split('archiveScan(').length - 1, 1, 'more than one call site');
+    assert.strictEqual(ARCHIVE_DEADLINE_MS, 9000);
+    assert.strictEqual(ARCHIVE_MIN_MS, 300);
+    const lib = fs.readFileSync(path.join(FN, 'lib/archive.js'), 'utf8');
+    assert.ok(/const archiveOn = \(\) => buildInfo\(\)\.deployContext === 'production';/.test(lib), 'the production gate changed');
+  });
+
+  /* Until 2026-10-16 this checked the opposite: that coa.js was still an
+     exports.handler function, the format Netlify stops accepting on July 1,
+     2027 (PARSER-HANDOFF s13, "coa.js in the current format"). */
+  await test('coa.js has one default export and nothing else: a function of the request alone, in the current format', async () => {
+    assert.deepStrictEqual(Object.keys(coaModule), ['default']);
+    assert.strictEqual(typeof handler, 'function');
+    assert.strictEqual(handler.length, 1, 'the handler takes a second argument - the Context');
+    const code = fs.readFileSync(COA, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+    assert.strictEqual(code.split(/\bexport\b/).length - 1, 1, 'more than one export');
+    assert.ok(code.includes('export default async (request) => {'), 'not a default export of the request');
+    assert.ok(!/\bexports\b|\bmodule\b|\brequire\(|connectLambda|connectBlobs|\bevent\b/.test(code), 'something of the old format is left');
+    assert.ok(!/\bcontext\b|\bctx\b|request\.(headers|url|signal)|headers\.get|cookie|user-?agent|\bgeo\b|\.ip\b|x-nf-|waitUntil/i.test(code),
+      'coa.js reads something about the caller');
+    assert.deepStrictEqual([...code.matchAll(/^import \w+ from '(\.\/lib\/[\w-]+\.js)';$/gm)].map(m => m[1]),
+      ['./lib/read-report.js', './lib/archive.js'], 'its imports changed');
+    assert.deepStrictEqual(contextReads, [], `the Context was read: ${contextReads.join(', ')}`);
+  });
+
+  /* --- requests it cannot read, and a failure (security audit #5) --------------- */
+
+  await test('a body that is not a JSON object - null, an array, a string, a number, true - gets the same 400 as one that is not JSON', async () => {
+    reset();
+    fetchUrl = null;
+    for (const body of ['null', '[]', '"a bare string"', '42', 'true', '[{"url":"https://lab.example.com/r.pdf"}]', '{url: nope']) {
+      const { value, lines } = await quietly(() => send(body));
+      assert.deepStrictEqual(value, UNREADABLE, body);
+      assert.deepStrictEqual(lines, [], body);
+    }
+    assert.deepStrictEqual([fetchUrl, pdfCalls.length, calls.length], [null, 0, 0], 'an unreadable request was fetched or kept');
+  });
+
+  await test('{} - no url - still gets the link sentence; a link its 200, as before; OPTIONS 204 with Allow: POST; GET 405', async () => {
+    reset();
+    const none = (await quietly(() => send('{}'))).value;
+    assert.deepStrictEqual(none, { status: 400, headers: JSON_HEADERS, body: '{"error":"That is not a valid web address."}' });
+    assert.deepStrictEqual((await quietly(() => scan())).value, baseline);
+    const options = (await quietly(() => send(undefined, 'OPTIONS'))).value;
+    assert.deepStrictEqual(options, { status: 204, headers: { allow: 'POST' }, body: '' });
+    const get = (await quietly(() => send(undefined, 'GET'))).value;
+    assert.deepStrictEqual(get, { status: 405, headers: JSON_HEADERS, body: '{"error":"Send a POST request with a url."}' });
+  });
+
+  await test('a throw anywhere - in the read, or after the archive - is the fixed 500 and one fixed line, nothing of the error in either', async () => {
+    const SECRET = `boom ${SOURCE} ${PDF_SHA} 203.0.113.9 Kaycha`;
+    const throwing = [
+      ['inside the read, before the archive', { get usable() { throw new Error(SECRET); }, lab: 'Kaycha Labs', terps: {} }],
+      ['after the archive, building the reply', null]
+    ];
+    version.pin({ ...PRODUCTION, deployContext: 'dev' });
+    for (const [where, output] of throwing) {
+      reset();
+      parseResult = output;
+      const { value, lines } = await quietly(() => scan());
+      parseResult = USABLE;
+      assert.deepStrictEqual(value, FAILED, where);
+      assert.deepStrictEqual(lines, [FAILED_LINE], where);
+      const said = value.body + lines.join('\n');
+      for (const s of ['boom', 'lab.example.com', 'KAY-TEST-001', PDF_SHA, '203.0.113.9', 'TypeError', 'null', 'Kaycha', 'at '])
+        assert.ok(!said.includes(s), `${where}: "${s}" in the reply or the line`);
+    }
+    /* In production the second one reaches the archive first, as every
+       parsed read does, and nothing is kept: a null reading shows no sign. */
+    version.pin(PRODUCTION);
+    reset();
+    parseResult = null;
+    const { value, lines } = await quietly(() => scan());
+    parseResult = USABLE;
+    assert.deepStrictEqual([value, lines, pdfCalls.length, calls.length], [FAILED, [FAILED_LINE], 0, 0]);
   });
 
   /* --- the guards -------------------------------------------------------------- */
 
   await test('too little time left: skipped without touching either store', async () => {
     reset();
-    const r = await coa._archiveScan(PDF, SOURCE, TEXT, USABLE, Date.now() + ARCHIVE_MIN_MS - 50);
+    const r = await archive.archiveScan(PDF, SOURCE, TEXT, USABLE, Date.now() + ARCHIVE_MIN_MS - 50);
     assert.deepStrictEqual(r, { kept: false, reason: 'no time left' });
     assert.strictEqual(pdfCalls.length + calls.length, 0);
   });
@@ -820,9 +959,10 @@ async function main() {
     assert.deepStrictEqual(bySigns['lab + phrase'], ['Harmony-Muscle-Rub-COA-PHRO1']);
   });
 
-  await test('no unhandled rejection anywhere in the run', async () => {
+  await test('no unhandled rejection anywhere in the run, and the Context never read by any request of it', async () => {
     await sleep(20);
     assert.strictEqual(unhandled.length, 0, `unhandled: ${unhandled.map(e => e && e.message)}`);
+    assert.deepStrictEqual(contextReads, [], `the Context was read: ${contextReads.join(', ')}`);
   });
 
   finished = true;

@@ -48,6 +48,7 @@ const Module = require('module');
 const os = require('os');
 const path = require('path');
 const { spawnSync } = require('child_process');
+const { pathToFileURL } = require('url');
 
 const ROOT = path.resolve(__dirname, '..');
 const LIB = path.join(ROOT, 'netlify/functions/lib');
@@ -393,13 +394,27 @@ async function main() {
   delete require.cache[ARCHIVE];
   delete require.cache[PDF_STORE];
   version.pin({ parserVersion: 'dev', extractorVersion: 'dev', deployContext: 'dev' });
-  const coa = require(COA);
+  /* coa.js is one default export taking a Request, since 2026-10-16: ES
+     module syntax in a CommonJS package, loaded as a module by a one-file
+     hook, as b2b-catalog-test loads b2b-catalog.js. */
+  const coaUrl = pathToFileURL(COA).href;
+  Module.register('data:text/javascript,' + encodeURIComponent(`
+    export async function load(url, context, next) {
+      if (url === ${JSON.stringify(coaUrl)}) {
+        const r = await next(url, { ...context, format: 'module' });
+        return { ...r, format: 'module', shortCircuit: true };
+      }
+      return next(url, context);
+    }`));
+  const coaModule = await import(coaUrl);
+  const coa = coaModule.default;
   const handlerSays = async url => {
     const saved = globalThis.fetch;
     globalThis.fetch = standInFetch;
     try {
-      const reply = await coa.handler({ httpMethod: 'POST', headers: {}, body: JSON.stringify({ url }) });
-      return JSON.parse(reply.body);
+      const reply = await coa(new Request('https://nose-app.com/.netlify/functions/coa',
+        { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url }) }));
+      return JSON.parse(await reply.text());
     } finally { globalThis.fetch = saved; }
   };
   const said = {};
@@ -502,7 +517,17 @@ async function main() {
 
   /* ===================================== one chain, and the scanner's steps */
   const fr = require(FETCH_REPORT);
-  check('coa.js\'s _resolvePdfFromPage is fetch-report.js\'s own function, not a copy', coa._resolvePdfFromPage === fr.resolvePdfFromPage, true);
+  /* Until 2026-10-16 coa.js exported _resolvePdfFromPage, fetch-report.js's
+     own function, for the resolver's other callers. It exports its default
+     alone now, and they take the function from fetch-report.js itself. */
+  const codeOf = src => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+  check('coa.js, one default export, names none of the fetch chain; the resolver\'s three other callers take it from lib/fetch-report.js',
+    [Object.keys(coaModule), /\b(validateUrl|isBlockedHost|fetchOnce|fetchPdf|resolvePdfFromPage)\b|fetch-report/.test(codeOf(fs.readFileSync(COA, 'utf8'))),
+     ['test/resolver-test.js', 'test/duplicates-test.js', 'scripts/download-twice.js'].map(f => {
+       const c = codeOf(fs.readFileSync(path.join(ROOT, f), 'utf8'));
+       return /\{ resolvePdfFromPage(: resolve)? \} = require\((path\.join\(LIB, 'fetch-report\.js'\)|'\.\.\/netlify\/functions\/lib\/fetch-report')\)/.test(c) && !/(?<![-\w])coa(\.js)?'/.test(c);
+     })],
+    [['default'], false, [true, true, true]]);
   const CHAIN = /\bfunction\s+(validateUrl|isBlockedHost|fetchOnce|fetchPdf|resolvePdfFromPage)\s*\(/;
   const holders = [];
   (function walk(dir) {
@@ -530,7 +555,7 @@ async function main() {
   const scriptSrc = fs.readFileSync(SCRIPT, 'utf8');
   const sentences = [...Object.values(rr.SCANNER), ...rr.unsafeSentence('').split(/\s+(?=Enter|this tool)/).map(s => s.replace(/^ /, ''))];
   check('coa.js and the script both read by lib/read-report.js, and neither restates a sentence, the text floor or the unsafe list',
-    [/require\('\.\/lib\/read-report'\)/.test(coaSrc), /require\(path\.join\(LIB, 'read-report\.js'\)\)/.test(scriptSrc),
+    [/^import report from '\.\/lib\/read-report\.js';$/m.test(coaSrc), /require\(path\.join\(LIB, 'read-report\.js'\)\)/.test(scriptSrc),
      cov.SCANNER === rr.SCANNER && cov.MIN_TEXT === rr.MIN_TEXT, rr.MIN_TEXT, sentences.length,
      [coaSrc, scriptSrc].map(src => sentences.filter(s => src.includes(s)).length),
      [coaSrc, scriptSrc].map(src => /text\.length\s*</.test(src) || /\bMIN_TEXT\s*=/.test(src) || /UNSAFE_UNDER_UNPDF\s*=/.test(src))],

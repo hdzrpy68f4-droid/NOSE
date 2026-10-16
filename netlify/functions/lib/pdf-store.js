@@ -31,16 +31,13 @@ const DAY = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
 
 const blobs = () => require('@netlify/blobs');
 
-/* A Lambda-style function (exports.handler) is not handed the Blobs context
- * automatically: without this, every write fails. connectLambda reads
- * event.blobs and the x-nf-site-id / x-nf-deploy-id headers - which site and
- * deploy, never who is asking - and keeps nothing else. */
-function connect(event) {
-  blobs().connectLambda(event);
-}
-
-/* Inside a function, after connect(): no arguments. From a Codespace script:
- * the site's ID and a Netlify personal access token. */
+/* Inside a function: no arguments. A function written as a default export
+ * taking a Request - coa.js, since 2026-10-16, as every other function of
+ * NOSE's - is handed its Blobs context by Netlify, so nothing connects first;
+ * until then coa.js was the one exports.handler function and called
+ * connectLambda(event) here (PARSER-HANDOFF s13, "coa.js in the current
+ * format"). From a Codespace script: the site's ID and a Netlify personal
+ * access token. */
 function open({ siteID, token } = {}) {
   if (siteID || token) {
     if (!siteID || !token) throw new Error('pdf-store: outside Netlify both a site ID and a token are needed');
@@ -119,4 +116,4 @@ async function remove(store, key) {
   await store.delete(key);
 }
 
-module.exports = { STORE_NAME, connect, open, put, keys, measure, read, remove, metadataFor };
+module.exports = { STORE_NAME, open, put, keys, measure, read, remove, metadataFor };

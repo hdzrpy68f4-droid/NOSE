@@ -13,7 +13,7 @@
  */
 const fs = require('fs');
 const path = require('path');
-const { _resolvePdfFromPage: resolve } = require('../netlify/functions/coa');
+const { resolvePdfFromPage: resolve } = require('../netlify/functions/lib/fetch-report');
 
 const DIR = path.join(__dirname, 'fixtures/pages');
 const CASES = [

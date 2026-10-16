@@ -10,8 +10,9 @@
  *     stamps build.sh writes; the extractor stamp moves with extract-text.js
  *     and with the installed unpdf; uncommitted files are seen; pin() wins
  *   - lib/pdf-store.js, against a stand-in @netlify/blobs: the site-wide store
- *     "coa-pdf" and never a deploy store, connectLambda given the event,
- *     onlyIfNew, the exact bytes, and metadata { sourceUrl, fetchedAt } only
+ *     "coa-pdf" and never a deploy store, onlyIfNew, the exact bytes, and
+ *     metadata { sourceUrl, fetchedAt } only; no connect(), since no function
+ *     is left in the Lambda format that needed connectLambda (2026-10-16)
  *   - scripts/archive-health.js: the report it prints, and that its SQL never
  *     reads report text or addresses
  *   - scripts/seed-from-fixtures.js: refuses without its secrets, and refuses
@@ -204,12 +205,26 @@ async function main() {
     assert.ok(!/getDeployStore/.test(src), 'pdf-store.js calls getDeployStore');
   });
 
-  await test('pdf-store: connect() hands the event to connectLambda, untouched', async () => {
-    blobCalls.length = 0;
-    const event = { blobs: 'e30=', headers: { 'x-nf-site-id': 's', 'x-nf-deploy-id': 'd' } };
-    pdfStore.connect(event);
-    assert.strictEqual(blobCalls.length, 1);
-    assert.strictEqual(blobCalls[0].event, event);
+  /* Until 2026-10-16 coa.js was an exports.handler function, which Netlify
+     does not hand the Blobs context, and connect() passed its event to
+     connectLambda. Every function is now a default export taking a Request,
+     which Netlify hands it (PARSER-HANDOFF s13, "coa.js in the current
+     format"), so nothing connects - and a function written the old way again
+     would find no connect() to call. */
+  await test('pdf-store: no connect(), and no function left in the old format - none names connectLambda or exports a handler', async () => {
+    assert.ok(!('connect' in pdfStore), 'pdf-store.js still exports connect()');
+    const code = src => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+    const old = [];
+    (function walk(dir) {
+      for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+        const p = path.join(dir, e.name);
+        if (e.isDirectory()) walk(p);
+        else if (/\.(c|m)?js$/.test(e.name) &&
+                 /connectLambda|\bexports\.handler\b|module\.exports\.handler\b/.test(code(fs.readFileSync(p, 'utf8')))) old.push(path.relative(ROOT, p));
+      }
+    })(path.join(ROOT, 'netlify'));
+    assert.deepStrictEqual(old, []);
+    assert.ok(!blobCalls.some(c => c.fn === 'connectLambda'), 'connectLambda was called');
   });
 
   await test('pdf-store: put() writes the exact bytes, only if new, with { sourceUrl, fetchedAt } only', async () => {

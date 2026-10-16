@@ -12,7 +12,7 @@
  * second one exists):
  *
  *   coa.js                   the scanner's endpoint: validateUrl and fetchPdf,
- *                            and resolvePdfFromPage as its _resolvePdfFromPage
+ *                            through lib/read-report.js since 2026-10-16
  *   scripts/b2b-coverage.js  the dispensary coverage report, run from a
  *                            Codespace
  *
@@ -31,11 +31,10 @@ const MAX_BYTES   = 12 * 1024 * 1024;   // COAs run to a few hundred KB; 12MB is
 /* One BUDGET for the whole chain, not per request. Each fetch used to start a
    fresh 7500ms timer, so three hops could reach 22.5s against the 10s NOSE
    keeps a reply within - its own budget, not a Netlify limit: the chain has
-   8s of it, and the archive what is left before 9s (coa.js). Netlify's
-   "Configuration for functions" gives a synchronous function 60s, and its
-   "Lambda compatibility for Functions" gives no limit for coa.js's
-   exports.handler format, only 10s for a streamed reply (both read
-   2026-10-15). A chain that runs on leaves the person waiting, and past the
+   8s of it, and the archive what is left before 9s (lib/archive.js). Netlify's
+   "Configuration for functions" gives a synchronous function - coa.js, a
+   default export taking a Request since 2026-10-16 - 60s (read 2026-10-16).
+   A chain that runs on leaves the person waiting, and past the
    platform's own limit shows them its error page instead of ours, which is
    the failure this timeout exists to prevent. TIMEOUT_MS still caps any
    single request; whichever is smaller wins. */

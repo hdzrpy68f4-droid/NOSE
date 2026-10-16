@@ -4,6 +4,13 @@
  * code a real scan runs.
  *
  *   storeScan(scan, options) -> { kept, pdf, db, copyOf, saved, failed }
+ *   archiveScan(buffer, finalUrl, text, result, deadline)   the scanner's call
+ *   archiveOn()                                             production only?
+ *
+ * archiveScan, archiveOn and their three limits were coa.js's until
+ * 2026-10-16, when coa.js became a default export taking a Request and
+ * nothing else (PARSER-HANDOFF s13, "coa.js in the current format"). They
+ * moved here unchanged.
  *
  * One fetch's worth - the PDF bytes, where they came from, the text extracted
  * from them and the parser's output - is kept in two places:
@@ -43,17 +50,23 @@
  * PDF with fewer signs is not kept at all, in either place - it could be
  * somebody's personal document, linked by mistake.
  *
- * NOTHING ABOUT THE PERSON. This module is never handed the request, so it
- * cannot store anything from it. The address it keeps has lost its query and
- * fragment: signed links carry a temporary credential there (X-Amz-Signature,
- * Signature, Expires) and order pages carry tokens that can point back at
- * whoever received the link. Dates are UTC days, never times.
+ * NOTHING ABOUT THE PERSON. This module is never handed the request, nor
+ * Netlify's Context, so it cannot store anything from either. The address it
+ * keeps has lost its query and fragment: signed links carry a temporary
+ * credential there (X-Amz-Signature, Signature, Expires) and order pages carry
+ * tokens that can point back at whoever received the link. Dates are UTC
+ * days, never times. (`context` in a scan is the deploy context - production,
+ * seed, backfill - and nothing to do with Netlify's Context object, which no
+ * function of NOSE's takes.)
  *
- * NOTHING IS LOGGED HERE. `failed` holds short reasons with any file
+ * storeScan LOGS NOTHING. `failed` holds short reasons with any file
  * fingerprint or address scrubbed out; the caller decides what to print.
+ * archiveScan, the scanner's caller, prints the fixed lines described above
+ * it, below.
  */
 
 const crypto = require('crypto');
+const { buildInfo } = require('./version');
 
 const MAX_TEXT = 256 * 1024;        // real reports run 2-30KB of text
 const DEFAULT_TIMEOUT_MS = 2000;
@@ -224,7 +237,86 @@ async function storeScan(scan, {
   };
 }
 
+/* ------------------------------------------------- the scanner's call */
+
+/* NOSE keeps coa.js's reply within 10s - its own budget, not a Netlify
+   limit. Netlify's "Configuration for functions" gives a synchronous
+   function 60s (read 2026-10-16). The fetch chain alone may spend 8s of the
+   10, so the two writes together get at most 2s of whatever is left before
+   9s, and are skipped outright when too little is left to be worth starting.
+   A stored row is worth less than a reply that arrives. */
+const ARCHIVE_DEADLINE_MS = 9000;         // measured from the start of coa.js's handler
+const ARCHIVE_BUDGET_MS   = 2000;         // the PDF and database writes, together
+const ARCHIVE_MIN_MS      = 300;          // below this, do not start
+const ARCHIVE_LIMITS = Object.freeze({ ARCHIVE_DEADLINE_MS, ARCHIVE_BUDGET_MS, ARCHIVE_MIN_MS });
+
+/* ONLY the production deploy stores anything. Deploy previews and branch
+   deploys share the site's Blobs store, so a preview scan would write into the
+   real archive. The context, like the two version stamps stored with every
+   scan, comes from build-info.json, which build.sh writes and esbuild bundles
+   (lib/version.js); a missing file reads as 'dev', and dev stores nothing. */
+const archiveOn = () => buildInfo().deployContext === 'production';
+
+/* Keep the report and what was read from it, without ever changing what the
+ * person is told. coa.js calls this once per parse, on the production deploy.
+ *
+ * WHAT IS PASSED: the PDF bytes, the address they came from, the extracted
+ * text and the parser's output, and the deadline coa.js measured from the
+ * start of its handler. Nothing about the person - no IP, no header, no user
+ * agent, no cookie, no session, no account. Neither the request nor
+ * Netlify's Context is ever handed to this module: test/archive-wiring-test.js
+ * fails if a function here takes one - or the old format's `event` - or reads
+ * anything off one.
+ *
+ * WHAT IS KEPT: a lab report, known by two of its three signs - a laboratory
+ * the parser recognised, "Certificate of Analysis" in the text, a terpene
+ * panel (labReportSigns) - refusals included. One sign is not enough: a
+ * receipt or a label can name a lab. What was read goes to Postgres first,
+ * then the PDF to Netlify Blobs - unless the database recognised the scan as
+ * a copy of a report it already holds, by its text (a portal that builds its
+ * PDF at the moment of download), or answered that it keeps nothing: the file
+ * was removed by hand and is withheld, or today's cap on new documents is
+ * reached. Either write can fail; a failed database still leaves the PDF
+ * written, for backfill.
+ *
+ * HOW IT STAYS OUT OF THE WAY:
+ *   - production only (archiveOn): previews and local runs store nothing
+ *   - NOSE_DB_URL unset: the database half is a no-op, store.js never loaded
+ *   - both writes together get at most ARCHIVE_BUDGET_MS of what is left
+ *     before the deadline, and are skipped when less than ARCHIVE_MIN_MS
+ *     remains
+ *   - every failure is swallowed; the reply never depends on this
+ *
+ * NOTHING IS LOGGED ON SUCCESS, and a failure logs no detail of the document.
+ * Netlify timestamps every log line, and a line naming the report would line
+ * a stored scan up with the request logs - the thing the day-only dates in the
+ * archive exist to prevent. A withheld file logs nothing at all: a line saying
+ * one was scanned again would tie a removed report to a request in those logs.
+ * Reaching the daily cap logs one fixed line, with nothing about the report,
+ * so a day the archive stopped filling can be seen. The lines still begin
+ * "coa:", the function they come from.
+ */
+async function archiveScan(buffer, finalUrl, text, result, deadline){
+  const left = deadline - Date.now();
+  if (left < ARCHIVE_MIN_MS) return { kept: false, reason: 'no time left' };
+  try {
+    const { parserVersion, extractorVersion } = buildInfo();
+    const outcome = await storeScan(
+      { buffer, finalUrl, text, output: result, context: 'production', parserVersion, extractorVersion },
+      { timeoutMs: Math.min(ARCHIVE_BUDGET_MS, left) });
+    if (outcome.failed && outcome.failed.length)
+      console.error('coa: archive incomplete, reply unaffected:', outcome.failed.join('; '));
+    if (outcome.db === DAILY_CAP)
+      console.error('coa: archive at its daily cap - nothing kept, reply unaffected');
+    return outcome;
+  } catch (err) {
+    console.error('coa: archive skipped, reply unaffected:', reason(err));
+    return { kept: false, reason: 'failed' };
+  }
+}
+
 module.exports = {
   storeScan, looksLikeLabReport, labReportSigns, signsShown, sourceAddress, reason, utcDay,
+  archiveScan, archiveOn, ARCHIVE_LIMITS,
   MAX_TEXT, DEFAULT_TIMEOUT_MS, DATABASE_SHARE, MIN_PDF_MS, MIN_SIGNS, WITHHELD, DAILY_CAP
 };

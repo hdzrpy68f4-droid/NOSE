@@ -10,10 +10,10 @@
  * ID, a document extracted twice - then its groups, counts and lines are
  * read back, and checked for report text, addresses and full fingerprints.
  *
- * download-twice.js: real fixture PDFs, the real extractor and parser, coa.js's
- * own page resolver, behind a stand-in fetch - a coaportal report page whose
- * PDF is rebuilt between downloads (every stamp of its making changed, as
- * Method's are), a viewer page whose PDF is the same file twice, a report
+ * download-twice.js: real fixture PDFs, the real extractor and parser, the
+ * scanner's own page resolver (lib/fetch-report.js), behind a stand-in
+ * fetch - a coaportal report page whose PDF is rebuilt between downloads
+ * (every stamp of its making changed, as Method's are), a viewer page whose PDF is the same file twice, a report
  * whose text changes, and a link that fails. No network, no waiting.
  */
 
@@ -166,7 +166,7 @@ async function run(db, log = console.log) {
   /* ==================================================== download-twice.js */
   const { extractCoaText } = require(path.join(LIB, 'extract-text.js'));
   const { parseCoa } = require(path.join(LIB, 'parse-coa.js'));
-  const { _resolvePdfFromPage } = require(path.join(ROOT, 'netlify/functions/coa.js'));
+  const { resolvePdfFromPage } = require(path.join(LIB, 'fetch-report.js'));
   const pdf = n => fs.readFileSync(path.join(ROOT, 'test/fixtures/pdf', `${n}.pdf`));
   const page = n => fs.readFileSync(path.join(ROOT, 'test/fixtures/pages', n));
 
@@ -202,7 +202,7 @@ async function run(db, log = console.log) {
   };
   let waited = null;
   const out = [];
-  const tally = await twice.downloadTwice({ links, resolvePage: _resolvePdfFromPage, extract, parse: parseCoa, fetch,
+  const tally = await twice.downloadTwice({ links, resolvePage: resolvePdfFromPage, extract, parse: parseCoa, fetch,
                                             sleep: async ms => { waited = ms; }, log: l => out.push(l) });
   const said = out.join('\n');
   const block = n => {

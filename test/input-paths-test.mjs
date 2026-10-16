@@ -84,7 +84,7 @@ import http from 'node:http';
 import { createRequire } from 'node:module';
 import os from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import zlib from 'node:zlib';
 
 const require = createRequire(import.meta.url);
@@ -234,7 +234,21 @@ install(path.join(FN, 'lib/extract-text.js'), {
   itemsToLines: () => { throw new Error('not used by the handler'); }
 });
 require(path.join(FN, 'lib/version.js')).pin({ parserVersion: 'dev', extractorVersion: 'dev', deployContext: 'dev' });
-const coa = require(path.join(FN, 'coa.js'));
+/* coa.js is one default export taking a Request, since 2026-10-16, in ES
+   module syntax in a CommonJS package, as every other function is; Netlify's
+   esbuild bundler compiles it. Node has to be told, so a one-file hook loads
+   it as a module, as b2b-catalog-test loads b2b-catalog.js. Its lib/ imports
+   are the CommonJS modules above, the extractor's stand-in included. */
+const COA_URL = pathToFileURL(path.join(FN, 'coa.js')).href;
+Module.register('data:text/javascript,' + encodeURIComponent(`
+  export async function load(url, context, next) {
+    if (url === ${JSON.stringify(COA_URL)}) {
+      const r = await next(url, { ...context, format: 'module' });
+      return { ...r, format: 'module', shortCircuit: true };
+    }
+    return next(url, context);
+  }`));
+const coa = (await import(COA_URL)).default;
 const { _novelty: NOVELTY } = require(path.join(FN, 'lib/parse-coa.js'));
 const PDF = Buffer.concat([Buffer.from('%PDF-1.4\n'), Buffer.alloc(1024, 0x20)]);
 
@@ -248,13 +262,18 @@ function textOf(fixture) {
   return [...lines.slice(0, at + 1), UNSEEN_HEADING, ...lines.slice(at + 1)].join('\n');
 }
 
-/* The handler's reply to `body`, the report being the fixture's text. Only
-   the PDF download is replaced, and only while the handler runs. */
+/* The handler's reply to `body`, the report being the fixture's text, as
+   { statusCode, headers, body }. Only the PDF download is replaced, and only
+   while the handler runs. */
 async function handlerReply(fixture, body) {
   fixtureText = textOf(fixture);
   const saved = globalThis.fetch;
   globalThis.fetch = async () => new Response(PDF, { status: 200, headers: { 'content-type': 'application/pdf' } });
-  try { return await coa.handler({ httpMethod: 'POST', body, headers: {} }); }
+  try {
+    const res = await coa(new Request('https://nose-app.com/.netlify/functions/coa',
+                                      { method: 'POST', headers: { 'content-type': 'application/json' }, body }));
+    return { statusCode: res.status, headers: Object.fromEntries(res.headers), body: await res.text() };
+  }
   finally { globalThis.fetch = saved; }
 }
 
