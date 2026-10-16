@@ -4807,13 +4807,36 @@ PARSER-HANDOFF.md                     s12; s13's table, "Connections and secrets
   2. `git push`; on GitHub, Actions → gates → the newest run, both jobs
      green, and `live` at the commit.
   3. Once Netlify's deploy of `live` is done: on `/app`, COA link, read one
-     report - its card shows as before. `curl -s -X POST
+     report - its card shows as before. `curl -si -X POST
      https://nose-app.com/.netlify/functions/coa -H 'content-type:
-     application/json' --data 'null'` answers
-     `{"error":"Could not read that request."}`.
+     application/json' --data 'null'; echo` answers `HTTP/2 400` and
+     `{"error":"Could not read that request."}`. The `echo` matters: the
+     body ends without a newline, and with `-s` alone the Codespace's next
+     prompt drew over it, so the first run looked empty.
   4. `node scripts/archive-health.js`: ok, the newest parse that report,
      dated today (UTC), context `production` - the archive written by the
-     new format, with no `connectLambda`.
+     new format, with no `connectLambda`. Read a jar the archive has not
+     seen: the same report again adds no parse.
+- **Live, 2026-10-16 (US Eastern).** `c05a98f` pulled from a git bundle
+  into the Codespace (`bacc758..c05a98f`, a fast-forward). `npm run gates`:
+  ALL GATES GREEN, 34 gates, on Node 24 and the real packages - the ten
+  this workspace could not run among them, `duplicates`, `b2b catalog` and
+  `b2b endpoints` included. The Codespace's `git push` (`bacc758..c05a98f
+  main -> main`) started the run; promote moved `live` from `bacc758` to
+  `c05a98f` by 17:05:25 UTC, seen through `git ls-remote` from the cloud
+  workspace every 30 s. Netlify then deployed `live` by itself. On `/app` a
+  Kaycha Labs report read through the COA link showed its card - checked
+  by the owner. `archive-health.js`: ok; newest parse #281, 2026-10-16,
+  `production`, Kaycha Labs, GELATO #43, flower, usable, total 2.11%, 15
+  terpene values, document #463, parser `c05a98f`, extractor `2e793bebe82a`
+  - the archive written by the current format; no PDF without its row, and
+  the only documents without a PDF still #3 and #184, kept on 2026-09-23
+  before PDFs were, so #463's PDF was written with no `connectLambda`. The
+  `null` request (step 3, with `-i`) at 17:12:45 UTC: `HTTP/2 400`,
+  `cache-control: no-store`, `content-type: application/json`,
+  `x-content-type-options: nosniff`, `{"error":"Could not read that
+  request."}` - where the same request had crashed the function until this
+  deploy.
 
 ### After a deploy — check it
 
