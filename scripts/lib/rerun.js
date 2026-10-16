@@ -100,9 +100,10 @@ function openBlobs(env = process.env) {
   return require(path.join(LIB, 'pdf-store.js')).open({ siteID: env.NETLIFY_SITE_ID, token: env.NETLIFY_AUTH_TOKEN });
 }
 
-/* An error that stopped a run, safe to print - archive.reason() scrubs
-   fingerprints, addresses, hosts and IPs - with Netlify's refusals explained,
-   as archive-health.js explains them. */
+/* An error that stopped a run, safe to print - archive.reason(), which is
+   lib/db.js's scrub(), takes out fingerprints, addresses, hosts, IPs, keys
+   and quoted values - with Netlify's refusals explained, as archive-health.js
+   explains them. */
 function explain(err) {
   const { reason } = require(path.join(LIB, 'archive.js'));
   const msg = reason(err);
@@ -156,16 +157,16 @@ async function readRow(db, documentId) {
    no lone surrogate), then JSON - which drops undefined and turns NaN into
    null exactly as the write does. */
 function asStored(output) {
-  const { _clean } = require(path.join(LIB, 'store.js'));
-  const s = JSON.stringify(_clean(output));
+  const { clean } = require(path.join(LIB, 'store.js'));
+  const s = JSON.stringify(clean(output));
   return s === undefined ? null : JSON.parse(s);
 }
 
 /* The text the database would keep, and its fingerprint - nose.text_hash is
    the SHA-256 of the same UTF-8 bytes. */
 function asStoredText(text) {
-  const { _clean } = require(path.join(LIB, 'store.js'));
-  return _clean(String(text));
+  const { clean } = require(path.join(LIB, 'store.js'));
+  return clean(String(text));
 }
 const textSha = text => crypto.createHash('sha256').update(asStoredText(text), 'utf8').digest('hex');
 

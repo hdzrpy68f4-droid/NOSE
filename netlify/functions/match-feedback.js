@@ -22,6 +22,7 @@ import {
   VOTES_STORE, readJsonBody, isId, isInt, safeClientTs,
   contextHash, dayKey, keySuffix, noContent, rejected,
 } from '../lib/beacon.js';
+import { methodNotAllowed } from '../lib/http.js';
 
 // matchBand()'s own four names (js/match-math.*.js), strongest first: the app
 // sends matchBand(score)[1]. Anything else is not a band this app can produce,
@@ -42,9 +43,7 @@ const MAX_NOTES = 3;
 
 
 export default async (request) => {
-  if (request.method !== 'POST') {
-    return new Response('Method Not Allowed', { status: 405, headers: { allow: 'POST' } });
-  }
+  if (request.method !== 'POST') return methodNotAllowed();
 
   const body = await readJsonBody(request);
   if (!body.ok) return rejected(body.reason);

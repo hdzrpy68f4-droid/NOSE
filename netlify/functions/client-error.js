@@ -19,13 +19,12 @@ import {
   ERRORS_STORE, readJsonBody, isInt, clean, safeClientTs,
   contextHash, dayKey, keySuffix, noContent, rejected,
 } from '../lib/beacon.js';
+import { methodNotAllowed } from '../lib/http.js';
 
 const KINDS = new Set(['error', 'unhandledrejection']);
 
 export default async (request) => {
-  if (request.method !== 'POST') {
-    return new Response('Method Not Allowed', { status: 405, headers: { allow: 'POST' } });
-  }
+  if (request.method !== 'POST') return methodNotAllowed();
 
   const body = await readJsonBody(request);
   if (!body.ok) return rejected(body.reason);

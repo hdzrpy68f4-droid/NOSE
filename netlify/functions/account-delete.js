@@ -23,8 +23,9 @@
 
 import {
   readSession, destroyAllSessions, readJsonBody, gotrue,
-  palateStore, palateKey, clearedCookie, json, methodNotAllowed, unauthenticated,
+  palateStore, palateKey, clearedCookie, unauthenticated,
 } from '../lib/auth.js';
+import { json, methodNotAllowed } from '../lib/http.js';
 
 export default async (request) => {
   if (request.method !== 'POST') return methodNotAllowed();

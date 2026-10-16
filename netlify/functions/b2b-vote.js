@@ -56,12 +56,15 @@
 // taking a Request and returning a Response, and nothing else exported. The
 // lib/ files are CommonJS, so each is imported whole (Netlify, "Configuration
 // for functions", Module format); netlify/lib/beacon.js is shared with the
-// consumer's beacon endpoints and used as it is.
+// consumer's beacon endpoints and used as it is, and netlify/lib/http.js
+// reads the body - at most 2048 characters, this function's own limit - and
+// gives the replies and the time limit.
 
 import flag from './lib/b2b-flag.js';
 import b2b from './lib/b2b-store.js';
 import votes from './lib/b2b-votes.js';
-import { readJsonBody, isInt, noContent, rejected } from '../lib/beacon.js';
+import { isInt, noContent, rejected } from '../lib/beacon.js';
+import { readJsonBody, json, notFound, within, JSON_UTF8 } from '../lib/http.js';
 
 const MAX_BODY_CHARS = 2048;
 const MAX_PALATE_SIZE = 1000;
@@ -71,8 +74,6 @@ const BLOBS_TIMEOUT_MS = 4000;
 const FIELDS = Object.freeze(['key', 'candidate', 'score', 'band', 'palateSize', 'vote']);
 const CONTROL = /[\u0000-\u001f\u007f-\u009f\u2028\u2029]/;
 
-const headers = { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' };
-const reply = (data, status, extra = {}) => new Response(JSON.stringify(data), { status, headers: { ...headers, ...extra } });
 
 const SAYS = Object.freeze({
   method: 'Send a vote with POST.',
@@ -90,11 +91,8 @@ const LOG = Object.freeze({
   capped: 'b2b-vote: a store reached its daily cap - vote dropped, reply unaffected'
 });
 
-const notFound = () => new Response('Not Found', {
-  status: 404, headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' }
-});
-const forbidden = reason => reply({ error: 'forbidden', reason }, 403);
-const unavailable = () => reply({ error: 'unavailable', reason: SAYS.unavailable }, 503);
+const forbidden = reason => json({ error: 'forbidden', reason }, 403, JSON_UTF8);
+const unavailable = () => json({ error: 'unavailable', reason: SAYS.unavailable }, 503, JSON_UTF8);
 
 /* The media type, parameters aside: text/plain;charset=UTF-8 is text/plain. */
 function isTextPlain(value) {
@@ -119,20 +117,14 @@ function validate(d) {
   return { ok: true, value: { key: d.key, candidate: d.candidate, score: d.score, band: d.band, palateSize: d.palateSize, vote: d.vote } };
 }
 
-function within(promise, ms) {
-  let timer;
-  const giveUp = new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(`gave up after ${ms}ms`)), ms); });
-  return Promise.race([promise, giveUp]).finally(() => clearTimeout(timer));
-}
-
 export default async (request) => {
   if (!flag.b2bEnabled()) return notFound();
-  if (request.method !== 'POST') return reply({ error: 'method-not-allowed', reason: SAYS.method }, 405, { allow: 'POST' });
-  if (!isTextPlain(request.headers.get('content-type'))) return reply({ error: 'unsupported-media-type', reason: SAYS.mediaType }, 415);
+  if (request.method !== 'POST') return json({ error: 'method-not-allowed', reason: SAYS.method }, 405, { ...JSON_UTF8, allow: 'POST' });
+  if (!isTextPlain(request.headers.get('content-type'))) return json({ error: 'unsupported-media-type', reason: SAYS.mediaType }, 415, JSON_UTF8);
 
   const declared = request.headers.get('content-length');
   if (declared !== null && /^\d+$/.test(declared.trim()) && Number(declared.trim()) > MAX_BODY_CHARS) return rejected('body-too-large');
-  const body = await readJsonBody(request, MAX_BODY_CHARS);
+  const body = await readJsonBody(request, { limit: MAX_BODY_CHARS });
   if (!body.ok) return rejected(body.reason);
   const checked = validate(body.data);
   if (!checked.ok) return rejected(checked.reason);

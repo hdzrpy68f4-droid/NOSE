@@ -12,9 +12,9 @@
 
 import {
   gotrue, isEmail, normaliseEmail, readJsonBody, rateLimit,
-  readSession, destroySession, createSession, sessionCookie,
-  json, methodNotAllowed, tooMany,
+  readSession, destroySession, createSession, sessionCookie, tooMany,
 } from '../lib/auth.js';
+import { json, methodNotAllowed } from '../lib/http.js';
 
 const BAD_CREDENTIALS = { error: 'invalid-credentials', message: 'Email or password is incorrect.' };
 

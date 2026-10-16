@@ -200,7 +200,7 @@ async function main(argv = process.argv.slice(2), { env = process.env, log = con
     return 0;
   } catch (e) {
     if (e instanceof Refusal) { error(`REFUSED: ${e.message}`); return 1; }
-    error(`b2b-read-catalog stopped: ${b2b._scrub(e)}`);
+    error(`b2b-read-catalog stopped: ${b2b.scrub(e)}`);
     return 1;
   } finally {
     if (own && db) await db.end().catch(() => {});
@@ -211,7 +211,7 @@ module.exports = { main, readStore, parseArgs, summaryLines, USAGE, UsageError, 
 
 if (require.main === module) {
   main().then(code => { process.exitCode = code; }, e => {
-    console.error(`b2b-read-catalog failed: ${b2b._scrub(e)}`);
+    console.error(`b2b-read-catalog failed: ${b2b.scrub(e)}`);
     process.exitCode = 1;
   });
 }

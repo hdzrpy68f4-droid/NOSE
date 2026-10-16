@@ -71,6 +71,7 @@ const pgLoaded = () => Object.keys(require.cache).some(k => /[\\/]node_modules[\
 
 const store = require(path.join(LIB, 'store.js'));
 const b2b = require(path.join(LIB, 'b2b-store.js'));
+const dbLib = require(path.join(LIB, 'db.js'));
 const { b2bEnabled } = require(path.join(LIB, 'b2b-flag.js'));
 const version = require(path.join(LIB, 'version.js'));
 const admin = require(path.join(ROOT, 'scripts/b2b-store.js'));
@@ -237,7 +238,7 @@ async function run(db, log = console.log) {
   check('...and lib/b2b-store.js refuses by store.js\'s own list, not a copy', b2b.PERSONAL_KEYS === store.PERSONAL_KEYS, true);
 
   const dbHolds = async doc => (await one('select b2b.holds_no_person($1::jsonb) as ok', [JSON.stringify(doc)])).ok;
-  const jsHolds = doc => store._findPersonalKey(doc) === null;
+  const jsHolds = doc => store.findPersonalKey(doc) === null;
   const depths = k => [{ [k]: 1 }, { a: { [k]: 1 } }, { a: { b: { c: { [k]: 'x' } } } }, { list: [1, { [k]: null }] }, [{ x: [{ [k]: [] }] }]];
   const missedByDb = [];
   for (const k of store.PERSONAL_KEYS) {
@@ -773,6 +774,9 @@ async function offline(log = console.log) {
     ['22P02', 'batches_thc_percent_check', false, false, true]);
   const clientErr = await rejects(() => b2b.upsertRead(1, 'B-1', { usable: false }, { client: { query: () => Promise.reject(pgError) } }));
   check('...the same when the caller passes its own client', [clientErr.message === said, 'detail' in clientErr], [true, false]);
+  check('...by lib/db.js\'s scrub(), the archive\'s too, which the dispensary scripts take from here: one scrubber, not a copy',
+    [b2b.scrub === dbLib.scrub, require(path.join(LIB, 'archive.js')).reason === dbLib.scrub, '_scrub' in b2b, '_withClient' in b2b],
+    [true, true, false, false]);
   check('a malformed key is never sent: storeForKey answers null without a query',
     [await b2b.storeForKey('nsk_' + 'g'.repeat(64), { client: { query: () => { throw new Error('queried'); } } }), await b2b.storeForKey(undefined)], [null, null]);
   delete process.env.NOSE_B2B_DB_URL;
@@ -781,7 +785,7 @@ async function offline(log = console.log) {
   const url = b2bUrl({ ref: 'abcdefghijklmnopqrst', host: 'aws-0-us-east-1.pooler.supabase.com' }, 'f'.repeat(64));
   const u = new URL(url);
   check('NOSE_B2B_DB_URL as set-b2b-password.js writes it: nose_b2b.<ref>, the transaction pooler, no sslmode - and the probe reads its ref',
-    [decodeURIComponent(u.username), u.port, u.pathname, u.search, store._checkUrl(url, 'NOSE_B2B_DB_URL') === url, probe.b2bTarget(url).ref],
+    [decodeURIComponent(u.username), u.port, u.pathname, u.search, dbLib.checkUrl(url, 'NOSE_B2B_DB_URL') === url, probe.b2bTarget(url).ref],
     ['nose_b2b.abcdefghijklmnopqrst', '6543', '/postgres', '', true, 'abcdefghijklmnopqrst']);
   const pwSrc = fs.readFileSync(path.join(ROOT, 'scripts/set-b2b-password.js'), 'utf8');
   check('...setting its password with set-writer-password.js\'s own SCRAM verifier, not a copy of it',

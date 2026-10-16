@@ -50,19 +50,20 @@
  *   no figure - no terpenes, no total, no moisture or water activity - and
  *   the database refuses one that tries.
  * - BOUNDED CONNECTIONS. With no client, a fresh pg Client per call - connect,
- *   one statement, end - the whole exchange inside timeoutMs, as store.js
- *   does it: a hung query cannot hold the function, and a late socket error
- *   cannot crash it.
+ *   one statement, end - the whole exchange inside timeoutMs, through the
+ *   same withClient() as store.js (lib/db.js, since 2026-10-16): a hung query
+ *   cannot hold the function, and a late socket error cannot crash it.
  * - A NO-OP WITHOUT NOSE_B2B_DB_URL. Writes answer NOT_CONFIGURED and
  *   storeForKey answers null; pg is never loaded.
  * - SCRUBBED ERRORS. A database error comes back as one short message with
  *   no key, fingerprint, address, host, IP or quoted value in it, plus its
  *   code and constraint name. Its detail - where Postgres puts the failing
- *   row - is never passed on.
+ *   row - is never passed on. The scrubber is lib/db.js's scrub(), the
+ *   archive's too, re-exported here for the dispensary scripts.
  *
  * NOSE_B2B_DB_URL is nose_b2b.<project-ref> through Supabase's transaction
  * pooler (6543), TLS verified against the embedded root certificate and no
- * sslmode - exactly as NOSE_DB_URL, through store.js's own clientConfig().
+ * sslmode - exactly as NOSE_DB_URL, through the same clientConfig() (lib/db.js).
  * Never a query `name`: the transaction pooler cannot run prepared
  * statements. Every value travels as a bind parameter, so none reaches the
  * Postgres log in a statement's text.
@@ -75,7 +76,8 @@
  */
 
 const crypto = require('crypto');
-const { PERSONAL_KEYS, clientConfig, _clean: clean, _findPersonalKey: findPersonalKey } = require('./store');
+const { PERSONAL_KEYS, clean, findPersonalKey } = require('./store');
+const db = require('./db');
 
 const NOT_CONFIGURED = 'not configured';
 const DEFAULT_TIMEOUT_MS = 4000;
@@ -411,22 +413,13 @@ const VOTE_TARGET_SQL = `
 
 /* ------------------------------------------------------------ connection */
 
+/* The dispensary store's database: NOSE_B2B_DB_URL, as nose_b2b. */
+const URL_ENV = 'NOSE_B2B_DB_URL';
 const configured = (env = process.env) => !!env.NOSE_B2B_DB_URL;
 
 /* An error's message, safe to print or return: no key, no fingerprint, no
-   address, no database host, no IP, no quoted input value. */
-function scrub(err) {
-  return String((err && err.message) || err || 'failed')
-    .replace(/n[sp]k_[0-9A-Za-z_-]+/g, '<key>')
-    .replace(/[0-9a-f]{64}/gi, '<sha256>')
-    .replace(/[a-z][a-z0-9+.-]*:\/\/\S+/gi, '<address>')
-    .replace(/\b[\w.-]+\.supabase\.(?:com|co)\b(?::\d+)?/gi, '<database host>')
-    .replace(/\b\d{1,3}(?:\.\d{1,3}){3}\b(?::\d+)?/g, '<ip>')
-    .replace(/\b(?:[0-9a-f]{0,4}:){2,7}[0-9a-f]{0,4}\b/gi, '<ip>')
-    .replace(/:\s*"[^"]*"/g, ': <value>')
-    .replace(/\s+/g, ' ')
-    .slice(0, 160);
-}
+   address, no database host, no IP, no quoted input value (lib/db.js). */
+const { scrub } = db;
 
 /* The error a caller sees: the scrubbed message, the SQLSTATE and the
    constraint's name - schema facts, not data - and nothing else. */
@@ -437,36 +430,18 @@ function scrubbed(err) {
   return e;
 }
 
-/* Connect, run fn(client), let go - inside timeoutMs, as store.js's
-   withClient: pg's own timeouts as a second line, an 'error' listener so a
-   socket lost after we stopped waiting cannot crash the process, and end()
-   never awaited. _Client exists for test/b2b-store-test.js. */
-async function withClient(fn, { timeoutMs = DEFAULT_TIMEOUT_MS, _Client } = {}) {
-  const Client = _Client || require('pg').Client;
-  const c = new Client(clientConfig(process.env.NOSE_B2B_DB_URL,
-                                    { name: 'NOSE_B2B_DB_URL', timeoutMs, queryTimeoutMs: timeoutMs }));
-  c.on('error', () => {});
-
-  let timer;
-  const work = (async () => {
-    await c.connect();
-    return fn(c);
-  })();
-  const giveUp = new Promise((_, reject) => {
-    timer = setTimeout(() => reject(new Error(`gave up after ${timeoutMs}ms`)), timeoutMs);
-  });
-  try {
-    return await Promise.race([work, giveUp]);
-  } finally {
-    clearTimeout(timer);
-    Promise.resolve().then(() => c.end()).catch(() => {});
-  }
-}
+/* With no client: connect, run, let go - inside timeoutMs, DEFAULT_TIMEOUT_MS
+   when none is given - through lib/db.js's withClient(): pg's own timeouts as
+   a second line, an 'error' listener so a socket lost after we stopped
+   waiting cannot crash the process, and end() never awaited. _Client exists
+   for test/b2b-store-test.js. */
+const bounds = (timeoutMs, _Client) =>
+  ({ urlEnv: URL_ENV, timeoutMs: timeoutMs === undefined ? DEFAULT_TIMEOUT_MS : timeoutMs, _Client });
 
 async function run(sql, params, { client, timeoutMs, _Client } = {}) {
   try {
     if (client) return await client.query(sql, params);
-    return await withClient(c => c.query(sql, params), { timeoutMs, _Client });
+    return await db.withClient(c => c.query(sql, params), bounds(timeoutMs, _Client));
   } catch (e) {
     throw scrubbed(e);
   }
@@ -477,7 +452,7 @@ async function run(sql, params, { client, timeoutMs, _Client } = {}) {
 async function runEach(fn, { client, timeoutMs, _Client } = {}) {
   try {
     if (client) return await fn(client);
-    return await withClient(fn, { timeoutMs, _Client });
+    return await db.withClient(fn, bounds(timeoutMs, _Client));
   } catch (e) {
     throw scrubbed(e);
   }
@@ -735,7 +710,8 @@ module.exports = {
   newKey, keyHash, keyKind, coaLink, configured,
   BATCH_FIELDS, OPTIONAL_BATCH_FIELDS, READ_FIELDS, KEY_PREFIX, PERSONAL_KEYS, NOT_CONFIGURED, DEFAULT_TIMEOUT_MS,
   TEXT_LIMITS, URL_LIMIT, FEED_FIELDS, FEED_STORE_FIELDS,
-  _buildBatchRows: buildBatchRows, _buildRead: buildRead, _scrub: scrub, _withClient: withClient,
+  scrub,
+  _buildBatchRows: buildBatchRows, _buildRead: buildRead,
   UPSERT_BATCHES_SQL, UPSERT_READ_SQL, STORE_FOR_KEY_SQL,
   UPSERT_UNFETCHED_SQL, APPLY_CATALOG_SQL, SECRET_KEY_SQL, STORE_BY_SLUG_SQL, IN_WINDOW_SQL, LISTED_SQL,
   CURRENT_READ_SQL, FEED_STORE_SQL, FEED_SQL, VOTE_TARGET_SQL

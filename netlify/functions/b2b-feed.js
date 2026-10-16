@@ -52,16 +52,16 @@
 //
 // Written as b2b-catalog.js is: one default export, taking a Request and
 // returning a Response, and nothing else exported; the lib/ files are
-// CommonJS and imported whole.
+// CommonJS and imported whole, and the replies are netlify/lib/http.js's,
+// but for the feed itself, which sets its own five headers.
 
 import flag from './lib/b2b-flag.js';
 import b2b from './lib/b2b-store.js';
+import { json, notFound, JSON_UTF8 } from '../lib/http.js';
 
 const CACHE = 'public, max-age=60';
 const DB_TIMEOUT_MS = 4000;
 
-const headers = { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' };
-const reply = (data, status, extra = {}) => new Response(JSON.stringify(data), { status, headers: { ...headers, ...extra } });
 
 const SAYS = Object.freeze({
   method: 'Read the feed with GET.',
@@ -77,11 +77,8 @@ const LOG = Object.freeze({
   failed: 'b2b-feed: the database did not answer - no feed served'
 });
 
-const notFound = () => new Response('Not Found', {
-  status: 404, headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' }
-});
-const forbidden = reason => reply({ error: 'forbidden', reason }, 403);
-const unavailable = () => reply({ error: 'unavailable', reason: SAYS.unavailable }, 503);
+const forbidden = reason => json({ error: 'forbidden', reason }, 403, JSON_UTF8);
+const unavailable = () => json({ error: 'unavailable', reason: SAYS.unavailable }, 503, JSON_UTF8);
 
 /* The one query parameter, key, given once - or null. */
 function keyOf(url) {
@@ -92,10 +89,10 @@ function keyOf(url) {
 
 export default async (request) => {
   if (!flag.b2bEnabled()) return notFound();
-  if (request.method !== 'GET') return reply({ error: 'method-not-allowed', reason: SAYS.method }, 405, { allow: 'GET' });
+  if (request.method !== 'GET') return json({ error: 'method-not-allowed', reason: SAYS.method }, 405, { ...JSON_UTF8, allow: 'GET' });
 
   const key = keyOf(request.url);
-  if (b2b.keyKind(key) !== 'public') return reply({ error: 'bad-request', reason: SAYS.query }, 400);
+  if (b2b.keyKind(key) !== 'public') return json({ error: 'bad-request', reason: SAYS.query }, 400, JSON_UTF8);
 
   if (!b2b.configured()) {
     console.error(LOG.notConfigured);

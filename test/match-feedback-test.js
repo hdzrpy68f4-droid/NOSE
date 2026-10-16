@@ -136,7 +136,8 @@ const writes = () => blobs.calls.filter(c => c[0] === 'setJSON').length;
    Node has to be told, so a one-file hook loads those three as modules and
    answers @netlify/blobs with the stand-in above. */
 async function loadFunctions() {
-  const urls = [VOTE, READ, BEACON].map(f => pathToFileURL(f).href);
+  /* netlify/lib/http.js too since 2026-10-16: all three import it. */
+  const urls = [VOTE, READ, BEACON, path.join(ROOT, 'netlify/lib/http.js')].map(f => pathToFileURL(f).href);
   const standIn = 'data:text/javascript,' + encodeURIComponent(
     'export function getStore(o) { return globalThis.__noseFeedbackBlobs.getStore(o); }');
   Module.register('data:text/javascript,' + encodeURIComponent(`
@@ -209,8 +210,10 @@ async function main() {
     [/\b(partial|weak)\b/i.test(voteCode), /\b(partial|weak)\b/i.test(readCode)], [false, false]);
   check('the vote reads nothing about the person: no request header, cookie, account, session, address or place',
     voteCode.match(/request\.headers|\.headers\.get|cookie|authoriz|session|account|user_?id|x-forwarded|x-nf-|client-ip|\bgeo\b|\bip\b|context\.|auth\.js/gi), null);
-  check('...and imports only @netlify/blobs and netlify/lib/beacon.js',
-    voteCode.match(/^import [\s\S]*?;$/gm).map(l => l.match(/from '([^']+)'/)[1]), ['@netlify/blobs', '../lib/beacon.js']);
+  check('...and imports only @netlify/blobs, netlify/lib/beacon.js and, since 2026-10-16, netlify/lib/http.js\'s methodNotAllowed()',
+    voteCode.match(/^import [\s\S]*?;$/gm).map(l => l.match(/from '([^']+)'/)[1]), ['@netlify/blobs', '../lib/beacon.js', '../lib/http.js']);
+  check('...the last for one helper, the 405',
+    voteCode.match(/^import \{([^}]*)\} from '\.\.\/lib\/http\.js';$/m)?.[1].trim(), 'methodNotAllowed');
 
   const { vote, read } = await loadFunctions();
   const post = body => vote(new Request('https://nose-app.com/.netlify/functions/match-feedback', {

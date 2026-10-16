@@ -5,6 +5,7 @@
 // inlined by esbuild at build time.
 
 import { createHash } from 'node:crypto';
+import { readJsonBody as readBody } from './http.js';
 
 export const VOTES_STORE = 'match-feedback';
 export const ERRORS_STORE = 'client-errors';
@@ -18,28 +19,11 @@ export const ERRORS_STORE = 'client-errors';
 export const MAX_BODY_BYTES = 16384;
 
 /**
- * Read and parse a JSON beacon body under a hard size cap.
+ * Read and parse a JSON beacon body under that cap: http.js's readJsonBody,
+ * shared with the auth endpoints, each with its own limit.
  * Returns { ok:true, data } or { ok:false, reason }.
  */
-export async function readJsonBody(request, limit = MAX_BODY_BYTES) {
-  let raw;
-  try {
-    raw = await request.text();
-  } catch {
-    return { ok: false, reason: 'unreadable-body' };
-  }
-  if (raw.length > limit) return { ok: false, reason: 'body-too-large' };
-  if (!raw) return { ok: false, reason: 'empty-body' };
-  try {
-    const data = JSON.parse(raw);
-    if (!data || typeof data !== 'object' || Array.isArray(data)) {
-      return { ok: false, reason: 'not-an-object' };
-    }
-    return { ok: true, data };
-  } catch {
-    return { ok: false, reason: 'invalid-json' };
-  }
-}
+export const readJsonBody = (request) => readBody(request, { limit: MAX_BODY_BYTES });
 
 /** Slug-shaped identifier: matches every built-in profile id plus the opaque
  *  privacy tokens 'custom' and 'unknown'. Deliberately a character-class check

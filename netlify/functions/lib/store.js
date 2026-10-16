@@ -7,11 +7,15 @@
  * This module only gets the payload there intact, over a verified connection.
  *
  * With no client: a fresh pg Client per call - connect, one query, end - and
- * the whole exchange bounded by timeoutMs (withClient, below). A function
- * instance serves one request at a time and Supabase's pooler is the real
- * pool, so holding sockets open buys nothing. Scripts may pass one client for
- * a whole run; test/store-test.js passes PGlite through the same seam, which
- * is why nothing here uses more than client.query(text, params).
+ * the whole exchange bounded by timeoutMs (withClient, lib/db.js, shared with
+ * the dispensary store since 2026-10-16). A function instance serves one request
+ * at a time and Supabase's pooler is the real pool, so holding sockets open
+ * buys nothing. Scripts may pass one client for a whole run;
+ * test/store-test.js passes PGlite through the same seam, which is why
+ * nothing here uses more than client.query(text, params).
+ *
+ * clientConfig() is lib/db.js's, re-exported here, where the Codespace
+ * scripts have always taken it from.
  *
  * touch() is the keep-awake read: one cheap query as nose_writer, so the free
  * Supabase project sees activity and is not paused.
@@ -23,6 +27,8 @@
  * parameters to its error log by default; inlining the payload into the SQL
  * text would put the whole report in the log on any failure.
  */
+
+const db = require('./db');
 
 /* Keep identical to the list in nose.holds_no_person(). test/store-test.js
  * proves the database refuses every key named here. */
@@ -96,86 +102,14 @@ function buildPayload(p) {
   };
 }
 
-function checkUrl(url, name = 'NOSE_DB_URL') {
-  if (!url) throw new Error(`${name} is not set`);
-  if (/[?&]sslmode=/i.test(url)) {
-    throw new Error(`${name} must not contain sslmode: pg discards the ssl object when one is present, ` +
-                    'and TLS verification is configured in code');
-  }
-  return url;
-}
-
-function loadCa() {
-  let ca;
-  try { ca = require('./supabase-ca'); }
-  catch {
-    throw new Error('Supabase root certificate not embedded yet - run: node scripts/embed-supabase-ca.js <downloaded .crt>');
-  }
-  if (typeof ca !== 'string' || !ca.includes('BEGIN CERTIFICATE')) {
-    throw new Error('netlify/functions/lib/supabase-ca.js does not hold a PEM certificate');
-  }
-  return ca;
-}
-
-/* One place that decides how NOSE connects, shared by the scripts. TLS is
- * verified against Supabase's own root certificate. Never
- * rejectUnauthorized: false - if verification fails, the connection fails. */
-function clientConfig(url, { name = 'NOSE_DB_URL', timeoutMs = 1000, queryTimeoutMs = 4000 } = {}) {
-  return {
-    connectionString: checkUrl(url, name),
-    ssl: { ca: loadCa() },
-    connectionTimeoutMillis: timeoutMs,
-    /* A hung query must not outlive the 10s NOSE keeps a reply within - its
-       own budget, not a Netlify limit ("Configuration for functions" and
-       "Lambda compatibility for Functions", read 2026-10-15; coa.js says more). */
-    query_timeout: queryTimeoutMs
-  };
-}
-
 function unwrap(res) {
   const r = res && res.rows && res.rows[0] && res.rows[0].result;
   if (r == null) throw new Error('saveScan: save_scan returned nothing');
   return typeof r === 'string' ? JSON.parse(r) : r;
 }
 
-/* Connect, run fn(client), let go - the whole exchange inside timeoutMs.
- *
- * The budget covers TLS, login and the query together. pg's own connect and
- * query timeouts are set to the same figure as a second line, but the race
- * here is what holds. Losing it ends the client without waiting: pg destroys
- * the socket when a query is still active, and save_scan is one statement, so
- * an abandoned write either committed whole or rolled back whole. There is no
- * half-written scan.
- *
- * Two things keep a late failure from taking the function down with it. An
- * 'error' listener, because a pg client that loses its socket while nobody is
- * waiting emits 'error', and an unheard one crashes the process - possibly in
- * the middle of somebody else's request. And Promise.race itself, which stays
- * subscribed to the work it abandoned, so a connect that fails after we
- * stopped waiting is still a handled rejection.
- *
- * _Client exists for test/archive-wiring-test.js; nothing else passes it. */
-async function withClient(fn, { timeoutMs = 4000, _Client } = {}) {
-  const Client = _Client || require('pg').Client;
-  const c = new Client(clientConfig(process.env.NOSE_DB_URL, { timeoutMs, queryTimeoutMs: timeoutMs }));
-  c.on('error', () => {});
-
-  let timer;
-  const work = (async () => {
-    await c.connect();
-    return fn(c);
-  })();
-  const giveUp = new Promise((_, reject) => {
-    timer = setTimeout(() => reject(new Error(`gave up after ${timeoutMs}ms`)), timeoutMs);
-  });
-  try {
-    return await Promise.race([work, giveUp]);
-  } finally {
-    clearTimeout(timer);
-    /* Not awaited: closing must never hold up the reply. */
-    Promise.resolve().then(() => c.end()).catch(() => {});
-  }
-}
+/* The archive's database: NOSE_DB_URL, as nose_writer. */
+const URL_ENV = 'NOSE_DB_URL';
 
 const SAVE_SQL = 'select nose.save_scan($1::jsonb) as result';
 
@@ -185,7 +119,7 @@ async function saveScan(payload, { client, timeoutMs = 4000, _Client } = {}) {
   const body = JSON.stringify(buildPayload(payload));
 
   if (client) return unwrap(await client.query(SAVE_SQL, [body]));
-  return withClient(async c => unwrap(await c.query(SAVE_SQL, [body])), { timeoutMs, _Client });
+  return db.withClient(async c => unwrap(await c.query(SAVE_SQL, [body])), { urlEnv: URL_ENV, timeoutMs, _Client });
 }
 
 /* A read of a real table, not "select 1": Supabase counts user activity on the
@@ -194,18 +128,19 @@ async function saveScan(payload, { client, timeoutMs = 4000, _Client } = {}) {
 const TOUCH_SQL = 'select id from nose.documents order by id desc limit 1';
 
 async function touch({ timeoutMs = 8000, _Client } = {}) {
-  await withClient(c => c.query(TOUCH_SQL), { timeoutMs, _Client });
+  await db.withClient(c => c.query(TOUCH_SQL), { urlEnv: URL_ENV, timeoutMs, _Client });
   return true;
 }
 
+/* clean and findPersonalKey are public: the dispensary store refuses and
+   cleans by them, and scripts/lib/rerun.js cleans by clean. */
 module.exports = {
   saveScan,
   touch,
-  clientConfig,
+  clientConfig: db.clientConfig,
   TOUCH_SQL,
   PERSONAL_KEYS,
-  _clean: clean,
-  _findPersonalKey: findPersonalKey,
-  _buildPayload: buildPayload,
-  _checkUrl: checkUrl
+  clean,
+  findPersonalKey,
+  _buildPayload: buildPayload
 };

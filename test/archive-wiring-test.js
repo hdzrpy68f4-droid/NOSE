@@ -155,13 +155,18 @@ version.pin({ ...PRODUCTION, deployContext: 'dev' });
    b2b-catalog-test loads b2b-catalog.js. Its lib/ imports are the same
    CommonJS modules this test holds, stand-ins included. */
 const COA = path.join(FN, 'coa.js');
+/* Its replies come from netlify/lib/http.js since 2026-10-16, an ES module
+   too, so the hook loads that file as a module as well. */
+const HTTP = path.join(ROOT, 'netlify/lib/http.js');
 let coaModule = null;
 let handler = null;
 async function loadCoa() {
   const url = pathToFileURL(COA).href;
+  const urls = [url, pathToFileURL(HTTP).href];
   Module.register('data:text/javascript,' + encodeURIComponent(`
+    const URLS = new Set(${JSON.stringify(urls)});
     export async function load(url, context, next) {
-      if (url === ${JSON.stringify(url)}) {
+      if (URLS.has(url)) {
         const r = await next(url, { ...context, format: 'module' });
         return { ...r, format: 'module', shortCircuit: true };
       }
@@ -329,7 +334,8 @@ async function main() {
     for (const m of lib.matchAll(/(?:^|[=(,:]\s*)(?:async\s*)?\(([^()]*)\)\s*=>/gm)) params.push(...m[1].split(','));
     for (const m of lib.matchAll(/(?:^|[=(,:]\s*)(?:async\s+)?(\w+)\s*=>/gm)) params.push(m[1]);
     const names = params.map(p => p.replace(/[{}[\]]/g, '').split('=')[0].trim()).filter(Boolean);
-    for (const n of ['buffer', 'finalUrl', 'deadline', 'output', 'err', 'signs']) assert.ok(names.includes(n), `the parameter scan missed "${n}"`);
+    /* 'work' since 2026-10-16: 'err' was reason()'s, now lib/db.js's scrub(). */
+    for (const n of ['buffer', 'finalUrl', 'deadline', 'output', 'work', 'signs']) assert.ok(names.includes(n), `the parameter scan missed "${n}"`);
     assert.deepStrictEqual(names.filter(n => /^(event|request|req|context|ctx)$/.test(n)), [], 'a function in lib/archive.js takes the person\'s request or context');
     assert.deepStrictEqual(contextReads, [], `the Context was read: ${contextReads.join(', ')}`);
   });
@@ -665,7 +671,7 @@ async function main() {
     const src = fs.readFileSync(COA, 'utf8');
     const start = src.indexOf('export default async (request) => {\n  const archiveDeadline = Date.now() + ARCHIVE_DEADLINE_MS;\n  try {\n    return await reply(request, archiveDeadline);');
     const read = src.indexOf('const read = await readReport(payload.url);');
-    const parsed = src.indexOf('if (!read.parsed) return json(422, { error: read.sentence });', read);
+    const parsed = src.indexOf('if (!read.parsed) return json({ error: read.sentence }, 422, NOSNIFF);', read);
     const gate = src.indexOf('if (archive.archiveOn())', parsed);
     const call = src.indexOf('await archive.archiveScan(read.buffer, read.finalUrl, read.text, result, archiveDeadline);', gate);
     const refusals = src.indexOf('if (read.stage === STAGES.unsafe){');
@@ -692,8 +698,11 @@ async function main() {
     assert.ok(!/\bexports\b|\bmodule\b|\brequire\(|connectLambda|connectBlobs|\bevent\b/.test(code), 'something of the old format is left');
     assert.ok(!/\bcontext\b|\bctx\b|request\.(headers|url|signal)|headers\.get|cookie|user-?agent|\bgeo\b|\.ip\b|x-nf-|waitUntil/i.test(code),
       'coa.js reads something about the caller');
-    assert.deepStrictEqual([...code.matchAll(/^import \w+ from '(\.\/lib\/[\w-]+\.js)';$/gm)].map(m => m[1]),
-      ['./lib/read-report.js', './lib/archive.js'], 'its imports changed');
+    /* Every import line, since 2026-10-16: the two lib/ files whole, and
+       netlify/lib/http.js's json() by name. */
+    assert.deepStrictEqual([...code.matchAll(/^import .* from '([^']+)';$/gm)].map(m => m[1]),
+      ['./lib/read-report.js', './lib/archive.js', '../lib/http.js'], 'its imports changed');
+    assert.deepStrictEqual([...code.matchAll(/^import (.*) from /gm)].map(m => m[1]), ['report', 'archive', '{ json }'], 'it imports something new');
     assert.deepStrictEqual(contextReads, [], `the Context was read: ${contextReads.join(', ')}`);
   });
 
@@ -803,6 +812,41 @@ async function main() {
     const r = archive.reason(new Error(`x ${PDF_SHA} at https://b.example/y.pdf?t=1 via ` +
       'db.abcdefghijklmnopqrst.supabase.co:5432 and aws-0-us-east-1.pooler.supabase.com from 203.0.113.9:443 or 2001:db8::1'));
     for (const s of [PDF_SHA, 'b.example', 'supabase', '203.0.113.9', '2001:db8']) assert.ok(!r.includes(s), `"${s}" survived: ${r}`);
+  });
+
+  /* One copy of each server helper, since 2026-10-16 (PARSER-HANDOFF s13,
+     "One set of server helpers"): lib/db.js connects and scrubs, for the
+     archive and the dispensary store alike, and netlify/lib/http.js reads
+     request bodies and builds the replies every function shares. */
+  await test('...and it is the dispensary store\'s scrubber, lib/db.js\'s scrub(): no key and no quoted value either', async () => {
+    const db = require(path.join(FN, 'lib/db.js'));
+    assert.strictEqual(archive.reason, db.scrub, 'archive.reason is a scrubber of its own');
+    const key = 'nsk_' + 'b'.repeat(64);
+    const r = archive.reason(new Error(`invalid input syntax for type json: "jane@example.org" near ${key}`));
+    assert.strictEqual(r, 'invalid input syntax for type json: <value> near <key>');
+  });
+
+  await test('one copy of each server helper: connections and the scrubber in lib/db.js, bodies and replies in netlify/lib/http.js', async () => {
+    const files = [];
+    (function walk(d) {
+      for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+        const p = path.join(d, e.name);
+        if (e.isDirectory()) walk(p); else if (/\.m?js$/.test(e.name)) files.push(p);
+      }
+    })(path.join(ROOT, 'netlify'));
+    const code = f => fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+    const holders = re => files.filter(f => re.test(code(f))).map(f => path.relative(ROOT, f).split(path.sep).join('/')).sort();
+    assert.deepStrictEqual(holders(/\bfunction\s+(withClient|clientConfig|checkUrl|loadCa)\s*\(|\bwithClient\s*=/),
+      ['netlify/functions/lib/db.js'], 'a second connection helper');
+    assert.deepStrictEqual(holders(/\.replace\(\/\[0-9a-f\]\{64\}\/gi?, '<sha256>'\)/), ['netlify/functions/lib/db.js'], 'a second scrubber');
+    assert.deepStrictEqual(holders(/\bfunction\s+readJsonBody\s*\(/), ['netlify/lib/http.js'], 'a second body reader');
+    /* coa.js's own function reply(request, deadline) is its handler's body, not a helper. */
+    assert.deepStrictEqual(holders(/\bfunction\s+(json|within)\s*\(|\bconst\s+(json|reply|notFound|methodNotAllowed|within)\s*=/),
+      ['netlify/lib/http.js'], 'a second reply or time-limit helper');
+    assert.deepStrictEqual(holders(/new Response\('Not Found'/), ['netlify/lib/http.js'], 'a 404 written out again');
+    /* b2b-release's 405 carries its own two headers (plain(), kept there). */
+    assert.deepStrictEqual(holders(/'Method Not Allowed'/), ['netlify/functions/b2b-release.js', 'netlify/lib/http.js'],
+      'a 405 written out again');
   });
 
   /* --- store.js: the bounded connection --------------------------------------- */
@@ -950,7 +994,7 @@ async function main() {
       assert.ok(archive.looksLikeLabReport(out, text), `${f} would not be archived`);
       const shown = archive.signsShown(archive.labReportSigns(out, text)).join(' + ');
       (bySigns[shown] = bySigns[shown] || []).push(f.replace(/\.txt$/, ''));
-      assert.strictEqual(store._findPersonalKey(out), null, `${f} output carries a personal key`);
+      assert.strictEqual(store.findPersonalKey(out), null, `${f} output carries a personal key`);
     }
     for (const k of Object.keys(bySigns)) bySigns[k].sort();
     assert.deepStrictEqual(Object.keys(bySigns).sort(), ['lab + panel', 'lab + phrase', 'lab + phrase + panel']);

@@ -16,6 +16,7 @@
 import { getStore } from '@netlify/blobs';
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { VOTES_STORE } from '../lib/beacon.js';
+import { json, methodNotAllowed } from '../lib/http.js';
 
 // SYNTHETIC RECORDS — exclude these from any analysis, and from any figure
 // that gets published or shown to anyone:
@@ -58,11 +59,11 @@ import { VOTES_STORE } from '../lib/beacon.js';
 const BAND_SLUGS = { strong: 'Strong', good: 'Good', moderate: 'Moderate', low: 'Low' };
 const isSlug = (s) => typeof s === 'string' && Object.hasOwn(BAND_SLUGS, s);
 const MAX_RECORDS = 1000;
+// Indented, for a person reading curl (http.js's json(), its fourth argument).
+const PRETTY = { space: 2 };
 
 export default async (request) => {
-  if (request.method !== 'GET') {
-    return new Response('Method Not Allowed', { status: 405, headers: { allow: 'GET' } });
-  }
+  if (request.method !== 'GET') return methodNotAllowed('GET');
 
   const expected = process.env.FEEDBACK_READ_TOKEN;
   // Fail closed. An unset token must not mean an open endpoint.
@@ -100,7 +101,7 @@ export default async (request) => {
 
   // Default view is the summary, computed from KEYS ALONE — no blob reads.
   if (!limit && format !== 'csv') {
-    return json({ summary, totalRecords: parsed.length, caveat: CAVEAT });
+    return json({ summary, totalRecords: parsed.length, caveat: CAVEAT }, 200, {}, PRETTY);
   }
 
   const take = parsed.slice(0, limit || MAX_RECORDS);
@@ -113,7 +114,7 @@ export default async (request) => {
   }
 
   if (format === 'csv') return csv(records);
-  return json({ summary, returned: records.length, totalRecords: parsed.length, caveat: CAVEAT, records });
+  return json({ summary, returned: records.length, totalRecords: parsed.length, caveat: CAVEAT, records }, 200, {}, PRETTY);
 };
 
 const CAVEAT =
@@ -181,13 +182,6 @@ function summarize(parsed) {
     byBand: out,
     overall: { up, down, total, upShare: total ? Number((up / total).toFixed(3)) : null },
   };
-}
-
-function json(obj) {
-  return new Response(JSON.stringify(obj, null, 2), {
-    status: 200,
-    headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
-  });
 }
 
 // notes, last so every earlier column keeps its place: a v2 record's smell

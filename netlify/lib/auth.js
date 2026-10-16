@@ -24,6 +24,7 @@
 
 import { getStore } from '@netlify/blobs';
 import { createHash, randomBytes } from 'node:crypto';
+import { readJsonBody as readBody, json } from './http.js';
 
 export const SESSIONS_STORE = 'auth-sessions';
 export const RATELIMIT_STORE = 'auth-ratelimit';
@@ -87,21 +88,10 @@ export const isPassword = (v) => typeof v === 'string' && v.length >= 10 && v.le
 
 export const normaliseEmail = (v) => String(v).trim().toLowerCase();
 
-export async function readJsonBody(request, limit = 4096) {
-  let raw;
-  try { raw = await request.text(); } catch { return { ok: false, reason: 'unreadable-body' }; }
-  if (!raw) return { ok: false, reason: 'empty-body' };
-  if (raw.length > limit) return { ok: false, reason: 'body-too-large' };
-  try {
-    const data = JSON.parse(raw);
-    if (!data || typeof data !== 'object' || Array.isArray(data)) {
-      return { ok: false, reason: 'not-an-object' };
-    }
-    return { ok: true, data };
-  } catch {
-    return { ok: false, reason: 'invalid-json' };
-  }
-}
+// An auth request's body: a JSON object of at most 4096 characters, read by
+// http.js's readJsonBody - the beacons' reader too, each with its own limit.
+const MAX_BODY_CHARS = 4096;
+export const readJsonBody = (request) => readBody(request, { limit: MAX_BODY_CHARS });
 
 // ------------------------------------------------------------------- cookies
 
@@ -234,15 +224,9 @@ export const palateKey = (userId) => `palates/${userId}`;
 export const palateStore = () => strongStore(PALATES_STORE);
 
 // ----------------------------------------------------------------- responses
-
-export const json = (data, status = 200, extraHeaders = {}) =>
-  new Response(JSON.stringify(data), {
-    status,
-    headers: { 'content-type': 'application/json', 'cache-control': 'no-store', ...extraHeaders },
-  });
-
-export const methodNotAllowed = (allow = 'POST') =>
-  new Response('Method Not Allowed', { status: 405, headers: { allow } });
+//
+// json() and methodNotAllowed() are http.js's, shared with every function;
+// these two are the auth endpoints' own.
 
 export const tooMany = () =>
   json({ error: 'rate-limited', message: 'Too many attempts. Wait a few minutes and try again.' }, 429);

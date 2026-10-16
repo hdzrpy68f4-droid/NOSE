@@ -396,11 +396,13 @@ async function main() {
   version.pin({ parserVersion: 'dev', extractorVersion: 'dev', deployContext: 'dev' });
   /* coa.js is one default export taking a Request, since 2026-10-16: ES
      module syntax in a CommonJS package, loaded as a module by a one-file
-     hook, as b2b-catalog-test loads b2b-catalog.js. */
+     hook, as b2b-catalog-test loads b2b-catalog.js - and netlify/lib/http.js, an ES module too, which it imports for its replies since 2026-10-16,
+     with it. */
   const coaUrl = pathToFileURL(COA).href;
+  const httpUrl = pathToFileURL(path.join(ROOT, 'netlify/lib/http.js')).href;
   Module.register('data:text/javascript,' + encodeURIComponent(`
     export async function load(url, context, next) {
-      if (url === ${JSON.stringify(coaUrl)}) {
+      if (url === ${JSON.stringify(coaUrl)} || url === ${JSON.stringify(httpUrl)}) {
         const r = await next(url, { ...context, format: 'module' });
         return { ...r, format: 'module', shortCircuit: true };
       }

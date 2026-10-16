@@ -238,11 +238,14 @@ require(path.join(FN, 'lib/version.js')).pin({ parserVersion: 'dev', extractorVe
    module syntax in a CommonJS package, as every other function is; Netlify's
    esbuild bundler compiles it. Node has to be told, so a one-file hook loads
    it as a module, as b2b-catalog-test loads b2b-catalog.js. Its lib/ imports
-   are the CommonJS modules above, the extractor's stand-in included. */
+   are the CommonJS modules above, the extractor's stand-in included - and
+   netlify/lib/http.js, an ES module too, which it imports for its replies
+   since 2026-10-16, is loaded as a module with it. */
 const COA_URL = pathToFileURL(path.join(FN, 'coa.js')).href;
+const HTTP_URL = pathToFileURL(path.join(FN, '..', 'lib', 'http.js')).href;
 Module.register('data:text/javascript,' + encodeURIComponent(`
   export async function load(url, context, next) {
-    if (url === ${JSON.stringify(COA_URL)}) {
+    if (url === ${JSON.stringify(COA_URL)} || url === ${JSON.stringify(HTTP_URL)}) {
       const r = await next(url, { ...context, format: 'module' });
       return { ...r, format: 'module', shortCircuit: true };
     }

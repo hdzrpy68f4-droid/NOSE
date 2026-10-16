@@ -37,9 +37,12 @@
 // with a path set, the function answers there and not at
 // /.netlify/functions/b2b-release. Written as b2b-feed.js is: a default
 // export taking a Request; the lib/ files are CommonJS and imported whole.
+// notFound() and within() are netlify/lib/http.js's; plain() stays here, for
+// the 405 and the 503, which carry this function's own two headers.
 
 import flag from './lib/b2b-flag.js';
 import releases from './lib/b2b-releases.js';
+import { notFound, within } from '../lib/http.js';
 
 export const config = { path: '/b2b/releases/:version/:file' };
 
@@ -49,7 +52,6 @@ const LOG = Object.freeze({ failed: 'b2b-release: the release store did not answ
 const plain = (body, status, extra = {}) => new Response(body, {
   status, headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store', ...extra }
 });
-const notFound = () => plain('Not Found', 404);
 
 /* The release a path names, or null: /b2b/releases/<version>/<file> exactly,
    with nothing after it - not even an empty "?" - so each file has one
@@ -59,12 +61,6 @@ function releaseOf(url) {
   try { u = new URL(url); } catch { return null; }
   if (u.search || u.hash || /[?#]/.test(u.href)) return null;
   return releases.parsePath(u.pathname);
-}
-
-function within(promise, ms) {
-  let timer;
-  return Promise.race([promise, new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('timed out')), ms); })])
-    .finally(() => clearTimeout(timer));
 }
 
 export default async (request) => {

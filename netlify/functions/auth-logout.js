@@ -9,9 +9,9 @@
 // browser. That is the control someone reaches for after losing a device.
 
 import {
-  readSession, destroySession, destroyAllSessions, readJsonBody,
-  clearedCookie, json, methodNotAllowed,
+  readSession, destroySession, destroyAllSessions, readJsonBody, clearedCookie,
 } from '../lib/auth.js';
+import { json, methodNotAllowed } from '../lib/http.js';
 
 export default async (request) => {
   if (request.method !== 'POST') return methodNotAllowed();

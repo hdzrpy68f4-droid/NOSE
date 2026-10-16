@@ -558,8 +558,11 @@ async function main() {
 
   /* ================================================ the command line */
   const tree = tmp('nose-pilot-tree-');
+  /* lib/db.js since 2026-10-16: store.js takes clientConfig from it (PARSER-HANDOFF
+     s13, "One set of server helpers"). */
   for (const f of ['scripts/b2b-pilot-report.js', 'scripts/b2b-sample-size.js', 'scripts/lib/rerun.js', 'netlify/functions/lib/b2b-catalog-format.js',
-    'netlify/functions/lib/store.js', 'netlify/functions/lib/b2b-votes.js', 'netlify/functions/lib/version.js']) {
+    'netlify/functions/lib/store.js', 'netlify/functions/lib/db.js', 'netlify/functions/lib/b2b-votes.js',
+    'netlify/functions/lib/version.js']) {
     fs.mkdirSync(path.dirname(path.join(tree, f)), { recursive: true });
     fs.copyFileSync(path.join(ROOT, f), path.join(tree, f));
   }

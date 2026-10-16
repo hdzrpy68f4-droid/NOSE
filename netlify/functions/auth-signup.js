@@ -16,8 +16,9 @@
 
 import {
   gotrue, isEmail, isPassword, normaliseEmail, readJsonBody,
-  rateLimit, createSession, sessionCookie, json, methodNotAllowed, tooMany,
+  rateLimit, createSession, sessionCookie, tooMany,
 } from '../lib/auth.js';
+import { json, methodNotAllowed } from '../lib/http.js';
 
 // Deliberately identical for every outcome.
 const NEUTRAL = {

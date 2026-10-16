@@ -16,10 +16,8 @@
 // The stored shape matches the export file exactly ({version, profiles}), so a
 // synced palate and a downloaded one are interchangeable.
 
-import {
-  readSession, palateStore, palateKey,
-  json, unauthenticated,
-} from '../lib/auth.js';
+import { readSession, palateStore, palateKey, unauthenticated } from '../lib/auth.js';
+import { json, methodNotAllowed } from '../lib/http.js';
 
 // A palate is a few hundred bytes per jar. 256KB is roughly 1500 jars: far
 // beyond any real palate, and a hard ceiling on what one account can push into
@@ -139,8 +137,5 @@ export default async (request) => {
     return json({ status: 'deleted' }, 200);
   }
 
-  return new Response('Method Not Allowed', {
-    status: 405,
-    headers: { allow: 'GET, PUT, DELETE' },
-  });
+  return methodNotAllowed('GET, PUT, DELETE');
 };

@@ -49,17 +49,18 @@
 // Written as palate-sync.js is: one default export, taking a Request and
 // returning a Response, and nothing else exported. The lib/ files are
 // CommonJS, so each is imported whole (Netlify, "Configuration for functions",
-// Module format: no named imports from a CommonJS module).
+// Module format: no named imports from a CommonJS module). Its replies are
+// netlify/lib/http.js's json() and notFound(), with the charset named
+// (JSON_UTF8), as the other dispensary functions' are.
 
 import flag from './lib/b2b-flag.js';
 import b2b from './lib/b2b-store.js';
 import format from './lib/b2b-catalog-format.js';
+import { json, notFound, JSON_UTF8 } from '../lib/http.js';
 
 const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
 const DB_TIMEOUT_MS = 8000;
 
-const headers = { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' };
-const reply = (data, status, extra = {}) => new Response(JSON.stringify(data), { status, headers: { ...headers, ...extra } });
 
 const NOTHING_CHANGED = 'Nothing was changed.';
 const SAYS = Object.freeze({
@@ -80,11 +81,8 @@ const LOG = Object.freeze({
   notConfirmed: 'b2b-catalog: upload not confirmed - the database did not answer'
 });
 
-const notFound = () => new Response('Not Found', {
-  status: 404, headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' }
-});
-const unauthorized = () => reply({ error: 'unauthorized', reason: SAYS.unauthorized }, 401, { 'www-authenticate': 'Bearer' });
-const unavailable = () => reply({ error: 'unavailable', reason: SAYS.unavailable }, 503);
+const unauthorized = () => json({ error: 'unauthorized', reason: SAYS.unauthorized }, 401, { ...JSON_UTF8, 'www-authenticate': 'Bearer' });
+const unavailable = () => json({ error: 'unavailable', reason: SAYS.unavailable }, 503, JSON_UTF8);
 
 /* "Bearer <key>", the scheme in any case (RFC 7235), one key and nothing else. */
 function bearer(value) {
@@ -114,14 +112,14 @@ async function readCapped(request, max) {
 
 export default async (request) => {
   if (!flag.b2bEnabled()) return notFound();
-  if (request.method !== 'POST') return reply({ error: 'method-not-allowed', reason: SAYS.method }, 405, { allow: 'POST' });
+  if (request.method !== 'POST') return json({ error: 'method-not-allowed', reason: SAYS.method }, 405, { ...JSON_UTF8, allow: 'POST' });
 
   const key = bearer(request.headers.get('authorization'));
   if (b2b.keyKind(key) !== 'secret') return unauthorized();
 
   const declared = request.headers.get('content-length');
   if (declared !== null && /^\d+$/.test(declared.trim()) && Number(declared.trim()) > MAX_UPLOAD_BYTES) {
-    return reply({ error: 'too-large', reason: SAYS.tooLarge }, 413);
+    return json({ error: 'too-large', reason: SAYS.tooLarge }, 413, JSON_UTF8);
   }
 
   if (!b2b.configured()) {
@@ -137,15 +135,15 @@ export default async (request) => {
   if (!store) return unauthorized();
 
   const body = await readCapped(request, MAX_UPLOAD_BYTES);
-  if (body.tooLarge) return reply({ error: 'too-large', reason: SAYS.tooLarge }, 413);
-  if (body.unreadable) return reply({ error: 'unreadable-body', reason: SAYS.unreadable }, 400);
+  if (body.tooLarge) return json({ error: 'too-large', reason: SAYS.tooLarge }, 413, JSON_UTF8);
+  if (body.unreadable) return json({ error: 'unreadable-body', reason: SAYS.unreadable }, 400, JSON_UTF8);
 
   const read = format.readCatalog(body.bytes);
-  if (read.refusal) return reply({ error: 'refused', reason: read.refusal }, 422);
+  if (read.refusal) return json({ error: 'refused', reason: read.refusal }, 422, JSON_UTF8);
 
   const { batches, refused, listed } = b2b.batchesFromCatalog(read.rows);
   const received = read.rows.length;
-  if (!batches.length) return reply({ error: 'refused', reason: SAYS.nothingKept, received, refused }, 422);
+  if (!batches.length) return json({ error: 'refused', reason: SAYS.nothingKept, received, refused }, 422, JSON_UTF8);
 
   let done;
   try { done = await b2b.applyCatalog(store.storeId, batches, listed, { timeoutMs: DB_TIMEOUT_MS }); }
@@ -153,5 +151,5 @@ export default async (request) => {
     console.error(LOG.notConfirmed);
     return unavailable();
   }
-  return reply({ received, upserted: done.inserted + done.updated, markedOutOfStock: done.markedOutOfStock, refused }, 200);
+  return json({ received, upserted: done.inserted + done.updated, markedOutOfStock: done.markedOutOfStock, refused }, 200, JSON_UTF8);
 };

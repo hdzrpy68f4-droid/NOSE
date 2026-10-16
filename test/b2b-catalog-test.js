@@ -168,13 +168,14 @@ function fakeB2bUrl() {
 
 /* The function is ES module syntax in a CommonJS package, as palate-sync.js
    is; Netlify's esbuild bundler compiles it (netlify.toml, node_bundler). Node
-   has to be told, so a one-file hook loads it as a module. Its lib/ imports
-   are the same CommonJS modules this test holds. */
+   has to be told, so a one-file hook loads it as a module - and netlify/lib/http.js, an ES module too, which it imports for its replies since 2026-10-16,
+   with it. Its lib/ imports are the same CommonJS modules this test holds. */
 async function loadFunction() {
   const url = pathToFileURL(FUNCTION).href;
+  const http = pathToFileURL(path.join(ROOT, 'netlify/lib/http.js')).href;
   Module.register('data:text/javascript,' + encodeURIComponent(`
     export async function load(url, context, next) {
-      if (url === ${JSON.stringify(url)}) {
+      if (url === ${JSON.stringify(url)} || url === ${JSON.stringify(http)}) {
         const r = await next(url, { ...context, format: 'module' });
         return { ...r, format: 'module', shortCircuit: true };
       }
@@ -264,9 +265,10 @@ async function main() {
     [(fnCode.match(/^export /gm) || []).length, /^export default async \(request\) => \{$/m.test(fnCode)], [1, true]);
   check('...it asks the switch first, before the method, the key or the body',
     fnCode.split('\n')[fnCode.split('\n').findIndex(l => l.startsWith('export default')) + 1].trim(), 'if (!flag.b2bEnabled()) return notFound();');
-  check('...it imports the switch, the store layer and the format reader, whole, and nothing else',
+  check('...it imports the switch, the store layer and the format reader, whole, and from netlify/lib/http.js its replies (since 2026-10-16), and nothing else',
     (fnCode.match(/^import .*$/gm) || []), ["import flag from './lib/b2b-flag.js';", "import b2b from './lib/b2b-store.js';",
-                                              "import format from './lib/b2b-catalog-format.js';"]);
+                                              "import format from './lib/b2b-catalog-format.js';",
+                                              "import { json, notFound, JSON_UTF8 } from '../lib/http.js';"]);
   check('...it reads nothing about the caller: no address, user agent, cookie, context, geography or time - and logs only by console.error',
     /x-forwarded|client-ip|connection-ip|user-agent|cookie|\bcontext\b|\bgeo\b|Date\.now|new Date|console\.(log|info|warn|debug)/i.test(fnCode), false);
   const storeSrc = codeOf(fs.readFileSync(STORE_LIB, 'utf8'));

@@ -597,7 +597,7 @@ async function mainStore(opts, { log, error, client, env }) {
     for (const line of summaryLines(got.report, files)) log(line);
     return 0;
   } catch (e) {
-    error(`b2b-coverage: the database could not be read - ${require(path.join(LIB, 'b2b-store.js'))._scrub(e)}`);
+    error(`b2b-coverage: the database could not be read - ${require(path.join(LIB, 'b2b-store.js')).scrub(e)}`);
     return 1;
   } finally {
     if (own && db) await db.end().catch(() => {});

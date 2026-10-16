@@ -13,7 +13,8 @@
 // turning gating on is a one-line change at the call site rather than a
 // retrofit of the trust model.
 
-import { gotrue, readSession, json, methodNotAllowed } from '../lib/auth.js';
+import { gotrue, readSession } from '../lib/auth.js';
+import { json, methodNotAllowed } from '../lib/http.js';
 
 const SIGNED_OUT = { signedIn: false, subscription: 'none' };
 

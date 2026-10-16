@@ -52,7 +52,8 @@
  * compatibility" format, whose deploys Netlify stops accepting on July 1, 2027
  * (PARSER-HANDOFF s13, "coa.js in the current format"). The lib/ files are
  * CommonJS, so each is imported whole (Netlify, "Configuration for
- * functions", Module format: no named imports from a CommonJS module).
+ * functions", Module format: no named imports from a CommonJS module);
+ * ../lib/http.js, an ES module, gives its json() by name.
  *
  * Netlify's Context - the caller's IP address, location and cookies among it
  * - is never taken: the handler has one parameter, the request, and reads
@@ -65,6 +66,7 @@
 
 import report from './lib/read-report.js';
 import archive from './lib/archive.js';
+import { json } from '../lib/http.js';
 
 const { readReport, STAGES } = report;
 const { ARCHIVE_DEADLINE_MS } = archive.ARCHIVE_LIMITS;
@@ -75,16 +77,10 @@ const FAILED = 'The report reader failed. Try again, or enter the values manuall
    it can never carry a link, a fingerprint or anything about the person. */
 const FAILED_LINE = 'coa: the report reader failed - a fixed 500 sent, no detail logged';
 
-function json(status, body){
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: {
-      'Content-Type': 'application/json',
-      'Cache-Control': 'no-store',
-      'X-Content-Type-Options': 'nosniff'
-    }
-  });
-}
+/* Every JSON reply carries three headers: http.js's json() gives
+   Content-Type: application/json and Cache-Control: no-store, and this adds
+   the third. */
+const NOSNIFF = { 'x-content-type-options': 'nosniff' };
 
 /* A body JSON.parse reads but that is not a plain object - null, an array, a
    string, a number, true - is as unreadable as one it cannot parse. Until
@@ -96,20 +92,20 @@ async function reply(request, archiveDeadline){
   if (request.method === 'OPTIONS')
     return new Response(null, { status: 204, headers: { 'Allow': 'POST' } });
   if (request.method !== 'POST')
-    return json(405, { error: 'Send a POST request with a url.' });
+    return json({ error: 'Send a POST request with a url.' }, 405, NOSNIFF);
 
   let payload;
   try { payload = JSON.parse((await request.text()) || '{}'); }
-  catch { return json(400, { error: UNREADABLE }); }
-  if (!isPlainObject(payload)) return json(400, { error: UNREADABLE });
+  catch { return json({ error: UNREADABLE }, 400, NOSNIFF); }
+  if (!isPlainObject(payload)) return json({ error: UNREADABLE }, 400, NOSNIFF);
 
   /* The link to a verdict, in lib/read-report.js: each step that fails stops
      the read, with the sentence the person is shown. A stage before the parse
      is replied to at once and never reaches the archive. */
   const read = await readReport(payload.url);
-  if (read.stage === STAGES.link) return json(400, { error: read.sentence });
-  if (read.stage === STAGES.fetch) return json(502, { error: read.sentence });
-  if (!read.parsed) return json(422, { error: read.sentence });
+  if (read.stage === STAGES.link) return json({ error: read.sentence }, 400, NOSNIFF);
+  if (read.stage === STAGES.fetch) return json({ error: read.sentence }, 502, NOSNIFF);
+  if (!read.parsed) return json({ error: read.sentence }, 422, NOSNIFF);
   const result = read.output;
 
   /* One call site, covering every outcome below: a usable read, an unusable
@@ -126,27 +122,27 @@ async function reply(request, archiveDeadline){
      refused rather than risk reading the wrong column, in a sentence that
      says the fault is this tool's, not the report's. */
   if (read.stage === STAGES.unsafe){
-    return json(422, {
+    return json({
       error: read.sentence,
       lab: result.lab,
       manualEntry: true
-    });
+    }, 422, NOSNIFF);
   }
 
   if (read.stage === STAGES.refused){
-    return json(422, {
+    return json({
       error: read.sentence,
       reasons: read.reasons,
       lab: result.lab,
       productClass: result.productClass,
       manualEntry: true
-    });
+    }, 422, NOSNIFF);
   }
 
   /* A successful read still returns coverage and unmapped compounds. The
      fingerprint may rest on a partial panel — several labs publish only a top
      ten — and the person is entitled to see that rather than infer it. */
-  return json(200, {
+  return json({
     lab: result.lab,
     strain: result.strain,
     batch: result.batch,
@@ -184,7 +180,7 @@ async function reply(request, archiveDeadline){
     layout: result.layout,
     source: read.finalUrl,
     viaPage: read.viaPage
-  });
+  }, 200, NOSNIFF);
 }
 
 /* The 9s archive deadline is measured from here, the handler's start. Any
@@ -196,6 +192,6 @@ export default async (request) => {
     return await reply(request, archiveDeadline);
   } catch {
     console.error(FAILED_LINE);
-    return json(500, { error: FAILED });
+    return json({ error: FAILED }, 500, NOSNIFF);
   }
 };

@@ -207,12 +207,16 @@ const record = work => fs.readFileSync(path.join(work, rel.DOC), 'utf8');
 
 /* --- the function, loaded as Netlify's bundler compiles it ----------------- */
 
+/* With netlify/lib/http.js, an ES module too, which it imports for its replies since 2026-10-16: notFound()
+   and within(). */
 async function loadFunction() {
   const url = pathToFileURL(FUNCTION).href;
+  const http = pathToFileURL(path.join(ROOT, 'netlify/lib/http.js')).href;
   Module.register('data:text/javascript,' + encodeURIComponent(`
     const URL_ = ${JSON.stringify(url)};
+    const HTTP_ = ${JSON.stringify(http)};
     export async function load(url, context, next) {
-      if (url === URL_) {
+      if (url === URL_ || url === HTTP_) {
         const r = await next(url, { ...context, format: 'module' });
         return { ...r, format: 'module', shortCircuit: true };
       }
@@ -485,8 +489,9 @@ async function main() {
   check('...which is where lib/b2b-releases.js says a release is served', releases.releasePath(7, releases.JS).replace(/^\/b2b\/releases\/7\//, '/b2b/releases/:version/').replace('nose-matches.js', ':file'), config.path);
   check('...it asks the switch first, before the method or the path',
     fnCode.split('\n')[fnCode.split('\n').findIndex(l => l.startsWith('export default')) + 1].trim(), 'if (!flag.b2bEnabled()) return notFound();');
-  check('...it imports the switch and the release store, whole, and nothing else',
-    fnCode.match(/^import .*$/gm), ["import flag from './lib/b2b-flag.js';", "import releases from './lib/b2b-releases.js';"]);
+  check('...it imports the switch and the release store, whole, and from netlify/lib/http.js notFound() and within() (since 2026-10-16), and nothing else',
+    fnCode.match(/^import .*$/gm), ["import flag from './lib/b2b-flag.js';", "import releases from './lib/b2b-releases.js';",
+                                    "import { notFound, within } from '../lib/http.js';"]);
   check('...and holds no clock, no request header, no write: nothing about the caller, nothing changed',
     /Date\.now|new Date|headers\.get|\.set\(|\.setJSON\(|\.delete\(|\.list\(|getDeployStore|connectLambda/.test(fnCode), false);
 

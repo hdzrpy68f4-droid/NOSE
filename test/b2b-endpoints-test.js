@@ -61,6 +61,7 @@ const MIGRATIONS = path.join(ROOT, 'supabase/migrations');
 const FEED = path.join(ROOT, 'netlify/functions/b2b-feed.js');
 const VOTE = path.join(ROOT, 'netlify/functions/b2b-vote.js');
 const BEACON = path.join(ROOT, 'netlify/lib/beacon.js');
+const HTTP = path.join(ROOT, 'netlify/lib/http.js');
 const VOTES_LIB = path.join(LIB, 'b2b-votes.js');
 const STORE_LIB = path.join(LIB, 'b2b-store.js');
 const ADMIN = path.join(ROOT, 'scripts/b2b-store.js');
@@ -194,7 +195,7 @@ const b2b = require(STORE_LIB);
 const votesLib = require(VOTES_LIB);
 const admin = require(ADMIN);
 const { parseCoa } = require(path.join(LIB, 'parse-coa.js'));
-const { _findPersonalKey: findPersonalKey } = require(path.join(LIB, 'store.js'));
+const { findPersonalKey } = require(path.join(LIB, 'store.js'));
 const M = require(path.join(ROOT, 'scripts/lib/match.js')).load();
 
 /* A fake address for NOSE_B2B_DB_URL, built so that no password-bearing URL is
@@ -209,12 +210,13 @@ function fakeB2bUrl() {
 }
 
 /* Both functions are ES module syntax in a CommonJS package, as palate-sync.js
-   is, and so is netlify/lib/beacon.js, which the vote imports; Netlify's
+   is, and so are netlify/lib/beacon.js, which the vote imports, and
+   netlify/lib/http.js, which both import (since 2026-10-16); Netlify's
    esbuild bundler compiles them (netlify.toml, node_bundler). Node has to be
-   told, so a one-file hook loads those three as modules. Their lib/ imports
+   told, so a one-file hook loads those four as modules. Their lib/ imports
    are the same CommonJS modules this test holds. */
 async function loadFunctions() {
-  const urls = [FEED, VOTE, BEACON].map(f => pathToFileURL(f).href);
+  const urls = [FEED, VOTE, BEACON, HTTP].map(f => pathToFileURL(f).href);
   Module.register('data:text/javascript,' + encodeURIComponent(`
     const URLS = new Set(${JSON.stringify(urls)});
     export async function load(url, context, next) {
@@ -263,12 +265,19 @@ async function main() {
       [...code.matchAll(/headers\.get\('([^']+)'\)/g)].map(m => m[1]).sort(),
       name === 'vote' ? ['content-length', 'content-type', 'origin'] : ['origin']);
   }
-  check('the feed imports the switch and the store layer, whole, and nothing else',
-    feedCode.match(/^import .*$/gm), ["import flag from './lib/b2b-flag.js';", "import b2b from './lib/b2b-store.js';"]);
-  check('the vote imports the switch, the store layer and the votes, whole - and from netlify/lib/beacon.js four helpers, none that carries a time',
+  /* Since 2026-10-16 the replies, the body reader and the time limit are
+     netlify/lib/http.js's, shared with every function (PARSER-HANDOFF s13,
+     "One set of server helpers"). */
+  check('the feed imports the switch and the store layer, whole, and from netlify/lib/http.js its replies, and nothing else',
+    feedCode.match(/^import .*$/gm), ["import flag from './lib/b2b-flag.js';", "import b2b from './lib/b2b-store.js';",
+                                      "import { json, notFound, JSON_UTF8 } from '../lib/http.js';"]);
+  check('the vote imports the switch, the store layer and the votes, whole - from netlify/lib/beacon.js three helpers and from netlify/lib/http.js five, none that carries a time',
     voteCode.match(/^import .*$/gm), ["import flag from './lib/b2b-flag.js';", "import b2b from './lib/b2b-store.js';",
                                       "import votes from './lib/b2b-votes.js';",
-                                      "import { readJsonBody, isInt, noContent, rejected } from '../lib/beacon.js';"]);
+                                      "import { isInt, noContent, rejected } from '../lib/beacon.js';",
+                                      "import { readJsonBody, json, notFound, within, JSON_UTF8 } from '../lib/http.js';"]);
+  check('...and netlify/lib/http.js reads no clock, address, header or cookie: a timer, never the time',
+    /Date\.now|new Date|toISOString|headers\.get|cookie|x-forwarded|user-agent|\bcontext\b|\bgeo\b|console\./i.test(codeOf(fs.readFileSync(HTTP, 'utf8'))), false);
   check('...nothing of the consumer\'s: not its store (VOTES_STORE, match-feedback), not keySuffix, safeClientTs or contextHash, which carry a time or group votes',
     [voteCode, votesLibCode].map(c => /VOTES_STORE|match-feedback|keySuffix|safeClientTs|contextHash/.test(c)), [false, false]);
   check('the votes module keeps the day it is given and no time: no clock, no toISOString, no counter, a random suffix',
@@ -591,7 +600,7 @@ async function main() {
                   [JSON.stringify({ ...ballot(), candidate: 'x'.repeat(3000) }), 'body-too-large']];
   const badBodies = [];
   for (const [raw] of bodies) badBodies.push(await sendVote(null, { raw }));
-  check('a body that is empty, not JSON, not an object, or over 2 KB: 400 with beacon.js\'s own reason',
+  check('a body that is empty, not JSON, not an object, or over 2 KB: 400 with the body reader\'s own reason (netlify/lib/http.js, beacon.js\'s until 2026-10-16)',
     badBodies.map(r => [r.status, r.json && r.json.reason]), bodies.map(([, reason]) => [400, reason]));
   const declared = await sendVote(ballot(), { headers: { 'content-length': '999999' } });
   check('...a declared length over the cap is refused before the body is read', [declared.status, declared.json && declared.json.reason], [400, 'body-too-large']);

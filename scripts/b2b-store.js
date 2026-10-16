@@ -250,7 +250,7 @@ async function deleteStore(opts, { db, votes, log }) {
   const s = await store(db, slug);
   let held;
   try { held = (await b2bVotes.storeVoteKeys(votes, slug)).length; }
-  catch (e) { throw new Refusal(`Netlify Blobs did not answer (${b2b._scrub(e)}) - nothing was changed`); }
+  catch (e) { throw new Refusal(`Netlify Blobs did not answer (${b2b.scrub(e)}) - nothing was changed`); }
   if (!s && !held) throw new Refusal(`no store called "${slug}" - nothing was changed`);
 
   if (s) {
@@ -404,7 +404,7 @@ async function main(argv = process.argv.slice(2), env = process.env) {
   } catch (e) {
     if (e instanceof UsageError) { console.error(e.message); process.exitCode = 2; }
     else if (e instanceof Refusal) { console.error(`REFUSED: ${e.message}`); process.exitCode = 1; }
-    else { console.error(`b2b-store stopped: ${b2b._scrub(e)}`); process.exitCode = 1; }
+    else { console.error(`b2b-store stopped: ${b2b.scrub(e)}`); process.exitCode = 1; }
   } finally {
     if (db) await db.end().catch(() => {});
   }
@@ -412,5 +412,5 @@ async function main(argv = process.argv.slice(2), env = process.env) {
 
 module.exports = { runCommand, parseArgs, toOrigin, USAGE, COMMANDS, UsageError, Refusal, DELETE_SQL };
 if (require.main === module) {
-  main().catch(e => { console.error('b2b-store failed:', b2b._scrub(e)); process.exit(1); });
+  main().catch(e => { console.error('b2b-store failed:', b2b.scrub(e)); process.exit(1); });
 }

@@ -60,13 +60,16 @@
  * function of NOSE's takes.)
  *
  * storeScan LOGS NOTHING. `failed` holds short reasons with any file
- * fingerprint or address scrubbed out; the caller decides what to print.
+ * fingerprint or address scrubbed out - by lib/db.js's scrub(), the
+ * dispensary store's rules, since 2026-10-16 - and the caller decides what to
+ * print.
  * archiveScan, the scanner's caller, prints the fixed lines described above
  * it, below.
  */
 
 const crypto = require('crypto');
 const { buildInfo } = require('./version');
+const { scrub } = require('./db');
 
 const MAX_TEXT = 256 * 1024;        // real reports run 2-30KB of text
 const DEFAULT_TIMEOUT_MS = 2000;
@@ -127,19 +130,6 @@ function sourceAddress(finalUrl) {
 }
 
 const utcDay = (now = new Date()) => now.toISOString().slice(0, 10);
-
-/* An error's message, safe to print: no file fingerprint, no address, no
-   database host, no IP address of any kind. */
-function reason(err) {
-  return String((err && err.message) || err || 'failed')
-    .replace(/[0-9a-f]{64}/gi, '<sha256>')
-    .replace(/[a-z][a-z0-9+.-]*:\/\/\S+/gi, '<address>')
-    .replace(/\b[\w.-]+\.supabase\.(?:com|co)\b(?::\d+)?/gi, '<database host>')
-    .replace(/\b\d{1,3}(?:\.\d{1,3}){3}\b(?::\d+)?/g, '<ip>')
-    .replace(/\b(?:[0-9a-f]{0,4}:){2,7}[0-9a-f]{0,4}\b/gi, '<ip>')
-    .replace(/\s+/g, ' ')
-    .slice(0, 160);
-}
 
 /* Wait for work() at most ms. The race stays subscribed to work it gave up
    on, so a late rejection is still handled rather than crashing the process. */
@@ -220,8 +210,8 @@ async function storeScan(scan, {
   }
 
   const failed = [];
-  if (pdf.status === 'rejected') failed.push(`pdf: ${reason(pdf.reason)}`);
-  if (db.status === 'rejected') failed.push(`database: ${reason(db.reason)}`);
+  if (pdf.status === 'rejected') failed.push(`pdf: ${scrub(pdf.reason)}`);
+  if (db.status === 'rejected') failed.push(`database: ${scrub(db.reason)}`);
 
   return {
     kept: pdf.status === 'fulfilled' || !!saved,
@@ -310,13 +300,16 @@ async function archiveScan(buffer, finalUrl, text, result, deadline){
       console.error('coa: archive at its daily cap - nothing kept, reply unaffected');
     return outcome;
   } catch (err) {
-    console.error('coa: archive skipped, reply unaffected:', reason(err));
+    console.error('coa: archive skipped, reply unaffected:', scrub(err));
     return { kept: false, reason: 'failed' };
   }
 }
 
+/* reason is lib/db.js's scrub() under the name the archive's scripts call it
+   by: an error's message, safe to print - no file fingerprint, address,
+   database host, IP address, key or quoted value. */
 module.exports = {
-  storeScan, looksLikeLabReport, labReportSigns, signsShown, sourceAddress, reason, utcDay,
+  storeScan, looksLikeLabReport, labReportSigns, signsShown, sourceAddress, reason: scrub, utcDay,
   archiveScan, archiveOn, ARCHIVE_LIMITS,
   MAX_TEXT, DEFAULT_TIMEOUT_MS, DATABASE_SHARE, MIN_PDF_MS, MIN_SIGNS, WITHHELD, DAILY_CAP
 };

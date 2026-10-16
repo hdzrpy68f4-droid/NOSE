@@ -18,6 +18,7 @@ const crypto = require('crypto');
 
 const ROOT = path.resolve(__dirname, '..');
 const store = require(path.join(ROOT, 'netlify/functions/lib/store.js'));
+const dbLib = require(path.join(ROOT, 'netlify/functions/lib/db.js'));
 
 const sha = s => crypto.createHash('sha256').update(s).digest('hex');
 
@@ -417,10 +418,20 @@ async function run(db, log = console.log) {
   }
 
   /* --- the connection rules, no database needed --------------------------- */
-  const ssl = await rejects(async () => store._checkUrl('postgresql://h:6543/postgres?sslmode=require'));
+  /* Since 2026-10-16 they are lib/db.js's, shared with lib/b2b-store.js
+     (PARSER-HANDOFF s13, "One set of server helpers"); store.js re-exports
+     clientConfig for the scripts, the same function, not a copy. */
+  const ssl = await rejects(async () => dbLib.checkUrl('postgresql://h:6543/postgres?sslmode=require'));
   check('a URL containing sslmode is refused', !!ssl && /sslmode/.test(ssl.message), true);
-  const unset = await rejects(async () => store._checkUrl(undefined));
+  const unset = await rejects(async () => dbLib.checkUrl(undefined));
   check('an unset NOSE_DB_URL is refused plainly', !!unset && /not set/.test(unset.message), true);
+  check('store.js\'s clientConfig is lib/db.js\'s own, and it names no other copy: no checkUrl, withClient or CA loader of its own',
+    [store.clientConfig === dbLib.clientConfig,
+     /function\s+(checkUrl|withClient|loadCa|clientConfig)\b/.test(fs.readFileSync(path.join(ROOT, 'netlify/functions/lib/store.js'), 'utf8'))],
+    [true, false]);
+  const noUrl = await rejects(async () => dbLib.withClient(() => 1, { timeoutMs: 50, _Client: class { constructor() { throw new Error('made'); } } }));
+  check('lib/db.js\'s withClient names no database of its own: a caller must say which variable holds the address',
+    !!noUrl && /urlEnv/.test(noUrl.message), true);
 
   return failures;
 }
