@@ -4409,6 +4409,22 @@ pins        actions/checkout   3d3c42e5aac5ba805825da76410c181273ba90b1  v7.0.1
      minutes of `live` moving: stop and bring it.
   6. A red run, ever: the site stays as it was. The run's gates step holds
      the failing gate's lines; fix it on main and push again.
+- **Live, 2026-10-16 (US Eastern): steps 1 to 4.** The Codespace's `git
+  push` of `4a6e081`, the workflow file in it, was accepted. Its run, the
+  workflow's first (38900014267), read through GitHub's API: gates from
+  12:22:11 to 12:26:24 UTC, every step green - `npm ci` 3 s, Chromium 21 s,
+  `extract-dump.js` 7 s, `gates.sh` 3 min 34 s, then the history and the
+  clean tree; promote 6 s, making `live` at `4a6e081`. So GitHub took a push
+  by its own token that made `live` at a commit adding the workflow file
+  (below, Still open: moving `live` across a later change to it is
+  untried). The job logs sit on a storage host the cloud workspace cannot
+  reach, so the gate lines themselves were not read here. Netlify's
+  production branch is `live` and branch deploys are None, set by the owner
+  with a deploy by hand after (step 3). The ruleset, read through GitHub's
+  API: `protect`, active, on `refs/heads/main` and `refs/heads/live`, its
+  rules `deletion` and `non_fast_forward` alone, nobody to bypass it. This
+  record's own push is step 5: its run green, `live` moved on, and a
+  production deploy that Netlify starts by itself.
 
 ### After a deploy — check it
 
@@ -4622,7 +4638,10 @@ schema comment if wanted.
   help centre, "When trying to sync panther-analysis, I see the Github error
   'Failed to push some refs'"), and a MongoDB ticket of 2026-09-03, PYTHON-6076,
   fixed by giving its token that permission (both read 2026-10-15). GitHub's
-  own pages do not say which pushes it checks. If promote fails that way, the
+  own pages do not say which pushes it checks. Making `live` at `4a6e081`,
+  the commit that adds the workflow, was accepted on 2026-10-16 (above,
+  "Live"); moving `live` forward across a later change to it has not been
+  tried. If promote fails that way, the
   site stays where it was; after a green run, move `live` by hand from the
   Codespace - `git fetch origin`, then `git push origin origin/main:live` -
   a fast-forward the ruleset allows. A token that can do it is a secret,
@@ -4634,10 +4653,6 @@ schema comment if wanted.
 - **The actions are pinned by hand.** Nothing proposes a newer release of
   `actions/checkout` or `actions/setup-node`; moving a pin means reading its
   releases page and changing the commit and the comment together.
-- **The Codespace pushes the workflow file** with its own token, "scoped for
-  read/write access to the repository" (above); GitHub's Codespaces pages say
-  nothing of workflow files. If that `git push` is refused with "refusing to
-  allow", nothing has moved: stop and bring the lines.
 
 ---
 
