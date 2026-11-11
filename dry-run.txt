@@ -1,0 +1,209 @@
+reparse --dry-run: parser bd4110f
+
+92dd3169  Method Testing Labs | Too Much Runtz
+          usable true → true   readBy forward → forward   totalTerpenes 2.73 → 2.73
+          also changed: testedOn (new)
+3e14e714  Modern Canna | (no strain)
+          usable true → true   readBy forward → forward   totalTerpenes 3.5 → 3.5
+          also changed: testedOn (new)
+6ba26025  Modern Canna | (no strain)
+          usable true → true   readBy forward → forward   totalTerpenes 3.73 → 3.73
+          also changed: testedOn (new)
+130cde1d  ACS Laboratory | Mixed
+          usable true → true   readBy forward → forward   totalTerpenes 6.527 → 6.527
+          also changed: testedOn (new)
+3439c896  ACS Laboratory | Member Berry
+          usable true → true   readBy forward → forward   totalTerpenes 4.402 → 4.402
+          also changed: testedOn (new)
+0e7afaa2  ACS Laboratory | OG PLUTO
+          usable true → true   readBy forward → forward   totalTerpenes 3.09 → 3.09
+          also changed: testedOn (new)
+30ec0091  ACS Laboratory | SFV OG
+          usable true → true   readBy forward → forward   totalTerpenes 2.008 → 2.008
+          also changed: testedOn (new)
+397575d2  ACS Laboratory | Markerz
+          usable true → true   readBy forward → forward   totalTerpenes 6.48 → 6.48
+          also changed: testedOn (new)
+00a19f3e  ACS Laboratory | Space Age Cake
+          usable true → true   readBy forward → forward   totalTerpenes 10.03 → 10.03
+          also changed: testedOn (new)
+d904685d  ACS Laboratory | Squirrell Thai Stick
+          usable true → true   readBy forward → forward   totalTerpenes 0.532 → 0.532
+          also changed: testedOn (new)
+ff5fa4d8  ACT Laboratories | Apple Burst
+          usable true → true   readBy forward → forward   totalTerpenes 4.53 → 4.53
+          also changed: testedOn (new)
+76024424  ACS Laboratory | Gassius Clay
+          usable true → true   readBy forward → forward   totalTerpenes 1.771 → 1.771
+          also changed: testedOn (new)
+85131aa8  Kaycha Labs | GREASE MONKEY
+          usable true → true   readBy forward → forward   totalTerpenes 9 → 9
+          also changed: testedOn (new)
+10ee89e7  Modern Canna | Grease Monkey
+          usable true → true   readBy forward → forward   totalTerpenes 3.19 → 3.19
+          also changed: testedOn (new)
+78c0889e  Kaycha Labs | GREASE MONKEY
+          usable true → true   readBy forward → forward   totalTerpenes 6.82 → 6.82
+          also changed: testedOn (new)
+705625e6  TerpLife Labs | (no strain)
+          usable false → false   readBy forward → forward   totalTerpenes 0 → 0
+          also changed: testedOn (new)
+fb7b2fbc  Green Scientific Labs | (no strain)
+          usable false → false   readBy forward → forward   totalTerpenes - → -
+          also changed: testedOn (new)
+1be999b4  Kaycha Labs | Bubbly Bagel
+          usable true → true   readBy forward → forward   totalTerpenes 8.33 → 8.33
+          also changed: testedOn (new)
+822b634c  Kaycha Labs | ACDC
+          usable true → true   readBy forward → forward   totalTerpenes 6.64 → 6.64
+          also changed: testedOn (new)
+71b3a166  Kaycha Labs | Florida Man
+          usable true → true   readBy forward → forward   totalTerpenes 4.56 → 4.56
+          also changed: testedOn (new)
+ce511e84  Kaycha Labs | Queso Perro
+          usable true → true   readBy forward → forward   totalTerpenes 6.75 → 6.75
+          also changed: testedOn (new)
+daed3d6c  Kaycha Labs | (no strain)
+          usable true → true   readBy multicolumn → multicolumn   totalTerpenes 4.124 → 4.124
+          also changed: testedOn (new)
+8c368e53  Kaycha Labs | Blueberry Cheesecake
+          usable true → true   readBy forward → forward   totalTerpenes 4.09 → 4.09
+          also changed: testedOn (new)
+d692d241  Kaycha Labs | HashBurger
+          usable true → true   readBy multicolumn → multicolumn   totalTerpenes 7.55 → 7.55
+          also changed: testedOn (new)
+501dabd4  Kaycha Labs | (no strain)
+          usable true → true   readBy multicolumn → multicolumn   totalTerpenes 4.049 → 4.049
+          also changed: testedOn (new)
+3db58c31  Kaycha Labs | (I) Banana Papaya
+          usable true → true   readBy forward → forward   totalTerpenes 1.38 → 1.38
+          also changed: testedOn (new)
+ba624158  Kaycha Labs | (no strain)
+          usable true → true   readBy multicolumn → multicolumn   totalTerpenes 1.992 → 1.992
+          also changed: testedOn (new)
+2a139785  Kaycha Labs | (no strain)
+          usable true → true   readBy multicolumn → multicolumn   totalTerpenes 1.685 → 1.685
+          also changed: testedOn (new)
+ca2a82a6  Kaycha Labs | (S) Ocifer
+          usable true → true   readBy forward → forward   totalTerpenes 4.33 → 4.33
+          also changed: testedOn (new)
+9879470e  Kaycha Labs | GMO
+          usable true → true   readBy forward → forward   totalTerpenes 4.78 → 4.78
+          also changed: testedOn (new)
+088e5d58  Kaycha Labs | Gelato de Limon
+          usable true → true   readBy forward → forward   totalTerpenes 2.89 → 2.89
+          also changed: testedOn (new)
+49c5b8c7  Kaycha Labs | (no strain)
+          usable true → true   readBy multicolumn → multicolumn   totalTerpenes 7.378 → 7.378
+          also changed: testedOn (new)
+64339f55  Kaycha Labs | (no strain)
+          usable true → true   readBy multicolumn → multicolumn   totalTerpenes 5.951 → 5.951
+          also changed: testedOn (new)
+a9d6d55f  Kaycha Labs | GMO
+          usable true → true   readBy forward → forward   totalTerpenes 6.04 → 6.04
+          also changed: testedOn (new)
+b4e59ff0  Kaycha Labs | (I) Indica Blend
+          usable true → true   readBy forward → forward   totalTerpenes 0.944 → 0.944
+          also changed: testedOn (new)
+b5bcab5c  ACT Laboratories | Purple Brulee
+          usable true → true   readBy multicolumn → multicolumn   totalTerpenes 1.8556 → 1.8556
+          also changed: testedOn (new)
+f7e9d9e6  Kaycha Labs | 710 LABS COLD CREEK KUSH
+          usable true → true   readBy forward → forward   totalTerpenes 2.25 → 2.25
+          also changed: testedOn (new)
+bb2990b5  ACT Laboratories | (no strain)
+          usable true → true   readBy forward → forward   totalTerpenes 0.206 → 0.206
+          also changed: testedOn (new)
+4ee668ec  Modern Canna | (no strain)
+          usable true → true   readBy forward → forward   totalTerpenes 5.44 → 5.44
+          also changed: testedOn (new)
+f2ea9914  Modern Canna | (no strain)
+          usable true → true   readBy forward → forward   totalTerpenes 16.8 → 16.8
+          also changed: testedOn (new)
+1aa9c988  Modern Canna | (no strain)
+          usable true → true   readBy forward → forward   totalTerpenes 1.25 → 1.25
+          also changed: testedOn (new)
+0f311b3c  Modern Canna | (no strain)
+          usable true → true   readBy forward → forward   totalTerpenes 1.769 → 1.769
+          also changed: testedOn (new)
+16188873  Modern Canna | Crippy
+          usable true → true   readBy backward → backward   totalTerpenes 2.24 → 2.24
+          also changed: testedOn (new)
+012dbb4d  Modern Canna | 710 Labs Cherry Zest #4
+          usable true → true   readBy forward → forward   totalTerpenes 2.25 → 2.25
+          also changed: testedOn (new)
+5de4f5e5  Modern Canna | 710 Labs Z Pie #9
+          usable true → true   readBy backward → backward   totalTerpenes 2.15 → 2.15
+          also changed: testedOn (new)
+80539e42  Modern Canna | (no strain)
+          usable true → true   readBy forward → forward   totalTerpenes 4.55 → 4.55
+          also changed: testedOn (new)
+f2818c7c  Modern Canna | Preferred: Peanut Butter Breath
+          usable true → true   readBy forward → forward   totalTerpenes 2.22 → 2.22
+          also changed: testedOn (new)
+bae8b12a  Modern Canna | DOJA: Twin Snakez #5
+          usable true → true   readBy forward → forward   totalTerpenes 1.38 → 1.38
+          also changed: testedOn (new)
+befde6b7  Method Testing Labs | FLORA
+          usable true → true   readBy forward → forward   totalTerpenes 8.47 → 8.47
+          also changed: testedOn (new)
+6f26dad9  Method Testing Labs | RVR
+          usable true → true   readBy forward → forward   totalTerpenes 3.13 → 3.13
+          also changed: testedOn (new)
+ec942993  Method Testing Labs | Purple Push Pop
+          usable true → true   readBy forward → forward   totalTerpenes 3.7 → 3.7
+          also changed: testedOn (new)
+264af7b6  Method Testing Labs | The Devil's Fruitstand
+          usable true → true   readBy forward → forward   totalTerpenes 3.44 → 3.44
+          also changed: testedOn (new)
+c8668ef3  Method Testing Labs | Rose Especial
+          usable true → true   readBy forward → forward   totalTerpenes 2.92 → 2.92
+          also changed: testedOn (new)
+21ad93d0  Method Testing Labs | FA
+          usable true → true   readBy forward → forward   totalTerpenes 10.4 → 10.4
+          also changed: testedOn (new)
+c6c033ae  Method Testing Labs | LK
+          usable true → true   readBy forward → forward   totalTerpenes 3.99 → 3.99
+          also changed: testedOn (new)
+83babbd9  Method Testing Labs | JC
+          usable true → true   readBy forward → forward   totalTerpenes 0.912 → 0.912
+          also changed: testedOn (new)
+cf451c7a  Method Testing Labs | (no strain)
+          usable true → true   readBy forward → forward   totalTerpenes 2.52 → 2.52
+          also changed: testedOn (new)
+6e715d4f  TerpLife Labs | GrpeBblGm
+          usable true → true   readBy forward → forward   totalTerpenes 2.15 → 2.15
+          also changed: testedOn (new)
+5dd50b83  Kaycha Labs | 710 LEMON TART PUCKER #1
+          usable true → true   readBy forward → forward   totalTerpenes 1.3 → 1.3
+          also changed: testedOn (new)
+67a39927  Method Testing Labs | (no strain)
+          usable false → false   readBy forward → forward   totalTerpenes - → -
+          also changed: testedOn (new)
+4b392b96  Kaycha Labs | WT - JUNGLE JUICE
+          usable true → true   readBy multicolumn → multicolumn   totalTerpenes 2.73 → 2.73
+          also changed: testedOn (new)
+40568f4a  Kaycha Labs | BLACK BOX GENETICS: TK MAUI
+          usable true → true   readBy multicolumn → multicolumn   totalTerpenes 3.13 → 3.13
+          also changed: testedOn (new)
+09b9b273  Kaycha Labs | PREFERRED: TROPIKILL
+          usable true → true   readBy multicolumn → multicolumn   totalTerpenes 5.72 → 5.72
+          also changed: testedOn (new)
+35843211  Method Testing Labs | Banana Shack
+          usable true → true   readBy forward → forward   totalTerpenes 3.3 → 3.3
+          also changed: testedOn (new)
+02b30bcc  Method Testing Labs | Pomelo Punch
+          usable true → true   readBy forward → forward   totalTerpenes 7.35 → 7.35
+          also changed: testedOn (new)
+39c53c4d  Kaycha Labs | PREFERRED: LEMON UP
+          usable true → true   readBy multicolumn → multicolumn   totalTerpenes 10.1 → 10.1
+          also changed: testedOn (new)
+b36d92d2  Method Testing Labs | Banana Cough
+          usable true → true   readBy forward → forward   totalTerpenes 3.6 → 3.6
+          also changed: testedOn (new)
+fce565f8  Kaycha Labs | 710 LABS SUPER FREAK
+          usable true → true   readBy multicolumn → multicolumn   totalTerpenes 1.99 → 1.99
+          also changed: testedOn (new)
+
+dry run - nothing was written
+68 documents: 0 unchanged / 68 values changed / 0 accepted→rejected / 0 rejected→accepted / 0 failed
