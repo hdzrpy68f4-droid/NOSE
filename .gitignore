@@ -25,3 +25,9 @@ test/fixtures/pdf/*.pdf
 # and a dispensary's catalog CSV belongs here too while it is read. Both are that
 # dispensary's own data, and this repo is public: never commit either.
 b2b-out/
+
+# Audits that list open weaknesses with file and line numbers. This repo is
+# public, so they stay on this computer only (docs/project-notes/README.md).
+docs/project-notes/nose-security-audit-2026-10-15.md
+docs/project-notes/nose-site-code-audit-pitch-readiness-2026-10-26.md
+docs/project-notes/nose-b2b-readiness-audit-2026-10-26.md
