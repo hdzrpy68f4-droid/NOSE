@@ -172,7 +172,7 @@ Also run `node test/resolver-test.js` - expect `resolver clean`, and
 file) runs, first, `node-version-test` - the Node running the gates is
 `.nvmrc`'s, 24 since 2026-10-15 (§13, "Node 24 everywhere") - then these, the Kaycha anchors,
 `novelty-test`, `coa-dates-test`, `store-test`, `probe-test`, `archive-wiring-test`,
-`archive-scripts-test`, `rerun-test`, `review-queue-test`, `match-test`,
+`archive-scripts-test`, `rerun-test`, `review-queue-test`, `match-test`, `match-props-test`,
 `match-feedback-test`, `accounts-test`, `client-error-test`, `analysis-test`, `duplicates-test`, `remove-copies-test`, `remove-document-test`, `b2b-coverage-test`, `b2b-store-test`, `b2b-catalog-test`, `b2b-endpoints-test`, `b2b-rank-test`, `b2b-strings-test`, `b2b-pilot-test`, `check-trust-test` and, after the build, `colour-tokens-test`, `b2b-release-test`, `input-paths-test`, `b2b-widget-test` and `b2b-compliance-kit-test`.
 It prints the line each gate produced and ends with `ALL GATES GREEN`. It passes
 a gate only on its exact expected line, so when a session legitimately changes
@@ -234,6 +234,7 @@ someone to look.
 | `resolver-test.js` | viewer-page resolution, offline, against saved portal pages |
 | `novelty-test.js` | the five `novelty` notes (§7) and the furniture the `unmapped` diagnostic skips; FAILS if an accepted fixture carries any novelty, and lists the refused ones that do, as information |
 | `match-test.js` | the matching maths has one home, `js/match-math.*.js`: the app takes it from there, nothing else holds a copy, and it returns every score in `test/fixtures/match-golden.json` to the last bit; every score is shown and sent through `shownScore()`, floored (§13, "The shown score"), and the worked examples on `learn/intensity-versus-character/` are the numbers the app shows; since 2026-10-14, a profile carrying `harvestOn`, `reportOn` and `totalTerpenes` normalises exactly as without them (§4) |
+| `match-props-test.js` | what must always hold of the maths (§13, "The maths has a property test"): over 20,000 seeded pairs on the 15 keys - every score between 0 and 1; one jar multiplied, the pair swapped, keys or a palate's jars reordered, each moving no score by more than 1e-12 and no shown number or band; a jar against itself shows 100; a below-limit row scores as an absent one; cis- and trans-nerolidol sum; cannabinoids, a date and a total change nothing; an empty jar is skipped; the band edges at 0.55, 0.75 and 0.90. It does not assert the alias table or `coerce()` on `0,45`, which the golden file pins until their own change |
 | `match-feedback-test.js` | the app's votes (§13, "Every vote stored"): `match-feedback.js` and `feedback-read.js` offline, `@netlify/blobs` stood in for - matchBand()'s four names each stored under its slug, every other band refused with `bad-band` and nothing stored, a score of 0 kept; the key layout, the store, the record's ten fields and anonymity unmoved; the summary, filters and CSV over the four, in matchBand()'s order, its caveat word for word; the bundle's own vote run on the default `/app` pair, 74 · Moderate, stored and counted; the question asks about smell and taste, no effect word in the block; the privacy page's sentence about votes; since 2026-10-14 the smell words (§13, "Smell words on a vote") - the bundle's `SMELL_NOTES` and the handler's `NOTES` one list, up to three distinct words stored in list order in a v 2 record, every other shape refused with `bad-notes` and nothing stored, `null` when none was sent, the CSV's notes column, no word on the list an effect word |
 | `accounts-test.js` | the account functions (§13, "A gate for the account system"): `auth-signup`, `auth-login`, `auth-me`, `auth-logout`, `auth-reset`, `account-delete`, `palate-sync` and `sessions-purge` offline over `netlify/lib/auth.js`, `@netlify/blobs` and Supabase (global `fetch`) stood in for - the age attestation and password length, the cookie word for word, the session record's five fields, the fixed bad-password message and the ninth try, a malformed cookie signed-out, logout here and everywhere, deletion's order and each failing step named, the palate's limits and one user never reading another's, one reset reply, the purge of expired sessions, no console line with an address or password |
 | `client-error-test.js` | the app's error reports (§13, "Start-up error reports reach the server"): `client-error.js` offline, `@netlify/blobs` stood in for by `test/lib/functions-harness.js` - `error`, `unhandledrejection` and `init:<step>` stored, every name the bundle passes to `step()` accepted, every other kind refused with `bad-kind` and nothing stored, an init record's fields the same as an error record's |
@@ -540,7 +541,10 @@ Without it the compound is measured and then silently discarded by
 `sanitizeTerps()` - from the score and the fingerprint bar alike. This happened
 with farnesene. **Flag any new key so the app side is updated in the same
 pass** - and since it changes scores, `test/fixtures/match-golden.json`
-fails, on purpose: regenerate it in the same commit, saying why.
+fails, on purpose: regenerate it in the same commit, saying why -
+`node test/extract-dump.js`, then
+`node test/match-golden-make.js --why "<what changed>"` (§13, "The maths has
+a property test").
 
 The same failure nearly recurred with nerolidol: `TRANS-`, `CIS-`, `E-` and `Z-`
 were mapped but bare `NEROLIDOL` was in `UNMODELLED`, so a lab printing one summed
@@ -949,7 +953,8 @@ test/review-queue-test.js                             the review queue on PGlite
 test/analysis-test.js                                 the analysis views and scripts on PGlite; offline
 test/match-test.js                                    the matching maths: one copy, the scores it gave before it moved, the numbers it shows
 test/fixtures/match-golden.json                       those scores, from js/nose.81d6bb53.js at b596508
-test/match-golden-make.js                             wrote them, once; never re-run to make a test pass
+test/match-golden-make.js                             wrote them; since 2026-11-14 writes them again from today's maths, --why for a change meant to move scores
+test/match-props-test.js                              what must always hold of the maths, over 20,000 seeded pairs
 test/novelty-test.js                                  the parser's novelty notes (s7); fails if an accepted fixture has any
 test/probe-test.js                                    the probe's pass/fail rules, offline
 test/date-probe.js                                    read-only: the dates each accepted fixture prints, and which the parser reads
@@ -5263,6 +5268,34 @@ said more than the code does. No code changed; `coa.js`'s header comment did.
   Lab LLC", printed `true null unknown 1`: usable, no lab, product unknown,
   one novelty note.
 - `sitemap.xml`: lastmod 2026-11-14 for the three pages.
+
+### The maths has a property test, and its golden file can be made again, 2026-11-14
+
+From the review of 2026-11-12 (finding 10, prompt P10). No score changed.
+
+- **`test/match-props-test.js`**, a new gate `match props` after `match
+  maths` (37 gates). It states properties where `match-test.js` compares
+  recorded scores; §5's table lists them. A seeded generator, no
+  `Math.random`. Checked against four broken copies of the maths, not
+  committed, each of which failed it: `normalize()` returning raw values,
+  `cosine()` over one profile's keys, `<` no longer read as zero, and
+  `matchBand()` cutting at 0.76.
+- **`test/match-golden-make.js`** could not do what `CLAUDE.md` and §8 told
+  a reader to do with it: it read the maths out of the old bundle
+  `js/nose.81d6bb53.js` and refused any other file. With no argument it now
+  takes the maths from `scripts/lib/match.js` and the demo profiles from
+  `js/nose`'s `PROFILES`, and writes the same structure in the same order.
+  Given a bundle's path it does what it did. With `--why "<reason>"` it
+  writes the reason and today's commit into `about` and `source`; without
+  it, those two strings are kept.
+- **The proof that nothing moved:** `sha256sum
+  test/fixtures/match-golden.json` printed
+  `2a7e6cce2a78491e2422f9fa977e8b40edb601e8363afedffbf418f6529258eb` before,
+  and the same after `node test/match-golden-make.js`; `git status` showed no
+  change to the file.
+- For a change that is meant to move scores: `node test/extract-dump.js`,
+  then `node test/match-golden-make.js --why "<what changed>"`, in the same
+  commit. `CLAUDE.md` and §8 now give that command.
 
 ### After a deploy — check it
 

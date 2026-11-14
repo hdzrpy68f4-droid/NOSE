@@ -3,6 +3,24 @@
  * code produced BEFORE it moved into js/match-math.js, for test/match-test.js
  * to hold the shared module to.
  *
+ * Since 2026-11-14 it can be made again, from today's maths:
+ *
+ *   node test/extract-dump.js
+ *   node test/match-golden-make.js
+ *       the same file, byte for byte, while no score has moved
+ *   node test/match-golden-make.js --why "<what changed>"
+ *       for a change that is MEANT to move scores: writes the reason and
+ *       today's commit into "about" and "source"
+ *
+ * With no bundle named, the maths comes from js/match-math.*.js through
+ * scripts/lib/match.js and the demo profiles from js/nose.*.js's PROFILES.
+ * Without --why the "about" and "source" strings already in the file are
+ * kept. Run with --why only in the commit that changes the maths, and say
+ * why there; never to make a test pass. PARSER-HANDOFF s13, "The maths has a
+ * property test".
+ *
+ * The first run, kept for the record:
+ *
  *   git show b596508:js/nose.81d6bb53.js > /tmp/nose-before.js
  *   node test/match-golden-make.js /tmp/nose-before.js
  *
@@ -21,8 +39,8 @@
  *   - sanitizeTerps() and coerce() on raw lab spellings, below-LOQ strings,
  *     cannabinoids, nerolidol isomers and non-numbers
  *
- * There is nothing to re-run: a changed golden file would mean the maths
- * changed, and that is what the test exists to catch. Inputs are written
+ * A changed golden file means the maths changed, and that is what the test
+ * exists to catch. Inputs are written
  * first and read back before anything is computed, so the test recomputes
  * from byte-identical objects, key order included - cosine() sums in key
  * order, and a float sum depends on its order.
@@ -60,13 +78,42 @@ function oldMaths(bundlePath) {
   return vm.runInContext(`${code}\n;({ TERPENES, PROFILES, coerce, sanitizeTerps, total, normalize, averageProfiles, cosine, matchBand })`, ctx);
 }
 
+/* Today's maths: js/match-math.*.js as the app loads it, and the demo
+   profiles from the one js/nose.*.js, read from its own text. */
+function todaysMaths() {
+  const M = require(path.join(ROOT, 'scripts/lib/match.js')).load();
+  const jsDir = path.join(ROOT, 'js');
+  const bundles = fs.readdirSync(jsDir).filter(f => /^nose(\.[0-9a-f]{8})?\.js$/.test(f));
+  if (bundles.length !== 1) throw new Error(`expected exactly one js/nose.<hash>.js, found ${bundles.length}`);
+  const lines = fs.readFileSync(path.join(jsDir, bundles[0]), 'utf8').split('\n');
+  const code = [...block(lines, '    const PROFILES = [', l => l.startsWith('    ];')), '    ];'].join('\n');
+  const PROFILES = vm.runInContext(`${code}\n;PROFILES`, vm.createContext({}));
+  return { ...M, PROFILES };
+}
+
 /* JSON cannot hold NaN or the infinities; coerce() cases carry them as {"$": "NaN"}. */
 const encode = v => (typeof v === 'number' && !Number.isFinite(v) ? { $: String(v) } : v);
 
 function main() {
-  const bundle = process.argv[2];
-  if (!bundle) { console.error('usage: node test/match-golden-make.js <pre-move js/nose bundle>'); process.exit(2); }
-  const M = oldMaths(bundle);
+  const args = process.argv.slice(2);
+  const whyAt = args.indexOf('--why');
+  const why = whyAt >= 0 ? args[whyAt + 1] : null;
+  if (whyAt >= 0 && !why) { console.error('usage: node test/match-golden-make.js [--why "<what changed>"] | <pre-move js/nose bundle>'); process.exit(2); }
+  const bundle = whyAt >= 0 ? null : args[0];
+  const M = bundle ? oldMaths(bundle) : todaysMaths();
+  let about = 'Scores from the maths in js/nose.81d6bb53.js at b596508, before it moved into js/match-math.js. ' +
+              'Written once by test/match-golden-make.js; read by test/match-test.js. Never regenerate to make a test pass.';
+  let source = 'js/nose.81d6bb53.js @ b596508';
+  if (why) {
+    const commit = require('child_process').execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: ROOT, encoding: 'utf8' }).trim();
+    const file = path.basename(require(path.join(ROOT, 'scripts/lib/match.js')).matchFile());
+    source = `js/${file}, regenerated ${new Date().toISOString().slice(0, 10)} on top of ${commit}`;
+    about = `Scores from the maths in ${source}: ${why}. ` +
+            'Written by test/match-golden-make.js --why; read by test/match-test.js. Never regenerate to make a test pass.';
+  } else if (!bundle && fs.existsSync(OUT)) {
+    const before = JSON.parse(fs.readFileSync(OUT, 'utf8'));
+    about = before.about; source = before.source;
+  }
   const { parseCoa } = require(path.join(ROOT, 'netlify/functions/lib/parse-coa.js'));
 
   /* --- inputs, written and read back before use --------------------------- */
@@ -120,9 +167,8 @@ function main() {
   const bands = scores.map(s => ({ score: s, band: M.matchBand(s) }));
 
   const golden = {
-    about: 'Scores from the maths in js/nose.81d6bb53.js at b596508, before it moved into js/match-math.js. ' +
-           'Written once by test/match-golden-make.js; read by test/match-test.js. Never regenerate to make a test pass.',
-    source: 'js/nose.81d6bb53.js @ b596508',
+    about,
+    source,
     profiles: decoded.profiles,
     edges: decoded.edges,
     normalized,
@@ -142,7 +188,7 @@ function main() {
     }
   };
   fs.writeFileSync(OUT, JSON.stringify(golden) + '\n');
-  console.log(`wrote ${path.relative(ROOT, OUT)}: ${decoded.profiles.length} profiles, ${pairs.length} pairs, ` +
+  console.log(`wrote ${path.relative(ROOT, OUT).split(path.sep).join('/')}: ${decoded.profiles.length} profiles, ${pairs.length} pairs, ` +
               `${palates.length} palates, ${bands.length} bands, ${golden.coerce.length} coerce cases`);
 }
 

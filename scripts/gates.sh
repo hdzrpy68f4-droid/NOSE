@@ -96,6 +96,10 @@ gate 'review queue'   'review-queue clean'       '^review-queue clean$' \
   node test/review-queue-test.js
 gate 'match maths'    'match clean'              '^match clean$' \
   node test/match-test.js
+# What must always be true of the maths: scale, order, below-limit rows, the
+# band edges - over 20,000 seeded pairs.
+gate 'match props'    'match-props clean'        '^match-props clean$' \
+  node test/match-props-test.js
 # The app's votes (match-feedback.js, feedback-read.js): every band matchBand()
 # gives is stored and counted, the question asks about smell and taste, and
 # since 2026-10-14 a vote's smell words are checked and stored. Offline,

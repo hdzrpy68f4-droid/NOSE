@@ -68,7 +68,7 @@ There's no manual deploy. On every push to `main`, `.github/workflows/gates.yml`
 - runs `scripts/check-trust.mjs` and `check-published.js`
 
 Shared front-end modules, each with one home:
-- `js/match-math.*.js`: **all the matching maths** (`window.NoseMatch`, the `TERPENES` → family map, `matchBand()`, `shownScore()`). The app, the B2B ranker (`b2b-rank`) and the Node scripts (`scripts/lib/match.js`) all read it, and `match-test.js` fails if another copy appears. Scores are pinned bit for bit in `test/fixtures/match-golden.json`. If a change alters scores, regenerate it with `test/match-golden-make.js` in the same commit and say why.
+- `js/match-math.*.js`: **all the matching maths** (`window.NoseMatch`, the `TERPENES` → family map, `matchBand()`, `shownScore()`). The app, the B2B ranker (`b2b-rank`) and the Node scripts (`scripts/lib/match.js`) all read it, and `match-test.js` fails if another copy appears. Scores are pinned bit for bit in `test/fixtures/match-golden.json`. If a change is meant to alter scores, regenerate it in the same commit: `node test/extract-dump.js`, then `node test/match-golden-make.js --why "<what changed>"`. `match-props-test.js` states what must hold either way (scale, order, below-limit rows, the band edges).
 - `js/aroma-bar.*.js`: the six-family bar (citrus, earthy, floral, herbal, pine, spice), shared by the app and the widget.
 - `css/tokens.*.css`: the only place the family colours are defined. `colour-tokens-test` checks every copy against it.
 
@@ -87,7 +87,7 @@ Shared front-end modules, each with one home:
 - Columns are chosen by **reconciliation** (which column sums to the lab's own printed total), not by position. The readers form an **ordered pipeline** (forward → column-major → backward), not a scoring contest; a contest was tried and broke ACS and TerpLife. The empirical constants each come from a real failure, so changing one needs a fixture that justifies it.
 - **A change that fixes one lab and breaks another is not a fix.** Revert it. Parity also compares `readBy`, `productClass`, `moisture`, `waterActivity` and `warnings`, so a change of route shows up as DIFFER and needs deliberate re-baselining in `test/fixtures/coa-baseline.json`.
 - The output field names (§7) are read by the app by name; renaming one breaks it silently. `rejectReasons` and `warnings` are shown to users **verbatim**, so write them as plain English with no internal class names.
-- **A new terpene key takes two edits:** `ANALYTE_MAP` in the parser **and** `TERPENES` in `js/match-math.*.js`. Otherwise `sanitizeTerps()` silently drops it. It changes scores, so regenerate the golden file. `wip/nose-farnesene-wip.js` is unfinished work on exactly this.
+- **A new terpene key takes two edits:** `ANALYTE_MAP` in the parser **and** `TERPENES` in `js/match-math.*.js`. Otherwise `sanitizeTerps()` silently drops it. It changes scores, so regenerate the golden file with `node test/match-golden-make.js --why "<what changed>"`.
 - Before trusting a test result, confirm your change is in the tree (grep for a token unique to it). A run against an unpatched file looks like a pass.
 
 ## Repository hygiene
