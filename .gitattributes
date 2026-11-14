@@ -1,0 +1,8 @@
+# Bundle names are hashes of file bytes, and bash cannot run CRLF scripts,
+# so every text file is checked out with LF endings on every system.
+* text=auto eol=lf
+*.pdf binary
+*.png binary
+*.jpg binary
+*.avif binary
+*.webp binary
