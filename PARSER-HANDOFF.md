@@ -5501,8 +5501,13 @@ asked for the recommended choice on each. What was done:
    people, and rewriting history needs a force push the ruleset blocks.
 6. **Who can move `live`:** left. The hand-push fallback is still the
    documented way out when promote fails.
-7. **Two dashboard checks** (Netlify deploy previews and secret contexts;
-   Dependabot alerts): still to do; only the owner can see those pages.
+7. **Two dashboard checks**, done 2026-11-14. Dependabot alerts are on
+   (the owner switched them on). Netlify builds Deploy Previews only for pull
+   requests against `live`. `NOSE_DB_URL` and `NOSE_B2B_DB_URL` were already
+   Production-only; `SUPABASE_SERVICE_KEY` and `FEEDBACK_READ_TOKEN` held the
+   production value in Deploy Previews, Branch deploys and Preview Server &
+   Agent Runners too, and are now Production-only. The live site was
+   unaffected (`live-check clean` afterwards).
 8. **Row-level security:** not enabled. The rule is written here instead:
    **no page talks to Supabase directly.** Every query runs in a Netlify
    function as `nose_writer` or `nose_b2b`. The day a browser-side Supabase
@@ -5612,8 +5617,7 @@ within a day; `/app` has six `role="status"` regions.
   `curl`. It answered 204. Ignore it when reading error reports; it is
   purged after 90 days with the rest.
 - Still to check by a person: the first `sessions-purge` run in Netlify's
-  function log, Netlify's deploy-preview and environment-variable contexts
-  (decision 7), and the first Dependabot pull requests.
+  function log, and the first Dependabot pull requests.
 
 ### After a deploy — check it
 
