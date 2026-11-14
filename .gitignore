@@ -31,3 +31,7 @@ b2b-out/
 docs/project-notes/nose-security-audit-2026-10-15.md
 docs/project-notes/nose-site-code-audit-pitch-readiness-2026-10-26.md
 docs/project-notes/nose-b2b-readiness-audit-2026-10-26.md
+
+# Reviews that list open weaknesses with file and line numbers. This repo is
+# public, so they stay on this computer only, as the three audits above do.
+docs/reviews/
