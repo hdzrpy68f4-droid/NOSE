@@ -864,17 +864,17 @@ async function offline(log = console.log) {
   check('...the real tree passes', [real.status, /^==> no database hosts or credentials/m.test(real.stdout)], [0, true]);
 
   /* --- the code: one place deletes, nothing consumer reaches B2B --------- */
-  const sources = dir => fs.readdirSync(path.join(ROOT, dir), { recursive: true }).map(f => path.join(dir, String(f)))
-    .filter(f => /\.(js|mjs)$/.test(f) && !f.split(path.sep).includes('node_modules'));
+  const sources = dir => fs.readdirSync(path.join(ROOT, dir), { recursive: true }).map(f => path.join(dir, String(f)).split(path.sep).join('/'))
+    .filter(f => /\.(js|mjs)$/.test(f) && !f.split('/').includes('node_modules'));
   const code = [...sources('netlify'), ...sources('scripts')].map(f => [f, fs.readFileSync(path.join(ROOT, f), 'utf8')]);
   check('the only code that deletes from b2b is scripts/b2b-store.js (and the probe, proving nose_b2b cannot)',
     code.filter(([, s]) => /(delete\s+from|truncate)\s+b2b\./i.test(s)).map(([f]) => f).sort(), ['scripts/b2b-store.js', 'scripts/probe-db.js']);
   check('...and in the probe only inside a refusal it expects',
     code.find(([f]) => f === 'scripts/probe-db.js')[1].split('\n').filter(l => /(delete\s+from|truncate)\s+b2b\./i.test(l)).every(l => /denied\(/.test(l)), true);
   check('no function outside the b2b- ones loads the B2B store or its switch, and lib/b2b-store.js names no table of schema nose',
-    [code.filter(([f, s]) => f.startsWith(`netlify${path.sep}functions${path.sep}`) && !/[\\/]b2b-[^\\/]*\.js$/.test(f) &&
+    [code.filter(([f, s]) => f.startsWith('netlify/functions/') && !/[\\/]b2b-[^\\/]*\.js$/.test(f) &&
                              /b2b-store|b2b-flag/.test(s)).map(([f]) => f),
-     /\bnose\.[a-z_]+/.test(code.find(([f]) => f.endsWith(`lib${path.sep}b2b-store.js`))[1])],
+     /\bnose\.[a-z_]+/.test(code.find(([f]) => f.endsWith('lib/b2b-store.js'))[1])],
     [[], false]);
   const mine = ['supabase/migrations/' + B2B_MIGRATION, 'supabase/migrations/' + TESTED_ON_MIGRATION,
                 'netlify/functions/lib/b2b-store.js', 'netlify/functions/lib/b2b-flag.js',

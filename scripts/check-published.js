@@ -114,7 +114,7 @@ function scan(files, patterns, why, hits) {
     const lines = fs.readFileSync(file, 'utf8').split('\n');
     lines.forEach((line, i) => {
       for (const [re, what] of patterns) {
-        if (re.test(line)) hits.push(`${path.relative(ROOT, file) || file}:${i + 1}: ${what} (${why})`);
+        if (re.test(line)) hits.push(`${path.relative(ROOT, file).split(path.sep).join('/') || file}:${i + 1}: ${what} (${why})`);
       }
     });
   }

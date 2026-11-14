@@ -801,7 +801,7 @@ async function main() {
   for (const dir of ['netlify', 'scripts']) {
     for (const f of fs.readdirSync(path.join(ROOT, dir), { recursive: true }).map(String)) {
       const p = path.join(ROOT, dir, f);
-      if (/\.(c|m)?js$/.test(f) && !f.split(path.sep).includes('node_modules') && /removeStoreVotes\(/.test(codeOf(fs.readFileSync(p, 'utf8')))) callers.push(path.relative(ROOT, p));
+      if (/\.(c|m)?js$/.test(f) && !f.split(path.sep).includes('node_modules') && /removeStoreVotes\(/.test(codeOf(fs.readFileSync(p, 'utf8')))) callers.push(path.relative(ROOT, p).split(path.sep).join('/'));
     }
   }
   check('only delete-store deletes votes: scripts/b2b-store.js and the votes module itself, no function', callers.sort(),

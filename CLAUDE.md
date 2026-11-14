@@ -28,7 +28,7 @@ Give terminal and Git instructions as beginner-friendly numbered steps with exac
 
 ## Commands
 
-The project ran in a GitHub Codespace (Linux). Every script is bash and Node 24 (`.nvmrc`), so on Windows use Git Bash.
+The project ran in a GitHub Codespace (Linux). Every script is bash and Node 24 (`.nvmrc`). It also runs on Windows: see "Windows" below.
 
 ```bash
 npm ci
@@ -37,6 +37,13 @@ npm install --no-save playwright@1.64.1 && npx playwright install --with-deps ch
 bash scripts/gates.sh                # every gate; must end "ALL GATES GREEN" (npm test / npm run gates are the same)
 bash build.sh                        # must end "OK — ready to deploy"
 ```
+
+### Windows
+
+- Install Node 24 (the major version `.nvmrc` names) from nodejs.org, and run every command in **Git Bash**, not PowerShell or cmd.
+- `.gitattributes` keeps LF line endings on every system. Bundle names are hashes of file bytes, and bash can't run CRLF scripts. If the first gate says "this checkout has CRLF line endings", the checkout predates that file: with a clean tree, run `git rm --cached -r -q . && git reset --hard -q`.
+- The Playwright line drops `--with-deps`: `npm install --no-save playwright@1.64.1 && npx playwright install chromium`.
+- Tests and scripts that compare or print a path write it with `/` on every system (`p.split(path.sep).join('/')`).
 
 There is no test framework. Each test is a plain Node script, so run one by itself with `node test/<name>-test.js` (or `.mjs`). Each prints one exact success line, usually `<name> clean`. `gates.sh` passes a gate only on that exact line, and the expected counts are hard-coded there. The core parser checks:
 

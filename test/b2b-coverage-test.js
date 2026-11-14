@@ -536,14 +536,14 @@ async function main() {
     for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
       const p = path.join(dir, e.name);
       if (e.isDirectory()) walk(p);
-      else if (/\.(c|m)?js$/.test(e.name) && CHAIN.test(fs.readFileSync(p, 'utf8'))) holders.push(path.relative(ROOT, p));
+      else if (/\.(c|m)?js$/.test(e.name) && CHAIN.test(fs.readFileSync(p, 'utf8'))) holders.push(path.relative(ROOT, p).split(path.sep).join('/'));
     }
   })(path.join(ROOT, 'netlify'));
   (function walk(dir) {
     for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
       const p = path.join(dir, e.name);
       if (e.isDirectory()) walk(p);
-      else if (/\.(c|m)?js$/.test(e.name) && CHAIN.test(fs.readFileSync(p, 'utf8'))) holders.push(path.relative(ROOT, p));
+      else if (/\.(c|m)?js$/.test(e.name) && CHAIN.test(fs.readFileSync(p, 'utf8'))) holders.push(path.relative(ROOT, p).split(path.sep).join('/'));
     }
   })(path.join(ROOT, 'scripts'));
   check('the fetch chain has one home: only lib/fetch-report.js defines it, under netlify/ and scripts/', holders, ['netlify/functions/lib/fetch-report.js']);

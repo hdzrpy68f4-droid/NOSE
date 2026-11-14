@@ -286,7 +286,7 @@ async function main() {
       for (const e of fs.readdirSync(d, { withFileTypes: true })) {
         const p = path.join(d, e.name);
         if (e.isDirectory()) { if (e.name !== 'node_modules') walk(p); }
-        else if (/\.(c|m)?js$/.test(e.name) && READER_FN.test(fs.readFileSync(p, 'utf8'))) holders.push(path.relative(ROOT, p));
+        else if (/\.(c|m)?js$/.test(e.name) && READER_FN.test(fs.readFileSync(p, 'utf8'))) holders.push(path.relative(ROOT, p).split(path.sep).join('/'));
       }
     })(path.join(ROOT, dir));
   }

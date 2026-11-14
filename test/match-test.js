@@ -91,7 +91,7 @@ const html = [];
   }
 })(ROOT);
 const loaders = html.filter(p => /\/js\/nose(\.[0-9a-f]{8})?\.js/.test(fs.readFileSync(p, 'utf8')));
-check('the pages that load the app bundle', loaders.map(p => path.relative(ROOT, p)).sort(), ['app.html', 'index.html']);
+check('the pages that load the app bundle', loaders.map(p => path.relative(ROOT, p).split(path.sep).join('/')).sort(), ['app.html', 'index.html']);
 check('...each load js/match-math first, from the same build',
   loaders.map(p => {
     const s = fs.readFileSync(p, 'utf8');
@@ -108,7 +108,7 @@ const copies = [];
     if (['node_modules', '.git', 'vendor'].includes(e.name)) continue;
     const p = path.join(dir, e.name);
     if (e.isDirectory()) walk(p);
-    else if (/\.(c|m)?js$/.test(e.name) && p !== file && COPY.test(fs.readFileSync(p, 'utf8'))) copies.push(path.relative(ROOT, p));
+    else if (/\.(c|m)?js$/.test(e.name) && p !== file && COPY.test(fs.readFileSync(p, 'utf8'))) copies.push(path.relative(ROOT, p).split(path.sep).join('/'));
   }
 })(ROOT);
 check('no other file in the repo holds a copy of the maths (wip/ is a stale draft, loaded by nothing)',
@@ -176,7 +176,7 @@ const scanForRounding = dir => {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
     const p = path.join(dir, e.name);
     if (e.isDirectory()) scanForRounding(p);
-    else if (/\.(c|m)?js$/.test(e.name) && ROUNDED.test(fs.readFileSync(p, 'utf8'))) rounded.push(path.relative(ROOT, p));
+    else if (/\.(c|m)?js$/.test(e.name) && ROUNDED.test(fs.readFileSync(p, 'utf8'))) rounded.push(path.relative(ROOT, p).split(path.sep).join('/'));
   }
 };
 scanForRounding(jsDir);

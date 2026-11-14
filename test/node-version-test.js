@@ -54,6 +54,14 @@ if (wanted) {
     problems.push(`running Node ${runningMajor}, .nvmrc says ${wanted} - switch: nvm install, then nvm alias default ${wanted}, then open a new terminal`);
 }
 
+/* build.sh as it sits in the working folder: bash cannot run a script with
+   CRLF line endings, and a bundle hashed over CRLF bytes gets another name
+   than the one GitHub computes. .gitattributes keeps LF on every system. */
+try {
+  if (fs.readFileSync(path.join(ROOT, "build.sh")).includes(13))
+    problems.push("this checkout has CRLF line endings - see CLAUDE.md, Windows");
+} catch (e) { problems.push(`build.sh could not be read: ${e.message}`); }
+
 if (problems.length) {
   for (const p of problems) console.log(`FAIL  ${p}`);
   process.exit(1);

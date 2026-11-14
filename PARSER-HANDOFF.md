@@ -190,7 +190,10 @@ the gates is checked there by all of them.
 project dependencies. Install them once per Codespace, and again after any
 `npm ci`, which removes Playwright: `npm install --no-save playwright@1.64.1`
 (the version the workflow pins; change both together), then
-`npx playwright install --with-deps chromium`. Without them the gate fails and
+`npx playwright install --with-deps chromium`. On the Windows desktop, in Git
+Bash, the gates run the same way since 2026-11-13, with
+`npx playwright install chromium` (no `--with-deps`; §13, "The Windows
+desktop builds and runs the gates"). Without them the gate fails and
 prints that command. It runs after the build, so it tests the pages as they
 deploy (§13, "The input paths").
 
@@ -5047,6 +5050,42 @@ PARSER-HANDOFF.md                     s13: "What exists", "How coa.js feeds it",
      out. Then `node scripts/probe-db.js`: probe clean - TLS, the roles and
      the grants, through the `clientConfig()` that is db.js's now, as
      nose_writer and, with `NOSE_B2B_DB_URL`, nose_b2b.
+
+### The Windows desktop builds and runs the gates, 2026-11-13
+
+From the whole-repo review of 2026-11-12 (finding 3, prompt P3). The work
+moved to a Windows 10 desktop on 2026-11-11, and that checkout could not run
+anything.
+
+- **Line endings.** There was no `.gitattributes`, and Git for Windows sets
+  `core.autocrlf=true`, so 196 tracked files were checked out with CRLF.
+  bash could not run `build.sh` or `scripts/gates.sh`, and a bundle hashed
+  over CRLF bytes would get another name than GitHub computes.
+  `.gitattributes` now says `* text=auto eol=lf`, with pdf, png, jpg, avif
+  and webp binary. `git add --renormalize .` staged nothing else: git
+  already stored every file with LF. The working folder was then rewritten
+  with `git rm --cached -r -q . && git reset --hard -q`, which leaves
+  untracked and ignored files alone; `git ls-files --eol | grep -c w/crlf`
+  prints 0.
+- **Node.** Node 24.22.1, installed with winget (`OpenJS.NodeJS.LTS`, version
+  24.22.1). winget's LTS package is at Node 26, so the version is named.
+- **The first gate run, sorted.** Pile one, a test or script that assumed `/`
+  in a path: match maths, remove copies, b2b coverage, b2b store, b2b
+  catalog, b2b endpoints - the six the review named. In b2b store,
+  `scripts/check-published.js` itself printed a tracked file's path with `\`.
+  Pile two, anything else: empty. The three browser gates failed only until
+  Chromium was installed.
+- **The fix.** Where one of those six tests, or `check-published.js`, builds
+  a path to compare or print, it writes `/` on every system
+  (`p.split(path.sep).join('/')`). No check is loosened and no expected value
+  changed.
+- **`node-version-test.js`** gains one check: `build.sh`, as it sits in the
+  working folder, holds no carriage return. It fails with "this checkout has
+  CRLF line endings - see CLAUDE.md, Windows".
+- `CLAUDE.md` has a "Windows" section under "Commands". Playwright on Windows
+  installs without `--with-deps`.
+- **The Codespace needs nothing.** Its files were already LF, and
+  `path.sep` is `/` there, so each changed line does what it did.
 
 ### After a deploy — check it
 
