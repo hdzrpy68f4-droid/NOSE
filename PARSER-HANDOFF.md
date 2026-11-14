@@ -5229,6 +5229,41 @@ listing failed, so `account-delete` reported no failure.
   open and is not touched here.
 - **Not yet checked:** the first daily run in Netlify's function log.
 
+### Four sentences made true, 2026-11-14
+
+From the review of 2026-11-12 (finding 6, prompt P6). Four public sentences
+said more than the code does. No code changed; `coa.js`'s header comment did.
+
+- **Privacy, the cookie.** It said the cookie "is not sent when another site
+  links to us". `auth.js` sets `SameSite=Lax`, chosen so that it is sent when
+  someone follows a link to NOSE. Now: "The cookie cannot be read by
+  JavaScript and is only sent over HTTPS. It is sent when you follow a link
+  to NOSE, so you arrive signed in, and it is not sent with requests another
+  site makes in the background. An earlier version of this sentence said it
+  was not sent when another site links to us."
+- **Privacy, the report check.** It said "A fabricated report fails that
+  test whatever address it arrived from." The test is arithmetic. Now: "...
+  the figures inside it must add up to the total the report itself prints.
+  That catches a report we misread. It does not prove a report is genuine: a
+  made-up document whose numbers add up would pass. An earlier version of
+  this paragraph said a fabricated report fails that test."
+- **The guide** (`learn/how-to-read-a-coa/`). It said NOSE accepts a report
+  only with "a lab layout it recognizes". Now: "NOSE fetches the PDF and only
+  accepts it if the terpene values reconcile with the total the report
+  prints. If the lab or the layout is one NOSE has not seen before, the card
+  says so." `dateModified` is 2026-11-14.
+- **Terms.** It told a person to change their password, which no page does.
+  Now: "If you think someone else has access, use Log out on every device on
+  your account page and email us. Changing a password from the site is not
+  available yet."
+- **The decision behind the second and third** (review, decision 2): a
+  report from a lab the parser has not seen stays accepted when its numbers
+  reconcile, with the card's novelty line. Refusing unknown labs would turn
+  away real reports. The probe, a made-up 12-terpene report from "Some New
+  Lab LLC", printed `true null unknown 1`: usable, no lab, product unknown,
+  one novelty note.
+- `sitemap.xml`: lastmod 2026-11-14 for the three pages.
+
 ### After a deploy — check it
 
 First, the run on GitHub is green and `live` has moved: Actions → gates → the

@@ -26,12 +26,16 @@
  *      every redirect
  *   3. bounded time and bounded bytes
  *   4. it must really be a PDF (magic bytes, not the Content-Type header)
- *   5. the CONTENT must stand up: a known lab template, a product class we
- *      model, and a terpene total that reconciles against the figure the lab
- *      printed itself
+ *   5. the CONTENT must reconcile: the terpene values read must add up to
+ *      the total the report printed itself. A recognised lab and product
+ *      class are recorded, not required: a report from a lab the parser has
+ *      never seen is accepted when its numbers reconcile, and the card says
+ *      the layout is new
  *
- * (5) is the substantive boundary. A fabricated report on an allowlisted
- * domain would pass a hostname check and fail reconciliation.
+ * (5) is the substantive boundary. Reconciliation shows the report was read
+ * consistently. It does not show the report is genuine: a made-up document
+ * whose numbers add up passes it, as it would have passed a hostname check.
+ * (Corrected 2026-11-14; this header said a known lab template was required.)
  *
  * Checks 1 to 4 are lib/fetch-report.js, moved there unchanged on 2026-10-05
  * so the dispensary coverage report (scripts/b2b-coverage.js) fetches through
