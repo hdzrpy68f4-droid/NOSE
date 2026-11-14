@@ -5619,6 +5619,29 @@ within a day; `/app` has six `role="status"` regions.
 - Still to check by a person: the first `sessions-purge` run in Netlify's
   function log, and the first Dependabot pull requests.
 
+### The real reparse after the review's parser changes, 2026-11-14
+
+Run in the Codespace once it had pulled `da2f083` (its first dry run used
+`dbd1d8c`, the checkout from 2026-11-11, and showed nothing: check the
+`parser` line before reading a dry run's counts).
+
+- `node scripts/reparse.js --dry-run` with parser `da2f083`: 69 documents,
+  66 unchanged, 3 "values changed", 0 either way between accepted and
+  refused. The three - a TerpLife, a Green Scientific and a Method report -
+  were refused before and after, with the same reader and total: "also
+  changed: rejectReasons", the plain-words rewording alone. **No archived
+  report prints a terpene both as a total and as its isomers.**
+- The real run is recorded as run #24: parser `da2f083` checked 69
+  documents through document #463.
+- `node scripts/archive-health.js` first failed on the PDF store: the
+  Codespace's `NETLIFY_AUTH_TOKEN`, a personal access token made 2026-09-23,
+  had expired on 2026-10-23. A new one, "NOSE Codespace scripts", was made
+  2026-11-14 with a 90-day expiry (so it ends about 2027-02-12) and put in
+  the repository's Codespaces secret. Then: database ok, 69 documents, 69
+  extractions, 267 parses, 13.0 MB of the free plan's 500 MB; 67 PDFs, 51.3
+  MB; 2 documents with no PDF (#3 and #184, both first fetched 2026-09-23,
+  before PDFs were kept). `archive-health: ok, 1 note(s)`.
+
 ### After a deploy — check it
 
 Since 2026-11-14 the workflow's third job, `live-check`, does the first part
@@ -5832,6 +5855,11 @@ schema comment if wanted.
   at .4), and `shell.css`'s `.hero:before` glow (all six at .10 to .16), each written as
   `rgba()`. Pointing them at the tokens means `color-mix()`, and the gate
   does not count a tint as the colour.
+- **The Codespace's Netlify token expires about 2027-02-12** (made
+  2026-11-14, 90 days). `archive-health` and `reparse --reextract` then fail
+  with a 401: make a new personal access token in Netlify (User settings,
+  Applications) and update the repository's Codespaces secret
+  `NETLIFY_AUTH_TOKEN`, then restart the Codespace.
 - **The weekly live check stops after 60 days without repository activity.**
   GitHub switches off a scheduled workflow in a public repository then, and
   emails the owner first; "Enable workflow" under Actions turns it back on.
