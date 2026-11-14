@@ -116,6 +116,18 @@ const ANALYTE_MAP = {
   'TRANS-B-FARNESENE': 'farnesene'          // ACT
 };
 
+/* Each key as a person reads it, for the sentences in rejectReasons - shown
+   word for word, so never an internal key such as pinene_a. One name for
+   every key ANALYTE_MAP can give; test/summed-rows-test.js checks that. The
+   app's own names are in js/match-math, which the parser does not load. */
+const PRINTED_NAME = {
+  limonene: 'limonene', myrcene: 'myrcene', caryophyllene: 'β-caryophyllene', humulene: 'α-humulene',
+  pinene_a: 'α-pinene', pinene_b: 'β-pinene', fenchol: 'fenchol', camphene: 'camphene',
+  linalool: 'linalool', bisabolol: 'α-bisabolol', terpineol: 'terpineol', nerolidol: 'nerolidol',
+  terpinolene: 'terpinolene', farnesene: 'farnesene', ocimene: 'ocimene'
+};
+const printedName = key => PRINTED_NAME[key] || String(key).replace(/_/g, ' ');
+
 /* A terpene printed both as a total and as its isomers counts once.
  *
  * Several spellings above map to one key, and every reader adds each row that
@@ -1220,11 +1232,11 @@ function parseCoa(text){
   if (terpenesTested === false)
     rejectReasons.push('the lab did not run a terpene panel on this sample');
   if (totalTerpenes == null)
-    rejectReasons.push('no total terpene figure printed, so coverage cannot be known');
+    rejectReasons.push('this report prints no total terpene figure NOSE can read, so NOSE cannot check its own reading');
   else if (!(totalTerpenes > 0))
     rejectReasons.push('lab reported a total of zero terpenes');
   if (nonZero === 0)
-    rejectReasons.push('no modelled terpene measured above the limit of quantitation');
+    rejectReasons.push("none of the terpenes NOSE compares was found above the lab's reporting limit");
   /* Catches the failure the ceiling cannot: values that are individually
      possible and a total that is correct, but most of the table missing. Under
      one number this looked like a partial panel; measured coverage separates
@@ -1241,7 +1253,7 @@ function parseCoa(text){
      honestly, so the guards must not depend on classifying them. */
   if ((INHALABLE.has(productClass) || productClass === 'unknown')
       && nonZero > 0 && nonZero < MIN_ANALYTES_INHALABLE)
-    rejectReasons.push(`only ${nonZero} terpene${nonZero === 1 ? '' : 's'} found on an inhalable product — implausible, so the panel was probably misread`);
+    rejectReasons.push(`only ${nonZero} terpene${nonZero === 1 ? ' was' : 's were'} found, too few for this kind of product, so the panel was probably misread`);
 
   const typicalMax = TYPICAL_MAX_TOTAL[productClass];
   if (typicalMax && totalTerpenes > typicalMax)
@@ -1274,10 +1286,10 @@ function parseCoa(text){
     warnings.push('one terpene accounts for most of the profile — unusual, though some cultivars genuinely are');
 
   for (const key of summedDisagree)
-    rejectReasons.push(`this report lists ${key} both as a total and as separate rows, and the two disagree, so NOSE cannot tell which to use`);
+    rejectReasons.push(`this report lists ${printedName(key)} both as a total and as separate rows, and the two disagree, so NOSE cannot tell which to use`);
 
   if (coverage != null && coverage > COVERAGE_CEILING)
-    rejectReasons.push(`coverage ${(coverage * 100).toFixed(1)}% exceeds the lab total — parse fault, not a lab finding`);
+    rejectReasons.push(`the terpene figures NOSE read add up to more than the total this report prints (${(coverage * 100).toFixed(1)}%), so the table was probably misread`);
   /* Coverage alone is only an INTERNAL consistency check: it compares two
      numbers that can both be wrong. Terpene figures are percentages of mass,
      so anything above 100 means we are reading the wrong column entirely —
@@ -1297,12 +1309,12 @@ function parseCoa(text){
      ratio threshold cannot tell those apart and this can. */
   const distinctValues = new Set(Object.values(terps).filter(v => v > 0)).size;
   if (nonZero >= MIN_DISTINCTNESS_SAMPLE && distinctValues <= MAX_UNIFORM_VALUES)
-    rejectReasons.push(`${nonZero} terpenes across only ${distinctValues} distinct value${distinctValues === 1 ? '' : 's'} — that is a limit column, not a measurement`);
+    rejectReasons.push(`every terpene read as ${distinctValues === 1 ? 'the same figure' : `one of only ${distinctValues} different figures`}, which is what a report's limits column looks like, not its results`);
     const overPercent = Object.entries(terps).filter(([, v]) => v > PERCENT_CEILING);
   if (totalTerpenes != null && totalTerpenes > PERCENT_CEILING)
-    rejectReasons.push(`total of ${totalTerpenes}% is not a possible percentage — wrong column read`);
+    rejectReasons.push(`a total of ${totalTerpenes}% is not possible, so the wrong column was read`);
   if (overPercent.length)
-    rejectReasons.push(`${overPercent.map(([k]) => k).join(', ')} above 100% — wrong column read`);
+    rejectReasons.push(`${overPercent.map(([k]) => printedName(k)).join(', ')} read above 100%, which is not possible, so the wrong column was read`);
 
   /* Freshness signals (moisture 9-13%, water activity < 0.65) describe the
      cure of plant material. On an extract they are not unknown, they are
@@ -1608,6 +1620,7 @@ function readColumnMajor(rawLines, printedTotal){
 }
 
 module.exports.readColumnMajor = readColumnMajor;
+module.exports._printedNames = { PRINTED_NAME, keys: [...new Set(Object.values(ANALYTE_MAP))] };
 
 /* ------------------------------------------------------------------ novelty --
  * Is this document new to the parser? Output field `novelty` (s7): short

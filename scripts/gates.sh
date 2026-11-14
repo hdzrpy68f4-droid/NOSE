@@ -86,6 +86,10 @@ gate 'coa dates'      'coa-dates clean'          '^coa-dates clean$' \
 # report is refused - on made-up reports; no fixture prints both.
 gate 'summed rows'    'summed-rows clean'        '^summed-rows clean$' \
   node test/summed-rows-test.js
+# The sentences a refused report shows a person hold none of the parser's
+# own words.
+gate 'refusal words'  'refusal-words clean'      '^refusal-words clean$' \
+  node test/refusal-words-test.js
 gate 'store'          'store clean'              '^store clean$' \
   node test/store-test.js
 gate 'probe logic'    'probe-test clean'         '^probe-test clean$' \
