@@ -5362,7 +5362,130 @@ From the review of 2026-11-12 (finding 12, prompt P12).
   listened with VoiceOver or TalkBack. The live-region and key behaviour is
   checked in headless Chromium only.
 
+### The live site is checked after every deploy, 2026-11-14
+
+From the review of 2026-11-12 (finding 13, prompt P13). The workflow ended
+when promote pushed `live`. The gates load each function's source in Node;
+Netlify's bundling and runtime ran only on Netlify, so a function that did
+not start there, a failed Netlify build, a paused site or an expiring
+certificate waited for whoever next opened the site.
+
+- **`scripts/live-check.sh <site> [<commit>]`**, bash, curl, git and
+  openssl. It reads only: no vote, no error report, no link to a report, no
+  secret. One line per check, then `live-check clean`, or exit 1 naming the
+  first failure. It checks:
+  - with a commit: within 10 minutes, the home page and `/app` link the
+    same fingerprinted files as that commit's `index.html` and `app.html`.
+    A commit that renamed none of those files looks like the one before it,
+    so for such a commit this shows the site is up, not that the deploy
+    arrived
+  - `/`, `/app`, `/privacy/` and `/methodology/` answer 200
+  - `coa` answers a body of `null` with `{"error":"Could not read that
+    request."}`
+  - `b2b-feed` with no key answers 400 (the module on) or 404 (off)
+  - `/PARSER-HANDOFF.md`, `/CLAUDE.md`, `/package.json` and `/README.md`
+    answer 404
+  - the certificate has more than 14 days left
+- **`.github/workflows/gates.yml`** gains `live-check` (needs promote, runs
+  only when promote succeeded, 15-minute limit, `contents: read`) and
+  `weekly-live-check` (Mondays 09:17 UTC and "Run workflow", needing neither
+  gates nor promote). The gates and promote jobs are unchanged line for
+  line. On the weekly schedule the gates job runs too; promote does not.
+- **Checked:** the workflow parses as YAML (js-yaml, in a scratch folder),
+  with four jobs. `actionlint` was not run. On 2026-11-14, from the Windows
+  desktop, `bash scripts/live-check.sh https://nose-app.com` ended
+  `live-check clean`, and with `origin/live` (`530c466`) as the commit it
+  passed too. `b2b-feed` with no key answered 400 that day; the certificate
+  ends 2027-01-25.
+- **This is the first push since 2026-10-16 that changes the workflow
+  file.** If promote fails with "refusing to allow a GitHub App to create or
+  update workflow", the site has not moved: Still open has the steps.
+
+### Dependency alerts, and the QR library's licence, 2026-11-14
+
+From the review of 2026-11-12 (finding 14, prompt P14).
+
+- **`.github/dependabot.yml`:** weekly, for npm (at most 3 open pull
+  requests, minor and patch updates in one group) and for github-actions.
+  Each pull request runs every gate; merging one is a push to main.
+  Written from memory of GitHub's format and parsed as YAML; GitHub's page
+  was not read in this session. Insights, then Dependency graph, then
+  Dependabot shows whether GitHub accepted it.
+- **The licence of html5-qrcode 2.3.8 is Apache-2.0:** its `package.json` at
+  https://unpkg.com/html5-qrcode@2.3.8/package.json says so, and its
+  `LICENSE` there is byte for byte the one at the repository's tag `v2.3.8`
+  (SHA-256 `306bc450...2338c612`), both read 2026-11-14. That text is now
+  `vendor/LICENSE-html5-qrcode.txt`, served beside the library. The package
+  ships no NOTICE file.
+- **Not established:** the minified file bundles a copy of zxing-js.
+  `@zxing/library` 0.19.1 on npm says MIT; which version is bundled was not
+  found, so no second licence file was added. `vendor/README.md` says so.
+- **Licences of what is installed for production** (from
+  `package-lock.json`): 46 MIT, 15 Apache-2.0, 5 ISC, 1 BSD-3-Clause
+  (`jpeg-js`), 1 0BSD (`tslib`), 1 MIT OR CC0-1.0 (`type-fest`), and 1 with
+  no licence field, `callsite`.
+- **For a person, on GitHub:** Settings, then Code security: switch on
+  Dependabot alerts. Not confirmed either way.
+
+### Docs that say what is true, and a README, 2026-11-14
+
+From the review of 2026-11-12 (finding 15, prompt P15), and what the day's
+other changes made untrue.
+
+- `CLAUDE.md`: the wip file is called what it is, a stale draft of the old
+  app bundle, with farnesene done; the bundle example no longer names a
+  hash that has since changed; the golden-file command is the one that
+  works; the functions list names the two purges and `accounts-test`; the
+  deploy paragraph names `live-check`.
+- `README.md`, new: what NOSE is, that the score is an unvalidated
+  hypothesis, where to read next, the four commands, and a licence
+  paragraph that grants nothing - "No licence has been chosen yet" - because
+  none has. `_redirects` forces a 404 for `/README.md`, which the build
+  guard asks for.
+- **P1's last step, done 2026-11-14:** after the deploy of `530c466`,
+  `https://nose-app.com/dry-run.txt` and `/CLAUDE.md` each answered 404.
+
+### The review's decisions, as taken on 2026-11-14
+
+The review of 2026-11-12 listed eight decisions for a person. The owner
+asked for the recommended choice on each. What was done:
+
+1. **The dispensary rail and a shopper's own purchases:** not changed. It
+   changes the widget, which means a new pinned release, and B4 is not
+   scheduled. Recommended when that release is cut: score a purchased batch
+   against the rest of the palate, as `voteScore()` already does. Until
+   then, B4's count of "Close match" cards includes the shopper's own
+   purchases.
+2. **A report from a lab the parser has not seen:** still accepted when its
+   numbers reconcile; the pages were changed to say so ("Four sentences made
+   true").
+3. **A summed row with its isomers:** fixed in the parser on made-up reports
+   ("A terpene printed as a total and as its isomers counts once", below),
+   since the wrong reading is a believable fingerprint and the change moves
+   no real fixture.
+4. **"Your high" on the home page:** left. Both sentences refuse a claim.
+   `CLAUDE.md`'s scope rule is about claiming or implying; a sentence that
+   says NOSE will not predict it is the brand's own position.
+5. **`dry-run.txt` in public history:** left. It names labs and strains, not
+   people, and rewriting history needs a force push the ruleset blocks.
+6. **Who can move `live`:** left. The hand-push fallback is still the
+   documented way out when promote fails.
+7. **Two dashboard checks** (Netlify deploy previews and secret contexts;
+   Dependabot alerts): still to do; only the owner can see those pages.
+8. **Row-level security:** not enabled. The rule is written here instead:
+   **no page talks to Supabase directly.** Every query runs in a Netlify
+   function as `nose_writer` or `nose_b2b`. The day a browser-side Supabase
+   client is wanted, row-level security comes first.
+
 ### After a deploy — check it
+
+Since 2026-11-14 the workflow's third job, `live-check`, does the first part
+of this: after promote it runs `bash scripts/live-check.sh https://nose-app.com
+<commit>` and goes red if the site is not serving that commit within 10
+minutes, or a page, the `coa` function or the `b2b-feed` function does not
+answer as it should ("The live site is checked after every deploy", above).
+A red `live-check` moves nothing back. The checks below are the ones only a
+person can do.
 
 First, the run on GitHub is green and `live` has moved: Actions → gates → the
 newest run shows both jobs, gates and promote, green; the Code tab's branch
@@ -5567,6 +5690,10 @@ schema comment if wanted.
   at .4), and `shell.css`'s `.hero:before` glow (all six at .10 to .16), each written as
   `rgba()`. Pointing them at the tokens means `color-mix()`, and the gate
   does not count a tint as the colour.
+- **The weekly live check stops after 60 days without repository activity.**
+  GitHub switches off a scheduled workflow in a public repository then, and
+  emails the owner first; "Enable workflow" under Actions turns it back on.
+  Not read from GitHub's page in this session: confirm the wording there.
 - **A push that changes `.github/workflows/` may stop promote** (above,
   "Every gate on every push"). GitHub's token takes no `workflows`
   permission - the workflow syntax page lists none - and two reports show
@@ -5590,9 +5717,12 @@ schema comment if wanted.
   after promote moved it (above, "Live ... step 5"). If a later green run
   moves `live` and no deploy follows, that has changed: Deploys → Trigger
   deploy → Deploy project builds `live` by hand meanwhile.
-- **The actions are pinned by hand.** Nothing proposes a newer release of
-  `actions/checkout` or `actions/setup-node`; moving a pin means reading its
-  releases page and changing the commit and the comment together.
+- **The actions are pinned to commits, and Dependabot proposes newer ones**
+  since 2026-11-14 (`.github/dependabot.yml`: weekly, npm and
+  github-actions). A pull request of its that moves a pin changes the
+  workflow file, so the promote item above applies to it. Whether Dependabot
+  alerts are switched on is a repository setting nobody has confirmed:
+  Settings, then Code security.
 - **The archive's re-run tools keep their own text floor**: `scripts/lib/rerun.js`
   has `MIN_TEXT = 200`, its comment saying `coa.js` refuses below it, and
   `reparse.js`, `backfill-from-blobs.js` and `seed-from-fixtures.js` read it

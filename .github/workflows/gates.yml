@@ -11,6 +11,14 @@
 # the only token is GitHub's own, read-only but for promote's one push.
 # Each action is pinned to the commit of its release, read from its releases
 # page on 2026-10-16; the version is in the comment beside it.
+#
+# After promote, the job "live-check" asks the real site whether it is serving
+# that commit and whether its functions answer (scripts/live-check.sh): the
+# gates load each function in Node, and only Netlify runs Netlify's bundling.
+# Once a week the job "weekly-live-check" asks the same of the site as it
+# stands. Both read only, with no secret. A red live-check moves nothing back:
+# the site stays as Netlify left it, and GitHub emails the repository's owner.
+# GitHub switches a schedule off after 60 days without repository activity.
 name: gates
 
 on:
@@ -18,6 +26,9 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+  # Mondays, 09:17 UTC. The gates run then too; promote does not.
+  schedule:
+    - cron: '17 9 * * 1'
 
 # One run per branch at a time; a newer push cancels the older run.
 concurrency:
@@ -97,3 +108,32 @@ jobs:
           # Never forced: git refuses unless live is behind this commit, and
           # then this job fails and nothing moves.
           git push origin "$GITHUB_SHA:refs/heads/live"
+
+  # Is the site serving the commit promote just moved live to? Waits up to 10
+  # minutes for Netlify's build.
+  live-check:
+    needs: promote
+    if: needs.promote.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: bash scripts/live-check.sh https://nose-app.com "$GITHUB_SHA"
+
+  # The site as it stands: weekly, and by hand from Actions -> gates -> Run
+  # workflow. Needs neither gates nor promote.
+  weekly-live-check:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: bash scripts/live-check.sh https://nose-app.com

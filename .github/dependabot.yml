@@ -1,0 +1,27 @@
+# NOSE - Dependabot: weekly pull requests for newer npm packages and newer
+# releases of the pinned GitHub actions.
+#
+# Each pull request runs every gate (.github/workflows/gates.yml). Merging
+# one is a push to main, so it deploys like any other green commit. A pull
+# request that changes .github/workflows/ may meet the handoff's promote item
+# (PARSER-HANDOFF.md section 13, Still open, "A push that changes
+# .github/workflows/ may stop promote").
+#
+# Playwright is not in package.json (the gates install a pinned version by
+# hand), so nothing here proposes a newer one.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 3
+    groups:
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

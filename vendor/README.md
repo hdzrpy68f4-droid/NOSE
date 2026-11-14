@@ -15,6 +15,16 @@ loads it from `/vendor/html5-qrcode.min.js`.
   https://data.jsdelivr.com/v1/packages/npm/html5-qrcode@2.3.8?structure=flat,
   entry `/html5-qrcode.min.js` (checked 2026-10-15).
 
+- **Licence:** Apache-2.0. `LICENSE-html5-qrcode.txt`, beside the file, is
+  the package's own `LICENSE`, from
+  https://unpkg.com/html5-qrcode@2.3.8/LICENSE (read 2026-11-14; its
+  `package.json` there says `"license": "Apache-2.0"`, and the same text is
+  at the repository's tag `v2.3.8`). The package ships no NOTICE file.
+- **What it bundles:** the minified file includes a copy of the zxing-js
+  library (it names `zxing-js` once). `@zxing/library` 0.19.1 on npm says
+  `"license": "MIT"`; which version is bundled was not established, so no
+  second licence file is added here. Not legal advice.
+
 `build.sh` downloads nothing. It fails unless this file exists and its SHA-256
 is the pinned value, `QR_LIB_SHA256` in `build.sh`. Any other bytes - an
 edit, a different version, a truncated copy - stop the build.

@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 NOSE (nose-app.com) is a cannabis terpene **aroma** matcher. It reads the terpene panel off a lab report (COA, certificate of analysis), builds a "palate" from jars a person likes, and scores other jars by how alike they smell. It also has a dispensary (B2B) module: an embeddable `<nose-matches>` widget, a catalog upload, a feed, votes, pinned releases and a pilot report.
 
-**Scope rule, enforced by tests:** aroma and flavour only, never effects. No words about relaxing, energising, focus, calm, sleep or "the high", anywhere: strings, pages, warnings or refusal reasons. If in doubt, cut the claim. `b2b-strings-test`, `match-feedback-test` and others fail on effect words.
+**Scope rule, enforced by tests:** aroma and flavour only, never effects. No words about relaxing, energising, focus, calm, sleep or "the high", anywhere: strings, pages, warnings or refusal reasons. If in doubt, cut the claim. The one exception is a sentence that refuses the claim: the home page's "NOSE compares aroma, not your high" and "We won't predict your high" stay (decided 2026-11-14). `b2b-strings-test`, `match-feedback-test` and others fail on effect words.
 
 `PARSER-HANDOFF.md` (~8,400 lines) is the project's authoritative record. Its sections: §2 current counts, §4 non-negotiable rules, §5 how to work, §6 parser architecture, §7 output contract, §8 adding a terpene, §11 bug log, §13 archive and app, §14 dispensary. Read the relevant section before changing a subsystem. When a change alters behaviour it records, update it in the same commit. The `docs/` folder has the B2B integration, catalog format and pilot docs.
 
@@ -57,11 +57,11 @@ After any parser change, the Kaycha anchors must not move: `KAY-CAR-001` → 4.1
 
 ## Deploy model
 
-There's no manual deploy. On every push to `main`, `.github/workflows/gates.yml` runs `gates.sh` on a fresh machine with no secrets. If the run is green, the `promote` job fast-forwards the branch `live`, and Netlify builds `live`. CI also fails if the gates leave the tree changed. So after editing a bundle, run `bash build.sh` and commit the renamed files. The steps to check a deploy are in PARSER-HANDOFF §13, "After a deploy — check it".
+There's no manual deploy. On every push to `main`, `.github/workflows/gates.yml` runs `gates.sh` on a fresh machine with no secrets. If the run is green, the `promote` job fast-forwards the branch `live`, and Netlify builds `live`. CI also fails if the gates leave the tree changed. So after editing a bundle, run `bash build.sh` and commit the renamed files. After promote, the workflow's `live-check` job runs `scripts/live-check.sh` against the real site. The checks only a person can do are in PARSER-HANDOFF §13, "After a deploy — check it".
 
 ## Architecture
 
-**Static site at the repo root** (Netlify publishes `.`). It has no framework or bundler. Pages are hand-written HTML, and `js/` and `css/` hold bundles whose names carry a content hash (`js/nose.2280eec5.js`). **Edit the hashed file, then run `build.sh`.** The build renames it to a new hash, rewrites references in every `.html`, and also:
+**Static site at the repo root** (Netlify publishes `.`). It has no framework or bundler. Pages are hand-written HTML, and `js/` and `css/` hold bundles whose names carry a content hash (`js/nose.<8 hex>.js`). **Edit the hashed file, then run `build.sh`.** The build renames it to a new hash, rewrites references in every `.html`, and also:
 - checks the committed `vendor/html5-qrcode.min.js` against its pinned SHA-256
 - refuses inline scripts and a loosened CSP (`_headers`)
 - checks script load order: `match-math` before `aroma-bar`, then `nose` / `b2b-rank` / `b2b-widget`
@@ -72,7 +72,7 @@ Shared front-end modules, each with one home:
 - `js/aroma-bar.*.js`: the six-family bar (citrus, earthy, floral, herbal, pine, spice), shared by the app and the widget.
 - `css/tokens.*.css`: the only place the family colours are defined. `colour-tokens-test` checks every copy against it.
 
-**Netlify Functions** (`netlify/functions/`, esbuild, Node 24). The main path is `coa.js`, a default-export `Request` handler: `lib/fetch-report.js` resolves a QR link or viewer page and downloads the PDF, `lib/extract-text.js` extracts the text with unpdf, `lib/parse-coa.js` parses it, then the card reply goes out and `lib/archive.js` saves to Postgres plus Netlify Blobs (the PDF). Shared plumbing lives in `netlify/functions/lib/db.js` (`withClient`, `scrub`) and `netlify/lib/http.js` (`readJsonBody`, `json`, `notFound`, `within`). Use these rather than writing new ones. Other functions handle auth and accounts, `palate-sync`, `match-feedback` votes (to Blobs), client error beacons, and the `b2b-*` endpoints, which are behind `B2B_ENABLED` (`lib/b2b-flag.js`).
+**Netlify Functions** (`netlify/functions/`, esbuild, Node 24). The main path is `coa.js`, a default-export `Request` handler: `lib/fetch-report.js` resolves a QR link or viewer page and downloads the PDF, `lib/extract-text.js` extracts the text with unpdf, `lib/parse-coa.js` parses it, then the card reply goes out and `lib/archive.js` saves to Postgres plus Netlify Blobs (the PDF). Shared plumbing lives in `netlify/functions/lib/db.js` (`withClient`, `scrub`) and `netlify/lib/http.js` (`readJsonBody`, `json`, `notFound`, `within`). Use these rather than writing new ones. Other functions handle auth and accounts (tested offline by `accounts-test.js`), two daily purges (`errors-purge`, `sessions-purge`), `palate-sync`, `match-feedback` votes (to Blobs), client error beacons, and the `b2b-*` endpoints, which are behind `B2B_ENABLED` (`lib/b2b-flag.js`).
 
 **Database:** Supabase Postgres, schema in `supabase/migrations/`. Schema `nose` is the archive, written by role `nose_writer` (`NOSE_DB_URL`). Schema `b2b` is the dispensary data, role `nose_b2b` (`NOSE_B2B_DB_URL`). Admin scripts use `NOSE_DB_ADMIN_URL`. TLS is verified against an embedded Supabase CA (`lib/supabase-ca.js`): never put `sslmode` in a URL, never set `rejectUnauthorized: false`. Tests run offline against PGlite with stand-ins for `pg`, `@netlify/blobs` and fetch. No gate needs secrets. Secrets live only in Codespaces secrets and Netlify env vars.
 
@@ -87,7 +87,7 @@ Shared front-end modules, each with one home:
 - Columns are chosen by **reconciliation** (which column sums to the lab's own printed total), not by position. The readers form an **ordered pipeline** (forward → column-major → backward), not a scoring contest; a contest was tried and broke ACS and TerpLife. The empirical constants each come from a real failure, so changing one needs a fixture that justifies it.
 - **A change that fixes one lab and breaks another is not a fix.** Revert it. Parity also compares `readBy`, `productClass`, `moisture`, `waterActivity` and `warnings`, so a change of route shows up as DIFFER and needs deliberate re-baselining in `test/fixtures/coa-baseline.json`.
 - The output field names (§7) are read by the app by name; renaming one breaks it silently. `rejectReasons` and `warnings` are shown to users **verbatim**, so write them as plain English with no internal class names.
-- **A new terpene key takes two edits:** `ANALYTE_MAP` in the parser **and** `TERPENES` in `js/match-math.*.js`. Otherwise `sanitizeTerps()` silently drops it. It changes scores, so regenerate the golden file with `node test/match-golden-make.js --why "<what changed>"`.
+- **A new terpene key takes two edits:** `ANALYTE_MAP` in the parser **and** `TERPENES` in `js/match-math.*.js`. Otherwise `sanitizeTerps()` silently drops it. It changes scores, so regenerate the golden file with `node test/match-golden-make.js --why "<what changed>"`. Farnesene itself is done. `wip/nose-farnesene-wip.js` is a stale draft of the old app bundle, loaded by nothing; the tests name it as a known old copy of the maths and the bar.
 - Before trusting a test result, confirm your change is in the tree (grep for a token unique to it). A run against an unpatched file looks like a pass.
 
 ## Repository hygiene
