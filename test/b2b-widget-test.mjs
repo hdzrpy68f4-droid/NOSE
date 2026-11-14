@@ -978,7 +978,7 @@ const holders = [];
     if (['node_modules', '.git', 'vendor'].includes(e.name)) continue;
     const p = path.join(dir, e.name);
     if (e.isDirectory()) walk(p);
-    else if (/\.(c|m)?js$/.test(e.name) && BAR_DEFS.test(fs.readFileSync(p, 'utf8'))) holders.push(path.relative(ROOT, p));
+    else if (/\.(c|m)?js$/.test(e.name) && BAR_DEFS.test(fs.readFileSync(p, 'utf8'))) holders.push(path.relative(ROOT, p).split(path.sep).join('/'));
   }
 })(ROOT);
 check('one copy of the bar: only js/aroma-bar defines FAMILIES, FAMILY_ORDER, familyShares and renderBar (wip/ is a stale draft, loaded by nothing)',

@@ -209,7 +209,7 @@ function kitFolder(root, opts) {
   const base = path.join(root, 'b2b-out');
   const dir = path.resolve(root, opts.out === undefined ? path.join('b2b-out', opts.slug, 'compliance-kit') : opts.out);
   const r = path.relative(base, dir);
-  if (!r || r.startsWith('..') || path.isAbsolute(r)) refuse(`the kit writes only under b2b-out/, which git ignores - not ${path.relative(root, dir) || '.'}`);
+  if (!r || r.startsWith('..') || path.isAbsolute(r)) refuse(`the kit writes only under b2b-out/, which git ignores - not ${path.relative(root, dir).split(path.sep).join('/') || '.'}`);
   try { git(root, ['check-ignore', '-q', path.relative(root, path.join(dir, 'README.md'))]); }
   catch { refuse('b2b-out/ is not ignored by git here: a store\'s kit is the store\'s, and this repository is public'); }
   if (fs.existsSync(dir)) {
@@ -217,7 +217,7 @@ function kitFolder(root, opts) {
     const readme = path.join(dir, 'README.md');
     const isKit = fs.existsSync(readme) && fs.readFileSync(readme, 'utf8').startsWith(KIT_TITLE)
       && entries.every(f => /^[0-9A-Za-z-]+\.(md|png)$/.test(f) && fs.statSync(path.join(dir, f)).isFile());
-    if (!isKit) refuse(`${path.relative(root, dir)} already holds something that is not an earlier kit - move it, or name another folder with --out`);
+    if (!isKit) refuse(`${path.relative(root, dir).split(path.sep).join('/')} already holds something that is not an earlier kit - move it, or name another folder with --out`);
   }
   return dir;
 }
@@ -1075,7 +1075,7 @@ async function main(argv = process.argv.slice(2), { root = ROOT, out = console.l
     staging = null;
     made.length = 0;
     const pngs = states.filter(x => x.rendered).reduce((n, s) => n + s.files.length, 0);
-    out(`compliance kit written: ${path.relative(root, target)}/ - ${states.filter(x => x.rendered).length} screens, ${pngs} PNGs, README.md, strings.md, data.md`);
+    out(`compliance kit written: ${path.relative(root, target).split(path.sep).join('/')}/ - ${states.filter(x => x.rendered).length} screens, ${pngs} PNGs, README.md, strings.md, data.md`);
     return 0;
   } catch (e) {
     if (e instanceof Refusal) { err(`REFUSED - ${e.message}`); return 1; }
