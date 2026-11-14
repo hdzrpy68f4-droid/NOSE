@@ -14,7 +14,7 @@
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="stylesheet" href="/css/tokens.8fb6b363.css">
-  <link rel="stylesheet" href="/css/shell.a26570a7.css">
+  <link rel="stylesheet" href="/css/shell.99ebd527.css">
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebApplication", "name": "NOSE aroma matcher", "url": "https://nose-app.com/app", "applicationCategory": "UtilitiesApplication", "operatingSystem": "Any modern browser", "description": "Turn a cannabis Certificate of Analysis into an aroma fingerprint and compare it with flower you already enjoy.", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"}, "browserRequirements": "Requires JavaScript."}</script>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/agegate.67a4ad39.css">
@@ -155,7 +155,7 @@
               <label for="coaUrl">Secure report URL</label>
               <input id="coaUrl" type="url" inputmode="url" placeholder="https://lab.example/report/…" autocomplete="url">
               <div class="button-row u-mt-14"><button class="button button-primary" id="validateUrlButton" type="button">Read report</button></div>
-              <div id="urlMessage" class="inline-message" hidden></div>
+              <div id="urlMessage" class="inline-message" role="status" hidden></div>
             </section>
 
             <section class="card panel input-panel" role="tabpanel" id="uploadPanel" aria-labelledby="uploadTab" hidden>
@@ -163,7 +163,7 @@
               <p class="small">Reading an uploaded file isn&rsquo;t available yet. Use Scan QR or COA link to read a lab report, or Manual to type its values in. A file chosen here is not sent anywhere.</p>
               <label for="reportFile">COA file</label>
               <input id="reportFile" type="file" accept="application/pdf,image/jpeg,image/png,image/webp">
-              <div id="uploadMessage" class="inline-message" hidden></div>
+              <div id="uploadMessage" class="inline-message" role="status" hidden></div>
             </section>
 
             <section class="card panel input-panel" role="tabpanel" id="manualPanel" aria-labelledby="manualTab" hidden>
@@ -181,7 +181,7 @@
                 <button class="button button-secondary" id="addRowButton" type="button">Add compound</button>
                 <button class="button button-primary" id="saveManualButton" type="button">Save to palate</button>
               </div>
-              <div id="manualMessage" class="inline-message" hidden></div>
+              <div id="manualMessage" class="inline-message" role="status" hidden></div>
             </section>
 
             <section class="card result-panel" id="fullResult" aria-labelledby="resultTitle" hidden>
@@ -264,7 +264,7 @@
 <script src="/vendor/html5-qrcode.min.js" defer></script>
   <script src="/js/match-math.cd934bdd.js" defer></script>
   <script src="/js/aroma-bar.4c8dc6b3.js" defer></script>
-  <script src="/js/nose.b7f83949.js" defer></script>
+  <script src="/js/nose.81127089.js" defer></script>
   <script src="/js/agegate.86760e1d.js" defer></script>
 </body>
 </html>

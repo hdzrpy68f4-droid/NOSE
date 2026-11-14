@@ -5328,6 +5328,40 @@ as a "confidence band".
   checks a palate of two four-compound jars reads Low, and the summary line.
 - Bundle: `js/nose.e69ed548.js` became `js/nose.b7f83949.js`.
 
+### Focus you can see, messages you can hear, tabs that take arrow keys, 2026-11-14
+
+From the review of 2026-11-12 (finding 12, prompt P12).
+
+- **The focus ring** was `rgba(47,97,68,.38)` in `css/shell` (two rules) and
+  `family.css` (two rules; the review named one). By WCAG 2.2's relative
+  luminance and contrast ratio it reached 1.81:1 over the page `#F3F3EE`,
+  1.85:1 over white and 1.34:1 over the footer `#0F150F`; SC 1.4.11 asks
+  3:1. It is now solid `#2F6144` (6.47:1 on the page, 7.21:1 on white), and
+  inside `.footer` `#82C59A` (9.17:1; the page green would reach 2.57:1
+  there). The review computed the footer as `#18211B`; the stylesheets say
+  `#0F150F`. Offsets are unchanged.
+- **Three messages are announced:** `urlMessage`, `uploadMessage` and
+  `manualMessage` in `app.html` have `role="status"`.
+- **The five tabs follow the tabs pattern:** the selected tab has tabindex
+  0 and the others -1; Left and Right move focus and selection and wrap;
+  Home and End go to the ends. Scan QR still starts the camera only when it
+  is chosen.
+- A manual row's remove button is renamed when the row's compound changes.
+- **Two sentences:** a refused camera says "Camera permission was denied.
+  Allow camera access for this site in your browser's settings, then try
+  again." (it named Safari in every browser). After a vote: "Sent — thank
+  you." where it said "Logged", since the page does not know the vote was
+  stored.
+- `colour-tokens-test` gains check 6: no stylesheet of the site draws an
+  outline in a translucent colour, and the two rings reach 3:1.
+  `input-paths-test` checks the keys, the status role and the remove label.
+- Bundles: `js/nose.b7f83949.js` became `js/nose.81127089.js`,
+  `css/shell.a26570a7.css` became `css/shell.99ebd527.css`,
+  `family.8e3469b6.css` became `family.f334208a.css`.
+- **Not done:** no before-and-after pictures were taken, and nobody has
+  listened with VoiceOver or TalkBack. The live-region and key behaviour is
+  checked in headless Chromium only.
+
 ### After a deploy — check it
 
 First, the run on GitHub is green and `live` has moved: Actions → gates → the

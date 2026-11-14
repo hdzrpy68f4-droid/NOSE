@@ -206,5 +206,32 @@ if (haveTokens) {
         !below.length, below.join('; '));
 }
 
+/* ---- 6. the focus ring reaches 3:1 --------------------------------------- */
+/* Since 2026-11-14 (PARSER-HANDOFF s13, "Focus you can see"). The site's ring
+   was rgba(47,97,68,.38), 1.81:1 over the page; WCAG 2.2 SC 1.4.11 asks 3:1
+   of a focus indicator. No stylesheet of the site draws an outline in a
+   translucent colour now (the dispensary widget's own sheet is a pinned
+   release and is not read here), and the two ring colours reach 3:1 on the
+   surfaces they are drawn on. Same formulas as check 5. */
+{
+  const channel = c => { const s = c / 255; return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; };
+  const luminance = ([r, g, b]) => 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+  const ratio = (a, b) => { const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x); return (hi + 0.05) / (lo + 0.05); };
+  const rgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+  const sheets = [...fs.readdirSync(path.join(ROOT, 'css')).filter(f => f.endsWith('.css') && !f.startsWith('b2b-widget')).map(f => `css/${f}`),
+    ...fs.readdirSync(ROOT).filter(f => /^family(\.[0-9a-f]{8})?\.css$/.test(f))];
+  const faint = sheets.filter(f => /outline(-color)?\s*:[^;}]*rgba\(/.test(stripCss(read(f))));
+  check('no stylesheet of the site draws an outline in a translucent colour', !faint.length, faint.join(', '));
+  const shell = sheets.find(f => /^css\/shell(\.[0-9a-f]{8})?\.css$/.test(f));
+  const css = shell ? stripCss(read(shell)) : '';
+  const ring = (/:focus-visible\s*\{\s*outline:3px solid (#[0-9A-Fa-f]{6});/.exec(css) || [])[1];
+  const footerRing = (/\.footer :focus-visible\s*\{\s*outline-color:(#[0-9A-Fa-f]{6});/.exec(css) || [])[1];
+  const footer = (/\.footer\s*\{\s*background:(#[0-9A-Fa-f]{6});/.exec(css) || [])[1];
+  const pairs = ring && footerRing && footer
+    ? [[ring, '#F3F3EE'], [ring, '#FFFFFF'], [footerRing, footer]].map(([a, b]) => [a, b, ratio(rgb(a), rgb(b))]) : [];
+  check(`the focus ring reaches 3:1 on the page, on white and on the footer (${pairs.map(p => `${p[0]} on ${p[1]} ${p[2].toFixed(2)}:1`).join(', ')})`,
+    pairs.length === 3 && pairs.every(p => p[2] >= 3), `ring ${ring}, footer ring ${footerRing}, footer ${footer}`);
+}
+
 if (failures) process.exit(1);
 console.log('colour-tokens clean');

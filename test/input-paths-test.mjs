@@ -953,6 +953,47 @@ try {
     await chip('palate', 'Sparse jar two').click();
     check('confidence: Lemon Tart Pucker\'s seven against thirteen still reads Moderate',
       (await t('#resultConfidence')) === 'Moderate — useful but incomplete', await t('#resultConfidence'));
+
+    /* Keys and announcements (since 2026-11-14, "Focus you can see, messages
+       you can hear"). The tabs pattern: the selected tab is the one in the
+       Tab order; Right and Left move focus and selection and wrap; Home and
+       End go to the ends. From COA link, so the camera is never asked for. */
+    const tabs = () => p.$$eval('[role="tab"]', ts => ts.map(x => [x.id, x.getAttribute('aria-selected'), x.tabIndex, x === document.activeElement]));
+    const only = id => JSON.stringify(['sampleTab', 'scanTab', 'urlTab', 'uploadTab', 'manualTab'].map(x => [x, String(x === id), x === id ? 0 : -1, x === id]));
+    await p.click('#urlTab');
+    check('tabs: the chosen tab alone is selected, focused and in the Tab order', JSON.stringify(await tabs()) === only('urlTab'), JSON.stringify(await tabs()));
+    await p.keyboard.press('ArrowRight');
+    check('tabs: Right moves focus and selection to the next tab, and shows its panel',
+      JSON.stringify(await tabs()) === only('uploadTab') && await p.isVisible('#uploadPanel') && !(await p.isVisible('#urlPanel')), JSON.stringify(await tabs()));
+    await p.keyboard.press('End');
+    check('tabs: End goes to the last tab', JSON.stringify(await tabs()) === only('manualTab'), JSON.stringify(await tabs()));
+    await p.keyboard.press('ArrowRight');
+    check('tabs: Right from the last tab wraps to the first', JSON.stringify(await tabs()) === only('sampleTab'), JSON.stringify(await tabs()));
+    await p.keyboard.press('ArrowLeft');
+    check('tabs: Left from the first tab wraps to the last', JSON.stringify(await tabs()) === only('manualTab'), JSON.stringify(await tabs()));
+    await p.keyboard.press('Home');
+    check('tabs: Home goes to the first tab', JSON.stringify(await tabs()) === only('sampleTab'), JSON.stringify(await tabs()));
+
+    /* A failed link read is said in a status region. */
+    await p.route('**/.netlify/functions/coa', route => route.fulfill({ status: 422, contentType: 'application/json',
+      body: JSON.stringify({ error: 'That report could not be read reliably.', reasons: ['made up for this check'] }) }));
+    await p.click('#urlTab');
+    await p.fill('#coaUrl', LINK_URL);
+    await p.click('#validateUrlButton');
+    await p.waitForFunction(() => /could not be read reliably/.test(document.getElementById('urlMessage').textContent));
+    check('a failed link read puts its sentence in an element with role "status"',
+      (await p.getAttribute('#urlMessage', 'role')) === 'status' && await p.isVisible('#urlMessage')
+        && (await t('#urlMessage')) === 'That report could not be read reliably. made up for this check.', await t('#urlMessage'));
+    check('the Upload and Manual messages are status regions too',
+      (await p.getAttribute('#uploadMessage', 'role')) === 'status' && (await p.getAttribute('#manualMessage', 'role')) === 'status');
+
+    /* A manual row's remove button is named for the row's compound. */
+    await p.click('#manualTab');
+    const removeLabel = () => p.getAttribute('#manualRows tr:nth-child(1) .remove-row', 'aria-label');
+    const was = await removeLabel();
+    await p.selectOption('#manualRows tr:nth-child(1) .manual-terpene', 'linalool');
+    check('a manual row\'s remove label follows its compound: "Remove Limonene", then "Remove Linalool"',
+      was === 'Remove Limonene' && (await removeLabel()) === 'Remove Linalool', `${was} -> ${await removeLabel()}`);
     await ctx.close();
   }
 

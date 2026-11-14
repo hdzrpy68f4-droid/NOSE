@@ -49,10 +49,15 @@
     }
     .skip-link:focus { transform:translateY(0); }
 
+    /* A solid ring: 6.47:1 on the page, 7.21:1 on white. The translucent
+       green it replaced on 2026-11-14 reached 1.81:1, under the 3:1 WCAG 2.2
+       asks of a focus indicator (SC 1.4.11). On the dark footer the page
+       green would reach 2.57:1, so the ring there is a light green, 9.17:1. */
     :focus-visible {
-      outline:3px solid rgba(47,97,68,.38);
+      outline:3px solid #2F6144;
       outline-offset:3px;
     }
+    .footer :focus-visible { outline-color:#82C59A; }
 
     .mono {
       font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -774,7 +779,7 @@
   font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:0.9375rem;
 }
 .coa-row input:focus-visible,#coaConfirmName:focus-visible{
-  outline:3px solid rgba(47,97,68,.38); outline-offset:2px;
+  outline:3px solid #2F6144; outline-offset:2px;
 }
 @media (max-width:520px){
   .coa-meta{ grid-template-columns:1fr; gap:2px 0; }

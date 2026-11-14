@@ -298,8 +298,8 @@
           sendFeedback(vote);
           const ack=document.getElementById('feedbackAck');
           ack.textContent = vote==='up'
-            ? 'Logged — thank you. Agreement is how we test whether shared aroma predicts shared enjoyment.'
-            : 'Logged — thank you. Disagreement is the most useful signal we get; it is exactly what we are watching for.';
+            ? 'Sent — thank you. Agreement is how we test whether shared aroma predicts shared enjoyment.'
+            : 'Sent — thank you. Disagreement is the most useful signal we get; it is exactly what we are watching for.';
           ack.hidden=false;
         });
       });
@@ -333,8 +333,28 @@
     }
 
     function setTab(name){
-      each('[role="tab"]',tab=>{ const selected=tab.dataset.tab===name; tab.setAttribute('aria-selected',String(selected)); document.getElementById(`${tab.dataset.tab}Panel`).hidden=!selected; });
+      /* The selected tab is the one Tab reaches; the arrow keys move between
+         them (chooseTab and the keydown handler in init). */
+      each('[role="tab"]',tab=>{ const selected=tab.dataset.tab===name; tab.setAttribute('aria-selected',String(selected)); tab.tabIndex=selected?0:-1; document.getElementById(`${tab.dataset.tab}Panel`).hidden=!selected; });
       if(name!=='scan') stopQrScanner();
+    }
+    /* Choosing a tab, by click or by key: Scan QR starts the camera only when
+       it is chosen. */
+    function chooseTab(tab){
+      setTab(tab.dataset.tab);
+      if(tab.dataset.tab==='scan') startQrScanner().then(live=>{ if(live) previewSized().then(revealScanner); });
+    }
+    /* The tabs pattern: Left and Right move focus and selection to the
+       neighbour and wrap, Home and End go to the first and last. */
+    function tabKey(event){
+      const tabs=[...document.querySelectorAll('[role="tab"]')];
+      const at=tabs.indexOf(event.target.closest('[role="tab"]'));
+      if(at<0) return;
+      const to={ArrowRight:(at+1)%tabs.length,ArrowLeft:(at-1+tabs.length)%tabs.length,Home:0,End:tabs.length-1}[event.key];
+      if(to===undefined) return;
+      event.preventDefault();
+      tabs[to].focus();
+      if(to!==at) chooseTab(tabs[to]);
     }
 
     let qrScanner=null;
@@ -743,7 +763,7 @@
         } catch {}
         setScannerButtons(false);
         const denied=error?.name==='NotAllowedError' || /permission|denied/i.test(String(error));
-        showMessage('scannerMessage',denied?'Camera permission was denied. Allow camera access in Safari settings, then try again.':'The rear camera could not be started. Choose a QR image or paste the link manually.','error');
+        showMessage('scannerMessage',denied?'Camera permission was denied. Allow camera access for this site in your browser\'s settings, then try again.':'The rear camera could not be started. Choose a QR image or paste the link manually.','error');
         return false;
       }
     }
@@ -819,6 +839,8 @@
       const valueTd=document.createElement('td'); const valueInput=document.createElement('input'); valueInput.className='manual-value'; valueInput.type='number'; valueInput.min='0'; valueInput.step='0.001'; valueInput.inputMode='decimal'; valueInput.value=value; valueInput.setAttribute('aria-label','Terpene value'); valueTd.append(valueInput);
       const unitTd=document.createElement('td'); const unitSelect=document.createElement('select'); unitSelect.className='manual-unit'; unitSelect.setAttribute('aria-label','Unit'); ['%','mg/g'].forEach(item=>{ const option=document.createElement('option'); option.value=item; option.textContent=item; option.selected=item===unit; unitSelect.append(option); }); unitTd.append(unitSelect);
       const removeTd=document.createElement('td'); const remove=document.createElement('button'); remove.type='button'; remove.className='icon-button remove-row'; remove.setAttribute('aria-label',`Remove ${TERPENES[selected].name}`); remove.textContent='×'; removeTd.append(remove);
+      /* The label follows the row's compound when it is changed. */
+      terpSelect.addEventListener('change',()=>{ remove.setAttribute('aria-label',`Remove ${TERPENES[terpSelect.value].name}`); });
       tr.append(terpTd,valueTd,unitTd,removeTd); tbody.append(tr);
     }
 
@@ -1046,7 +1068,7 @@
         if(event.key==='Tab') trapOpenFocus(event);
       });
       window.addEventListener('hashchange',route);
-      each('[role="tab"]',tab=>tab.addEventListener('click',()=>{ setTab(tab.dataset.tab); if(tab.dataset.tab==='scan') startQrScanner().then(live=>{ if(live) previewSized().then(revealScanner); }); }));
+      each('[role="tab"]',tab=>{ tab.tabIndex=tab.getAttribute('aria-selected')==='true'?0:-1; tab.addEventListener('click',()=>chooseTab(tab)); tab.addEventListener('keydown',tabKey); });
       on('startScannerButton','click',startQrScanner);
       on('stopScannerButton','click',stopQrScanner);
       on('cameraSelect','change',event=>switchCamera(event.target.value));
