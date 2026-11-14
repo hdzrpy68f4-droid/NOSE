@@ -820,6 +820,119 @@ try {
     `the message says "${said}"`);
   check('Upload: the page makes no request - the file goes nowhere', requests.length === 0, requests.join(', '));
 
+  /* ---- a jar that is gone is never replaced by another (since 2026-11-14) --- */
+  /* Delete, Import, Remove and Load from account, each on a fresh start of
+     the page's saved jars. After each, the summary line and the result name
+     only jars the person can see, and a vote's body names only those.
+     Until 2026-11-14 a jar that was gone was read as Lemon Tart Pucker
+     (PARSER-HANDOFF s13, "A jar that is gone"). */
+  {
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+    const p = await ctx.newPage();
+    p.setDefaultTimeout(8000);
+    p.on('pageerror', e => pageErrors.push(e.message));
+    const asked = [];
+    let answer = true;
+    p.on('dialog', d => { asked.push(d.message()); return answer ? d.accept() : d.dismiss(); });
+    const votes = [];
+    await p.route('**/.netlify/functions/match-feedback', async route => {
+      votes.push(route.request().postData() || '');
+      await route.fulfill({ status: 204, body: '' });
+    });
+    let account = [];
+    await p.route('**/.netlify/functions/palate-sync', route =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ version: 1, profiles: account }) }));
+    await p.goto(`${BASE}/app`);
+    await p.click('.ag-yes');
+    await p.waitForSelector('#palateSamples .sample-chip');
+    const t = async sel => ((await p.locator(sel).textContent()) || '').trim();
+    const LEMON = 'Lemon Tart Pucker';
+    const EMPTY = 'Select one or more jars you like. Your palate is their averaged aroma shape.';
+    const chipAt = (mode, name) => p.locator(`#${mode}Samples .sample-chip`, { has: p.locator('strong', { hasText: name }) });
+    /* the chips are in the Samples tab */
+    const chip = (mode, name) => ({ click: async () => { await p.click('#sampleTab'); await chipAt(mode, name).click(); } });
+    const savedNames = () => p.$$eval('#savedPalateList .saved-item-name', ns => ns.map(n => n.textContent));
+    async function saveManual(name) {
+      await p.click('#manualTab');
+      await p.fill('#manualName', name);
+      const values = p.locator('#manualRows .manual-value');
+      await values.nth(0).fill('0.4'); await values.nth(1).fill('0.3'); await values.nth(2).fill('0.2');
+      await p.click('#saveManualButton');
+      await p.waitForFunction(n => [...document.querySelectorAll('#savedPalateList .saved-item-name')].some(x => x.textContent === n), name);
+    }
+    /* a vote from the page as it stands: the POST's body, or null if none left */
+    async function vote() {
+      votes.length = 0;
+      await p.evaluate(() => { const b = document.querySelector('#matchFeedback [data-vote="up"]'); if (b) b.click(); });
+      for (let i = 0; i < 10 && !votes.length; i++) await p.waitForTimeout(50);
+      try { return votes.length ? JSON.parse(votes[0]) : null; } catch { return null; }
+    }
+
+    /* Delete: the saved jar is the palate alone, then every saved jar goes. */
+    await saveManual('Gone jar one');
+    await chip('palate', LEMON).click();
+    check('a jar that is gone: before Delete, the palate is the saved jar alone',
+      (await t('#palateSummaryLine')) === 'Palate = average of 1 jar: Gone jar one', await t('#palateSummaryLine'));
+    await p.click('#clearButton');
+    await chip('candidate', 'Violet Hour').click();
+    let summary = await t('#palateSummaryLine');
+    check('a jar that is gone: after Delete, the summary asks for a jar and names none',
+      summary === EMPTY, `it says "${summary}"`);
+    check('a jar that is gone: after Delete, no result is shown', !(await p.isVisible('#fullResult')),
+      `the result reads "${await t('#resultNames')}"`);
+    check('a jar that is gone: after Delete, a vote sends nothing', (await vote()) === null, votes.join(' | '));
+
+    /* Import: asks first when jars are saved; Cancel changes nothing. */
+    await chip('palate', LEMON).click();
+    await saveManual('Gone jar two');
+    await chip('palate', LEMON).click();
+    const file = { name: 'nose-palate.json', mimeType: 'application/json',
+      buffer: Buffer.from(JSON.stringify({ version: 1, profiles: [{ id: 'saved-imported-1', name: 'Imported jar', subtitle: '2 measured compounds', terps: { linalool: 0.3, limonene: 0.1 } }] })) };
+    asked.length = 0; answer = false;
+    await p.setInputFiles('#importFile', file);
+    await p.waitForTimeout(300);
+    check('a jar that is gone: Import asks before replacing saved jars, in the words Load from account uses',
+      asked.length === 1 && asked[0] === 'Replace the 1 jar in this browser with 1 from this file? What is here now will be lost.', JSON.stringify(asked));
+    check('a jar that is gone: Import, cancelled, changes nothing',
+      JSON.stringify(await savedNames()) === '["Gone jar two"]' && (await t('#palateSummaryLine')) === 'Palate = average of 1 jar: Gone jar two',
+      `${JSON.stringify(await savedNames())} ${await t('#palateSummaryLine')}`);
+    answer = true;
+    await p.setInputFiles('#importFile', file);
+    await p.waitForFunction(() => [...document.querySelectorAll('#savedPalateList .saved-item-name')].some(x => x.textContent === 'Imported jar'));
+    summary = await t('#palateSummaryLine');
+    check('a jar that is gone: after Import, the replaced jar leaves the palate and no other takes its place',
+      summary === EMPTY && !(await p.isVisible('#fullResult')), `summary "${summary}", result "${await t('#resultNames')}"`);
+
+    /* Remove: the jar being compared goes. */
+    await chip('palate', LEMON).click();
+    await chip('candidate', 'Imported jar').click();
+    check('a jar that is gone: before Remove, the result compares the imported jar',
+      (await t('#resultNames')) === `${LEMON} compared with Imported jar`, await t('#resultNames'));
+    await p.click('#savedPalateList .saved-item-remove');
+    await p.waitForFunction(() => !document.querySelector('#savedPalateList .saved-item'));
+    check('a jar that is gone: after Remove, the result compares the first sample jar, not the removed one',
+      (await t('#resultNames')) === `${LEMON} compared with Cold Creek Kush`, await t('#resultNames'));
+    let body = await vote();
+    check('a jar that is gone: after Remove, a vote names only the jars on screen',
+      !!body && JSON.stringify(body.palate) === '["lemon-tart"]' && body.candidate === 'cold-creek', JSON.stringify(body));
+
+    /* Load from account: the reply stood in for. */
+    await saveManual('Gone jar three');
+    await chip('candidate', 'Gone jar three').click();
+    account = [{ id: 'saved-account-1', name: 'Account jar', subtitle: '2 measured compounds', terps: { pinene_a: 0.3, myrcene: 0.2 } }];
+    await p.click('#palateRestoreButton');
+    await p.waitForFunction(() => [...document.querySelectorAll('#savedPalateList .saved-item-name')].some(x => x.textContent === 'Account jar'));
+    summary = await t('#palateSummaryLine');
+    check('a jar that is gone: after Load from account, the palate keeps only jars that exist',
+      summary === `Palate = average of 1 jar: ${LEMON}`, `it says "${summary}"`);
+    check('a jar that is gone: after Load from account, the result no longer compares the replaced jar',
+      (await t('#resultNames')) === `${LEMON} compared with Cold Creek Kush`, await t('#resultNames'));
+    body = await vote();
+    check('a jar that is gone: after Load from account, a vote names only the jars on screen',
+      !!body && JSON.stringify(body.palate) === '["lemon-tart"]' && body.candidate === 'cold-creek', JSON.stringify(body));
+    await ctx.close();
+  }
+
   check('no uncaught error on the page', pageErrors.length === 0, pageErrors.join(' | '));
   check('every request to the handler had a reply waiting', queue.length === 0 && sent.length === 8 + FRESHNESS.length + DATED.length,
     `${sent.length} requests, ${queue.length} replies unused`);

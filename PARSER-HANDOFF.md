@@ -5122,6 +5122,36 @@ added on 2026-11-11 and were on no list.
 - **Not yet checked on the live site:** that both addresses answer 404. That
   waits for this commit's deploy.
 
+### A jar that is gone is never replaced by another, 2026-11-14
+
+From the review of 2026-11-12 (finding 2, prompt P2). In `js/nose`,
+`profileById()` answered the first sample, Lemon Tart Pucker, for any id it
+could not find. Delete, Import, Remove and "Load from account" each left ids
+of jars that were gone in the palate or as the compared jar, so a score could
+be computed from Lemon Tart Pucker's numbers under a jar the person had
+deleted.
+
+- **Votes before this day.** A vote cast after one of those four actions,
+  before this change deployed, may hold `palate: ["lemon-tart"]` (or
+  `lemon-tart` repeated) for a pair nobody compared. Nothing in a vote tells
+  those apart from a real Lemon Tart Pucker palate, so read votes dated
+  before 2026-11-14 with that in mind.
+- `profileById()` answers undefined for an id that is neither a sample nor a
+  saved jar. The hero asks only for sample ids.
+- `dropMissingJars()` runs after each of the four: the palate keeps only ids
+  that exist, a compared jar that is gone becomes the default sample
+  (`cold-creek`), and the chips and the result are drawn again. "Load from
+  account" no longer empties the palate; it drops only what is gone.
+- `updateFullResult()` with an empty palate hides `#fullResult` and clears
+  the feedback context, so no vote is sent for a result not on screen.
+- Import asks first when jars are saved: "Replace the N jars in this browser
+  with M from this file? What is here now will be lost." Cancel changes
+  nothing. The file input is cleared, so the same file can be chosen again.
+- The unused `LAB_ALLOWLIST` constant and its comment are deleted.
+- `test/input-paths-test.mjs` runs the four actions in a second browser
+  context: 12 checks, each of which failed before the change. Same gate line.
+- Bundle: `js/nose.2280eec5.js` became `js/nose.e69ed548.js`.
+
 ### After a deploy — check it
 
 First, the run on GitHub is green and `live` has moved: Actions → gates → the

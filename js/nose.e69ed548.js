@@ -78,7 +78,19 @@
       saved:loadSaved()
     };
 
-    function profileById(id){ return [...PROFILES,...state.saved].find(profile=>profile.id===id) || PROFILES[0]; }
+    /* A jar that is neither a sample nor saved is undefined, never another jar:
+       until 2026-11-14 it was read as the first sample (PARSER-HANDOFF s13,
+       "A jar that is gone"). */
+    function profileById(id){ return [...PROFILES,...state.saved].find(profile=>profile.id===id); }
+    /* After Delete, Import, Remove and Load from account: the palate keeps
+       only jars that still exist, a compared jar that is gone gives way to the
+       default sample, and the chips and the result are drawn again. */
+    function dropMissingJars(){
+      state.palateIds=state.palateIds.filter(id=>profileById(id));
+      if(!profileById(state.appCandidate)) state.appCandidate='cold-creek';
+      if($id('palateSamples')) step('samples after a jar left',renderSampleButtons);
+      if($id('fullResult')) step('result after a jar left',updateFullResult);
+    }
     function topFamilies(values){ return Object.entries(familyShares(values)).sort((a,b)=>b[1]-a[1]); }
     function confidence(profileA,profileB){ const countA=Object.keys(profileA.terps||{}).length; const countB=Object.keys(profileB.terps||{}).length; const min=Math.min(countA,countB); if(min>=9) return 'High — broad measured panels'; if(min>=5) return 'Moderate — useful but incomplete'; return 'Low — few measured compounds'; }
     function safeText(value){ return String(value ?? ''); }
@@ -291,7 +303,9 @@
     function updateFullResult(){
       const b=profileById(state.appCandidate);
       const palateVec=palateVector();
-      if(!b||!Object.keys(palateVec).length) return;
+      /* No palate, or no jar to compare: no result is shown, and no vote can
+         be sent for one that is no longer on screen. */
+      if(!b||!Object.keys(palateVec).length){ document.getElementById('fullResult').hidden=true; feedbackContext=null; return; }
       const a={name:palateLabel(),terps:palateVec};
       const score=cosine(palateVec,normalize(b.terps));
       const familyA=familyShares(palateVec), familyB=familyShares(b.terps);
@@ -872,12 +886,10 @@
       const name=state.saved[index].name;
       if(!confirm('Remove "'+name+'" from your saved jars? This only affects this browser.')) return;
       state.saved.splice(index,1);
-      /* A removed jar must not linger in the selected palate, or the matcher
-         would keep averaging a profile the user can no longer see. */
-      if(Array.isArray(state.palateIds)) state.palateIds=state.palateIds.filter(pid=>pid!==id);
       persistSaved();
       updateSavedSummary();
-      step('samples after removal',()=>{ if(document.getElementById('palateSamples')) renderSampleButtons(); });
+      /* A removed jar must not linger in the palate or the result. */
+      dropMissingJars();
     }
     /* Backup and restore are deliberately manual. The server holds whatever
        was last pushed; this device stays authoritative until the user says
@@ -924,22 +936,18 @@
           }
           state.saved=profiles.filter(item=>item&&item.name&&item.terps)
             .map(item=>({...item,id:item.id||`saved-${slugify(item.name)}-${Date.now()}`}));
-          state.palateIds=[];
           persistSaved();
           updateSavedSummary();
-          step('samples after restore',()=>{ if(document.getElementById('palateSamples')) renderSampleButtons(); });
+          dropMissingJars();
           palateMessage('Loaded '+state.saved.length+' jar'+(state.saved.length===1?'':'s')+' from your account.');
         })
         .catch(()=>palateMessage('Network problem. Try again.'));
     }
 
     function exportSaved(){ const blob=new Blob([JSON.stringify({version:1,profiles:state.saved},null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='nose-palate.json'; a.click(); URL.revokeObjectURL(url); }
-    function importSaved(file){ const reader=new FileReader(); reader.onload=()=>{ try { const data=JSON.parse(String(reader.result)); const profiles=Array.isArray(data)?data:data.profiles; if(!Array.isArray(profiles)) throw new Error('Invalid format'); state.saved=profiles.filter(item=>item&&item.name&&item.terps).map(item=>({...item,id:item.id||`saved-${slugify(item.name)}-${Date.now()}`})); const persisted=persistSaved(); updateSavedSummary(); showMessage('manualMessage',`Imported ${state.saved.length} profiles${persisted?' into this browser':' for this session'}.`,'success'); } catch { alert('That file is not a valid NOSE palate export.'); } }; reader.readAsText(file); }
+    function importSaved(file){ const reader=new FileReader(); reader.onload=()=>{ try { const data=JSON.parse(String(reader.result)); const profiles=Array.isArray(data)?data:data.profiles; if(!Array.isArray(profiles)) throw new Error('Invalid format'); const incoming=profiles.filter(item=>item&&item.name&&item.terps).map(item=>({...item,id:item.id||`saved-${slugify(item.name)}-${Date.now()}`})); if(state.saved.length&&!confirm('Replace the '+state.saved.length+' jar'+(state.saved.length===1?'':'s')+' in this browser with '+incoming.length+' from this file? What is here now will be lost.')) return; state.saved=incoming; const persisted=persistSaved(); updateSavedSummary(); dropMissingJars(); showMessage('manualMessage',`Imported ${state.saved.length} profiles${persisted?' into this browser':' for this session'}.`,'success'); } catch { alert('That file is not a valid NOSE palate export.'); } }; reader.readAsText(file); }
 
-    /* A bare https check is not enough: any attacker-controlled domain passed it
-   and was reported back to the user as a "valid secure link". Lab hosts are
-   allowlisted, and the same check is reused by the QR scanner. */
-    const LAB_ALLOWLIST=['confidentcannabis.com','sclabs.com','steephill.com','kaychalabs.com','anresco.com','greenleaflab.org'];
+    /* The same check is reused by the QR scanner. */
     function checkCoaUrl(value){
       let url; try{ url=new URL(String(value).trim()); }catch{ return {ok:false,message:'Enter a complete HTTPS report URL.'}; }
       if(url.protocol!=='https:') return {ok:false,message:'Secure HTTPS links only.'};
@@ -1049,8 +1057,8 @@
       on('reportFile','change',event=>validateUpload(event.target.files[0]));
       on('exportButton','click',exportSaved);
       on('importButton','click',()=>{ const f=$id('importFile'); if(f) f.click(); });
-      on('importFile','change',event=>{ if(event.target.files[0]) importSaved(event.target.files[0]); });
-      on('clearButton','click',()=>{ if(confirm('Delete all locally saved NOSE profiles?')){ state.saved=[]; persistSaved(); updateSavedSummary(); } });
+      on('importFile','change',event=>{ const file=event.target.files[0]; event.target.value=''; if(file) importSaved(file); });
+      on('clearButton','click',()=>{ if(confirm('Delete all locally saved NOSE profiles?')){ state.saved=[]; persistSaved(); updateSavedSummary(); dropMissingJars(); } });
       on('palateBackupButton','click',backupPalate);
       on('palateRestoreButton','click',restorePalate);
       step('route',route);
