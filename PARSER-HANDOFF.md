@@ -5597,6 +5597,24 @@ reliably." Only words changed: no rule, threshold or verdict.
   not hold.
 - New gate `refusal words`, after `summed rows`: 39 gates.
 
+### The review's fixes, live, 2026-11-14
+
+`main` was fast-forwarded to `d7e3021` (P2 to P15, P9 and P11). The run on
+GitHub was green in all three jobs: gates, promote and, for the first time,
+`live-check`. Promote moved `live` across this first change to the workflow
+file since 2026-10-16 without the refusal Still open warns of. Checked on the
+live site afterwards: `/README.md` answers 404; `/methodology/` shows the
+labels table; the privacy page says an expired session's record is removed
+within a day; `/app` has six `role="status"` regions.
+
+- **One synthetic error report is stored**, sent 2026-11-14 by P7's last
+  step: kind `init:deploy check`, message "synthetic - deploy check", ua
+  `curl`. It answered 204. Ignore it when reading error reports; it is
+  purged after 90 days with the rest.
+- Still to check by a person: the first `sessions-purge` run in Netlify's
+  function log, Netlify's deploy-preview and environment-variable contexts
+  (decision 7), and the first Dependabot pull requests.
+
 ### After a deploy — check it
 
 Since 2026-11-14 the workflow's third job, `live-check`, does the first part
