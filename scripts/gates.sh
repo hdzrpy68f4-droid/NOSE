@@ -82,6 +82,10 @@ gate 'novelty'        'novelty clean'            '^novelty clean$' \
   node test/novelty-test.js
 gate 'coa dates'      'coa-dates clean'          '^coa-dates clean$' \
   node test/coa-dates-test.js
+# A terpene printed both as a total and as its isomers counts once, or the
+# report is refused - on made-up reports; no fixture prints both.
+gate 'summed rows'    'summed-rows clean'        '^summed-rows clean$' \
+  node test/summed-rows-test.js
 gate 'store'          'store clean'              '^store clean$' \
   node test/store-test.js
 gate 'probe logic'    'probe-test clean'         '^probe-test clean$' \

@@ -82,8 +82,8 @@ const ANALYTE_MAP = {
   /* ACS prints a summed terpineol row on all seven of its fixtures, the way
      Modern Canna prints "Ocimene, Total". Six read <LOQ and zero out; ACS-LRS-002
      detects 0.193%, which was the whole of its 2.5% coverage shortfall. A
-     document printing BOTH this and alpha-terpineol would double-count and be
-     refused by the coverage ceiling rather than asserted. */
+     document printing BOTH this and alpha-terpineol is read once, from this
+     row, or refused if the two disagree (SUMMED_SPELLINGS, below). */
   'TOTAL TERPINEOL': 'terpineol',
   'TRANS-NEROLIDOL': 'nerolidol',           // cis + trans are summed (rule 6)
   'CIS-NEROLIDOL': 'nerolidol',
@@ -91,8 +91,8 @@ const ANALYTE_MAP = {
      unmodelled it was measured and then dropped from the vector - the compound
      vanished from the fingerprint while coverage still looked healthy, the same
      way farnesene did. A document printing BOTH the summed row and its isomers
-     would double-count; that overshoots the lab's own total and is refused by
-     the coverage ceiling rather than asserted. */
+     is read once, from the summed row, or refused if the two disagree
+     (SUMMED_SPELLINGS, below). */
   'NEROLIDOL': 'nerolidol',
   'E-NEROLIDOL': 'nerolidol',
   'Z-NEROLIDOL': 'nerolidol',
@@ -115,6 +115,73 @@ const ANALYTE_MAP = {
   'TRANS-BETA-FARNESENE': 'farnesene',      // Modern Canna
   'TRANS-B-FARNESENE': 'farnesene'          // ACT
 };
+
+/* A terpene printed both as a total and as its isomers counts once.
+ *
+ * Several spellings above map to one key, and every reader adds each row that
+ * maps to a key - that is how cis- and trans-nerolidol sum. A report that
+ * prints BOTH a summed row and the isomer rows for one terpene was therefore
+ * read with that terpene doubled. The comments here said the coverage ceiling
+ * refused such a report; it did only when the doubled terpene was more than
+ * about 5% of the total (COVERAGE_CEILING), and a smaller one was accepted
+ * with one family inflated. Found 2026-11-12 on made-up reports
+ * (test/summed-rows-test.js); no fixture prints both (PARSER-HANDOFF s11).
+ *
+ * Each spelling that is a sum by its own name is in SUMMED_SPELLINGS, each
+ * that is one isomer by its own name in ISOMER_SPELLINGS. A bare OCIMENE,
+ * TERPINEOL or FARNESENE is in neither - its name does not say which it is -
+ * and behaves as it always has. When one read has both kinds for a key:
+ *   - the two agree within RECONCILE_TOLERANCE of the summed row: the key
+ *     takes the summed row alone
+ *   - otherwise the report is refused, naming the terpene
+ * The column choosers leave such an isomer row out of the sums they compare
+ * with the lab's total, so the choice of column sees the corrected value too.
+ * On a report with only one kind - every fixture - nothing here does anything. */
+const SUMMED_SPELLINGS = new Set(['NEROLIDOL', 'TOTAL TERPINEOL', 'OCIMENE, TOTAL', 'OCIMENES']);
+const ISOMER_SPELLINGS = new Set([
+  'TRANS-NEROLIDOL', 'CIS-NEROLIDOL', 'E-NEROLIDOL', 'Z-NEROLIDOL',
+  'ALPHA-TERPINEOL',
+  'BETA-OCIMENE', 'TRANS-OCIMENE', 'CIS-OCIMENE', 'TRANS-B-OCIMENE', 'CIS-B-OCIMENE',
+  'ALPHA-FARNESENE', 'BETA-FARNESENE', 'TRANS-FARNESENE', 'CIS-FARNESENE', 'TRANS-BETA-FARNESENE', 'TRANS-B-FARNESENE'
+]);
+/* The keys, among these rows, that both a summed spelling and an isomer
+   spelling feed. Rows are { key, upper }. */
+function keysPrintedBothWays(rows){
+  const summed = new Set(), isomer = new Set();
+  for (const r of rows){
+    if (!r || !r.key) continue;
+    if (SUMMED_SPELLINGS.has(r.upper)) summed.add(r.key);
+    else if (ISOMER_SPELLINGS.has(r.upper)) isomer.add(r.key);
+  }
+  return new Set([...summed].filter(k => isomer.has(k)));
+}
+/* What a reader keeps while it adds rows to keys: per key, how much came from
+   summed rows and how much from isomer rows. */
+function summedTally(){
+  const parts = {};
+  return {
+    note(key, upper, v){
+      const kind = SUMMED_SPELLINGS.has(upper) ? 'summed' : ISOMER_SPELLINGS.has(upper) ? 'isomer' : null;
+      if (!kind || !key) return;
+      const p = parts[key] || (parts[key] = { summed: 0, isomer: 0, hasSummed: false, hasIsomer: false });
+      p[kind] += v;
+      p[kind === 'summed' ? 'hasSummed' : 'hasIsomer'] = true;
+    },
+    reset(){ Object.keys(parts).forEach(k => delete parts[k]); },
+    /* Take the isomers back out of each key printed both ways, or name the
+       key when the two disagree. Changes terps in place; returns the keys
+       that disagree. */
+    settle(terps){
+      const disagree = [];
+      for (const [key, p] of Object.entries(parts)){
+        if (!p.hasSummed || !p.hasIsomer) continue;
+        if (Math.abs(p.summed - p.isomer) <= RECONCILE_TOLERANCE * p.summed + 1e-9) terps[key] = round((terps[key] || 0) - p.isomer);
+        else disagree.push(key);
+      }
+      return disagree;
+    }
+  };
+}
 
 /* Terpenes a lab may report that NOSE does not model. Tracked only so we can
    tell the user how much of the measured mass the fingerprint represents.
@@ -488,6 +555,10 @@ function parseCoa(text){
      chosen instead by which one makes the table reconcile with the total the
      lab printed itself. Same principle as readColumnMajor, applied row-wise. */
   const analyteRows = [];
+  /* Per key, what summed rows and isomer rows contributed to the reading
+     that stands (SUMMED_SPELLINGS, above). Reset wherever terps is. */
+  const tally = summedTally();
+  let summedDisagree = [];
   let legendUntil = -1;   // index before which analyte rows are chart legend
   let totalPinned = false;
   let totalCandidates = [];
@@ -832,7 +903,7 @@ function parseCoa(text){
     else if (isMoisture){ if (moisture === null) moisture = value; }
     else if (isWater){ if (waterActivity === null) waterActivity = value; }
     else if (i < legendUntil){ /* inside a chart legend - not authoritative */ }
-    else analyteRows.push({ key, isUnmodelled, verdictValue, candidates: numerics.slice(), nonDetect: sawNonDetect });
+    else analyteRows.push({ key, upper, isUnmodelled, verdictValue, candidates: numerics.slice(), nonDetect: sawNonDetect });
   }
 
   /* Some COAs print a row of "Total CBD / Total THC / Total Cannabinoids /
@@ -866,7 +937,11 @@ function parseCoa(text){
   {
     const pinned = analyteRows.filter(r => r.verdictValue !== null);
     const loose  = analyteRows.filter(r => r.verdictValue === null);
-    const pinnedSum = pinned.reduce((a, r) => a + (r.verdictValue || 0), 0);
+    /* An isomer row of a terpene this report also prints as a total stays
+       out of the sums compared with the lab's total (SUMMED_SPELLINGS). */
+    const bothWays = keysPrintedBothWays(analyteRows);
+    const shadowed = r => bothWays.size > 0 && bothWays.has(r.key) && ISOMER_SPELLINGS.has(r.upper);
+    const pinnedSum = pinned.reduce((a, r) => a + (shadowed(r) ? 0 : (r.verdictValue || 0)), 0);
 
     const valueAt = (r, dir, idx) => {
       const c = r.candidates.filter(n => n != null && n <= PERCENT_CEILING);
@@ -885,7 +960,8 @@ function parseCoa(text){
           for (const r of loose){
             const v = valueAt(r, dir, idx);
             if (v != null){
-              sum += v; filled++;
+              if (!shadowed(r)) sum += v;
+              filled++;
               if (v > 0){ measured++; columnValues.add(v); }
             }
           }
@@ -932,7 +1008,7 @@ function parseCoa(text){
       }
       if (v === null || v === undefined) continue;
       if (r.isUnmodelled) unmodelledTotal += v;
-      else terps[r.key] = (terps[r.key] || 0) + v;   // cis+trans nerolidol accumulate
+      else { terps[r.key] = (terps[r.key] || 0) + v; tally.note(r.key, r.upper, v); }   // cis+trans nerolidol accumulate
     }
   }
 
@@ -951,13 +1027,15 @@ function parseCoa(text){
    * the document's own internal check. */
   if (rowKeys.length >= 4 && totalCandidates.length > 1){
     const rows = rowKeys.map(r => ({ r, c: r.candidates || [] }));
+    const bothWays = keysPrintedBothWays(rowKeys);
+    const shadowed = r => bothWays.size > 0 && bothWays.has(r.key) && ISOMER_SPELLINGS.has(r.upper);
     const width = Math.max(...rows.map(x => x.c.length), totalCandidates.length);
     let best = null;
     for (let idx = 0; idx < width; idx++){
       const declared = totalCandidates[idx];
       if (!(declared > 0)) continue;
       let sum = 0, filled = 0;
-      rows.forEach(x => { const v = x.c[idx]; if (v != null){ sum += v; filled++; } });
+      rows.forEach(x => { const v = x.c[idx]; if (v != null){ if (!shadowed(x.r)) sum += v; filled++; } });
       if (filled < rows.length * 0.5) continue;
       if (sum > declared * (1 + RECONCILE_TOLERANCE)) continue;
       const share = sum / declared;
@@ -975,6 +1053,7 @@ function parseCoa(text){
       readBy = 'multicolumn';
       columnResolved = true;
       Object.keys(terps).forEach(k => delete terps[k]);
+      tally.reset();
       unmodelledTotal = 0;
       totalTerpenes = best.declared;
       const seen = new Set();
@@ -983,7 +1062,7 @@ function parseCoa(text){
         if (v == null || seen.has(x.r.upper)) return;
         seen.add(x.r.upper);
         if (x.r.isUnmodelled) unmodelledTotal += v;
-        else if (x.r.key) terps[x.r.key] = (terps[x.r.key] || 0) + v;
+        else if (x.r.key){ terps[x.r.key] = (terps[x.r.key] || 0) + v; tally.note(x.r.key, x.r.upper, v); }
       });
     }
     /* Cross-check the chosen column against the ones it beat.
@@ -1062,6 +1141,7 @@ function parseCoa(text){
     if (fits(bwdShare) && bwdShare >= MIN_BACKWARD_SHARE && (bwdShare > fwdShare + BACKWARD_MARGIN || valueFirstEdges)){
       readBy = 'backward';
       Object.keys(terps).forEach(k => delete terps[k]);
+      tally.reset();
       unmodelledTotal = 0;
       const seen = new Set();
       rowKeys.forEach((r, n) => {
@@ -1069,12 +1149,15 @@ function parseCoa(text){
         if (v == null || seen.has(r.upper)) return;
         seen.add(r.upper);
         if (r.isUnmodelled) unmodelledTotal += v;
-        else if (r.key) terps[r.key] = (terps[r.key] || 0) + v;
+        else if (r.key){ terps[r.key] = (terps[r.key] || 0) + v; tally.note(r.key, r.upper, v); }
       });
     }
   }
 
   Object.keys(terps).forEach(k => { terps[k] = round(terps[k]); });
+  /* A terpene printed as a total and as its isomers: counted once, before
+     anything below measures the reading against the lab's total. */
+  summedDisagree = tally.settle(terps);
   unmodelledTotal = round(unmodelledTotal);
 
   let mappedTotal = round(Object.values(terps).reduce((a, b) => a + b, 0));
@@ -1096,6 +1179,7 @@ function parseCoa(text){
       totalTerpenes = col.totalTerpenes;
       Object.keys(terps).forEach(k => delete terps[k]);
       Object.assign(terps, col.terps);
+      summedDisagree = col.summedDisagree;
       unmodelledTotal = col.unmodelledTotal;
       mappedTotal = col.mappedTotal;
       readBy = 'columnmajor';
@@ -1188,6 +1272,9 @@ function parseCoa(text){
   const top = Math.max(0, ...Object.values(terps));
   if (mappedTotal > 0 && top / mappedTotal > 0.85 && nonZero > 2)
     warnings.push('one terpene accounts for most of the profile — unusual, though some cultivars genuinely are');
+
+  for (const key of summedDisagree)
+    rejectReasons.push(`this report lists ${key} both as a total and as separate rows, and the two disagree, so NOSE cannot tell which to use`);
 
   if (coverage != null && coverage > COVERAGE_CEILING)
     rejectReasons.push(`coverage ${(coverage * 100).toFixed(1)}% exceeds the lab total — parse fault, not a lab finding`);
@@ -1447,6 +1534,11 @@ function readColumnMajor(rawLines, printedTotal){
 
   for (const names of nameRuns){
     const totalIdx = names.items.findIndex(n => TOTAL_ROW.test(n));
+    /* An isomer row of a terpene this column also prints as a total stays
+       out of the checksum (SUMMED_SPELLINGS). */
+    const uppers = names.items.map(canonicalAnalyte);
+    const bothWays = keysPrintedBothWays(uppers.map(upper => ({ key: ANALYTE_MAP[upper], upper })));
+    const shadowed = k => bothWays.size > 0 && bothWays.has(ANALYTE_MAP[uppers[k]]) && ISOMER_SPELLINGS.has(uppers[k]);
     /* A value run may carry trailing extras the name column has no row for -
        TerpLife appends "75.25 mg/Unit" after the total. Accept runs at least
        as long as the name column and try both the leading and trailing
@@ -1468,7 +1560,7 @@ function readColumnMajor(rawLines, printedTotal){
       if (!(declared > 0)) continue;
 
       let sum = 0;
-      c.items.forEach((t, k) => { if (k !== totalIdx) sum += (resultToNumber(t) || 0); });
+      c.items.forEach((t, k) => { if (k !== totalIdx && !shadowed(k)) sum += (resultToNumber(t) || 0); });
 
       /* One-sided on purpose. A column can never sum to MORE than the lab's own
          total - that means we are reading the wrong units (Method prints ug/g
@@ -1496,6 +1588,7 @@ function readColumnMajor(rawLines, printedTotal){
   if (!bestOverall) return null;
 
   const terps = {}, seen = new Set();
+  const tally = summedTally();
   let unmodelled = 0;
   bestOverall.names.items.forEach((name, k) => {
     if (k === bestOverall.totalIdx) return;
@@ -1505,12 +1598,13 @@ function readColumnMajor(rawLines, printedTotal){
     const v = resultToNumber(bestOverall.run.items[k]);
     if (v == null) return;
     const key = ANALYTE_MAP[u];
-    if (key) terps[key] = round((terps[key] || 0) + v);
+    if (key){ terps[key] = round((terps[key] || 0) + v); tally.note(key, u, v); }
     else if (UNMODELLED.test(u)) unmodelled = round(unmodelled + v);
   });
+  const summedDisagree = tally.settle(terps);
 
   const mapped = round(Object.values(terps).reduce((a, b) => a + b, 0));
-  return { terps, unmodelledTotal: unmodelled, mappedTotal: mapped, totalTerpenes: bestOverall.declared };
+  return { terps, summedDisagree, unmodelledTotal: unmodelled, mappedTotal: mapped, totalTerpenes: bestOverall.declared };
 }
 
 module.exports.readColumnMajor = readColumnMajor;

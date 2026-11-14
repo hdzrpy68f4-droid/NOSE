@@ -171,7 +171,7 @@ Also run `node test/resolver-test.js` - expect `resolver clean`, and
 **Or all at once:** `bash scripts/gates.sh` (or `npm run gates`, the same
 file) runs, first, `node-version-test` - the Node running the gates is
 `.nvmrc`'s, 24 since 2026-10-15 (§13, "Node 24 everywhere") - then these, the Kaycha anchors,
-`novelty-test`, `coa-dates-test`, `store-test`, `probe-test`, `archive-wiring-test`,
+`novelty-test`, `coa-dates-test`, `summed-rows-test`, `store-test`, `probe-test`, `archive-wiring-test`,
 `archive-scripts-test`, `rerun-test`, `review-queue-test`, `match-test`, `match-props-test`,
 `match-feedback-test`, `accounts-test`, `client-error-test`, `analysis-test`, `duplicates-test`, `remove-copies-test`, `remove-document-test`, `b2b-coverage-test`, `b2b-store-test`, `b2b-catalog-test`, `b2b-endpoints-test`, `b2b-rank-test`, `b2b-strings-test`, `b2b-pilot-test`, `check-trust-test` and, after the build, `colour-tokens-test`, `b2b-release-test`, `input-paths-test`, `b2b-widget-test` and `b2b-compliance-kit-test`.
 It prints the line each gate produced and ends with `ALL GATES GREEN`. It passes
@@ -239,6 +239,7 @@ someone to look.
 | `accounts-test.js` | the account functions (§13, "A gate for the account system"): `auth-signup`, `auth-login`, `auth-me`, `auth-logout`, `auth-reset`, `account-delete`, `palate-sync` and `sessions-purge` offline over `netlify/lib/auth.js`, `@netlify/blobs` and Supabase (global `fetch`) stood in for - the age attestation and password length, the cookie word for word, the session record's five fields, the fixed bad-password message and the ninth try, a malformed cookie signed-out, logout here and everywhere, deletion's order and each failing step named, the palate's limits and one user never reading another's, one reset reply, the purge of expired sessions, no console line with an address or password |
 | `client-error-test.js` | the app's error reports (§13, "Start-up error reports reach the server"): `client-error.js` offline, `@netlify/blobs` stood in for by `test/lib/functions-harness.js` - `error`, `unhandledrejection` and `init:<step>` stored, every name the bundle passes to `step()` accepted, every other kind refused with `bad-kind` and nothing stored, an init record's fields the same as an error record's |
 | `coa-dates-test.js` | `lib/coa-dates.js` and the parser's `harvestOn` / `reportOn` / `testedOn` (§7): the four forms, a one-digit month or day, a time of day, the near misses, `testedOn` on every fixture and the rule behind each lab's row, and every other field identical without it |
+| `summed-rows-test.js` | a terpene printed both as a total and as its isomers (§13, "A terpene printed as a total and as its isomers"): made-up reports, one cell per line - Nerolidol beside cis- and trans-, alpha-Terpineol beside Total Terpineol, cis- and trans-Ocimene beside "Ocimene, Total" each read once and accepted with no arithmetic warning; isomers alone still sum; a summed row alone is read; a bare Ocimene beside beta-Ocimene adds as before; the two disagreeing is refused in a plain sentence |
 | `date-probe.js` | read-only, not a gate: for every accepted fixture, the lab, the dates the parser reads, and every line whose label ends in `Date:`, `Completed:` or `Created:` with the line after it; then per lab, how many are dated and on how many fixtures each label appears (`--labels`). Run it before choosing a date label for a new lab (§13, "When the lab finished") |
 | `analysis-test.js` | the analysis layer (§13) on PGlite: the two views, their grants; `drift.js`, `lab-stats.js` and, since 2026-10-14, `score-spread.js` |
 | `duplicates-test.js` | `duplicates.js` and `download-twice.js` (§13, "One report, many documents"): on PGlite, and on fixture PDFs behind a stand-in fetch - a PDF rebuilt between downloads, the same file twice, a text that changes, a link that fails; offline |
@@ -549,9 +550,14 @@ a property test").
 The same failure nearly recurred with nerolidol: `TRANS-`, `CIS-`, `E-` and `Z-`
 were mapped but bare `NEROLIDOL` was in `UNMODELLED`, so a lab printing one summed
 row had the compound measured and then dropped from the fingerprint. Now mapped.
-A document printing BOTH the summed row and its isomers double-counts, overshoots
-the lab's own total, and is refused by the coverage ceiling rather than asserted.
-No fixture currently uses the bare spelling.
+A document printing BOTH the summed row and its isomers is read once, from the
+summed row, when the two agree within `RECONCILE_TOLERANCE`, and refused when
+they disagree (since 2026-11-14; `SUMMED_SPELLINGS` and `ISOMER_SPELLINGS` in the
+parser, §11 and §13, "A terpene printed as a total and as its isomers"). **A new
+spelling that is a sum or an isomer by its own name goes into one of those two
+sets as well as `ANALYTE_MAP`.** A spelling whose name does not say which it is -
+a bare `OCIMENE`, `TERPINEOL` or `FARNESENE` - goes in neither. No fixture
+currently uses the bare `NEROLIDOL` spelling.
 
 ---
 
@@ -810,6 +816,20 @@ asymmetry as the look-ahead entry above, found by review rather than by a
 fixture, because no fixture can currently reach it
 
 ---
+
+- **A summed row plus its isomers was read doubled, and the comments said it
+  was refused** (found 2026-11-12, fixed 2026-11-14). `ANALYTE_MAP`'s comments
+  and §8 said a report printing both `Nerolidol` and its cis- and trans- rows
+  "overshoots the lab's own total, and is refused by the coverage ceiling".
+  The ceiling is 5%, so that held only when the doubled terpene was more than
+  about 5% of the total. On a made-up 12-terpene report, Nerolidol 0.030
+  beside cis- 0.012 and trans- 0.018 was accepted with nerolidol 0.060;
+  alpha-Terpineol beside Total Terpineol with terpineol 0.070; cis- and
+  trans-Ocimene beside "Ocimene, Total" with ocimene 0.080 - each with only
+  the warning that the report's own arithmetic does not close, which blamed
+  the lab. A believable fingerprint with one family inflated. No fixture
+  prints both, so nothing in the corpus could show it. **A comment that says
+  another check catches a case is a claim; test it with a made-up report.**
 
 ## 12. The fetcher — `netlify/functions/lib/fetch-report.js`, called by `coa.js`
 
@@ -5476,6 +5496,56 @@ asked for the recommended choice on each. What was done:
    **no page talks to Supabase directly.** Every query runs in a Netlify
    function as `nose_writer` or `nose_b2b`. The day a browser-side Supabase
    client is wanted, row-level security comes first.
+
+### A terpene printed as a total and as its isomers counts once, 2026-11-14
+
+From the review of 2026-11-12 (finding 9, prompt P9; decision 3). §11 has the
+bug. No real report with this layout has been seen: the change rests on
+made-up reports, and it was made because the wrong reading is a believable
+fingerprint, which is the one outcome the parser's rules rule out.
+
+- **The probe, before the change** (`test/summed-rows-test.js` against the
+  old parser, 10 of 14 checks failing), on a made-up 12-terpene report:
+
+  | Rows printed | True value | Read as | Verdict |
+  |---|---|---|---|
+  | Nerolidol 0.030, cis- 0.012, trans- 0.018 | 0.030 | 0.060 | accepted |
+  | alpha-Terpineol 0.035, Total Terpineol 0.035 | 0.035 | 0.070 | accepted |
+  | cis-Ocimene 0.015, trans- 0.025, "Ocimene, Total" 0.040 | 0.040 | 0.080 | accepted |
+  | Nerolidol 0.120, cis- 0.050, trans- 0.070 (5.4% of the total) | 0.120 | 0.240 | refused, coverage 105.4% |
+
+- **No fixture prints both.** Of the 59 extracted texts, none names one
+  terpene by a summed spelling and an isomer spelling. 37 print cis- and
+  trans-Nerolidol, 3 print E- and Z-Nerolidol, 1 prints cis- and
+  trans-b-Ocimene. Bare `FARNESENE` is in 33, bare `OCIMENE` in 30 and bare
+  `TERPINEOL` in 12; those three are placed in neither set.
+- **The change** (`parse-coa.js`): `SUMMED_SPELLINGS` (NEROLIDOL, TOTAL
+  TERPINEOL, "OCIMENE, TOTAL", OCIMENES) and `ISOMER_SPELLINGS` (the cis-,
+  trans-, E-, Z-, alpha- and beta- forms of nerolidol, terpineol, ocimene
+  and farnesene). Each of the four readers - forward, multicolumn, backward,
+  column-major - notes what each kind contributed to a key. When both fed
+  one key: if they agree within `RECONCILE_TOLERANCE` of the summed row the
+  key takes the summed row alone; otherwise the report is refused with "this
+  report lists <key> both as a total and as separate rows, and the two
+  disagree, so NOSE cannot tell which to use". The forward, multicolumn and
+  column-major choosers leave such an isomer row out of the sums they
+  compare with the lab's total. No constant changed. On a report with one
+  kind only, nothing here does anything.
+- **After:** the four rows of the table read 0.030, 0.035, 0.040 and 0.120,
+  each accepted with no arithmetic warning.
+- **Nothing moved on the corpus:** `56 accepted / 3 rejected`; `56 match / 0
+  differ / 3 no-baseline / 0 threw`; `test/mutation-test.js` printed `262
+  absorbed / 151 rejected / 35 SILENTLY CHANGED` before and after;
+  `KAY-CAR-001 4.124 KAY-PRR-001 0.944`.
+- **Not run:** `node scripts/reparse.js --dry-run`. It needs the archive's
+  database address, which the Windows desktop does not hold. Run it in the
+  Codespace before the real reparse. If any document changes, it is a real
+  report with this layout, and it becomes the fixture this change lacked.
+- **A limit worth knowing:** the 3% is of the summed row, so on small values
+  a lab's own rounding can exceed it (0.012 + 0.019 against a printed 0.030
+  is 3.3% apart) and the report is refused. That is the fail-closed side; a
+  real report refused this way is the evidence for an allowance.
+- New gate `summed rows`, after `coa dates`: 38 gates.
 
 ### After a deploy — check it
 
