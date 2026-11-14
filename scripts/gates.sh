@@ -102,6 +102,9 @@ gate 'match maths'    'match clean'              '^match clean$' \
 # Blobs stood in for.
 gate 'match feedback' 'match-feedback clean'     '^match-feedback clean$' \
   node test/match-feedback-test.js
+# The app's error reports, a failed start-up step included: client-error.js
+# offline, Blobs stood in for.
+gate 'client errors'  'client-error clean'       '^client-error clean$' \n  node test/client-error-test.js
 gate 'analysis'       'analysis clean'           '^analysis clean$' \
   node test/analysis-test.js
 gate 'duplicates'     'duplicates clean'         '^duplicates clean$' \

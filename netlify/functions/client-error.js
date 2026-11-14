@@ -22,6 +22,11 @@ import {
 import { methodNotAllowed } from '../lib/http.js';
 
 const KINDS = new Set(['error', 'unhandledrejection']);
+// A failed start-up step of the app: js/nose's step() catches it, so the
+// browser's own error event never fires, and reports it as "init:<step>" -
+// "init:hero", "init:manual rows". Refused as bad-kind until 2026-11-14.
+const INIT_KIND = /^init:[a-z ]{1,40}$/;
+const isKind = (v) => typeof v === 'string' && (KINDS.has(v) || INIT_KIND.test(v));
 
 export default async (request) => {
   if (request.method !== 'POST') return methodNotAllowed();
@@ -30,7 +35,7 @@ export default async (request) => {
   if (!body.ok) return rejected(body.reason);
   const d = body.data;
 
-  if (!KINDS.has(d.kind)) return rejected('bad-kind');
+  if (!isKind(d.kind)) return rejected('bad-kind');
   if (typeof d.message !== 'string' || !d.message) return rejected('bad-message');
   if (d.line !== null && d.line !== undefined && !isInt(d.line, 0, 1e7)) return rejected('bad-line');
   if (d.col !== null && d.col !== undefined && !isInt(d.col, 0, 1e7)) return rejected('bad-col');
