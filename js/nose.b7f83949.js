@@ -92,7 +92,12 @@
       if($id('fullResult')) step('result after a jar left',updateFullResult);
     }
     function topFamilies(values){ return Object.entries(familyShares(values)).sort((a,b)=>b[1]-a[1]); }
-    function confidence(profileA,profileB){ const countA=Object.keys(profileA.terps||{}).length; const countB=Object.keys(profileB.terps||{}).length; const min=Math.min(countA,countB); if(min>=9) return 'High — broad measured panels'; if(min>=5) return 'Moderate — useful but incomplete'; return 'Low — few measured compounds'; }
+    /* The smallest count of the 15 compounds among the jars compared: each jar
+       in the palate, and the new jar. Until 2026-11-14 the palate was counted
+       after averaging - the union across its jars - so three sparse jars could
+       read High. An empty jar is skipped, as averageProfiles() skips it.
+       PARSER-HANDOFF s13, "The method page says what the code does". */
+    function confidence(profiles){ const counts=profiles.map(profile=>Object.keys(normalize(profile.terps)).length).filter(Boolean); const min=counts.length?Math.min(...counts):0; if(min>=9) return 'High — broad measured panels'; if(min>=5) return 'Moderate — useful but incomplete'; return 'Low — few measured compounds'; }
     function safeText(value){ return String(value ?? ''); }
     function slugify(value){ return String(value).toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,60) || 'saved-profile'; }
 
@@ -316,12 +321,12 @@
       document.getElementById('resultNames').textContent=`${a.name} compared with ${b.name}`;
       document.getElementById('resultBadge').textContent=matchBand(score)[0];
       document.getElementById('resultScore').textContent=shownScore(score);
-      document.getElementById('resultSummary').textContent=`${shownScore(score)}% aroma similarity — ${matchBand(score)[1].toLowerCase()} confidence band`;
+      document.getElementById('resultSummary').textContent=`${shownScore(score)}% aroma similarity`;
       document.getElementById('resultExplanation').textContent=describeMatch(a,b,score);
       resetFeedback(score,b);
       document.getElementById('sharedBackbone').textContent=shared.length?shared.slice(0,2).map(key=>FAMILIES[key].label).join(' + '):'No strong shared family';
       document.getElementById('biggestDifference').textContent=`${FAMILIES[biggest[0]].label} ${biggest[1]>=0?'higher':'lower'} by ${Math.round(Math.abs(biggest[1])*100)} points`;
-      document.getElementById('resultConfidence').textContent=confidence(a,b);
+      document.getElementById('resultConfidence').textContent=confidence([...palateProfiles(),b]);
       renderBar('resultPalateBar',a.terps); renderBar('resultCandidateBar',b.terps);
       const tbody=document.getElementById('accessibleResultRows'); tbody.replaceChildren();
       FAMILY_ORDER.forEach(key=>{ const tr=document.createElement('tr'); [FAMILIES[key].label,`${Math.round(familyA[key]*100)}%`,`${Math.round(familyB[key]*100)}%`,`${Math.round((familyB[key]-familyA[key])*100)} pts`].forEach(text=>{ const td=document.createElement('td'); td.textContent=text; tr.append(td); }); tbody.append(tr); });

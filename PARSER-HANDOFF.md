@@ -5297,6 +5297,37 @@ From the review of 2026-11-12 (finding 10, prompt P10). No score changed.
   then `node test/match-golden-make.js --why "<what changed>"`, in the same
   commit. `CLAUDE.md` and §8 now give that command.
 
+### The method page says what the code does, 2026-11-14
+
+From the review of 2026-11-12 (finding 8, prompt P8). The methodology page
+named no label and no threshold, though the code and its tests call 90, 75
+and 55 "the published method"; its confidence step named a rule the code
+does not have; and the result's summary line showed the internal band name
+as a "confidence band".
+
+- **The page** (`methodology/index.html`, `dateModified` 2026-11-14) gains:
+  the 15 compounds by family, and that anything else is left out with the
+  card saying how much; the two reading rules (below the reporting limit is
+  zero; cis- and trans-nerolidol are added together); that a palate is the
+  average of its jars' shares; a step "4. Name the result" with a table of
+  the four labels (Close match 90 and up, Related profile 75 to 89, Partial
+  overlap 55 to 74, Different profile below 55), that the number is rounded
+  down so a 74.9 shows 74, and that the cut-offs are ones NOSE chose, tested
+  by the votes; and step 5, confidence as coded.
+- **One change in the code:** `confidence()` in `js/nose` takes the smallest
+  count of the 15 compounds among the jars compared - each jar in the palate
+  and the new jar. It counted the averaged palate, the union across its
+  jars, so jars with few compounds each could read High. The three sentences
+  it returns are unchanged. No score, band or threshold changed.
+- **The summary line** reads "74% aroma similarity", with no band word. The
+  badge above it shows the label.
+- **Privacy page:** a vote sends "its match band", where the page said "its
+  confidence band". The vote's fields are unchanged.
+- `match-test.js` reads each label and the score it starts at from
+  `matchBand()` and fails if the page's table differs. `input-paths-test`
+  checks a palate of two four-compound jars reads Low, and the summary line.
+- Bundle: `js/nose.e69ed548.js` became `js/nose.b7f83949.js`.
+
 ### After a deploy — check it
 
 First, the run on GitHub is green and `live` has moved: Actions → gates → the

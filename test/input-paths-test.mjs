@@ -930,6 +930,29 @@ try {
     body = await vote();
     check('a jar that is gone: after Load from account, a vote names only the jars on screen',
       !!body && JSON.stringify(body.palate) === '["lemon-tart"]' && body.candidate === 'cold-creek', JSON.stringify(body));
+
+    /* Confidence is read from the smallest panel among the jars compared
+       (since 2026-11-14, "The method page says what the code does"). Two
+       saved jars of four compounds each, sharing none: averaged they hold
+       eight, which until then read Moderate. */
+    await p.setInputFiles('#importFile', { name: 'nose-palate.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({ version: 1, profiles: [
+      { id: 'saved-sparse-1', name: 'Sparse jar one', subtitle: '4 measured compounds', terps: { limonene: 0.4, myrcene: 0.3, caryophyllene: 0.2, humulene: 0.1 } },
+      { id: 'saved-sparse-2', name: 'Sparse jar two', subtitle: '4 measured compounds', terps: { pinene_a: 0.4, linalool: 0.3, terpinolene: 0.2, ocimene: 0.1 } }] })) });
+    await p.waitForFunction(() => [...document.querySelectorAll('#savedPalateList .saved-item-name')].some(x => x.textContent === 'Sparse jar two'));
+    await chip('palate', 'Sparse jar one').click();
+    await chip('palate', 'Sparse jar two').click();
+    await chip('palate', LEMON).click();
+    check('confidence: a palate of two jars with four compounds each, against Cold Creek Kush\'s thirteen, reads Low',
+      [await t('#palateSummaryLine'), await t('#resultConfidence')].join(' | ')
+        === 'Palate = average of 2 jars: Sparse jar one + Sparse jar two | Low — few measured compounds',
+      [await t('#palateSummaryLine'), await t('#resultConfidence')].join(' | '));
+    check('the result\'s summary line is the number and "aroma similarity", with no band word',
+      /^\d+% aroma similarity$/.test(await t('#resultSummary')), await t('#resultSummary'));
+    await chip('palate', LEMON).click();
+    await chip('palate', 'Sparse jar one').click();
+    await chip('palate', 'Sparse jar two').click();
+    check('confidence: Lemon Tart Pucker\'s seven against thirteen still reads Moderate',
+      (await t('#resultConfidence')) === 'Moderate — useful but incomplete', await t('#resultConfidence'));
     await ctx.close();
   }
 

@@ -516,7 +516,7 @@ async function main() {
     ' ' + sandbox.list().map(w => w[1]).join(' ') + ' ' + limitNote;
   check('no effect word in the feedback block, read or heard - the words\' labels and the note included', (words.match(new RegExp(EFFECT_WORDS.source, 'gi')) || []), []);
   check('the privacy page\'s sentence about votes names what a vote sends, the smell words included',
-    fs.readFileSync(PRIVACY, 'utf8').includes('When you press &ldquo;Matched&rdquo; or &ldquo;Didn\'t match&rdquo; on a result, we receive: the similarity score, its confidence band, how many jars were in your palate, which built-in sample jars were involved, a timestamp, and up to three smell words you picked from a fixed list.</p>'),
+    fs.readFileSync(PRIVACY, 'utf8').includes('When you press &ldquo;Matched&rdquo; or &ldquo;Didn\'t match&rdquo; on a result, we receive: the similarity score, its match band, how many jars were in your palate, which built-in sample jars were involved, a timestamp, and up to three smell words you picked from a fixed list.</p>'),
     true);
   check('...and its "What changed" list dates the change',
     fs.readFileSync(PRIVACY, 'utf8').includes('<p><strong>A sixth change: smell words on a vote.</strong>') && /A sixth change: smell words on a vote\.[^\n]*That changed on <strong>October \d{1,2}, 2026<\/strong>/.test(fs.readFileSync(PRIVACY, 'utf8')),

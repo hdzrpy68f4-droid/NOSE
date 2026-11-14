@@ -168,6 +168,26 @@ check('the app shows and sends every score through shownScore(): the hero, the r
    /getElementById\('resultScore'\)\.textContent=shownScore\(score\);/.test(app),
    /`\$\{shownScore\(score\)\}% aroma similarity/.test(app),
    /\bscore:shownScore\(score\),/.test(app)], [true, true, true, true]);
+/* The methodology page defines the four labels (since 2026-11-14, PARSER-HANDOFF
+   s13, "The method page says what the code does"). Each label and the shown
+   score it starts at are read from matchBand() itself, so the page cannot
+   drift from the code. */
+{
+  const page = fs.readFileSync(path.join(ROOT, 'methodology/index.html'), 'utf8');
+  const starts = [];
+  for (let n = 0; n <= 100; n++) {
+    const label = M.matchBand(n / 100)[0];
+    if (!starts.some(s => s[0] === label)) starts.push([label, n]);
+  }
+  const rows = starts.map(([label, n], i) => {
+    const range = i === 0 ? `below ${starts[1][1]}` : i === starts.length - 1 ? `${n} and up` : `${n} to ${starts[i + 1][1] - 1}`;
+    return [label, range, page.includes(`<tr><th scope="row">${label}</th><td>${range}</td></tr>`)];
+  });
+  check('the methodology page prints each of matchBand()\'s four labels beside the scores it covers',
+    rows, [['Different profile', 'below 55', true], ['Partial overlap', '55 to 74', true], ['Related profile', '75 to 89', true], ['Close match', '90 and up', true]]);
+  check('...and says the number shown is rounded down; the result\'s summary line carries no band word',
+    [page.includes('rounded down, so a 74.9 shows 74'), /confidence band/.test(app)], [true, false]);
+}
 check('...and scripts/drift.js prints it the same way',
   /M\.shownScore\(p\.score\)/.test(fs.readFileSync(path.join(ROOT, 'scripts/drift.js'), 'utf8')), true);
 const ROUNDED = /Math\.round\(\s*[\w.]*score\s*\*\s*100\s*\)|Math\.round\(\s*100\s*\*\s*[\w.]*score\s*\)/i;
