@@ -173,7 +173,7 @@ file) runs, first, `node-version-test` - the Node running the gates is
 `.nvmrc`'s, 24 since 2026-10-15 (§13, "Node 24 everywhere") - then these, the Kaycha anchors,
 `novelty-test`, `coa-dates-test`, `store-test`, `probe-test`, `archive-wiring-test`,
 `archive-scripts-test`, `rerun-test`, `review-queue-test`, `match-test`,
-`match-feedback-test`, `client-error-test`, `analysis-test`, `duplicates-test`, `remove-copies-test`, `remove-document-test`, `b2b-coverage-test`, `b2b-store-test`, `b2b-catalog-test`, `b2b-endpoints-test`, `b2b-rank-test`, `b2b-strings-test`, `b2b-pilot-test`, `check-trust-test` and, after the build, `colour-tokens-test`, `b2b-release-test`, `input-paths-test`, `b2b-widget-test` and `b2b-compliance-kit-test`.
+`match-feedback-test`, `accounts-test`, `client-error-test`, `analysis-test`, `duplicates-test`, `remove-copies-test`, `remove-document-test`, `b2b-coverage-test`, `b2b-store-test`, `b2b-catalog-test`, `b2b-endpoints-test`, `b2b-rank-test`, `b2b-strings-test`, `b2b-pilot-test`, `check-trust-test` and, after the build, `colour-tokens-test`, `b2b-release-test`, `input-paths-test`, `b2b-widget-test` and `b2b-compliance-kit-test`.
 It prints the line each gate produced and ends with `ALL GATES GREEN`. It passes
 a gate only on its exact expected line, so when a session legitimately changes
 a count, update the script in the same commit.
@@ -235,6 +235,7 @@ someone to look.
 | `novelty-test.js` | the five `novelty` notes (§7) and the furniture the `unmapped` diagnostic skips; FAILS if an accepted fixture carries any novelty, and lists the refused ones that do, as information |
 | `match-test.js` | the matching maths has one home, `js/match-math.*.js`: the app takes it from there, nothing else holds a copy, and it returns every score in `test/fixtures/match-golden.json` to the last bit; every score is shown and sent through `shownScore()`, floored (§13, "The shown score"), and the worked examples on `learn/intensity-versus-character/` are the numbers the app shows; since 2026-10-14, a profile carrying `harvestOn`, `reportOn` and `totalTerpenes` normalises exactly as without them (§4) |
 | `match-feedback-test.js` | the app's votes (§13, "Every vote stored"): `match-feedback.js` and `feedback-read.js` offline, `@netlify/blobs` stood in for - matchBand()'s four names each stored under its slug, every other band refused with `bad-band` and nothing stored, a score of 0 kept; the key layout, the store, the record's ten fields and anonymity unmoved; the summary, filters and CSV over the four, in matchBand()'s order, its caveat word for word; the bundle's own vote run on the default `/app` pair, 74 · Moderate, stored and counted; the question asks about smell and taste, no effect word in the block; the privacy page's sentence about votes; since 2026-10-14 the smell words (§13, "Smell words on a vote") - the bundle's `SMELL_NOTES` and the handler's `NOTES` one list, up to three distinct words stored in list order in a v 2 record, every other shape refused with `bad-notes` and nothing stored, `null` when none was sent, the CSV's notes column, no word on the list an effect word |
+| `accounts-test.js` | the account functions (§13, "A gate for the account system"): `auth-signup`, `auth-login`, `auth-me`, `auth-logout`, `auth-reset`, `account-delete`, `palate-sync` and `sessions-purge` offline over `netlify/lib/auth.js`, `@netlify/blobs` and Supabase (global `fetch`) stood in for - the age attestation and password length, the cookie word for word, the session record's five fields, the fixed bad-password message and the ninth try, a malformed cookie signed-out, logout here and everywhere, deletion's order and each failing step named, the palate's limits and one user never reading another's, one reset reply, the purge of expired sessions, no console line with an address or password |
 | `client-error-test.js` | the app's error reports (§13, "Start-up error reports reach the server"): `client-error.js` offline, `@netlify/blobs` stood in for by `test/lib/functions-harness.js` - `error`, `unhandledrejection` and `init:<step>` stored, every name the bundle passes to `step()` accepted, every other kind refused with `bad-kind` and nothing stored, an init record's fields the same as an error record's |
 | `coa-dates-test.js` | `lib/coa-dates.js` and the parser's `harvestOn` / `reportOn` / `testedOn` (§7): the four forms, a one-digit month or day, a time of day, the near misses, `testedOn` on every fixture and the rule behind each lab's row, and every other field identical without it |
 | `date-probe.js` | read-only, not a gate: for every accepted fixture, the lab, the dates the parser reads, and every line whose label ends in `Date:`, `Completed:` or `Created:` with the line after it; then per lab, how many are dated and on how many fixtures each label appears (`--labels`). Run it before choosing a date label for a new lab (§13, "When the lab finished") |
@@ -5175,6 +5176,58 @@ so each such report was answered `400 bad-kind` and dropped - and because
   came from") is unchanged: a stack names scripts and lines and nothing else.
 - **Not yet done:** the one synthetic report to the live site (P7's last
   step), which waits for the deploy.
+
+### A gate for the account system, 2026-11-14
+
+From the review of 2026-11-12 (finding 4, prompt P4). No test loaded
+`auth-login`, `auth-logout`, `auth-me`, `auth-reset`, `auth-signup`,
+`account-delete` or `palate-sync`, and nothing loaded `netlify/lib/auth.js`.
+
+- `test/accounts-test.js`, a new gate `accounts` after `match feedback` (36
+  gates with `client errors`). Offline: `@netlify/blobs` is stood in for by
+  `test/lib/functions-harness.js`, and global `fetch` - the one way
+  `gotrue()` reaches Supabase - by a made-up user list that records every
+  call. 60 checks; §5's table says what they cover.
+- Checked against four broken copies, not committed: the cookie without
+  `HttpOnly`, `account-delete` not naming a failed palate step, a console
+  line printing the address (each one failing check), and `palate-sync`
+  using one key for everyone (the run stops before its last check, which
+  fails the gate).
+- **One fault it found, fixed in the same commit:** a request whose cookie
+  was `nose_session=%` made `readCookie()` throw in `decodeURIComponent`,
+  and with it every function that reads a session, where `readSession()`'s
+  comment says it never throws on a bad cookie. `readCookie()` now answers
+  null for a value that is not valid percent-encoding.
+- P4 and P5 were run in one session, so the two checks P4 was to pin "as it
+  stands" were written once, in the form P5 leaves them.
+
+### Sessions end when the privacy page says, 2026-11-14
+
+From the same review (finding 5, prompt P5). A session record holds the
+person's email address. An expired one was deleted only when its cookie came
+back, and the browser drops the cookie at 14 days, so most expired records
+stayed in Blobs with no end date. `destroyAllSessions()` answered 0 when its
+listing failed, so `account-delete` reported no failure.
+
+- `auth.js` gains `purgeExpiredSessions(now)`: it lists `sessions/` page by
+  page and deletes each record whose `expiresAt` has passed, with its
+  `by-user/<userId>/<id>` entry, and each record that cannot be read as a
+  session. It returns counts only.
+- `netlify/functions/sessions-purge.js`, scheduled `@daily` as
+  `errors-purge.js` is, calls it and logs one line: scanned, deleted,
+  failed. Never an id or an address.
+- `destroyAllSessions()` throws when its listing fails. `account-delete`
+  then answers 500 `partial` with `failed: ["sessions"]`; `auth-logout`'s
+  "everywhere" logs one line and still clears the cookie, as its existing
+  catch did.
+- The session cookie and the key layout are unchanged, so the deploy signs
+  nobody out.
+- The privacy page, "How long we keep things": "Sessions: fourteen days, or
+  until you log out; an expired session's record is removed within a day."
+  "What changed" gains no entry: nothing new is collected.
+- The security audit's item 14 (throttle records with no end date) stays
+  open and is not touched here.
+- **Not yet checked:** the first daily run in Netlify's function log.
 
 ### After a deploy — check it
 

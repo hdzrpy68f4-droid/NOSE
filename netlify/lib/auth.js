@@ -101,7 +101,10 @@ export function readCookie(request, name) {
     const i = part.indexOf('=');
     if (i < 0) continue;
     if (part.slice(0, i).trim() === name) {
-      return decodeURIComponent(part.slice(i + 1).trim());
+      // A value that is not valid percent-encoding ("%") is no cookie at all.
+      // Until 2026-11-14 decodeURIComponent threw here, and with it every
+      // function that reads a session.
+      try { return decodeURIComponent(part.slice(i + 1).trim()); } catch { return null; }
     }
   }
   return null;
@@ -168,16 +171,15 @@ export async function destroySession(id, userId) {
   if (userId) await store.delete(`by-user/${userId}/${id}`).catch(() => {});
 }
 
-/** Used on password change and account deletion — privilege change means every
- *  other session dies, not just the current one. */
+/** Used on "log out everywhere" and account deletion — privilege change means
+ *  every other session dies, not just the current one.
+ *
+ *  Throws when the sessions cannot be listed. Until 2026-11-14 it answered 0,
+ *  so account-delete reported every session destroyed when none had been
+ *  looked at (PARSER-HANDOFF s13, "Sessions end when the privacy page says"). */
 export async function destroyAllSessions(userId) {
   const store = strongStore(SESSIONS_STORE);
-  let listed;
-  try {
-    listed = await store.list({ prefix: `by-user/${userId}/` });
-  } catch {
-    return 0;
-  }
+  const listed = await store.list({ prefix: `by-user/${userId}/` });
   const blobs = (listed && listed.blobs) || [];
   for (const b of blobs) {
     const id = b.key.split('/').pop();
@@ -185,6 +187,40 @@ export async function destroyAllSessions(userId) {
     await store.delete(b.key).catch(() => {});
   }
   return blobs.length;
+}
+
+/**
+ * Delete every session record whose 14 days have ended, with its by-user
+ * entry, and every record under sessions/ that cannot be read as a session.
+ * sessions-purge.js runs it daily: the browser drops the cookie at 14 days,
+ * so an expired record's cookie normally never comes back for readSession()
+ * to delete it, and the record holds an email address.
+ *
+ * Returns counts only - never an id, a user id or an address. Throws when
+ * the listing fails.
+ */
+export async function purgeExpiredSessions(now = Date.now()) {
+  const store = strongStore(SESSIONS_STORE);
+  let scanned = 0, deleted = 0, failed = 0;
+  for await (const page of store.list({ prefix: 'sessions/', paginate: true })) {
+    for (const blob of page.blobs || []) {
+      scanned++;
+      let record = null;
+      try { record = await store.get(blob.key, { type: 'json' }); } catch { record = null; }
+      const isSession = record && typeof record === 'object' && typeof record.expiresAt === 'string';
+      if (isSession && Date.parse(record.expiresAt) > now) continue;
+      try {
+        await store.delete(blob.key);
+        if (isSession && typeof record.userId === 'string') {
+          await store.delete(`by-user/${record.userId}/${blob.key.split('/').pop()}`);
+        }
+        deleted++;
+      } catch {
+        failed++;
+      }
+    }
+  }
+  return { scanned, deleted, failed };
 }
 
 // ---------------------------------------------------------------- rate limit
