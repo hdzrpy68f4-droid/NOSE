@@ -4,7 +4,7 @@
  *
  *   node scripts/check-published.js [extra files...]    (run by build.sh)
  *
- * Two checks, because there are two rules:
+ * Three checks, because there are three rules:
  *
  *  1. PUBLISHED files must not name the database at all: no postgres:// or
  *     postgresql:// URL, no pooler.supabase.com, no <ref>.supabase.co host, no
@@ -15,6 +15,16 @@
  *  2. EVERY file in git must not hold a credential: no URL with a password in
  *     it, no Supabase secret key, no Netlify token, no dispensary secret key.
  *     The repo is public.
+ *
+ *  3. EVERY top-level file and folder is either meant to be served or blocked.
+ *     netlify.toml publishes the repository root, so a new file at the top
+ *     is a public page until a rule hides it. On 2026-11-12 the site was
+ *     serving /dry-run.txt and /CLAUDE.md that way. Each top-level name git
+ *     tracks must be one of: on the SERVED list below; a name Netlify reads
+ *     and does not serve; a name starting with a dot, which Netlify does not
+ *     serve; or blocked by a FORCED 404 in _redirects. Anything else fails
+ *     and is named. Tracked names only: Netlify builds from a git checkout,
+ *     so a file git does not hold is never deployed.
  *
  * "Published" is computed, not listed: everything in the publish directory
  * except .git, node_modules and whatever _redirects blocks with a FORCED 404.
@@ -120,6 +130,39 @@ function scan(files, patterns, why, hits) {
   }
 }
 
+/* Check 3: what the site is meant to serve from the top level. A new page or
+   folder is added here on purpose, by someone who decided it is one. */
+const SERVED_FILES = ['404.html', 'app.html', 'index.html', 'apple-touch-icon.png', 'favicon.svg', 'robots.txt', 'sitemap.xml'];
+const SERVED_PATTERNS = [/^family\.[0-9a-f]{8}\.css$/];
+const SERVED_DIRS = ['about', 'account', 'aromas', 'b2b', 'css', 'images', 'js', 'learn', 'methodology', 'privacy', 'terms', 'vendor'];
+/* Read by Netlify, never served: each answered 404 on the live site, 2026-11-14. */
+const NETLIFY_READS = ['_headers', '_redirects', 'netlify.toml'];
+
+function topLevelNames() {
+  let list;
+  try {
+    list = execFileSync('git', ['ls-files', '-z'], { cwd: ROOT, encoding: 'utf8' })
+      .split('\0').filter(Boolean).filter(f => fs.existsSync(path.join(ROOT, f)));
+  } catch {
+    list = walk(ROOT).map(f => path.relative(ROOT, f).split(path.sep).join('/'));   /* no git */
+  }
+  const names = new Map();   /* name -> is a folder */
+  for (const f of list) { const i = f.indexOf('/'); names.set(i < 0 ? f : f.slice(0, i), i >= 0); }
+  return names;
+}
+
+function strays(prefixes, blockedFiles) {
+  const out = [];
+  for (const [name, isDir] of topLevelNames()) {
+    if (name.startsWith('.')) continue;
+    if (isDir ? SERVED_DIRS.includes(name) : SERVED_FILES.includes(name) || SERVED_PATTERNS.some(re => re.test(name))) continue;
+    if (!isDir && NETLIFY_READS.includes(name)) continue;
+    if (isDir ? prefixes.includes(name + '/') : blockedFiles.includes(name)) continue;
+    out.push(name);
+  }
+  return out.sort();
+}
+
 const { prefixes, files: blockedFiles } = blockedPaths();
 const published = walk(ROOT).filter(f => {
   const rel = path.relative(ROOT, f).split(path.sep).join('/');
@@ -141,6 +184,12 @@ if (hits.length) {
   console.log('FAIL: a database address or credential would be published or committed:');
   for (const h of [...new Set(hits)]) console.log(`  ${h}`);
   console.log('Connection strings belong only in Netlify environment variables and Codespaces secrets.');
+  process.exit(1);
+}
+const stray = strays(prefixes, blockedFiles);
+if (stray.length) {
+  for (const name of stray) console.log(`FAIL: ${name} is at the top level and neither listed as published nor blocked in _redirects`);
+  console.log('Netlify publishes the repository root. Add a forced 404 for it in _redirects, or, if it is a page, add it to the list in scripts/check-published.js.');
   process.exit(1);
 }
 console.log(`==> no database hosts or credentials (${published.length} published files, blocked: ${prefixes.length} dirs + ${blockedFiles.length} files)`);

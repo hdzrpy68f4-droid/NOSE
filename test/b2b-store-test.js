@@ -862,6 +862,20 @@ async function offline(log = console.log) {
     [unguarded !== GUARD, site({ tracked: { 'docs/setup.md': `Bearer ${secretKey}\n` }, guard: unguarded }).code], [true, 0]);
   const real = spawnSync(process.execPath, [path.join(ROOT, 'scripts/check-published.js')], { cwd: ROOT, encoding: 'utf8' });
   check('...the real tree passes', [real.status, /^==> no database hosts or credentials/m.test(real.stdout)], [0, true]);
+  /* The third check, since 2026-11-14: a tracked top-level file or folder
+     that is neither on the guard's served list nor blocked by a forced 404
+     fails the build, and is named (PARSER-HANDOFF s13, "The site stops
+     serving stray root files"). */
+  const STRAY = name => new RegExp(`^FAIL: ${name} is at the top level and neither listed as published nor blocked in _redirects$`, 'm');
+  const strayFile = site({ tracked: { 'notes.txt': 'a listing nobody meant to publish\n' } });
+  const strayDir = site({ tracked: { 'drafts/a.md': 'a draft\n' } });
+  const blockedFile = site({ tracked: { 'notes.txt': 'a listing\n', '_redirects': '/docs/*  /404.html  404!\n/scripts/*  /404.html  404!\n/notes.txt  /404.html  404!\n' } });
+  const unforced = site({ tracked: { 'notes.txt': 'a listing\n', '_redirects': '/docs/*  /404.html  404!\n/scripts/*  /404.html  404!\n/notes.txt  /404.html  404\n' } });
+  const dotted = site({ tracked: { '.nvmrc': '24\n', 'netlify.toml': '[build]\n', '_headers': '/*\n', 'family.0123abcd.css': 'a{}\n', 'vendor/x.js': '\n' } });
+  check('check-published.js: a tracked top-level file or folder that is neither served nor blocked fails the build and is named; a forced 404 passes it, an unforced one does not; dot names, Netlify\'s own files and the served names pass',
+    [strayFile.code, STRAY('notes\\.txt').test(strayFile.out), strayDir.code, STRAY('drafts').test(strayDir.out),
+     blockedFile.code, unforced.code, STRAY('notes\\.txt').test(unforced.out), dotted.code],
+    [1, true, 1, true, 0, 1, true, 0]);
 
   /* --- the code: one place deletes, nothing consumer reaches B2B --------- */
   const sources = dir => fs.readdirSync(path.join(ROOT, dir), { recursive: true }).map(f => path.join(dir, String(f)).split(path.sep).join('/'))

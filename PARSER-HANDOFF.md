@@ -1154,6 +1154,12 @@ that do not. Every "Source, not website" rule had been missing it, so
 `/test/`, `/scripts/`, `/supabase/`, `/wip/` and this file added. Delete a `!`
 and the guard scans that path again.
 
+Since 2026-11-14 a third check: every top-level file and folder git tracks
+must be on the guard's own list of what the site serves, a name Netlify reads
+and does not serve (`_headers`, `_redirects`, `netlify.toml`), a name starting
+with a dot, or blocked by a forced 404. Anything else fails the build and is
+named (§13, "The site stops serving stray root files").
+
 ### The trust guard
 
 Until 2026-09-22 the About page counted among its trust claims that NOSE kept
@@ -5086,6 +5092,35 @@ anything.
   installs without `--with-deps`.
 - **The Codespace needs nothing.** Its files were already LF, and
   `path.sep` is `/` there, so each changed line does what it did.
+
+### The site stops serving stray root files, 2026-11-14
+
+From the review of 2026-11-12 (finding 1, prompt P1). `netlify.toml`
+publishes the repository root and `_redirects` hides source by a list of
+names, so a new top-level file is public until someone adds a rule. Two were
+added on 2026-11-11 and were on no list.
+
+- **Seen on the live site, 2026-11-14, before this change:**
+  `curl -s -o /dev/null -w '%{http_code} %{size_download}\n' https://nose-app.com/dry-run.txt`
+  answered `200 11785`, and the same for `/CLAUDE.md` answered `200 9546`.
+  `/netlify.toml`, `/_headers`, `/_redirects`, `/package.json`,
+  `/PARSER-HANDOFF.md`, `/.gitignore` and `/.nvmrc` each answered 404.
+- `dry-run.txt` is deleted from the tree. It was the output of
+  `reparse.js --dry-run` on the real archive: 68 documents by the start of
+  their file hash, lab and strain name. It stays in git history (`dbd1d8c`);
+  it names labs and strains, not people.
+- `_redirects` forces a 404 for `/CLAUDE.md`. The file stays at the root,
+  where Claude Code reads it.
+- `scripts/check-published.js` has a third check (§13, "The build guard, and
+  what it found"). It reads tracked names only: Netlify builds from a git
+  checkout, so an untracked file is never deployed. A new page or folder is
+  added to the list in the script on purpose.
+- `test/b2b-store-test.js` checks it on scratch sites: a tracked top-level
+  file or folder fails and is named; a forced 404 passes it and an unforced
+  one does not; dot names, Netlify's own three files and the served names
+  pass. Same gate line.
+- **Not yet checked on the live site:** that both addresses answer 404. That
+  waits for this commit's deploy.
 
 ### After a deploy — check it
 
