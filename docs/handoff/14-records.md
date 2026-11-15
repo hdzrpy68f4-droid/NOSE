@@ -2820,8 +2820,31 @@ match by NOSE".
   knows the endings of 2nd, 3rd and 4th. Same gate lines.
 - No change to `js/match-math`, the app, the golden file or the methodology
   page. Release 1's bytes are untouched.
-- **Not yet done, from the Codespace once this deploys:** publish release 2
+- **Done 2026-11-15 ("Release 2 published"):** publish release 2
   (`node scripts/b2b-release.js --dry-run`, then the release, then its
   `docs/B2B-RELEASES.md` row committed on its own, then `node
   scripts/b2b-release-check.js --site https://nose-app.com`), and the
   compliance kit for it (`node scripts/b2b-compliance-kit.js --release 2`).
+
+### Release 2 published, 2026-11-15
+
+The last steps of "How a flower score reads", run in the Codespace.
+
+- `node scripts/b2b-release.js` (after a dry run, and after `git checkout --
+  package-lock.json`: a Playwright install had left it changed, and the
+  script refuses a tree with any change): release 2 from commit `c96b15a`,
+  `nose-matches.js` 66,645 bytes,
+  `sha384-ria5Ei+NaS29qm0wrTCxfib/zOXnVZvEeAwaKZBRnHYcfTKIYBaFMkVUs/ZgAUa8`;
+  `nose-matches.css` 5,788 bytes,
+  `sha384-R2Sxy67O6gPnbBB7Gx4hwPTj/C85nqi1xO/mthRYsfhTTYCfCtkAk+5tc5nVWLNW`.
+  Both written, read back and matched; the row committed on its own as
+  `d8c19b7`.
+- `node scripts/b2b-release-check.js --site https://nose-app.com`: releases 1
+  (`77f96a8`) and 2 (`c96b15a`) each "git ok store ok site ok".
+- `node scripts/b2b-compliance-kit.js --release 2`: 10 screens, 37 PNGs,
+  README.md, strings.md and data.md under
+  `b2b-out/test-store/compliance-kit/` (gitignored), the rail and the
+  sold-out panel at 201 and 188 strings. It needed Playwright installed in
+  the Codespace first; the lock file was put back afterwards.
+- A store on release 1 sees no change until its page carries release 2's
+  tag, given in `docs/B2B-RELEASES.md` and `docs/B2B-INTEGRATION.md`.

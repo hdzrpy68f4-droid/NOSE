@@ -394,10 +394,6 @@ schema comment if wanted.
   batch's report" would be untrue of a batch whose report NOSE has not read
   or could not fetch. The owner decides; one line in `js/b2b-strings` changes
   it.
-- **Release 2 is built into the site's widget but not yet published** (since
-  2026-11-15, "How a flower score reads"). A store on release 1 sees no
-  change until release 2 is published from the Codespace (`scripts/b2b-release.js`)
-  and the store changes its tag.
 - **The Florida variant is NOSE's reading of 64ER25-6**, not counsel's.
   Whether the rule reaches a vendor's widget, and whether words like
   "palate" or a store's flavor-named products count, is for the
