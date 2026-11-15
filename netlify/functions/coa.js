@@ -187,6 +187,18 @@ async function reply(request, archiveDeadline){
   }, 200, NOSNIFF);
 }
 
+/* Netlify's rate limit at its edge, counted per IP address over 60 seconds:
+   request 13 in a minute from one address gets Netlify's 429 and never
+   reaches this code. NOSE stores no address - Netlify counts it, a minute at a
+   time, and NOSE never sees the count. A slow server could otherwise make every call run for about eight seconds of compute. The Personal plan allows two
+   rules per project, and this is one of them (Netlify, "Rate limiting",
+   https://docs.netlify.com/manage/security/secure-access-to-sites/rate-limiting/,
+   last updated 2026-09-17, read 2026-11-14). PARSER-HANDOFF s13, "Rate limits
+   at Netlify's edge". */
+export const config = {
+  rateLimit: { windowLimit: 12, windowSize: 60, aggregateBy: ['ip', 'domain'] },
+};
+
 /* The 9s archive deadline is measured from here, the handler's start. Any
    throw at all becomes the fixed 500: the reply and the log line say nothing
    of the request or of the error. */

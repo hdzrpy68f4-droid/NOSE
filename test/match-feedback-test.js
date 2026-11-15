@@ -153,7 +153,8 @@ async function loadFunctions() {
       }
       return next(url, context);
     }`));
-  return { vote: (await import(urls[0])).default, read: (await import(urls[1])).default };
+  const voteModule = await import(urls[0]);
+  return { vote: voteModule.default, voteConfig: voteModule.config, read: (await import(urls[1])).default };
 }
 
 /* What the functions print. */
@@ -209,13 +210,27 @@ async function main() {
   check('...and neither names Partial or Weak as a band any more, outside its comments',
     [/\b(partial|weak)\b/i.test(voteCode), /\b(partial|weak)\b/i.test(readCode)], [false, false]);
   check('the vote reads nothing about the person: no request header, cookie, account, session, address or place',
-    voteCode.match(/request\.headers|\.headers\.get|cookie|authoriz|session|account|user_?id|x-forwarded|x-nf-|client-ip|\bgeo\b|\bip\b|context\.|auth\.js/gi), null);
+    /* The rate-limit config names 'ip' as what Netlify counts by at its edge;
+       it is checked whole on its own, below, and left out of this scan. */
+    voteCode.replace(/^export const config = \{\n  rateLimit: \{[^\n]*\},\n\};$/m, '')
+      .match(/request\.headers|\.headers\.get|cookie|authoriz|session|account|user_?id|x-forwarded|x-nf-|client-ip|\bgeo\b|\bip\b|context\.|auth\.js/gi), null);
   check('...and imports only @netlify/blobs, netlify/lib/beacon.js and, since 2026-10-16, netlify/lib/http.js\'s methodNotAllowed()',
     voteCode.match(/^import [\s\S]*?;$/gm).map(l => l.match(/from '([^']+)'/)[1]), ['@netlify/blobs', '../lib/beacon.js', '../lib/http.js']);
   check('...the last for one helper, the 405',
     voteCode.match(/^import \{([^}]*)\} from '\.\.\/lib\/http\.js';$/m)?.[1].trim(), 'methodNotAllowed');
 
-  const { vote, read } = await loadFunctions();
+  const { vote, voteConfig, read } = await loadFunctions();
+  /* Netlify's rate limits at its edge, since 2026-11-14 (PARSER-HANDOFF s13,
+     "Rate limits at Netlify's edge"). The Personal plan allows two rules:
+     coa 12 and match-feedback 30 a minute per address. No other function
+     may claim a third. */
+  check('match-feedback exports its rate limit: 30 a minute per IP address',
+    voteConfig, { rateLimit: { windowLimit: 30, windowSize: 60, aggregateBy: ['ip', 'domain'] } });
+  {
+    const dir = path.join(ROOT, 'netlify/functions');
+    const limited = fs.readdirSync(dir).filter(f => f.endsWith('.js') && /\brateLimit\s*:/.test(codeOf(fs.readFileSync(path.join(dir, f), 'utf8')))).sort();
+    check('exactly two functions carry a rate limit, the Personal plan\'s two rules', limited, ['coa.js', 'match-feedback.js']);
+  }
   const post = body => vote(new Request('https://nose-app.com/.netlify/functions/match-feedback', {
     method: 'POST', headers: { 'content-type': 'application/json' }, body: typeof body === 'string' ? body : JSON.stringify(body) }));
   const ballot = (band, score, extra = {}) => ({ vote: 'up', band, score, candidate: 'cold-creek', palate: ['lemon-tart'], palateSize: 1,

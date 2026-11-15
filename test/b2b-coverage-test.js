@@ -523,13 +523,13 @@ async function main() {
      own function, for the resolver's other callers. It exports its default
      alone now, and they take the function from fetch-report.js itself. */
   const codeOf = src => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
-  check('coa.js, one default export, names none of the fetch chain; the resolver\'s three other callers take it from lib/fetch-report.js',
-    [Object.keys(coaModule), /\b(validateUrl|isBlockedHost|fetchOnce|fetchPdf|resolvePdfFromPage)\b|fetch-report/.test(codeOf(fs.readFileSync(COA, 'utf8'))),
+  check('coa.js, its default export and its rate-limit config, names none of the fetch chain; the resolver\'s three other callers take it from lib/fetch-report.js',
+    [Object.keys(coaModule).sort(), /\b(validateUrl|isBlockedHost|fetchOnce|fetchPdf|resolvePdfFromPage)\b|fetch-report/.test(codeOf(fs.readFileSync(COA, 'utf8'))),
      ['test/resolver-test.js', 'test/duplicates-test.js', 'scripts/download-twice.js'].map(f => {
        const c = codeOf(fs.readFileSync(path.join(ROOT, f), 'utf8'));
        return /\{ resolvePdfFromPage(: resolve)? \} = require\((path\.join\(LIB, 'fetch-report\.js'\)|'\.\.\/netlify\/functions\/lib\/fetch-report')\)/.test(c) && !/(?<![-\w])coa(\.js)?'/.test(c);
      })],
-    [['default'], false, [true, true, true]]);
+    [['config', 'default'], false, [true, true, true]]);
   const CHAIN = /\bfunction\s+(validateUrl|isBlockedHost|fetchOnce|fetchPdf|resolvePdfFromPage)\s*\(/;
   const holders = [];
   (function walk(dir) {

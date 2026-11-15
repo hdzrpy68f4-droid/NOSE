@@ -42,6 +42,18 @@ const NOTES = ['gas', 'skunk', 'savory', 'chemical', 'sweet', 'fruity', 'hay', '
 const MAX_NOTES = 3;
 
 
+/* Netlify's rate limit at its edge, counted per IP address over 60 seconds:
+   request 31 in a minute from one address gets Netlify's 429 and never
+   reaches this code. NOSE stores no address - Netlify counts it, a minute at a
+   time, and NOSE never sees the count. The page sends one vote per result, so 30 a minute is far above a person and far below a flood. The Personal plan allows two
+   rules per project, and this is one of them (Netlify, "Rate limiting",
+   https://docs.netlify.com/manage/security/secure-access-to-sites/rate-limiting/,
+   last updated 2026-09-17, read 2026-11-14). PARSER-HANDOFF s13, "Rate limits
+   at Netlify's edge". */
+export const config = {
+  rateLimit: { windowLimit: 30, windowSize: 60, aggregateBy: ['ip', 'domain'] },
+};
+
 export default async (request) => {
   if (request.method !== 'POST') return methodNotAllowed();
 

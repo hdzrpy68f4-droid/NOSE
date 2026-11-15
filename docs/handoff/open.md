@@ -255,6 +255,14 @@ schema comment if wanted.
 
 ---
 
+- **Only two functions are rate-limited at Netlify's edge** (since 2026-11-14,
+  "Rate limits at Netlify's edge"): the Personal plan allows two rules, so
+  `coa` and `match-feedback` have them and `auth-login`, `auth-signup`,
+  `auth-reset`, `client-error` and `b2b-vote` do not (security audit items 8
+  and 9 stay open). Pro allows five. A flood from many addresses passes any
+  per-address rule; a shared address - a dispensary's wifi, a phone carrier -
+  can reach a limit with several people on it.
+
 ## §14, dispensary integration: still open
 
 - `scripts/download-twice.js` keeps its own looser fetch loop. Moving it onto

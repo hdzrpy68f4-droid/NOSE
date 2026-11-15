@@ -688,12 +688,15 @@ async function main() {
   /* Until 2026-10-16 this checked the opposite: that coa.js was still an
      exports.handler function, the format Netlify stops accepting on July 1,
      2027 (PARSER-HANDOFF s13, "coa.js in the current format"). */
-  await test('coa.js has one default export and nothing else: a function of the request alone, in the current format', async () => {
-    assert.deepStrictEqual(Object.keys(coaModule), ['default']);
+  await test('coa.js has one default export and its config, nothing else: a function of the request alone, in the current format', async () => {
+    assert.deepStrictEqual(Object.keys(coaModule).sort(), ['config', 'default']);
+    /* Netlify's rate limit at its edge, since 2026-11-14 (PARSER-HANDOFF s13,
+       "Rate limits at Netlify's edge"): the config is that one rule. */
+    assert.deepStrictEqual(coaModule.config, { rateLimit: { windowLimit: 12, windowSize: 60, aggregateBy: ['ip', 'domain'] } });
     assert.strictEqual(typeof handler, 'function');
     assert.strictEqual(handler.length, 1, 'the handler takes a second argument - the Context');
     const code = fs.readFileSync(COA, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
-    assert.strictEqual(code.split(/\bexport\b/).length - 1, 1, 'more than one export');
+    assert.strictEqual(code.split(/\bexport\b/).length - 1, 2, 'an export other than the handler and its config');
     assert.ok(code.includes('export default async (request) => {'), 'not a default export of the request');
     assert.ok(!/\bexports\b|\bmodule\b|\brequire\(|connectLambda|connectBlobs|\bevent\b/.test(code), 'something of the old format is left');
     assert.ok(!/\bcontext\b|\bctx\b|request\.(headers|url|signal)|headers\.get|cookie|user-?agent|\bgeo\b|\.ip\b|x-nf-|waitUntil/i.test(code),

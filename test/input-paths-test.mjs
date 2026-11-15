@@ -984,6 +984,15 @@ try {
     check('a failed link read puts its sentence in an element with role "status"',
       (await p.getAttribute('#urlMessage', 'role')) === 'status' && await p.isVisible('#urlMessage')
         && (await t('#urlMessage')) === 'That report could not be read reliably. made up for this check.', await t('#urlMessage'));
+    /* Netlify's rate limit answers a plain-text 429 (since 2026-11-14,
+       "Rate limits at Netlify's edge"): the page says so, not that the
+       reader could not be reached. */
+    await p.unroute('**/.netlify/functions/coa');
+    await p.route('**/.netlify/functions/coa', route => route.fulfill({ status: 429, contentType: 'text/plain', body: 'Too Many Requests' }));
+    await p.click('#validateUrlButton');
+    await p.waitForFunction(() => /last minute/.test(document.getElementById('urlMessage').textContent));
+    check('a 429 from Netlify\'s rate limit says to wait a minute',
+      (await t('#urlMessage')) === 'Too many reports read from this connection in the last minute. Wait a minute, then try again.', await t('#urlMessage'));
     check('the Upload and Manual messages are status regions too',
       (await p.getAttribute('#uploadMessage', 'role')) === 'status' && (await p.getAttribute('#manualMessage', 'role')) === 'status');
 

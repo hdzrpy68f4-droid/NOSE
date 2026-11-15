@@ -3966,3 +3966,48 @@ mostly dated records, and every prompt asked a session to read them first.
   comment, test or script changed: the 117 files that cite the handoff do
   so by section and record title, and the index carries a title to its
   file. `/docs/*` is already a forced 404 on the site.
+
+### Rate limits at Netlify's edge, 2026-11-14
+
+M4 from `docs/project-notes/nose-m-cleanup-prompts-2026-10-15.md`; security
+audit item 1, in part.
+
+- **The plan:** the team is on Netlify's Personal plan (Usage & billing,
+  read 2026-11-14), which allows **two** rate-limit rules per project.
+  Netlify, "Rate limiting"
+  (https://docs.netlify.com/manage/security/secure-access-to-sites/rate-limiting/,
+  last updated 2026-09-17, read 2026-11-14): "2 per project" on Free,
+  Starter and Personal, 5 on Pro; a limited request is blocked "returns
+  HTTP status `429`"; `windowSize` "Maximum is 180"; "rate limits for
+  functions cannot be defined in the `netlify.toml` configuration file".
+- **The two rules**, each `aggregateBy: ['ip', 'domain']` over 60 seconds,
+  as each function's `config.rateLimit`:
+  - `coa`: 12 a minute. A slow server could make each call run about eight
+    seconds.
+  - `match-feedback`: 30 a minute.
+  Nothing else in either function changed.
+- **Cost of a blocked request:** "How credits work" (last updated
+  2026-08-12, read 2026-11-14) prices web requests at "2 credits per 10,000
+  requests" and does not say whether a blocked one counts. At most it costs
+  a web request, where an unblocked `coa` call costs compute.
+- **The app:** a 429 from `coa` now says "Too many reports read from this
+  connection in the last minute. Wait a minute, then try again." It said
+  "Could not reach the report reader", because Netlify's 429 body is not
+  JSON. The vote and error beacons ignore the reply, as before. The account
+  page is unchanged: no account function has an edge rule on this plan, and
+  `auth.js`'s own `tooMany()` is already JSON.
+- **Privacy page**, in the Netlify paragraph: "To slow down floods, Netlify
+  also counts the recent requests from each IP address to two of our server
+  functions, the lab-report reader and the match feedback, a minute at a
+  time, and turns away any over the limit. We never receive those counts."
+  No "What changed" entry: NOSE collects nothing new. The dispensary
+  section's logs paragraph is unchanged, since no dispensary function is
+  limited.
+- **Tests:** `archive-wiring-test` and `b2b-coverage-test` pin `coa.js`'s exports to the handler and
+  its config, and the rule; `match-feedback-test` pins its rule and that
+  exactly two functions carry one; `input-paths-test` checks the 429
+  sentence. Same gate lines. The privacy scan of `match-feedback.js` skips
+  the config block, which names `'ip'` as what Netlify counts by.
+- Bundle: `js/nose.81127089.js` became `js/nose.3c9d05e1.js`.
+- **Not yet checked live:** 15 quick POSTs to `coa` answer 400, then 429
+  from about the 13th, then 400 again after a minute.

@@ -435,6 +435,10 @@
           headers:{'Content-Type':'application/json'},
           body:JSON.stringify({url:href})
         });
+        /* Netlify's rate limit answers a 429 whose body is not this
+           function's JSON (PARSER-HANDOFF s13, "Rate limits at Netlify's
+           edge"). */
+        if(res.status===429){ showMessage(messageId,'Too many reports read from this connection in the last minute. Wait a minute, then try again.','error'); return; }
         data=await res.json();
       }catch{
         showMessage(messageId,'Could not reach the report reader. Check your connection, or enter the values manually.','error');

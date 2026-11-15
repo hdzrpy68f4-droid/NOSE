@@ -1815,6 +1815,7 @@ under the cap.
 - [The review's fixes, live, 2026-11-14](docs/handoff/13-records.md#the-reviews-fixes-live-2026-11-14)
 - [The real reparse after the review's parser changes, 2026-11-14](docs/handoff/13-records.md#the-real-reparse-after-the-reviews-parser-changes-2026-11-14)
 - [The handoff split into what is and what happened, 2026-11-14](docs/handoff/13-records.md#the-handoff-split-into-what-is-and-what-happened-2026-11-14)
+- [Rate limits at Netlify's edge, 2026-11-14](docs/handoff/13-records.md#rate-limits-at-netlifys-edge-2026-11-14)
 
 ## 14. Dispensary integration
 
