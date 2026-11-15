@@ -4097,5 +4097,4 @@ none was limited.
   count the two addresses use the new ones. `/api/` is not a folder in the
   tree, so the build guard has nothing to add.
 - Bundle: `js/nose.3c9d05e1.js` became `js/nose.35f66604.js`.
-- **Not yet checked live:** that `/api/coa` answers 429 from about the
-  13th request in a minute.
+- **Checked live, 2026-11-14:** 20 POSTs to `/api/coa` a third of a second apart answered 400 fourteen times, then 429; five more after 12 seconds, 429; 70 seconds later, 400 again. The old `/.netlify/functions/coa` answers 404. (Netlify: blocking can start "up to 10 seconds" after the threshold.)

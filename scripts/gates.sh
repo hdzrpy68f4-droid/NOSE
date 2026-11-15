@@ -30,7 +30,7 @@
 # once per Codespace, and again after any npm ci. The version is the one the
 # workflow pins; change both together:
 #   npm install --no-save playwright@1.64.1
-#   npx playwright install --with-deps chromium
+#   npx playwright install --with-deps chromium webkit firefox
 # bash build.sh writes netlify/functions/lib/build-info.json, which is
 # gitignored: a Codespace build records deployContext "dev", and none of the
 # gates below can store anything in the archive.
