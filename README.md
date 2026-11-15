@@ -17,7 +17,7 @@ Node 24 and bash (on Windows, Git Bash; see the Windows section of `CLAUDE.md`).
 ```bash
 npm ci
 node test/extract-dump.js
-npm install --no-save playwright@1.64.1 && npx playwright install --with-deps chromium
+npm install --no-save playwright@1.64.1 && npx playwright install --with-deps chromium webkit firefox
 bash scripts/gates.sh
 ```
 

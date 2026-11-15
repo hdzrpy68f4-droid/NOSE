@@ -77,7 +77,9 @@ process.on('exit', code => {
 });
 
 let failures = 0;
+let ENGINE = null;   // the engine running now; set by the loop below
 function check(name, ok, detail) {
+  if (ENGINE) name = `${ENGINE}: ${name}`;
   if (ok) { console.log(`ok    ${name}`); return; }
   failures++;
   console.log(`FAIL  ${name}${detail ? `\n      ${String(detail).slice(0, 900)}` : ''}`);
@@ -97,7 +99,7 @@ function loadPlaywright() {
 }
 const playwright = loadPlaywright();
 if (!playwright) {
-  console.error('FAIL: Playwright is not installed - run: npm install --no-save playwright && npx playwright install --with-deps chromium');
+  console.error('FAIL: Playwright is not installed - run: npm install --no-save playwright && npx playwright install --with-deps chromium webkit firefox');
   process.exit(1);
 }
 
@@ -345,7 +347,21 @@ const DEMO_SRC = { html: fs.readFileSync(path.join(ROOT, 'b2b/demo/index.html'),
 
 /* --- the browser ------------------------------------------------------------- */
 
-const browser = await playwright.chromium.launch();
+/* Every browser case runs in Chromium, WebKit (Safari's engine) and Firefox
+   in turn, since 2026-11-14 (PARSER-HANDOFF s13, "WebKit and Firefox in the
+   tests"). A failure names its engine; the gate's line prints only when all
+   three pass. NOSE_ENGINES=webkit (say) runs fewer, by hand - never in the
+   gates, which check that all three ran. */
+/* Playwright's WebKit build for Windows is not Safari's engine as Linux's is:
+   on 2026-11-14 it sent a SameSite=Lax cookie with requests made with
+   credentials: 'omit', skipped links on Tab, and drew <select> menus with
+   inline styles the CSP then reported. So on Windows WebKit is left out, and
+   said so; GitHub's runner and the Codespace, both Linux, run all three. */
+const ALL_ENGINES = process.platform === 'win32' ? ['chromium', 'firefox'] : ['chromium', 'webkit', 'firefox'];
+if (process.platform === 'win32' && !process.env.NOSE_ENGINES) console.log('note  WebKit is not run on Windows: Playwright\'s Windows build behaves unlike Safari. GitHub and the Codespace run it.');
+const ENGINES = (process.env.NOSE_ENGINES || ALL_ENGINES.join(',')).split(',').filter(Boolean);
+const ran = [];
+let browser = null;
 const shadowState = page => page.evaluate(() => {
   const r = document.querySelector('nose-matches').shadowRoot;
   return { text: r ? r.textContent.trim() : '', links: r ? r.querySelectorAll('link').length : 0 };
@@ -401,8 +417,9 @@ async function close(c, { quietWarnings = false, allowErrors = null } = {}) {
   check(`${c.name}: no request is of any other kind, and none goes to another origin`,
     !reqs.some(r => kind(r) === 'other') && !c.elsewhere.length,
     JSON.stringify([...reqs.filter(r => kind(r) === 'other').map(r => `${r.origin} ${r.method} ${r.url}`), ...c.elsewhere]));
+  const cookieChecked = r => r.origin === 'nose';
   check(`${c.name}: no request to NOSE carries a cookie or the page's address`,
-    reqs.filter(r => r.origin === 'nose').every(r => !r.headers.cookie && (!r.headers.referer || r.headers.referer === `${STORE}/`)),
+    reqs.filter(cookieChecked).every(r => !r.headers.cookie && (!r.headers.referer || r.headers.referer === `${STORE}/`)),
     JSON.stringify(reqs.filter(r => r.origin === 'nose').map(r => [r.url, r.headers.cookie, r.headers.referer])));
   const violations = await c.page.evaluate(() => window.__violations.slice());
   const errors = allowErrors ? c.errors.filter(e => !allowErrors.test(e)) : c.errors;
@@ -454,9 +471,20 @@ const focusLands = (page, want) => orTimeout(page.waitForFunction(FOCUSED, want,
 const stops = page => page.evaluate(() => [...document.querySelector('nose-matches').shadowRoot.querySelectorAll('a[href], button:not([disabled]), summary')]
   .filter(n => n.getClientRects().length && (n.localName === 'summary' || !n.closest('details:not([open])')))
   .map(a => `${a.localName}${a.getAttribute('href') ? ` ${a.getAttribute('href')}` : ''}|${(a.getAttribute('aria-label') || a.textContent).trim()}`));
+/* The Tab key as each engine takes it. Firefox makes a scrolling list a stop of its own, before the links in it:
+   the rail's list, named "Closest to your usual", is stepped past and counted
+   as such. */
+const TAB = () => 'Tab';
+const SHIFT_TAB = () => 'Shift+Tab';
+const scrollerStops = [];
 async function tabThrough(page, n) {
   const seen = [];
-  for (let i = 0; i < n; i++) { await page.keyboard.press('Tab'); seen.push(await deepFocus(page)); }
+  for (let i = 0; i < n; i++) {
+    await page.keyboard.press(TAB());
+    let at = await deepFocus(page);
+    if (ENGINE === 'firefox' && at && at.startsWith('ul|')) { scrollerStops.push(at); await page.keyboard.press(TAB()); at = await deepFocus(page); }
+    seen.push(at);
+  }
   return seen;
 }
 
@@ -486,6 +514,9 @@ async function wordsCheck(c, what) {
     text.trim().length > 0 && !unknown.length && !effectWords(text).length, `unknown ${JSON.stringify(unknown)}; effect ${JSON.stringify(effectWords(text))}`);
 }
 
+for (const engine of ENGINES) {
+ENGINE = engine;
+browser = await playwright[engine].launch();
 try {
   /* ==================================================== consent: unknown */
   {
@@ -619,7 +650,7 @@ try {
     const tabbed2 = await tabThrough(page, buttonStops.length);
     check('rail: Tab then reaches each remove button', same(tabbed2, buttonStops), differs(tabbed2, buttonStops));
     const wanted = `button|${fill(S.default.removeAria, { name: 'Cold Creek Kush' })}`;
-    for (let i = buttonStops.length - 1; i > buttonStops.indexOf(wanted) && i >= 0; i--) await page.keyboard.press('Shift+Tab');
+    for (let i = buttonStops.length - 1; i > buttonStops.indexOf(wanted) && i >= 0; i--) await page.keyboard.press(SHIFT_TAB());
     const target = await deepFocus(page);
     check('...and Shift+Tab back to the one for Cold Creek Kush', target === wanted, target);
     await page.keyboard.press('Enter');
@@ -758,7 +789,7 @@ try {
     await wordsCheck(c, 'the vote shows');
     const tabbed = await tabThrough(page, 2);
     check('vote: Tab reaches up, then down', same(tabbed, [`button|${S.default.voteUp}`, `button|${S.default.voteDown}`]), JSON.stringify(tabbed));
-    await page.keyboard.press('Shift+Tab');
+    await page.keyboard.press(SHIFT_TAB());
     await page.keyboard.press(' ');
     await page.waitForFunction(() => document.querySelector('nose-matches').shadowRoot.querySelector('.nm-thanks').textContent);
     await page.waitForTimeout(300);
@@ -941,9 +972,13 @@ try {
   check('the browser cases ran to the end', false, e && e.message ? e.message.split('\n')[0] : String(e));
 } finally {
   await browser.close();
-  noseServer.close();
-  storeServer.close();
 }
+ran.push(engine);
+}
+ENGINE = null;
+noseServer.close();
+storeServer.close();
+check(`the browser cases ran in ${ran.join(', ')}`, !process.env.NOSE_ENGINES ? ran.join() === ALL_ENGINES.join() : true);
 
 {
   const leaks = received.filter(r => NEEDLES.some(n => `${r.method} ${r.url} ${JSON.stringify(r.headers)} ${r.body}`.includes(n)));

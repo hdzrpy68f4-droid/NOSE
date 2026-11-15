@@ -361,6 +361,12 @@
     let qrScannerRunning=false;
     let qrScanLocked=false;
     let selectedCameraId='';
+    /* Each camera start and each QR image is one attempt. A camera that starts,
+       or fails, after a newer attempt - an image chosen while the camera
+       prompt was still open - says nothing: until 2026-11-14 its late "could
+       not be started" replaced the newer "read" message over the card
+       (PARSER-HANDOFF s13, "WebKit and Firefox in the tests"). */
+    let scanAttempt=0;
 
     function scannerAvailable(){
       if(typeof Html5Qrcode==='undefined'){
@@ -733,6 +739,8 @@
         return false;
       }
       qrScanLocked=false;
+      const attempt=++scanAttempt;
+      const superseded=()=>attempt!==scanAttempt;
       showMessage('scannerMessage','Starting the rear camera…','neutral');
       try {
         qrScanner ||= new Html5Qrcode('qrReader', {formatsToSupport:[Html5QrcodeSupportedFormats.QR_CODE],verbose:false});
@@ -748,6 +756,7 @@
           experimentalFeatures:{useBarCodeDetectorIfSupported:true}
         };
         await qrScanner.start(cameraConfig,config,handleQrResult,()=>{});
+        if(superseded()){ await stopQrScanner(); return false; }
         selectedCameraId=chosen || document.getElementById('cameraSelect').value;
         setScannerButtons(true);
         showMessage('scannerMessage','Camera active. Hold the QR code steady inside the square.','success');
@@ -759,6 +768,7 @@
           qrScanner ||= new Html5Qrcode('qrReader', {formatsToSupport:[Html5QrcodeSupportedFormats.QR_CODE],verbose:false});
           const config={fps:15,aspectRatio:1.333333,disableFlip:false,experimentalFeatures:{useBarCodeDetectorIfSupported:true}};
           await qrScanner.start({facingMode:'environment'},config,handleQrResult,()=>{});
+          if(superseded()){ await stopQrScanner(); return false; }
           setScannerButtons(true);
           await loadCameraChoices();
           showMessage('scannerMessage','Camera active. Hold the QR code steady inside the square.','success');
@@ -766,6 +776,7 @@
           return true;
         } catch {}
         setScannerButtons(false);
+        if(superseded()) return false;
         const denied=error?.name==='NotAllowedError' || /permission|denied/i.test(String(error));
         showMessage('scannerMessage',denied?'Camera permission was denied. Allow camera access for this site in your browser\'s settings, then try again.':'The rear camera could not be started. Choose a QR image or paste the link manually.','error');
         return false;
@@ -822,6 +833,7 @@
         return;
       }
       qrScanLocked=false;
+      ++scanAttempt;
       await stopQrScanner();
       try {
         qrScanner ||= new Html5Qrcode('qrReader', {formatsToSupport:[Html5QrcodeSupportedFormats.QR_CODE],verbose:false});

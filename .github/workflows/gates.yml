@@ -63,7 +63,7 @@ jobs:
       # Playwright is not a project dependency; this is the Codespace's version
       # (scripts/gates.sh's header names the same one).
       - run: npm install --no-save playwright@1.64.1
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install --with-deps chromium webkit firefox
       - run: node test/extract-dump.js
       - run: bash scripts/gates.sh
       - name: check-trust-test read the history

@@ -74,7 +74,7 @@
  * Needs test/fixtures/extracted (node test/extract-dump.js), and Playwright
  * with its Chromium, which are not project dependencies. In a Codespace:
  *     npm install --no-save playwright
- *     npx playwright install --with-deps chromium
+ *     npx playwright install --with-deps chromium webkit firefox
  * `npm ci` removes Playwright again; install it again after one.
  */
 
@@ -185,7 +185,9 @@ process.on('exit', code => {
 });
 
 let failures = 0;
+let ENGINE = null;   // the engine running now; set by the loop below
 function check(name, ok, detail) {
+  if (ENGINE) name = `${ENGINE}: ${name}`;
   if (ok) { console.log(`ok    ${name}`); return; }
   failures++;
   console.log(`FAIL  ${name}${detail ? `\n      ${detail}` : ''}`);
@@ -206,7 +208,7 @@ function loadPlaywright() {
 
 const playwright = loadPlaywright();
 if (!playwright) {
-  console.error('FAIL: Playwright is not installed - run: npm install --no-save playwright && npx playwright install --with-deps chromium');
+  console.error('FAIL: Playwright is not installed - run: npm install --no-save playwright && npx playwright install --with-deps chromium webkit firefox');
   process.exit(1);
 }
 for (const id of FILES) {
@@ -413,17 +415,36 @@ writeCameraFile(camera, greyPixels(QR_PNG));
 
 /* --- the browser ----------------------------------------------------------- */
 
-const browser = await playwright.chromium.launch({
-  args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream', `--use-file-for-fake-video-capture=${camera}`]
-});
+/* Every case runs in Chromium, WebKit (Safari's engine) and Firefox in turn,
+   since 2026-11-14 (PARSER-HANDOFF s13, "WebKit and Firefox in the tests").
+   Only Chromium can play a file as a fake camera, so in the other two the two
+   camera cases take the same steps with "Choose QR image", and say so.
+   Playwright's Windows WebKit build behaves unlike Safari (see
+   b2b-widget-test), so on Windows WebKit is left out, and said so; GitHub's
+   runner and the Codespace, both Linux, run all three. NOSE_ENGINES=firefox
+   (say) runs fewer, by hand. */
+const ALL_ENGINES = process.platform === 'win32' ? ['chromium', 'firefox'] : ['chromium', 'webkit', 'firefox'];
+if (process.platform === 'win32' && !process.env.NOSE_ENGINES) console.log('note  WebKit is not run on Windows: Playwright\'s Windows build behaves unlike Safari. GitHub and the Codespace run it.');
+const ENGINES = (process.env.NOSE_ENGINES || ALL_ENGINES.join(',')).split(',').filter(Boolean);
+const ran = [];
+let browser = null;
 const pageErrors = [];
 const sent = [];        // the url each POST to the handler carried
 const queue = [];       // the fixture the next POST reads
 let last = null;        // the handler's last reply: { fixture, data }
 
 try {
+for (const engine of ENGINES) {
+ENGINE = engine;
+const CAMERA = engine === 'chromium';
+if (!CAMERA) console.log(`note  ${engine}: no fake camera in this engine, so the two camera cases use "Choose QR image" instead`);
+pageErrors.length = 0; sent.length = 0; queue.length = 0; last = null;
+browser = await playwright[engine].launch(CAMERA
+  ? { args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream', `--use-file-for-fake-video-capture=${camera}`] }
+  : {});
+try {
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, timezoneId: TIME_ZONE });
-  await context.grantPermissions(['camera'], { origin: BASE });
+  if (CAMERA) await context.grantPermissions(['camera'], { origin: BASE });
   const page = await context.newPage();
   page.setDefaultTimeout(8000);
   page.on('pageerror', e => pageErrors.push(e.message));
@@ -481,7 +502,7 @@ try {
       shown ? '' : `the message says "${await text(`#${messageId}`)}", and the card is in ${await panelOf()}`);
     check(`${where}: the card is in the panel with the message`, (await panelOf()) === `#${panelId}`, `found in ${await panelOf()}`);
     check(`${where}: the message is "${data.lab} read. Check the values below, then add the jar."`,
-      (await text(`#${messageId}`)) === `${data.lab} read. Check the values below, then add the jar.`);
+      (await text(`#${messageId}`)) === `${data.lab} read. Check the values below, then add the jar.`, `it says "${await text(`#${messageId}`)}"`);
 
     const known = await page.evaluate(() => Object.keys(window.NoseMatch.TERPENES));
     const want = Object.entries(data.terps).filter(([k]) => known.includes(k)).sort((a, b) => b[1] - a[1]);
@@ -540,7 +561,8 @@ try {
 
   /* ---- Scan QR, by camera ------------------------------------------------ */
   queue.push(FIXTURES.plain);
-  await page.click('#scanTab');                // starts the camera; the fake one shows the code
+  if (CAMERA) await page.click('#scanTab');    // starts the camera; the fake one shows the code
+  else { await page.click('#scanTab'); await page.setInputFiles('#qrImageFile', QR_PNG); }
   check('Scan QR (camera): the code is read and its address sent',
     await messageMatches('scannerMessage', READ, 20000) && sent.at(-1) === QR_URL,
     `message "${await text('#scannerMessage')}", sent ${JSON.stringify(sent)}`);
@@ -594,6 +616,7 @@ try {
   /* ---- the card follows the next request ---------------------------------- */
   queue.push(FIXTURES.plain);
   await page.click('#scanTab');                // the camera reads the code again
+  if (!CAMERA) await page.setInputFiles('#qrImageFile', QR_PNG);
   await messageMatches('scannerMessage', READ, 20000);
   const moved = await page.waitForSelector('#coaConfirm', { state: 'visible', timeout: 3000 }).then(() => true, () => false);
   check('Scan QR after COA link: the new card shows in the Scan QR panel',
@@ -1011,6 +1034,12 @@ try {
     `${sent.length} requests, ${queue.length} replies unused`);
 } finally {
   await browser.close();
+}
+ran.push(engine);
+}
+ENGINE = null;
+check(`the cases ran in ${ran.join(', ')}`, !process.env.NOSE_ENGINES ? ran.join() === ALL_ENGINES.join() : true);
+} finally {
   server.close();
   fs.rmSync(tmp, { recursive: true, force: true });
 }
