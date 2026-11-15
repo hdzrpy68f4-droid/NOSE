@@ -4099,3 +4099,37 @@ none was limited.
 - Bundle: `js/nose.3c9d05e1.js` became `js/nose.35f66604.js`.
 - **Not yet checked live:** that `/api/coa` answers 429 from about the
   13th request in a minute.
+
+### The app's alias table, and coerce(), 2026-11-14
+
+The readiness audit's code findings 7 and 8 (2026-10-26), and the review's
+note that the app drops spellings the parser accepts. Scores change on
+purpose, for made-up inputs only.
+
+- **The folds are gone.** `TERP_ALIAS` folded `caryophyllene-oxide` into
+  caryophyllene, `linalool-oxide` into linalool and a bare `pinene` into
+  alpha-pinene, against §4's rule that names match exactly. Each is now
+  dropped, as any compound outside the 15 is.
+- **Every parser spelling reaches the app.** Eighteen of the 48 spellings in
+  the parser's `ANALYTE_MAP` were dropped by `sanitizeTerps()` -
+  `E-Caryophyllene`, `Fenchyl Alcohol`, `Ocimene, Total` and fifteen
+  more. Each is now in `TERP_ALIAS`. The parser never sends the app a
+  spelling, only its keys, so this reaches only a hand-made Import file.
+- **`coerce()` reads a plain number** - digits, an optional decimal point,
+  an optional exponent, an optional trailing % - and anything else as 0. It
+  stripped every non-digit first, so "0,45" read 45 and "1.5e-2" read 1.52;
+  "1,234.5" read 1234.5 and now reads 0.
+- **The golden file**, regenerated with `node test/match-golden-make.js --why
+  "..."`, the first regeneration since 2026-09-23. Compared with the old one:
+  `about` and `source` say why; one edge profile ("aliases the app folds")
+  changed in `normalized`, `totals`, `sanitized`, `edgeScores` and one
+  band; one `coerce` case ("1,234.5"). **No pair, self-score or palate
+  changed:** no real report, and no demo jar, scores differently.
+- `match-props-test` states it: every `ANALYTE_MAP` spelling reaches its
+  key, the three folds are dropped, and 14 `coerce()` cases. Its header no
+  longer says it leaves these out.
+- Bundle: `js/match-math.cd934bdd.js` became `js/match-math.65bb9941.js`. A pinned widget
+  release keeps its own copy and does not change.
+- **Not done here:** `wip/nose-farnesene-wip.js`, the stale draft that
+  removed these folds, is deleted once "WebKit and Firefox in the tests"
+  reaches main, since both change `b2b-widget-test`.

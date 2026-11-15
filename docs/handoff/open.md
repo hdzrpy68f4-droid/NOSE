@@ -40,14 +40,6 @@ promise that NOSE keeps nothing.
 - Supabase free projects pause after a week idle, which looks like a connection
 fault. `keep-awake.js` exists to prevent it; if its log says FAILED, resume the
 project from the dashboard before debugging anything else.
-- **The app's alias table contradicts §4.** `TERP_ALIAS` (now in
-`js/match-math.*.js`) folds `caryophyllene-oxide` into caryophyllene,
-`linalool-oxide` into linalool and a bare `pinene` into α-pinene. The parser
-never emits those keys, but a hand-made palate file brought in through
-Import reaches them. Moved verbatim, because the scores had to stay
-identical; `wip/nose-farnesene-wip.js` is an unfinished draft that removes
-them. Fixing it changes scores, so it needs its own prompt and a
-regenerated `match-golden.json` in the same commit.
 - **The static preview keeps its own copy of the maths** (it is not in this
   repo, §13 above). `match-test.js` cannot see it; a preview built after
   today should load `js/match-math.<hash>.js` rather than carry a copy. Its

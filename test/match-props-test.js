@@ -12,11 +12,10 @@
  * scale, order and below-limit handling as they are. The maths is loaded
  * through scripts/lib/match.js: js/match-math.*.js, the file the app loads.
  *
- * NOT asserted here, on purpose: the two behaviours already marked for
- * fixing - the alias table folding caryophyllene oxide, linalool oxide and a
- * bare "pinene" into other compounds, and coerce() reading "0,45" as 45 and
- * "1.5e-2" as 1.52. test/fixtures/match-golden.json pins those as they are
- * until their own change.
+ * Since 2026-11-14 it also states the alias table and coerce(), fixed that
+ * day (PARSER-HANDOFF s13, "The app's alias table, and coerce()"): every
+ * spelling the parser accepts reaches the same key here, no compound is
+ * folded into another, and coerce() reads only a plain number.
  *
  * Offline. Nothing is written.
  */
@@ -129,6 +128,17 @@ const edges = [[0.90, 'Strong', 'Good'], [0.75, 'Good', 'Moderate'], [0.55, 'Mod
 property('matchBand() gives the higher band at exactly 0.55, 0.75 and 0.90 and the lower one a step below each', edges);
 const shares = PAIRS.slice(0, 2000).map(([a]) => a).filter(a => Math.abs(Object.values(M.normalize(a)).reduce((x, y) => x + y, 0) - 1) > EPS);
 property('a jar\'s shares add up to 1', shares);
+
+/* The alias table and coerce(), since 2026-11-14. */
+const { ANALYTE_MAP } = require(path.join(__dirname, '..', 'netlify/functions/lib/parse-coa.js'));
+property(`every spelling the parser accepts (${Object.keys(ANALYTE_MAP).length}) reaches the same key in the app`,
+  Object.entries(ANALYTE_MAP).filter(([s, k]) => JSON.stringify(Object.keys(M.sanitizeTerps({ [s]: 1 }))) !== JSON.stringify([k])).map(([s, k]) => ({ s, k })));
+property('no compound is folded into another: caryophyllene oxide, linalool oxide and a bare "pinene" are dropped, not counted',
+  ['caryophyllene oxide', 'Caryophyllene-Oxide', 'linalool oxide', 'pinene', 'Pinene'].filter(s => Object.keys(M.sanitizeTerps({ [s]: 1 })).length));
+const COERCE = [['0.51', 0.51], [' 3 ', 3], ['12.5%', 12.5], ['.5', 0.5], ['1.5e-2', 0.015], ['0,45', 0], ['1,234.5', 0], ['abc', 0],
+  ['<0.2', 0], ['ND', 0], ['', 0], ['-1', 0], [0.25, 0.25], [-0.1, 0]];
+property('coerce() reads a plain number, with an exponent or a trailing %, and anything else as 0',
+  COERCE.filter(([v, want]) => M.coerce(v) !== want).map(([v, want]) => ({ v, want, got: M.coerce(v) })));
 
 if (failures) { console.log(`\nmatch-props: ${failures} failure${failures === 1 ? '' : 's'}`); process.exit(1); }
 console.log('\nmatch-props clean');

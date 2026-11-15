@@ -70,17 +70,29 @@
     /* Lab reports spell the same compound many ways. Explicit alias table -
        never regex surgery on keys, which risks mangling valid names. */
     const TERP_ALIAS={
-      'alpha-pinene':'pinene_a','a-pinene':'pinene_a','α-pinene':'pinene_a','pinene-a':'pinene_a','pinene':'pinene_a',
+      'alpha-pinene':'pinene_a','a-pinene':'pinene_a','α-pinene':'pinene_a','pinene-a':'pinene_a',
       'beta-pinene':'pinene_b','b-pinene':'pinene_b','β-pinene':'pinene_b','pinene-b':'pinene_b',
-      'beta-caryophyllene':'caryophyllene','b-caryophyllene':'caryophyllene','β-caryophyllene':'caryophyllene','caryophyllene-oxide':'caryophyllene',
+      'beta-caryophyllene':'caryophyllene','b-caryophyllene':'caryophyllene','β-caryophyllene':'caryophyllene',
       'alpha-humulene':'humulene','a-humulene':'humulene','α-humulene':'humulene',
       'alpha-bisabolol':'bisabolol','a-bisabolol':'bisabolol','α-bisabolol':'bisabolol','bisabolol-a':'bisabolol',
       'alpha-terpineol':'terpineol','a-terpineol':'terpineol','α-terpineol':'terpineol',
       'beta-myrcene':'myrcene','b-myrcene':'myrcene','β-myrcene':'myrcene',
       'd-limonene':'limonene','r-limonene':'limonene','(r)-limonene':'limonene',
       'beta-ocimene':'ocimene','b-ocimene':'ocimene','β-ocimene':'ocimene',
-      'linalool-oxide':'linalool','trans-b-farnesene':'farnesene','trans-beta-farnesene':'farnesene',
+      'trans-b-farnesene':'farnesene','trans-beta-farnesene':'farnesene',
 'alpha-farnesene':'farnesene','beta-farnesene':'farnesene','β-farnesene':'farnesene',
+      /* Every spelling the parser's ANALYTE_MAP accepts reaches the same key
+         here too (match-props-test checks it), since 2026-11-14. Until then
+         eighteen were dropped, and the table folded caryophyllene oxide into
+         caryophyllene, linalool oxide into linalool and a bare "pinene" into
+         alpha-pinene - against rule 4, names match exactly. Only a hand-made
+         Import file reached any of it. PARSER-HANDOFF s13, "The app's alias
+         table, and coerce()". */
+      '(r)-(+)-limonene':'limonene','trans-caryophyllene':'caryophyllene','e-caryophyllene':'caryophyllene',
+      'fenchyl-alcohol':'fenchol','endo-fenchyl-alcohol':'fenchol','alpha-fenchyl-alcohol,-(+)-':'fenchol','alpha-fenchyl-alcohol,-(+)':'fenchol',
+      'alpha-bisabolol,-l':'bisabolol','total-terpineol':'terpineol','alpha-terpinolene':'terpinolene',
+      'ocimene,-total':'ocimene','ocimenes':'ocimene','trans-ocimene':'ocimene','cis-ocimene':'ocimene','trans-b-ocimene':'ocimene','cis-b-ocimene':'ocimene',
+      'trans-farnesene':'farnesene','cis-farnesene':'farnesene',
 
     };
     function coerce(value){
@@ -89,7 +101,12 @@
       const raw=value.trim();
       if(/^[<≤]/.test(raw)) return 0;            // below limit of quantitation
       if(/^(nd|n\/d|none detected|bql|loq)$/i.test(raw)) return 0;
-      const n=parseFloat(raw.replace(/[^0-9.]/g,''));
+      /* A plain number, optionally with an exponent and a trailing %; anything
+         else is 0. Until 2026-11-14 every non-digit was stripped first, so
+         "0,45" read 45 and "1.5e-2" read 1.52. */
+      const t=raw.replace(/\s*%$/,'');
+      if(!/^\+?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i.test(t)) return 0;
+      const n=Number(t);
       return Number.isFinite(n)&&n>0?n:0;
     }
     function sanitizeTerps(values){
