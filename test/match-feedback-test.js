@@ -212,7 +212,7 @@ async function main() {
   check('the vote reads nothing about the person: no request header, cookie, account, session, address or place',
     /* The rate-limit config names 'ip' as what Netlify counts by at its edge;
        it is checked whole on its own, below, and left out of this scan. */
-    voteCode.replace(/^export const config = \{\n  rateLimit: \{[^\n]*\},\n\};$/m, '')
+    voteCode.replace(/^export const config = \{\n  path: '[^'\n]*',\n  rateLimit: \{[^\n]*\},\n\};$/m, '')
       .match(/request\.headers|\.headers\.get|cookie|authoriz|session|account|user_?id|x-forwarded|x-nf-|client-ip|\bgeo\b|\bip\b|context\.|auth\.js/gi), null);
   check('...and imports only @netlify/blobs, netlify/lib/beacon.js and, since 2026-10-16, netlify/lib/http.js\'s methodNotAllowed()',
     voteCode.match(/^import [\s\S]*?;$/gm).map(l => l.match(/from '([^']+)'/)[1]), ['@netlify/blobs', '../lib/beacon.js', '../lib/http.js']);
@@ -225,7 +225,7 @@ async function main() {
      coa 12 and match-feedback 30 a minute per address. No other function
      may claim a third. */
   check('match-feedback exports its rate limit: 30 a minute per IP address',
-    voteConfig, { rateLimit: { windowLimit: 30, windowSize: 60, aggregateBy: ['ip', 'domain'] } });
+    voteConfig, { path: '/api/match-feedback', rateLimit: { windowLimit: 30, windowSize: 60, aggregateBy: ['ip', 'domain'] } });
   {
     const dir = path.join(ROOT, 'netlify/functions');
     const limited = fs.readdirSync(dir).filter(f => f.endsWith('.js') && /\brateLimit\s*:/.test(codeOf(fs.readFileSync(path.join(dir, f), 'utf8')))).sort();
@@ -443,7 +443,7 @@ async function main() {
   check('the app\'s vote takes its band from matchBand(score)[1] and its number from shownScore(score), in its bundle\'s source text',
     [/\bscore:shownScore\(score\),/.test(app), /\bband:matchBand\(score\)\[1\],/.test(app)], [true, true]);
   check('...and its only sender posts that context, with the vote and the chosen words, to match-feedback',
-    [(app.match(/\/\.netlify\/functions\/match-feedback/g) || []).length, /const payload=\{\.\.\.feedbackContext,vote,notes:chosenNotes\(\)\};/.test(app)], [2, true]);
+    [(app.match(/'\/api\/match-feedback'/g) || []).length, /const payload=\{\.\.\.feedbackContext,vote,notes:chosenNotes\(\)\};/.test(app)], [2, true]);
 
   /* The bundle's own pieces, run as the page runs them on the default /app
      pair, with the maths from js/match-math.*.js and a beacon that records. */
@@ -477,7 +477,7 @@ async function main() {
   check('the bundle\'s vote on the default pair: 0.7452..., sent as 74 · Moderate - the band behind "Partial overlap"',
     [Object.is(score, golden.anchors.heroDefault.score), M.matchBand(score), sent.length, sent[0].url, sent[0].type,
      Object.keys(payload), payload.score, payload.band, payload.candidate, payload.palate, payload.palateSize, payload.vote],
-    [true, ['Partial overlap', 'Moderate'], 1, '/.netlify/functions/match-feedback', 'application/json',
+    [true, ['Partial overlap', 'Moderate'], 1, '/api/match-feedback', 'application/json',
      ['score', 'band', 'palate', 'palateSize', 'candidate', 'ts', 'vote', 'notes'], 74, 'Moderate', 'cold-creek', ['lemon-tart'], 1, 'up']);
   check('...with notes [] when no word is picked', payload.notes, []);
   {

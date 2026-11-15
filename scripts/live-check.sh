@@ -66,7 +66,7 @@ ok '/, /app, /privacy/ and /methodology/ answer 200'
 
 # The lab-report function starts and reads a request: a body of null is
 # refused with its fixed sentence before anything is fetched or stored.
-reply=$(curl -s --max-time 30 -X POST "$site/.netlify/functions/coa" -H 'content-type: application/json' --data 'null')
+reply=$(curl -s --max-time 30 -X POST "$site/api/coa" -H 'content-type: application/json' --data 'null')
 [ "$reply" = '{"error":"Could not read that request."}' ] || fail "the coa function answered: ${reply:0:200}"
 ok 'the coa function refuses an empty request with its fixed sentence'
 

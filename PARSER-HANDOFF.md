@@ -1818,6 +1818,7 @@ under the cap.
 - [The handoff split into what is and what happened, 2026-11-14](docs/handoff/13-records.md#the-handoff-split-into-what-is-and-what-happened-2026-11-14)
 - [Rate limits at Netlify's edge, 2026-11-14](docs/handoff/13-records.md#rate-limits-at-netlifys-edge-2026-11-14)
 - [Security audit items 3, 4, 6, 7, 14, 15 and 16, 2026-11-14](docs/handoff/13-records.md#security-audit-items-3-4-6-7-14-15-and-16-2026-11-14)
+- [Rate limits need a path: coa and match-feedback move to /api/, 2026-11-14](docs/handoff/13-records.md#rate-limits-need-a-path-coa-and-match-feedback-move-to-api-2026-11-14)
 
 ## 14. Dispensary integration
 

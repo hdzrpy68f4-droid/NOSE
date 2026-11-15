@@ -5,7 +5,7 @@
  *
  * Headless Chromium opens /app from a local copy of the site, served with the
  * headers in _headers (CSP included), and uses each input path the way a
- * person does. POST /.netlify/functions/coa never leaves the machine: the
+ * person does. POST /api/coa (/.netlify/functions/coa until 2026-11-14) never leaves the machine: the
  * browser's request goes to the REAL handler, netlify/functions/coa.js, and
  * the REAL parser. Only the two steps that need the outside world are stood
  * in for - the download of the PDF, and unpdf, which here returns the
@@ -428,7 +428,7 @@ try {
   page.setDefaultTimeout(8000);
   page.on('pageerror', e => pageErrors.push(e.message));
 
-  await page.route('**/.netlify/functions/coa', async route => {
+  await page.route('**/api/coa', async route => {
     const body = route.request().postData() || '';
     let url = null;
     try { url = JSON.parse(body).url; } catch {}
@@ -714,7 +714,7 @@ try {
      list's order, and no other new field. */
   {
     const votes = [];
-    await page.route('**/.netlify/functions/match-feedback', async route => {
+    await page.route('**/api/match-feedback', async route => {
       votes.push(route.request().postData() || '');
       await route.fulfill({ status: 204, body: '' });
     });
@@ -796,7 +796,7 @@ try {
     const fresh = await btns();
     check('smell words: a new result starts with none picked and every word pressable again',
       fresh.every(b => b[2] === 'false' && b[5] === false), JSON.stringify(fresh));
-    await page.unroute('**/.netlify/functions/match-feedback');
+    await page.unroute('**/api/match-feedback');
   }
 
   /* ---- Upload -------------------------------------------------------------- */
@@ -835,7 +835,7 @@ try {
     let answer = true;
     p.on('dialog', d => { asked.push(d.message()); return answer ? d.accept() : d.dismiss(); });
     const votes = [];
-    await p.route('**/.netlify/functions/match-feedback', async route => {
+    await p.route('**/api/match-feedback', async route => {
       votes.push(route.request().postData() || '');
       await route.fulfill({ status: 204, body: '' });
     });
@@ -975,7 +975,7 @@ try {
     check('tabs: Home goes to the first tab', JSON.stringify(await tabs()) === only('sampleTab'), JSON.stringify(await tabs()));
 
     /* A failed link read is said in a status region. */
-    await p.route('**/.netlify/functions/coa', route => route.fulfill({ status: 422, contentType: 'application/json',
+    await p.route('**/api/coa', route => route.fulfill({ status: 422, contentType: 'application/json',
       body: JSON.stringify({ error: 'That report could not be read reliably.', reasons: ['made up for this check'] }) }));
     await p.click('#urlTab');
     await p.fill('#coaUrl', LINK_URL);
@@ -987,8 +987,8 @@ try {
     /* Netlify's rate limit answers a plain-text 429 (since 2026-11-14,
        "Rate limits at Netlify's edge"): the page says so, not that the
        reader could not be reached. */
-    await p.unroute('**/.netlify/functions/coa');
-    await p.route('**/.netlify/functions/coa', route => route.fulfill({ status: 429, contentType: 'text/plain', body: 'Too Many Requests' }));
+    await p.unroute('**/api/coa');
+    await p.route('**/api/coa', route => route.fulfill({ status: 429, contentType: 'text/plain', body: 'Too Many Requests' }));
     await p.click('#validateUrlButton');
     await p.waitForFunction(() => /last minute/.test(document.getElementById('urlMessage').textContent));
     check('a 429 from Netlify\'s rate limit says to wait a minute',

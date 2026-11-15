@@ -194,8 +194,15 @@ async function reply(request, archiveDeadline){
    rules per project, and this is one of them (Netlify, "Rate limiting",
    https://docs.netlify.com/manage/security/secure-access-to-sites/rate-limiting/,
    last updated 2026-09-17, read 2026-11-14). PARSER-HANDOFF s13, "Rate limits
-   at Netlify's edge". */
+   at Netlify's edge".
+   A function's rate limit applies only when its config also sets a path
+   (the same page: "You must also have a `path` for the function defined in
+   this object"), and a function with a path is "only available at that path
+   - not at the default /.netlify/functions/<name> URL" (Netlify, "Functions
+   configuration", last updated 2026-09-17, read 2026-11-14). So it moved,
+   the day the rule went in. */
 export const config = {
+  path: '/api/coa',
   rateLimit: { windowLimit: 12, windowSize: 60, aggregateBy: ['ip', 'domain'] },
 };
 

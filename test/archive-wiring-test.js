@@ -692,7 +692,7 @@ async function main() {
     assert.deepStrictEqual(Object.keys(coaModule).sort(), ['config', 'default']);
     /* Netlify's rate limit at its edge, since 2026-11-14 (PARSER-HANDOFF s13,
        "Rate limits at Netlify's edge"): the config is that one rule. */
-    assert.deepStrictEqual(coaModule.config, { rateLimit: { windowLimit: 12, windowSize: 60, aggregateBy: ['ip', 'domain'] } });
+    assert.deepStrictEqual(coaModule.config, { path: '/api/coa', rateLimit: { windowLimit: 12, windowSize: 60, aggregateBy: ['ip', 'domain'] } });
     assert.strictEqual(typeof handler, 'function');
     assert.strictEqual(handler.length, 1, 'the handler takes a second argument - the Context');
     const code = fs.readFileSync(COA, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');

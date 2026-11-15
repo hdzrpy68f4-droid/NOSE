@@ -259,9 +259,9 @@
       try{
         const body=JSON.stringify(payload);
         if(navigator.sendBeacon){
-          navigator.sendBeacon('/.netlify/functions/match-feedback',new Blob([body],{type:'application/json'}));
+          navigator.sendBeacon('/api/match-feedback',new Blob([body],{type:'application/json'}));
         } else {
-          fetch('/.netlify/functions/match-feedback',{method:'POST',headers:{'Content-Type':'application/json'},body,keepalive:true}).catch(()=>{});
+          fetch('/api/match-feedback',{method:'POST',headers:{'Content-Type':'application/json'},body,keepalive:true}).catch(()=>{});
         }
       }catch(e){ /* never let telemetry break the UI */ }
     }
@@ -430,7 +430,7 @@
       showMessage(messageId,'Reading the lab report\u2026','neutral');
       let res,data;
       try{
-        res=await fetch('/.netlify/functions/coa',{
+        res=await fetch('/api/coa',{
           method:'POST',
           headers:{'Content-Type':'application/json'},
           body:JSON.stringify({url:href})
@@ -987,7 +987,7 @@
          the shop that sold the jar, not the issuing lab — both real reports this
          was tested against were served from a retailer's bucket. A hostname list
          rejected exactly the files people actually hold.
-         The guard moved to the server (/.netlify/functions/coa), which blocks
+         The guard moved to the server (/api/coa), which blocks
          private address ranges, caps size and time, verifies PDF magic bytes, and
          then trusts the CONTENT: a recognised lab template whose terpene mass
          reconciles against the total the lab printed itself. That is a stronger

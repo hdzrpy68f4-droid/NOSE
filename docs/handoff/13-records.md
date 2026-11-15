@@ -4072,3 +4072,30 @@ closed earlier. Still open: 2 (M5), 8, 9, 10 and 13.
   `fetch-guard-test`, a new gate after `resolver` (40 gates): 27 private
   forms refused and 8 public passed, the stream cancelled past the cap. It
   failed on the old fetcher on both counts.
+
+### Rate limits need a path: coa and match-feedback move to /api/, 2026-11-14
+
+The same day as "Rate limits at Netlify's edge", and correcting it. After
+that deploy, 21 quick POSTs to `/.netlify/functions/coa` all answered 400;
+none was limited.
+
+- **Why:** Netlify, "Rate limiting" (read again 2026-11-14): "Limits for
+  Netlify functions and edge functions are defined in the exported `config`
+  object of your function file. You must also have a `path` for the function
+  defined in this object." Netlify, "Functions configuration" (last updated
+  2026-09-17, read 2026-11-14): "When you set a custom `path`, the function
+  is only available at that path — not at the default
+  `/.netlify/functions/<name>` URL." M4's prompt said "No path change"; that
+  could not work. A rule that does not apply fails no deploy, so nothing
+  said so but the live test.
+- **The move:** `coa` is at `/api/coa` and `match-feedback` at
+  `/api/match-feedback`, each set as `config.path` beside its rule. The old
+  addresses answer 404 from this deploy on. The app (`js/nose`) calls the
+  new ones; a tab opened before the deploy and not reloaded calls the old
+  ones until it is.
+- `scripts/live-check.sh` asks `/api/coa`; the tests that route, pin or
+  count the two addresses use the new ones. `/api/` is not a folder in the
+  tree, so the build guard has nothing to add.
+- Bundle: `js/nose.3c9d05e1.js` became `js/nose.35f66604.js`.
+- **Not yet checked live:** that `/api/coa` answers 429 from about the
+  13th request in a minute.
