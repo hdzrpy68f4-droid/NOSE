@@ -149,7 +149,7 @@ function scan(files, patterns, why, hits) {
    folder is added here on purpose, by someone who decided it is one. */
 const SERVED_FILES = ['404.html', 'app.html', 'index.html', 'apple-touch-icon.png', 'favicon.svg', 'robots.txt', 'sitemap.xml'];
 const SERVED_PATTERNS = [/^family\.[0-9a-f]{8}\.css$/];
-const SERVED_DIRS = ['about', 'account', 'aromas', 'b2b', 'css', 'images', 'js', 'learn', 'methodology', 'privacy', 'terms', 'vendor'];
+const SERVED_DIRS = ['about', 'account', 'aromas', 'b2b', 'css', 'dispensaries', 'images', 'js', 'learn', 'methodology', 'privacy', 'terms', 'vendor'];
 /* Read by Netlify, never served: each answered 404 on the live site, 2026-11-14. */
 const NETLIFY_READS = ['_headers', '_redirects', 'netlify.toml'];
 

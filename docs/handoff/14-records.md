@@ -2743,3 +2743,44 @@ that should hold no row):
   section and its other mentions of dispensaries are `privacy/index.html`'s
   word for word, so the new phrase and the seventh change are live, dated
   October 15, 2026 - the day the deploy went out.
+
+### A front door for dispensaries, 2026-11-15
+
+B7 from `docs/project-notes/nose-blocker-prompts-FULL-2026-10-27.md`. Facts
+given 2026-11-15: the About story is true as written and keeps "we"; the
+name shown is Chris Carreon; the contact is contact@nose-app.com; no price.
+
+- **`/dispensaries/`**, a new page (indexed, in the sitemap). What shoppers
+  see, with three screenshots of the widget on the demo's made-up test store
+  (`images/dispensaries/rail.png`, `sold-out.png`, `vote.png`, each with
+  alt text); that purchase history never reaches NOSE; what a store's web
+  team does; the coverage report first; compliance; the pilot; what NOSE
+  won't do; and contact. Every claim has an HTML comment naming the file it
+  rests on: `docs/B2B-INTEGRATION.md` (the opening, the core promise,
+  sections 1-4 and 7), `scripts/b2b-coverage.js` and
+  `docs/B2B-CATALOG-FORMAT.md`, `js/b2b-strings.*.js` (default and Florida
+  wording, and the "still being tested" line), `scripts/b2b-compliance-kit.js`,
+  `docs/B2B-RELEASES.md`, `docs/B2B-PILOT-PLAN.md` (sections 2, 3 and 10),
+  `js/b2b-rank.*.js` and `privacy/index.html#dispensaries`. No client name,
+  count, testimonial, uptime promise or price. It does not say "reviewed by
+  counsel". One draft sentence said every view says the score is untested;
+  the vote view does not, so it says the widget says so under its matches.
+- **The demo's pitch view**, `/b2b/demo/?view=pitch`: the widget first, its
+  consent prompt ready, the example purchases loaded, one line saying the
+  store and purchases are made up; "Show the developer controls" reveals the
+  form and the batch list. Without the parameter the page is as before. It
+  stays noindex and out of the sitemap.
+- **About:** the story as written, plus "Who runs NOSE": "NOSE is run by
+  Chris Carreon. Questions, corrections and dispensaries:
+  contact@nose-app.com." The Organization JSON-LD names him as founder and
+  gives the email.
+- **Links:** "For dispensaries" in the shared footer (Explore) and a line
+  under the home page's closing button.
+- `family.css` gains one rule so the screenshots fit their cards;
+  `check-published` serves `dispensaries/`.
+- **Tests:** `b2b-widget-test` checks the pitch view (widget first, consent
+  ready, one tap brings the rail for the 11 example purchases, the button
+  reveals and hides the controls), that the plain demo is unchanged, and that
+  only `/dispensaries/` links the demo, by its pitch view. `page-chrome`: 25
+  pages. Seen in Chromium at 390 and 1280 px.
+- **Not checked:** that mail to contact@nose-app.com reaches anyone.

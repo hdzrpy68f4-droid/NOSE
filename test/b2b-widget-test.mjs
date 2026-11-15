@@ -978,6 +978,31 @@ try {
     const errors = c.errors.filter(e => !(skip > 0 && /^Refused to apply a stylesheet because/.test(e) && skip--));
     check('demo page: no CSP violation under the site\'s own CSP, no page error', !violations.length && !errors.length,
       JSON.stringify({ violations, errors }));
+    check('demo page: without ?view=pitch it is as before - the controls shown, no pitch line',
+      [await page.isVisible('#demoForm'), await page.isVisible('#demoPitchNote'), await page.isVisible('#demoShowControls')], [true, false, false]);
+    await c.context.close();
+  }
+
+  /* ================================================= the demo's pitch view */
+  /* /b2b/demo/?view=pitch (since 2026-11-15, PARSER-HANDOFF s14, "A front
+     door for dispensaries"): it opens on the widget, its consent prompt
+     ready, the example purchases loaded, one line saying it is made up; the
+     controls wait behind a button. */
+  {
+    const c = await open('demo pitch', {}, { origin: 'nose', path: '/b2b/demo/?view=pitch' });
+    const { page } = c;
+    await page.waitForFunction(() => document.querySelector('nose-matches').shadowRoot.querySelector('button.nm-primary'));
+    check('pitch view: the widget first, its consent button ready; the controls and the batch list hidden; the made-up line shown',
+      [await page.isVisible('#demoForm'), await page.isVisible('.demo-menu'), await page.isVisible('#demoPitchNote'),
+       await page.locator('nose-matches').locator('button.nm-primary').isVisible()], [false, false, true, true]);
+    await page.locator('nose-matches').locator('button.nm-primary').click();
+    await page.waitForFunction(() => document.querySelector('nose-matches').shadowRoot.querySelectorAll('.nm-card').length);
+    check('pitch view: one tap on consent brings the rail for the example purchases',
+      (await readCards(page)).length > 0 && JSON.parse(await page.locator('nose-matches').getAttribute('purchases')).length === 11);
+    await page.click('#demoShowControls');
+    check('pitch view: the button reveals the developer controls and the batch list, and says it can hide them',
+      [await page.isVisible('#demoForm'), await page.isVisible('.demo-menu'), await page.getAttribute('#demoShowControls', 'aria-expanded'),
+       ((await page.textContent('#demoShowControls')) || '').trim()], [true, true, 'true', 'Hide the developer controls']);
     await c.context.close();
   }
 } catch (e) {
@@ -1011,9 +1036,16 @@ const pages = [];
     else if (e.name.endsWith('.html')) pages.push(p);
   }
 })(ROOT);
-check('the demo page is linked from no other page, nor from the sitemap or robots.txt',
-  pages.filter(p => !p.endsWith(path.join('b2b', 'demo', 'index.html')) && /\/b2b\//.test(fs.readFileSync(p, 'utf8'))).length === 0
-    && !/b2b/.test(fs.readFileSync(path.join(ROOT, 'sitemap.xml'), 'utf8')) && !/b2b/.test(fs.readFileSync(path.join(ROOT, 'robots.txt'), 'utf8')));
+/* Since 2026-11-15 /dispensaries/ links the demo's pitch view, and nothing
+   else links it; it stays out of the sitemap and robots.txt, and noindex. */
+const demoLinkers = pages.filter(p => !p.endsWith(path.join('b2b', 'demo', 'index.html')) && /\/b2b\//.test(fs.readFileSync(p, 'utf8')))
+  .map(p => path.relative(ROOT, p).split(path.sep).join('/'));
+check('the demo page is linked from /dispensaries/ alone, by its pitch view, and from neither the sitemap nor robots.txt; it stays noindex',
+  JSON.stringify(demoLinkers) === '["dispensaries/index.html"]'
+    && [...fs.readFileSync(path.join(ROOT, 'dispensaries/index.html'), 'utf8').matchAll(/href="([^"]*\/b2b\/[^"]*)"/g)].every(m => m[1] === '/b2b/demo/?view=pitch')
+    && !/b2b/.test(fs.readFileSync(path.join(ROOT, 'sitemap.xml'), 'utf8')) && !/b2b/.test(fs.readFileSync(path.join(ROOT, 'robots.txt'), 'utf8'))
+    && /<meta name="robots" content="noindex, nofollow">/.test(fs.readFileSync(path.join(ROOT, 'b2b/demo/index.html'), 'utf8')),
+  JSON.stringify(demoLinkers));
 check('the demo page holds no inline script or style, so build.sh\'s checks pass it',
   !/style="|<style/.test(DEMO_SRC.html) && !(DEMO_SRC.html.match(/<script[^>]*>[^<]/g) || []).length);
 

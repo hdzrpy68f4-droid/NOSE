@@ -32,7 +32,7 @@ const noCurrent = h => h.replace(/ aria-current="[^"]*"/g, '');
 const P = S.readPartials();
 const pages = S.pages();
 
-check('24 pages in the tree, b2b/demo and /account/reset/ among them', [pages.length, pages.includes('b2b/demo/index.html'), pages.includes('account/reset/index.html')], [24, true, true]);
+check('25 pages in the tree, b2b/demo, /account/reset/ and /dispensaries/ among them', [pages.length, pages.includes('b2b/demo/index.html'), pages.includes('account/reset/index.html'), pages.includes('dispensaries/index.html')], [25, true, true, true]);
 const marked = pages.filter(p => !S.NO_CHROME.has(p));
 const counts = p => { const h = fs.readFileSync(path.join(ROOT, p), 'utf8'); return [/<!-- nose:header (static|app) -->/g, /<!-- \/nose:header -->/g, /<!-- nose:footer -->/g, /<!-- \/nose:footer -->/g].map(re => (h.match(re) || []).length); };
 check('every page but b2b/demo carries each marker once', marked.filter(p => JSON.stringify(counts(p)) !== '[1,1,1,1]'), []);

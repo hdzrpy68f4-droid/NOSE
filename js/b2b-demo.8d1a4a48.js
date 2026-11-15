@@ -61,6 +61,28 @@
       $('demoQuiet').hidden = !empty;
     }, 400);
   }
+  /* ?view=pitch (since 2026-11-15, PARSER-HANDOFF s14, "A front door for
+     dispensaries"): the page opens on the widget, its consent prompt ready
+     and the example purchases loaded, with one line saying it is made up;
+     the developer controls and the batch list wait behind a button. Without
+     the parameter the page is as before. */
+  if (new URLSearchParams(location.search).get('view') === 'pitch') {
+    const main = $('main');
+    main.classList.add('demo-pitch');
+    form.hidden = true;
+    const menu = document.querySelector('.demo-menu');
+    if (menu) menu.hidden = true;
+    $('demoPitchNote').hidden = false;
+    $('demoPitchControls').hidden = false;
+    $('demoShowControls').addEventListener('click', () => {
+      const open = form.hidden;
+      form.hidden = !open;
+      if (menu) menu.hidden = !open;
+      main.classList.toggle('demo-pitch', !open);
+      $('demoShowControls').setAttribute('aria-expanded', String(open));
+      $('demoShowControls').textContent = open ? 'Hide the developer controls' : 'Show the developer controls';
+    });
+  }
   form.addEventListener('submit', e => { e.preventDefault(); apply(); });
   form.addEventListener('change', apply);
 

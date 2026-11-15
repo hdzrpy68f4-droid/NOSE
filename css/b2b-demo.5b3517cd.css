@@ -36,6 +36,8 @@
 .demo-routes label { display: inline-flex; gap: 6px; align-items: center; color: var(--ink); }
 
 .demo-stage { min-width: 0; }
+/* ?view=pitch: the widget alone, full width, until the controls are shown. */
+.demo-pitch .demo-grid { grid-template-columns: minmax(0, 1fr); }
 .demo-shop { background: white; border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; color: var(--ink); }
 .demo-events { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.8125rem; }
 .demo-events:empty { display: none; }

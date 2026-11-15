@@ -264,6 +264,12 @@ schema comment if wanted.
 
 ## §14, dispensary integration: still open
 
+- **The pilot agreement (B2.1) waits for NOSE's registration (B1).** Facts
+  given 2026-11-15: no fee for the pilot; Chris Carreon signs for NOSE. B1
+  (the Terms page's legal name, entity, state, address, governing law) waits
+  until the business is registered, expected within a month. The draft goes
+  to counsel and never into this public repository.
+
 - `scripts/download-twice.js` keeps its own looser fetch loop. Moving it onto
   `lib/fetch-report.js` would change what it reports (redirects re-checked,
   8 s for a link it waits 30 s for today), so it waits for its own prompt.
@@ -408,7 +414,7 @@ schema comment if wanted.
   classic script (above, "Pinned releases"); the integration guide says not
   to load it as a module.
 - **The demo page goes live with the next deploy**, at `/b2b/demo/`: static,
-  noindex, linked from nowhere, its feed a file. Its votes reach the
+  noindex, linked only from /dispensaries/ (its pitch view, since 2026-11-15), its feed a file. Its votes reach the
   production b2b-vote, which answers 404 until Prompt 8 and then refuses the
   made-up key as no store's. Its test store is rewritten by
   `node scripts/b2b-demo-feed.js` after a parser change moves a fixture's

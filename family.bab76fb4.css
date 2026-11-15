@@ -293,3 +293,6 @@ body.theme-herbal{--family:var(--herbal);--family-text:var(--herbal-text)}
   .fp-compare{padding:18px}
 }
 @media(prefers-reduced-motion:reduce){.guide-card{transition:none}}
+
+/* /dispensaries/: the widget screenshots fit their cards (since 2026-11-15). */
+.shot{margin:0}.shot img{display:block;max-width:100%;height:auto;border-radius:12px;margin-bottom:12px}
