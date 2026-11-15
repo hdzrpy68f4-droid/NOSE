@@ -4338,3 +4338,39 @@ the page (2026-11-15).
   (Supabase → Authentication → Emails → Reset password). Until then the page
   is built but no email leads to it. Also not known: whether custom SMTP is
   on (`docs/handoff/open.md`).
+
+### The reset page works with Supabase's default email, 2026-11-15
+
+Follows "A password reset that finishes". The plan was to point Supabase's
+"Reset password" template at `/account/reset/?token_hash=...`. In the
+dashboard on 2026-11-15 (accounts project, Authentication → Emails), the
+templates cannot be edited: "Set up custom SMTP to edit templates. Emails
+will be sent using the default templates."
+
+- **Two Supabase projects, read in the dashboard 2026-11-15:** the accounts
+  are in "hdzrpy68f4-droid's Project" (Canada Central, ca-central-1; its Site
+  URL is `https://curious-crumble-352160.netlify.app/`, and it has no
+  redirect URLs); the archive and the dispensary tables are in "nose" (East
+  US, us-east-1, as the privacy page says). Both are on the free plan, in one
+  organization, "NOSE".
+- **The default email works too.** `auth-reset.js` now asks Supabase to send
+  the link back to `https://nose-app.com/account/reset/`
+  (`/recover?redirect_to=...`). Supabase checks the link and lands on the
+  page with a recovery session after `#`. The page takes it out of the
+  address at once and sends only the access token with the new password;
+  `auth-reset-finish.js` sets the password with it (no `/verify`), ends that
+  session and signs every NOSE session of the account out. A session
+  Supabase does not know gets the same "expired or already used" sentence.
+  The `token_hash` path stays, for a custom template later.
+- Supabase only sends a link back to an address on the project's Redirect
+  URLs list; until it is there, it falls back to the Site URL, as before.
+- **Tests:** `accounts-test` checks the reset request names the page, and the
+  session path end to end (password set with no `/verify`, the old NOSE
+  session gone, an unknown or malformed session refused);
+  `input-paths-test` checks the page reads the `#` session, clears the
+  address and sends the access token, never the refresh token.
+- **The limit that matters most:** without custom SMTP, Supabase's built-in
+  sender delivers only to the project's team members, about two emails an
+  hour (`docs/handoff/open.md`). So no one but the owner gets a sign-up
+  confirmation or a reset email today, and the reset page cannot help anyone
+  else until an email service is set up.

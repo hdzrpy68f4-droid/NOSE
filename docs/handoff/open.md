@@ -123,7 +123,11 @@ after `#` on nose-app.com (the documented flow again; not yet watched). NOSE
 never reads or clears them - the app's router reads `#` only to name a page -
 so they would stay in that browser's history. Ending the redirect (the item
 above) ends this too.
-- **Custom SMTP: not known whether it is on.** Supabase's docs (read
+- **Custom SMTP is not set up (seen in the dashboard 2026-11-15), so account
+  emails reach no one but the owner.** The accounts project says "Set up
+  custom SMTP to edit templates". Needs an email service, its sender domain
+  checked, and the privacy page naming it before it is switched on.
+- **(Earlier note) Custom SMTP: not known whether it is on.** Supabase's docs (read
 2026-10-03): without it, the built-in service delivers only to the project's
 team members, 2 messages an hour, so real people would get no confirmation or
 reset email. With it, that company receives every address it delivers to, and

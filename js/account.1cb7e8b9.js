@@ -288,9 +288,12 @@
      opens the link first does not use it up. */
   function initReset() {
     var params = new URLSearchParams(location.search);
+    var hash = new URLSearchParams(location.hash.replace(/^#/, ''));
     var tokenHash = params.get('type') === 'recovery' ? params.get('token_hash') : null;
+    /* Supabase's default email comes back with its session after "#". */
+    var accessToken = !tokenHash && hash.get('type') === 'recovery' ? hash.get('access_token') : null;
     if (location.search || location.hash) history.replaceState(null, '', location.pathname);
-    if (!tokenHash) {
+    if (!tokenHash && !accessToken) {
       show($('newpass-form'), false);
       show($('newpass-nolink'), true);
       return;
@@ -303,7 +306,7 @@
         return;
       }
       busy(btn, true, 'Setting…');
-      post('/auth-reset-finish', { token_hash: tokenHash, password: password }).then(function (res) {
+      post('/auth-reset-finish', tokenHash ? { token_hash: tokenHash, password: password } : { access_token: accessToken, password: password }).then(function (res) {
         busy(btn, false);
         if (res.ok) {
           $('newpass-password').value = '';

@@ -15,6 +15,8 @@
 import { gotrue, isEmail, normaliseEmail, readJsonBody, rateLimit, fromThisSite, crossSite } from '../lib/auth.js';
 import { json, methodNotAllowed } from '../lib/http.js';
 
+const RESET_PAGE = 'https://nose-app.com/account/reset/';
+
 const NEUTRAL = {
   status: 'submitted',
   message: 'If that address has an account, a reset link is on its way.',
@@ -33,7 +35,11 @@ export default async (request) => {
   const allowed = await rateLimit('reset', email, { limit: 3, windowSeconds: 3600 });
   if (!allowed) return json(NEUTRAL, 200); // Not even a 429 — that leaks activity.
 
-  const res = await gotrue('/recover', { body: { email } });
+  /* The reset link comes back to /account/reset/, which asks for the new
+     password (since 2026-11-15). Supabase sends there only an address on the
+     project's Redirect URLs list, which holds it (Authentication -> URL
+     Configuration). PARSER-HANDOFF s13, "A password reset that finishes". */
+  const res = await gotrue(`/recover?redirect_to=${encodeURIComponent(RESET_PAGE)}`, { body: { email } });
 
   if (!res.ok) {
     console.warn('[auth-reset] non-ok from supabase', { status: res.status });

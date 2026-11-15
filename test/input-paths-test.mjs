@@ -1083,6 +1083,19 @@ try {
     await p.goto(`${BASE}/account/reset/`);
     check('reset page: opened without a code, it says the reset email\'s link is needed, and shows no form',
       [await p.isVisible('#newpass-nolink'), await p.isVisible('#newpass-form')], [true, false]);
+    /* Supabase's default email comes back with its session after "#". */
+    const SESSION = 'aaa.bbb.ccc';
+    finishes.length = 0;
+    await p.goto("about:blank");   // a hash alone on the same page would not reload it
+    await p.goto(`${BASE}/account/reset/#access_token=${SESSION}&refresh_token=r&type=recovery`);
+    await p.waitForFunction(() => location.hash === '');
+    await p.fill('#newpass-password', 'a brand new password');
+    await p.click('#newpass-submit');
+    await p.waitForSelector('#newpass-done:not([hidden])');
+    let viaHash = null;
+    try { viaHash = JSON.parse(finishes[0]); } catch {}
+    check('reset page: from the default email, the session leaves the address at once and is sent with the password, the refresh token never',
+      [new URL(p.url()).hash, viaHash], ['', { access_token: SESSION, password: 'a brand new password' }]);
     await ctx.close();
   }
 

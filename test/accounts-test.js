@@ -82,7 +82,7 @@ globalThis.fetch = async (url, init = {}) => {
     if (!user || user.password !== body.password) return reply(400, { error_code: 'invalid_credentials', msg: 'Invalid login credentials' });
     return reply(200, { access_token: 'made-up-token', user: { id: user.id, email: user.email } });
   }
-  if (p === '/recover' && call.method === 'POST') return reply(200, {});
+  if (p.startsWith('/recover') && call.method === 'POST') return reply(200, {});
   /* The reset's three calls (since 2026-11-14): a recovery code verified once,
      the password set with the session that answer carries, that session ended. */
   if (p === '/verify' && call.method === 'POST') {
@@ -436,6 +436,25 @@ async function main() {
     check('reset-finish: the same code a second time is refused', [r.status, r.data], [400, EXPIRED]);
     check('reset-finish: no console line holds the address, the password or the code',
       logged.filter(l => l.includes(DAN) || l.includes('brand new') || l.includes(code)), []);
+
+    /* Supabase's default email (since 2026-11-15): it comes back to the page
+       with a session after "#", and the page sends that session. */
+    const jwt = sub => ['{"alg":"HS256"}', JSON.stringify({ sub, role: 'authenticated' }), 'sig'].map(x => Buffer.from(x).toString('base64url')).join('.');
+    const d3 = await signIn(DAN);
+    const session = jwt(supa.users.get(DAN).id);
+    supa.access.set(session, DAN);
+    const at2 = supa.calls.length;
+    r = await call(resetFinish, 'POST', { access_token: session, password: 'a third new password' });
+    check('reset-finish, by the session the default email hands back: the password set and Supabase\'s session ended, with no /verify',
+      [r.status, r.data.status, supa.calls.slice(at2).map(c => `${c.method} ${c.path}`)],
+      [200, 'password-set', ['PUT /auth/v1/user', 'POST /auth/v1/logout?scope=global']]);
+    check('...the new password signs in, and the NOSE session from before is gone',
+      [(await call(login, 'POST', { email: DAN, password: 'a third new password' })).status, (await call(me, 'GET', undefined, d3)).data.signedIn], [200, false]);
+    r = await call(resetFinish, 'POST', { access_token: jwt('00000000-0000-0000-0000-000000000000'), password: 'a fourth new password' });
+    check('reset-finish: a session Supabase does not know is refused with the same plain sentence', [r.status, r.data], [400, EXPIRED]);
+    r = await call(resetFinish, 'POST', { access_token: 'not a jwt', password: 'a fourth new password' });
+    check('reset-finish: something that is not a session never reaches Supabase', [r.status, r.data.error], [400, 'link-expired']);
+    SECRETS.push('third new', 'fourth new');
   }
 
   /* ---- auth-reset ---- */
@@ -450,7 +469,9 @@ async function main() {
   for (let i = 0; i < 3; i++) resets.push((await call(reset, 'POST', { email: ALICE })).data);
   check('reset: ...and after the hourly limit of three', resets, [RESET, RESET, RESET]);
   check('reset: Supabase was asked three times for that address, not six',
-    supa.calls.filter(c => c.path === '/auth/v1/recover' && c.body.email === ALICE).length, 3);
+    supa.calls.filter(c => c.path.startsWith('/auth/v1/recover') && c.body.email === ALICE).length, 3);
+  check('reset: the link Supabase sends comes back to /account/reset/ (since 2026-11-15)',
+    supa.calls.filter(c => c.path.startsWith('/auth/v1/recover')).every(c => c.path === '/auth/v1/recover?redirect_to=https%3A%2F%2Fnose-app.com%2Faccount%2Freset%2F'), true);
 
   /* ---- account-delete ---- */
   r = await call(accountDelete, 'POST', { confirm: 'DELETE' });
