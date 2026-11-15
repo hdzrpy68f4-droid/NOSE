@@ -428,6 +428,31 @@ if (process.platform === 'win32' && !process.env.NOSE_ENGINES) console.log('note
 const ENGINES = (process.env.NOSE_ENGINES || ALL_ENGINES.join(',')).split(',').filter(Boolean);
 const ran = [];
 let browser = null;
+/* Playwright hands a route WebKit's sendBeacon request with an empty body
+   (seen on Linux, 2026-11-14), so a vote's body could not be read there. Each
+   context gets this recorder, which keeps the text of every beacon the page
+   sends; a route that finds no body takes the newest recorded one. It records
+   and passes the call on unchanged: the page still sends by sendBeacon. */
+const BEACON_RECORDER = () => {
+  window.__beacons = [];
+  const send = navigator.sendBeacon && navigator.sendBeacon.bind(navigator);
+  if (!send) return;
+  navigator.sendBeacon = (url, data) => {
+    const keep = t => window.__beacons.push([String(url), t]);
+    if (data instanceof Blob) data.text().then(keep); else keep(String(data));
+    return send(url, data);
+  };
+};
+async function bodyOf(page, request) {
+  const posted = request.postData();
+  if (posted) return posted;
+  for (let i = 0; i < 40; i++) {
+    const got = await page.evaluate(u => { const b = window.__beacons.filter(x => x[0].endsWith(u)); return b.length ? b[b.length - 1][1] : null; }, new URL(request.url()).pathname);
+    if (got) return got;
+    await new Promise(r => setTimeout(r, 25));
+  }
+  return '';
+}
 const pageErrors = [];
 const sent = [];        // the url each POST to the handler carried
 const queue = [];       // the fixture the next POST reads
@@ -444,6 +469,7 @@ browser = await playwright[engine].launch(CAMERA
   : {});
 try {
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, timezoneId: TIME_ZONE });
+  await context.addInitScript(BEACON_RECORDER);
   if (CAMERA) await context.grantPermissions(['camera'], { origin: BASE });
   const page = await context.newPage();
   page.setDefaultTimeout(8000);
@@ -738,7 +764,7 @@ try {
   {
     const votes = [];
     await page.route('**/api/match-feedback', async route => {
-      votes.push(route.request().postData() || '');
+      votes.push(await bodyOf(page, route.request()));
       await route.fulfill({ status: 204, body: '' });
     });
     await page.click('#sampleTab');
@@ -851,6 +877,7 @@ try {
      (PARSER-HANDOFF s13, "A jar that is gone"). */
   {
     const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+    await ctx.addInitScript(BEACON_RECORDER);
     const p = await ctx.newPage();
     p.setDefaultTimeout(8000);
     p.on('pageerror', e => pageErrors.push(e.message));
@@ -859,7 +886,7 @@ try {
     p.on('dialog', d => { asked.push(d.message()); return answer ? d.accept() : d.dismiss(); });
     const votes = [];
     await p.route('**/api/match-feedback', async route => {
-      votes.push(route.request().postData() || '');
+      votes.push(await bodyOf(p, route.request()));
       await route.fulfill({ status: 204, body: '' });
     });
     let account = [];

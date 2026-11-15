@@ -374,7 +374,11 @@ async function open(name, attrs, { origin = 'store', path: at, page: pg } = {}) 
   await context.addCookies([{ name: 'nose_session', value: 'widget-test-session', url: NOSE, sameSite: 'Lax', httpOnly: true }]);
   await context.addInitScript(() => {
     window.__violations = [];
-    document.addEventListener('securitypolicyviolation', e => window.__violations.push(e.effectiveDirective || e.violatedDirective));
+    window.__violationTargets = [];
+    document.addEventListener('securitypolicyviolation', e => {
+      window.__violations.push(e.effectiveDirective || e.violatedDirective);
+      window.__violationTargets.push([e.effectiveDirective || e.violatedDirective, e.target && e.target.nodeName]);
+    });
     window.__purchaseReads = 0;
     const get = Element.prototype.getAttribute;
     Element.prototype.getAttribute = function (n) {
@@ -961,9 +965,17 @@ try {
     const reqs = since(c).filter(r => r.origin === 'nose');
     check('demo page: everything it asks for is on NOSE\'s own origin, and nothing goes elsewhere', !c.elsewhere.length && reqs.every(r => r.method === 'GET'),
       JSON.stringify(reqs.filter(r => r.method !== 'GET').map(r => r.url)));
-    const violations = await page.evaluate(() => window.__violations.slice());
-    check('demo page: no CSP violation under the site\'s own CSP, no page error', !violations.length && !c.errors.length,
-      JSON.stringify({ violations, errors: c.errors }));
+    /* WebKit draws a <select> with inline styles of its own and reports each
+       as a style-src-attr violation, with a console line, on the demo page's
+       three menus (seen on Linux and Windows, 2026-11-14). Those - a SELECT,
+       style-src-attr - are left out in WebKit alone; anything else counts. */
+    const raw = await page.evaluate(() => window.__violationTargets.slice());
+    const ownSelect = v => ENGINE === 'webkit' && v[0] === 'style-src-attr' && v[1] === 'SELECT';
+    const violations = raw.filter(v => !ownSelect(v)).map(v => v[0]);
+    let skip = raw.filter(ownSelect).length;
+    const errors = c.errors.filter(e => !(skip > 0 && /^Refused to apply a stylesheet because/.test(e) && skip--));
+    check('demo page: no CSP violation under the site\'s own CSP, no page error', !violations.length && !errors.length,
+      JSON.stringify({ violations, errors }));
     await c.context.close();
   }
 } catch (e) {
