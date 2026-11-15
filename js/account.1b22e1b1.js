@@ -280,9 +280,51 @@
     refresh();
   }
 
+  /* /account/reset/: finish a password reset (since 2026-11-14; PARSER-HANDOFF
+     s13, "A password reset that finishes"). The reset email's link carries
+     ?token_hash=...&type=recovery. The code is read once and taken out of the
+     address at once, so it stays in neither the history nor a Referer; it is
+     sent only when the person presses the button, so an email scanner that
+     opens the link first does not use it up. */
+  function initReset() {
+    var params = new URLSearchParams(location.search);
+    var tokenHash = params.get('type') === 'recovery' ? params.get('token_hash') : null;
+    if (location.search || location.hash) history.replaceState(null, '', location.pathname);
+    if (!tokenHash) {
+      show($('newpass-form'), false);
+      show($('newpass-nolink'), true);
+      return;
+    }
+    $('newpass-submit').addEventListener('click', function () {
+      var btn = $('newpass-submit');
+      var password = $('newpass-password').value;
+      if (password.length < 10) {
+        message($('newpass-message'), 'Use at least 10 characters.', 'error');
+        return;
+      }
+      busy(btn, true, 'Setting…');
+      post('/auth-reset-finish', { token_hash: tokenHash, password: password }).then(function (res) {
+        busy(btn, false);
+        if (res.ok) {
+          $('newpass-password').value = '';
+          show($('newpass-form'), false);
+          message($('newpass-message'), '', null);
+          var done = $('newpass-done');
+          done.insertAdjacentText('afterbegin', (res.data && res.data.message) || 'Your password is changed. Sign in with the new one.');
+          done.insertBefore(document.createElement('br'), done.querySelector('a'));
+          show(done, true);
+          return;
+        }
+        message($('newpass-message'),
+          (res.data && res.data.message) || 'The password could not be set. Try again in a moment.', 'error');
+      });
+    });
+  }
+
+  var start = document.getElementById('panel-newpass') ? initReset : init;
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', start);
   } else {
-    init();
+    start();
   }
 }());

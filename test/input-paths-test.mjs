@@ -1053,6 +1053,36 @@ try {
     await p.selectOption('#manualRows tr:nth-child(1) .manual-terpene', 'linalool');
     check('a manual row\'s remove label follows its compound: "Remove Limonene", then "Remove Linalool"',
       was === 'Remove Limonene' && (await removeLabel()) === 'Remove Linalool', `${was} -> ${await removeLabel()}`);
+
+    /* /account/reset/ (since 2026-11-14, "A password reset that finishes"):
+       the code leaves the address at once, nothing is sent until the button,
+       then the code and the password go to auth-reset-finish. */
+    const finishes = [];
+    await p.route('**/.netlify/functions/auth-reset-finish', async route => {
+      finishes.push(route.request().postData() || '');
+      await route.fulfill({ status: 200, contentType: 'application/json',
+        body: JSON.stringify({ status: 'password-set', message: 'Your password is changed, and every device was signed out. Sign in with the new one.' }) });
+    });
+    const CODE = 'pkce_' + 'c'.repeat(40);
+    await p.goto(`${BASE}/account/reset/?token_hash=${CODE}&type=recovery`);
+    await p.waitForFunction(() => location.search === '');
+    check('reset page: the code is taken out of the address at once, and nothing is sent before the button',
+      [new URL(p.url()).pathname, new URL(p.url()).search, finishes.length], ['/account/reset/', '', 0]);
+    await p.fill('#newpass-password', 'short');
+    await p.click('#newpass-submit');
+    check('reset page: under 10 characters is refused on the page, and nothing is sent',
+      [(await t('#newpass-message')), finishes.length], ['Use at least 10 characters.', 0]);
+    await p.fill('#newpass-password', 'a brand new password');
+    await p.click('#newpass-submit');
+    await p.waitForSelector('#newpass-done:not([hidden])');
+    let sentBody = null;
+    try { sentBody = JSON.parse(finishes[0]); } catch {}
+    check('reset page: the button sends the code and the password, once, and the page says to sign in',
+      [finishes.length, sentBody, await p.isVisible('#newpass-form'), (await t('#newpass-done')).startsWith('Your password is changed')],
+      [1, { token_hash: CODE, password: 'a brand new password' }, false, true]);
+    await p.goto(`${BASE}/account/reset/`);
+    check('reset page: opened without a code, it says the reset email\'s link is needed, and shows no form',
+      [await p.isVisible('#newpass-nolink'), await p.isVisible('#newpass-form')], [true, false]);
     await ctx.close();
   }
 

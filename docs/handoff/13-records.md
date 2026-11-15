@@ -4298,3 +4298,43 @@ once it has run".
 
 The two synthetic votes `feedback-read.js` names (2026-10-14) are among the
 five, and keep their day and notes; filter them by those.
+
+### A password reset that finishes, 2026-11-14
+
+Security audit item 13; the open items "No page finishes a password reset"
+and "Supabase's session is left in the address". The owner chose to build
+the page (2026-11-15).
+
+- **`/account/reset/`**, a new page (noindex, no referrer, the account
+  page's stylesheet and script). The reset email's link carries
+  `?token_hash=...&type=recovery`. `js/account` reads the code once and
+  takes it out of the address at once; it asks for the new password and
+  sends the code only when the button is pressed, so an email scanner that
+  opens the link first does not use it up. Opened without a code, it says
+  the reset email's link is needed.
+- **`netlify/functions/auth-reset-finish.js`**: refuses a cross-site request
+  and a password under 10 characters before anything else; Supabase checks
+  the code (`POST /verify`, type recovery); with the session that answer
+  carries the password is set (`PUT /user`); that session is ended (`POST
+  /logout?scope=global`) and every NOSE session of the account destroyed.
+  A used, expired or made-up code gets one sentence: "This reset link has
+  expired or was already used. Ask for a new one on the account page." It
+  keeps nothing and logs no address, password or code.
+- **Terms:** "If you think someone else has access, reset your password from
+  the account page, which signs every device out, and email us." It said
+  changing a password was not available yet.
+- **Tests:** `accounts-test` (a stand-in Supabase that knows `/verify`, `PUT
+  /user` and `/logout`): short password refused first, unknown, malformed and
+  reused codes refused, cross-site refused without using the code, the three
+  calls in order, the new password signing in and the old not, both earlier
+  NOSE sessions gone, nothing logged. `input-paths-test`: the code leaves the
+  address at once, nothing is sent before the button, the button sends code
+  and password once, the page without a code shows no form. `page-chrome`:
+  24 pages.
+- **Not done, and needed before it works:** Supabase's "Reset password"
+  email template still sends people to the Site URL with tokens after `#`.
+  It has to link to
+  `https://nose-app.com/account/reset/?token_hash={{ .TokenHash }}&type=recovery`
+  (Supabase → Authentication → Emails → Reset password). Until then the page
+  is built but no email leads to it. Also not known: whether custom SMTP is
+  on (`docs/handoff/open.md`).

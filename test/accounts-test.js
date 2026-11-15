@@ -56,7 +56,7 @@ function check(label, actual, expected) {
 
 /* ------------------------------------------------ Supabase, stood in for */
 
-const supa = { users: new Map(), calls: [], down: false, failDelete: false, failAdminGet: false };
+const supa = { users: new Map(), calls: [], down: false, failDelete: false, failAdminGet: false, recovery: new Map(), access: new Map() };
 function addUser(email, password, meta = {}) {
   const user = { id: crypto.randomUUID(), email, password, user_metadata: meta, created_at: '2026-01-02T03:04:05.000Z' };
   supa.users.set(email, user);
@@ -83,6 +83,27 @@ globalThis.fetch = async (url, init = {}) => {
     return reply(200, { access_token: 'made-up-token', user: { id: user.id, email: user.email } });
   }
   if (p === '/recover' && call.method === 'POST') return reply(200, {});
+  /* The reset's three calls (since 2026-11-14): a recovery code verified once,
+     the password set with the session that answer carries, that session ended. */
+  if (p === '/verify' && call.method === 'POST') {
+    const email = supa.recovery.get(body.token_hash);
+    if (body.type !== 'recovery' || !email) return reply(403, { error_code: 'otp_expired', msg: 'Token has expired or is invalid' });
+    supa.recovery.delete(body.token_hash);
+    const token = 'access-' + crypto.randomBytes(8).toString('hex');
+    supa.access.set(token, email);
+    return reply(200, { access_token: token, refresh_token: 'r', user: { id: supa.users.get(email).id, email } });
+  }
+  if (p === '/user' && call.method === 'PUT') {
+    const email = supa.access.get(String(call.headers.authorization).replace(/^Bearer /, ''));
+    if (!email) return reply(401, { msg: 'invalid JWT' });
+    if (String(body.password).length < 10) return reply(422, { error_code: 'weak_password', msg: 'Password should be at least 10 characters' });
+    supa.users.get(email).password = body.password;
+    return reply(200, { id: supa.users.get(email).id, email });
+  }
+  if (p === '/logout?scope=global' && call.method === 'POST') {
+    supa.access.delete(String(call.headers.authorization).replace(/^Bearer /, ''));
+    return reply(204);
+  }
   const m = /^\/admin\/users\/([^/]+)$/.exec(p);
   if (m && call.method === 'GET') {
     const user = byId(decodeURIComponent(m[1]));
@@ -128,10 +149,10 @@ const sessionOf = r => (/^nose_session=([^;]+);/.exec(r.cookie || '') || [])[1] 
 
 async function main() {
   const blobs = makeBlobs();
-  const [signup, login, me, logout, reset, accountDelete, palate, purge] = await loadFunctions(blobs, [
+  const [signup, login, me, logout, reset, accountDelete, palate, purge, resetFinish] = await loadFunctions(blobs, [
     'netlify/functions/auth-signup.js', 'netlify/functions/auth-login.js', 'netlify/functions/auth-me.js',
     'netlify/functions/auth-logout.js', 'netlify/functions/auth-reset.js', 'netlify/functions/account-delete.js',
-    'netlify/functions/palate-sync.js', 'netlify/functions/sessions-purge.js']);
+    'netlify/functions/palate-sync.js', 'netlify/functions/sessions-purge.js', 'netlify/functions/auth-reset-finish.js']);
   const sessions = () => blobs.keys('auth-sessions');
   addUser(ALICE, PASSWORD, { subscription: 'free', age_attested_at: '2026-01-02T03:04:05.000Z' });
   addUser(BOB, PASSWORD, { subscription: 'active' }).app_metadata = { subscription: 'active' };
@@ -382,6 +403,39 @@ async function main() {
       [(await call(palate, 'DELETE', undefined, bobCookie, { 'sec-fetch-site': 'cross-site' })).status,
         (await call(palate, 'GET', undefined, bobCookie)).status], [403, 200]);
     await call(palate, 'DELETE', undefined, bobCookie, { 'sec-fetch-site': 'same-origin' });   // as it was before this block
+  }
+
+  /* ---- auth-reset-finish (security audit item 13, since 2026-11-14) ---- */
+  {
+    const DAN = 'dan@example.test';
+    SECRETS.push(DAN, 'a brand new password');
+    addUser(DAN, PASSWORD);
+    const d1 = await signIn(DAN), d2 = await signIn(DAN);
+    const code = 'pkce_' + 'a'.repeat(40);
+    supa.recovery.set(code, DAN);
+    const EXPIRED = { error: 'link-expired', message: 'This reset link has expired or was already used. Ask for a new one on the account page.' };
+    r = await call(resetFinish, 'POST', { token_hash: code, password: 'short' });
+    check('reset-finish: a password under 10 characters is refused before Supabase is asked, and the code is not used up',
+      [r.status, r.data.error, supa.recovery.has(code)], [400, 'bad-password', true]);
+    r = await call(resetFinish, 'POST', { token_hash: 'pkce_' + 'b'.repeat(40), password: 'a brand new password' });
+    check('reset-finish: a code Supabase does not know is refused with one plain sentence', [r.status, r.data], [400, EXPIRED]);
+    r = await call(resetFinish, 'POST', { token_hash: 'x<script>', password: 'a brand new password' });
+    check('reset-finish: a code of the wrong shape never reaches Supabase', [r.status, r.data, supa.calls.filter(c => c.body && c.body.token_hash === 'x<script>').length], [400, EXPIRED, 0]);
+    r = await call(resetFinish, 'POST', { token_hash: code, password: 'a brand new password' }, undefined, { 'sec-fetch-site': 'cross-site' });
+    check('reset-finish: refused from another site, the code not used up', [r.status, supa.recovery.has(code)], [403, true]);
+    const at = supa.calls.length;
+    r = await call(resetFinish, 'POST', { token_hash: code, password: 'a brand new password' });
+    check('reset-finish: the code verified, the password set, the Supabase session ended - in that order',
+      [r.status, r.data.status, supa.calls.slice(at).map(c => `${c.method} ${c.path}`)],
+      [200, 'password-set', ['POST /auth/v1/verify', 'PUT /auth/v1/user', 'POST /auth/v1/logout?scope=global']]);
+    check('...the new password signs in, the old one no longer does',
+      [(await call(login, 'POST', { email: DAN, password: 'a brand new password' })).status, (await call(login, 'POST', { email: DAN, password: PASSWORD })).status], [200, 400]);
+    check('...and both NOSE sessions from before the reset are gone',
+      [(await call(me, 'GET', undefined, d1)).data.signedIn, (await call(me, 'GET', undefined, d2)).data.signedIn], [false, false]);
+    r = await call(resetFinish, 'POST', { token_hash: code, password: 'another new password' });
+    check('reset-finish: the same code a second time is refused', [r.status, r.data], [400, EXPIRED]);
+    check('reset-finish: no console line holds the address, the password or the code',
+      logged.filter(l => l.includes(DAN) || l.includes('brand new') || l.includes(code)), []);
   }
 
   /* ---- auth-reset ---- */
