@@ -472,7 +472,7 @@ try {
   await context.addInitScript(BEACON_RECORDER);
   if (CAMERA) await context.grantPermissions(['camera'], { origin: BASE });
   const page = await context.newPage();
-  page.setDefaultTimeout(8000);
+  page.setDefaultTimeout(ENGINE === 'chromium' ? 8000 : 15000);   // a cold Firefox or WebKit is slower over its first page
   page.on('pageerror', e => pageErrors.push(e.message));
 
   await page.route('**/api/coa', async route => {
@@ -879,7 +879,7 @@ try {
     const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
     await ctx.addInitScript(BEACON_RECORDER);
     const p = await ctx.newPage();
-    p.setDefaultTimeout(8000);
+    p.setDefaultTimeout(ENGINE === 'chromium' ? 8000 : 15000);
     p.on('pageerror', e => pageErrors.push(e.message));
     const asked = [];
     let answer = true;

@@ -388,7 +388,9 @@ async function open(name, attrs, { origin = 'store', path: at, page: pg } = {}) 
     try { localStorage.setItem('nose-age-ok', '1'); } catch (e) {}
   });
   const page = await context.newPage();
-  page.setDefaultTimeout(8000);
+  /* A cold Firefox or WebKit can take longer than 8 s over its first page (one
+     Firefox run in four timed out there, 2026-11-14). */
+  page.setDefaultTimeout(ENGINE === 'chromium' ? 8000 : 15000);
   const c = { name, context, page, errors: [], warnings: [], elsewhere: [], mark: received.length };
   page.on('pageerror', e => c.errors.push(e.message));
   page.on('console', m => { if (m.type() === 'error') c.errors.push(m.text()); if (m.type() === 'warning') c.warnings.push(m.text()); });
@@ -1028,8 +1030,8 @@ const holders = [];
     else if (/\.(c|m)?js$/.test(e.name) && BAR_DEFS.test(fs.readFileSync(p, 'utf8'))) holders.push(path.relative(ROOT, p).split(path.sep).join('/'));
   }
 })(ROOT);
-check('one copy of the bar: only js/aroma-bar defines FAMILIES, FAMILY_ORDER, familyShares and renderBar (wip/ is a stale draft, loaded by nothing)',
-  same(holders.sort(), [`js/${F.bar}`, 'wip/nose-farnesene-wip.js']), JSON.stringify(holders));
+check('one copy of the bar: only js/aroma-bar defines FAMILIES, FAMILY_ORDER, familyShares and renderBar (the stale draft in wip/ was deleted on 2026-11-14)',
+  same(holders.sort(), [`js/${F.bar}`]), JSON.stringify(holders));
 {
   const lines = SRC.bar.split('\n');
   const from = lines.indexOf('    const FAMILIES = {');

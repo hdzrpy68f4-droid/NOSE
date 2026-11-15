@@ -4188,3 +4188,56 @@ vote" (2026-10-14), which kept the time.
 - **Not yet done:** running the script on the real stores. Until then,
   votes and reports stored before this deploy keep their times, and the
   eighth change's promise is open.
+
+### WebKit and Firefox in the tests, 2026-11-14
+
+B5 from `docs/project-notes/nose-blocker-prompts-FULL-2026-10-27.md`. Until
+now `b2b-widget-test` and `input-paths-test` launched Chromium alone, and
+the workflow installed Chromium alone.
+
+- **Each runs its browser cases in Chromium, WebKit and Firefox in turn,**
+  through one loop. A failure names its engine; the gate's line prints only
+  when every engine passes; a closing check says which engines ran.
+  `NOSE_ENGINES=firefox` (say) runs fewer, by hand.
+- **WebKit runs on Linux only** (GitHub's runner, the Codespace). On the
+  Windows desktop Playwright's WebKit build sent a SameSite=Lax cookie on
+  requests made with `credentials: 'omit'` and on a `crossorigin`
+  release, skipped links on Tab, and drew `<select>` menus with inline
+  styles. Those are faults of that build, not of NOSE: Linux WebKit passed
+  the same cookie checks. On Windows both tests say so and run two engines.
+- **Camera cases:** only Chromium can play a file as a fake camera, so in
+  Firefox and WebKit the two camera cases take the same steps with "Choose QR
+  image", and each run says so.
+- **What each engine needed of the tests** (none a change to the widget):
+  Firefox makes the rail's scrolling list a Tab stop of its own, before its
+  links, so the keyboard checks step past it. WebKit draws a `<select>`
+  with inline styles and reports them as style-src-attr violations: on the
+  demo page those (a SELECT, that directive, in WebKit) are left out, and
+  anything else still counts. Playwright hands a route WebKit's sendBeacon
+  request with an empty body, so a test-only recorder keeps each beacon's
+  text and a route that finds no body reads it there; the page still sends
+  by sendBeacon.
+- **One real fault, in the app, found by Firefox:** opening Scan QR starts
+  the camera; choosing a QR image while that start was still pending or
+  failing let the camera's late "The rear camera could not be started"
+  replace the newer "<lab> read" message over the card. It failed three of
+  four Firefox runs. `js/nose` now numbers each scan attempt, and a camera
+  start that finishes after a newer attempt says nothing (and stops itself
+  if it did start). Then four of four passed.
+- **CI:** `gates.yml` and `gates.sh`'s header install `chromium webkit
+  firefox` with `--with-deps`. GitHub's run on branch `b5-engines`
+  (run 28): the install took 45 s and `gates.sh` 5 min 16 s, within the
+  job's 30 minutes. The first two runs there failed and showed what the
+  bullets above fix; a temporary step printed their failing checks and was
+  removed before merging.
+- A cold Firefox or WebKit can take longer than 8 s over its first page (one
+  widget run in four timed out there), so their waits are 15 s; Chromium's stay 8.
+- The compliance kit stays on Chromium: it is a record of the screens.
+- **`wip/nose-farnesene-wip.js` is deleted**, as "The app's alias table,
+  and coerce()" said it would be once this reached main. `match-test` and
+  `b2b-widget-test` now expect no stale copy at all; `/wip/` stays a
+  forced 404.
+- Bundle: `js/nose` became `js/nose.0f989888.js`.
+- **Not done:** a five-minute check on a real iPhone in Safari - /app (a
+  sample match, the COA link tab, the camera prompt) and /b2b/demo/ (the
+  consent button, the cards, removing and putting back a purchase, a vote).

@@ -432,12 +432,11 @@ schema comment if wanted.
   data, not code it loaded.
 - **Each deploy clears the CDN's copy of every release**, after which the
   function reads Blobs once per edge; browsers keep theirs a year.
-- **Only Chromium has run a release** (141, Playwright 1.56). Integrity on
-  `<script>` and on a shadow root's `<link>`, and CORS with `crossorigin`, are
-  standard (MDN, above); `fetch` with `keepalive` has been Baseline since
-  November 2024 ([MDN, Request.keepalive](https://developer.mozilla.org/en-US/docs/Web/API/Request/keepalive),
-  modified 2025-03-13). The compliance kit draws in Chromium too, so Firefox
-  and Safari still wait for the pilot store's own check.
+- **WebKit and Firefox run in the gates; a real iPhone is still the pilot
+  store's check** (since 2026-11-14, "WebKit and Firefox in the tests"). The
+  gates drive Playwright's Linux WebKit, Safari's engine but not iOS Safari,
+  and leave it out on Windows, whose build behaves unlike Safari. The
+  compliance kit still draws in Chromium alone, as a record of the screens.
 - **A release request is in Netlify's request logs**, with its address and
   time, like the feed's. Netlify's documented log fields hold no `Origin`
   ([Log Drains](https://docs.netlify.com/monitor-sites/log-drains)), and a

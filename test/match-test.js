@@ -99,8 +99,8 @@ check('...each load js/match-math first, from the same build',
     return m >= 0 && m < s.indexOf(`/js/${bundles[0]}"`);
   }), loaders.map(() => true));
 
-/* Nothing else that runs may carry the maths. wip/ keeps an unfinished,
-   unloaded copy of an older bundle - listed here so a new copy is not. */
+/* Nothing else that runs may carry the maths. wip/ kept an unfinished,
+   unloaded copy of an older bundle until 2026-11-14; none may come back. */
 const COPY = /\bfunction\s+(cosine|normalize|matchBand|averageProfiles)\s*\(\s*(a\s*,\s*b|values|score|list)\s*\)/;
 const copies = [];
 (function walk(dir) {
@@ -111,8 +111,8 @@ const copies = [];
     else if (/\.(c|m)?js$/.test(e.name) && p !== file && COPY.test(fs.readFileSync(p, 'utf8'))) copies.push(path.relative(ROOT, p).split(path.sep).join('/'));
   }
 })(ROOT);
-check('no other file in the repo holds a copy of the maths (wip/ is a stale draft, loaded by nothing)',
-  copies, ['wip/nose-farnesene-wip.js']);
+check('no other file in the repo holds a copy of the maths (the stale draft in wip/ was deleted on 2026-11-14)',
+  copies, []);
 check('...and nothing loads that draft',
   html.concat(fs.readdirSync(jsDir).map(f => path.join(jsDir, f))).filter(p => /nose-farnesene-wip/.test(fs.readFileSync(p, 'utf8'))).length, 0);
 
