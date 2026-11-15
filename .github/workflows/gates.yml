@@ -66,12 +66,6 @@ jobs:
       - run: npx playwright install --with-deps chromium webkit firefox
       - run: node test/extract-dump.js
       - run: bash scripts/gates.sh
-      # TEMPORARY, branch b5-engines only: the failing checks of the two browser tests, whole.
-      - name: browser test failures
-        if: failure()
-        run: |
-          node test/input-paths-test.mjs 2>&1 | grep -A4 "^FAIL" || true
-          node test/b2b-widget-test.mjs 2>&1 | grep -A4 "^FAIL" || true
       - name: check-trust-test read the history
         run: |
           out=$(node test/check-trust-test.js)
