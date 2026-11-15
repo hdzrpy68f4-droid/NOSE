@@ -206,13 +206,26 @@ function split(feed, purchases, category) {
 function expectRail(feed, purchases, removed, category, routes = ROUTES) {
   const { mine, others } = split(feed, purchases, category);
   const palate = R.palateFrom(feed, mine, removed);
-  return { palate, others, ranked: R.rank(feed, palate, { category, routes }).slice(0, 12) };
+  return { palate, others, ranked: placed(R.rank(feed, palate, { category, routes })).slice(0, 12) };
 }
+/* Since 2026-11-15 a card names its place among the in-stock batches with a
+   panel it was ranked with ("closest of 15 in stock", "2nd closest of 15";
+   PARSER-HANDOFF s14, "How a flower score reads"). placed() notes each scored
+   entry's place in a full ranked list, beside it, without touching it. */
+const PLACES = new WeakMap();
+function placed(list) {
+  const n = list.filter(e => !e.unscored).length;
+  let k = 0;
+  for (const e of list) if (!e.unscored) PLACES.set(e, [++k, n]);
+  return list;
+}
+const ordinal = k => { const t = k % 100, u = k % 10; return k + (t >= 11 && t <= 13 ? 'th' : u === 1 ? 'st' : u === 2 ? 'nd' : u === 3 ? 'rd' : 'th'); };
+const placeText = (V, e) => { const [k, n] = PLACES.get(e) || []; return k === 1 ? fill(V.placeFirst, { n }) : fill(V.placeNth, { ord: ordinal(k), n }); };
 const httpsOnly = u => { try { return new URL(u).protocol === 'https:' ? new URL(u).href : null; } catch { return null; } };
 const expectCard = (V, e) => ({
   name: e.batch.name, href: httpsOnly(e.batch.product_url), brand: e.batch.brand || null,
-  match: e.unscored ? null : fill(V.matchLine, { label: e.label, shown: e.shown }),
-  sr: e.unscored ? null : fill(V.matchAria, { label: e.label, shown: e.shown }),
+  match: e.unscored ? null : fill(V.matchLine, { label: e.label, shown: e.shown, place: placeText(V, e) }),
+  sr: e.unscored ? null : fill(V.matchAria, { label: e.label, shown: e.shown, place: placeText(V, e) }),
   band: e.unscored ? null : e.band, nopanel: e.unscored ? V.noPanel : null,
   facts: [typeof e.batch.thc_percent === 'number' ? fill(V.thc, { value: e.batch.thc_percent }) : V.thcMissing,
           typeof e.batch.cbd_percent === 'number' ? fill(V.cbd, { value: e.batch.cbd_percent }) : V.cbdMissing]
@@ -511,6 +524,8 @@ const words = s => (String(s).match(/[A-Za-z]+/g) || []).map(w => w.toLowerCase(
 const VOCAB = new Set([
   ...[S.default, S.florida].flatMap(v => Object.values(v).flatMap(x => (typeof x === 'string' ? [x] : Object.values(x)))).flatMap(s => words(s.replace(/\{\w+\}/g, ' '))),
   ...words(JSON.stringify(S.SHOWN_FROM_OTHER_FILES)),
+  /* the endings of 2nd, 3rd, 4th in a card's place, which words() splits from their digits */
+  'st', 'nd', 'rd', 'th',
   ...FEED.batches.flatMap(b => words(`${b.name} ${b.brand || ''}`))
 ]);
 async function wordsCheck(c, what) {
@@ -624,6 +639,8 @@ try {
     check(`rail: the basis says "${expectSummary(S.default, want.palate, 'flower')}"`, summary === expectSummary(S.default, want.palate, 'flower'), summary);
     const method = await page.evaluate(() => document.querySelector('nose-matches').shadowRoot.querySelector('.nm-method').textContent);
     check('rail: the method line is the strings file\'s', method === S.default.method);
+    check('rail: under it, the attribution line from the strings file, "Flavor match by NOSE"',
+      (await page.evaluate(() => (document.querySelector('nose-matches').shadowRoot.querySelector('.nm-attribution') || {}).textContent)) === S.default.attribution && S.default.attribution === 'Flavor match by NOSE' && S.florida.attribution === 'Aroma match by NOSE');
 
     /* keyboard: every card link, then the basis, then its buttons */
     const linkStops = (await stops(page));
@@ -762,8 +779,8 @@ try {
     check('sold out: the panel names the usual, sold out, and leads into what is closest to its last batch',
       found && found.productId === 'D-106' && same(head, [fill(S.default.soldOutTitle, { name: 'Cold Creek Kush' }), S.default.soldOutLead]), JSON.stringify(head));
     check('sold out: the cards are js/b2b-rank\'s soldOut() ranking, in its order, with its numbers',
-      same(cards.map(({ bar, ...k }) => k), found.ranked.slice(0, 12).map(e => expectCard(S.default, e))),
-      differs(cards.map(({ bar, ...k }) => k), found.ranked.slice(0, 12).map(e => expectCard(S.default, e))));
+      same(cards.map(({ bar, ...k }) => k), placed(found.ranked).slice(0, 12).map(e => expectCard(S.default, e))),
+      differs(cards.map(({ bar, ...k }) => k), placed(found.ranked).slice(0, 12).map(e => expectCard(S.default, e))));
     check('sold out: every bar is renderBar()\'s, role="img" and labelled',
       same(cards.map(k => k.bar), await drawBars(page, found.ranked.slice(0, 12).map(e => (e.unscored ? null : e.batch.terps))))
         && (await barsOk(page)).every(Boolean));

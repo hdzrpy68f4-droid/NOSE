@@ -22,8 +22,11 @@
  * those files ever disagree. Product names, brands and THC and CBD figures
  * come from the store's own catalog, as the store wrote them.
  *
- * No attribution line ("Flavor match by NOSE") is here yet: that waits on the
- * owner's choice (PARSER-HANDOFF s14, "The widget").
+ * The attribution line, since 2026-11-15 (the owner's choice): "Flavor match
+ * by NOSE", and "Aroma match by NOSE" in the Florida wording, which says aroma
+ * throughout. A card's match line names its place among the in-stock
+ * batches it was ranked with, beside matchBand()'s label (PARSER-HANDOFF s14,
+ * "How a flower score reads").
  *
  * Loaded as a classic script in a page (sets window.NoseStrings) and by
  * require() in Node (module.exports). build.sh fingerprints it:
@@ -61,8 +64,12 @@
     soldOutNone: 'Nothing in stock to compare it with right now.',
 
     /* A card. */
-    matchLine: '{label} · {shown}',
-    matchAria: '{label}, {shown} out of 100',
+    matchLine: '{label} · {shown} · {place}',
+    matchAria: '{label}, {shown} out of 100, {place}',
+    /* {place}: the first card, then the rest, among the {n} in-stock batches
+       with a panel it was ranked with. {ord} is 2nd, 3rd, 4th ... */
+    placeFirst: 'closest of {n} in stock',
+    placeNth: '{ord} closest of {n}',
     noPanel: 'No terpene panel available for this batch',
     thc: 'THC {value}%',
     cbd: 'CBD {value}%',
@@ -85,6 +92,7 @@
 
     /* Under the rail and the sold-out panel. */
     method: 'Matched on the terpene shares in each batch\'s lab report: aroma and flavor only. Whether a close match smells and tastes alike is still being tested.',
+    attribution: 'Flavor match by NOSE',
 
     /* On order history, after a purchase. */
     voteQuestion: 'Was the flavor close?',
@@ -111,8 +119,12 @@
     soldOutNoPanel: 'Its most recent batch has no terpene panel available, so there is nothing to compare it with.',
     soldOutNone: 'Nothing available to compare it with right now.',
 
-    matchLine: '{label} · {shown}',
-    matchAria: '{label}, {shown} out of 100',
+    matchLine: '{label} · {shown} · {place}',
+    matchAria: '{label}, {shown} out of 100, {place}',
+    /* {place}: the first card, then the rest, among the {n} in-stock batches
+       with a panel it was ranked with. {ord} is 2nd, 3rd, 4th ... */
+    placeFirst: 'closest of {n} in stock',
+    placeNth: '{ord} closest of {n}',
     noPanel: 'No terpene panel available for this batch',
     thc: 'THC {value}%',
     cbd: 'CBD {value}%',
@@ -133,6 +145,7 @@
     notUsedOthersMany: '{n} other order items aren\'t used',
 
     method: 'Matched on the terpene shares in each batch\'s lab report: aroma only. Whether a close match smells alike is still being tested.',
+    attribution: 'Aroma match by NOSE',
 
     voteQuestion: 'Was the aroma close?',
     voteMatched: 'Matched to the rest of your orders here as {label} · {shown}',

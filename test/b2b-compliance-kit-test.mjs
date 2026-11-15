@@ -356,8 +356,8 @@ if (fs.existsSync(AK)) {
     .map(n => String(n).padStart(2, '0')).join(', ') || '**not rendered with this store**';
   check('...each Florida string\'s "Shown in" is exactly the screens where it is seen or read aloud - not one where it sits in a closed list',
     floridaKeys.every(k => listed.get(k) === shownOn(k)), JSON.stringify(floridaKeys.filter(k => listed.get(k) !== shownOn(k)).map(k => [k, listed.get(k), shownOn(k)])));
-  check('...with the test store, those are the sold-out panel\'s two messages, THC not listed, and one other order item',
-    JSON.stringify(notRendered.sort()) === JSON.stringify(['notUsedOthersOne', 'soldOutNoPanel', 'soldOutNone', 'thcMissing']), JSON.stringify(notRendered));
+  check('...with the test store, those are the sold-out panel\'s two messages, THC not listed, one other order item, and the two place strings, seen only inside the match line',
+    JSON.stringify(notRendered.sort()) === JSON.stringify(['notUsedOthersOne', 'placeFirst', 'placeNth', 'soldOutNoPanel', 'soldOutNone', 'thcMissing']), JSON.stringify(notRendered));
   check('...the strings in the closed list of screen 02 are said to be there, and shown on screen 06 once it is opened',
     screenRows.some(r => r.screen === 2 && r.from === 'florida.remove' && hidden(r.how))
       && screenRows.some(r => r.screen === 6 && r.from === 'florida.remove' && r.how === 'shown')

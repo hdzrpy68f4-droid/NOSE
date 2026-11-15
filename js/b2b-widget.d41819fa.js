@@ -73,7 +73,7 @@
      and the stylesheet are. Read once, while the script runs. */
   const SCRIPT = document.currentScript && document.currentScript.src;
   const ORIGIN = SCRIPT ? new URL(SCRIPT).origin : null;
-  const STYLESHEET = '/css/b2b-widget.25464277.css';
+  const STYLESHEET = '/css/b2b-widget.17731ef4.css';
   /* null on NOSE's own site; a pinned release names its stylesheet's sha384 here. */
   const STYLESHEET_INTEGRITY = null;
   const FEED_PATH = '/.netlify/functions/b2b-feed';
@@ -175,7 +175,17 @@
 
   /* --------------------------------------------------------------- views */
 
-  function card(S, entry) {
+  /* 1st, 2nd, 3rd, 4th ... 11th, 12th, 13th, 21st. */
+  const ordinal = k => {
+    const t = k % 100, u = k % 10;
+    return k + (t >= 11 && t <= 13 ? 'th' : u === 1 ? 'st' : u === 2 ? 'nd' : u === 3 ? 'rd' : 'th');
+  };
+  /* Where a scored card sits among the in-stock batches with a panel it was
+     ranked with (since 2026-11-15): the label alone gave the top band on
+     nearly every flower card (PARSER-HANDOFF s14, "How a flower score reads"). */
+  const placeOf = (S, k, n) => (k === 1 ? fill(S.placeFirst, { n }) : fill(S.placeNth, { ord: ordinal(k), n }));
+
+  function card(S, entry, k, n) {
     const b = entry.batch;
     const li = node('li', 'nm-card');
     const name = node('h3', 'nm-name');
@@ -189,9 +199,10 @@
     } else {
       const match = node('p', 'nm-match');
       match.dataset.band = entry.band;
-      const seen = node('span', null, fill(S.matchLine, { label: entry.label, shown: entry.shown }));
+      const place = placeOf(S, k, n);
+      const seen = node('span', null, fill(S.matchLine, { label: entry.label, shown: entry.shown, place }));
       seen.setAttribute('aria-hidden', 'true');
-      match.append(seen, node('span', 'nm-sr', fill(S.matchAria, { label: entry.label, shown: entry.shown })));
+      match.append(seen, node('span', 'nm-sr', fill(S.matchAria, { label: entry.label, shown: entry.shown, place })));
       const bar = node('div', 'nm-bar');
       BAR.renderBar(bar, b.terps);
       li.append(match, bar);
@@ -205,12 +216,16 @@
     return li;
   }
 
-  function cards(S, entries, label) {
+  /* entries: the cards shown; scoredTotal: how many in-stock batches with a
+     panel they were ranked among, shown or not. */
+  function cards(S, entries, label, scoredTotal) {
     const list = node('ul', 'nm-cards');
     list.setAttribute('aria-label', label);
-    entries.forEach(e => list.append(card(S, e)));
+    let k = 0;
+    entries.forEach(e => list.append(card(S, e, e.unscored ? 0 : ++k, scoredTotal)));
     return list;
   }
+  const scoredIn = list => list.filter(e => !e.unscored).length;
 
   const firstOf = (list, by) => {
     const seen = new Set();
@@ -296,10 +311,10 @@
     const s = section('nm-rail', S.railTitle);
     if (!palate.basis.used.length) s.append(node('p', 'nm-empty', S.railEmpty));
     else if (!ranked.length) s.append(node('p', 'nm-empty', S.railNone));
-    else s.append(cards(S, ranked.slice(0, RAIL_MAX), S.railTitle));
+    else s.append(cards(S, ranked.slice(0, RAIL_MAX), S.railTitle, scoredIn(ranked)));
     const b = basis(S, widget, palate, category, others);
     if (b) s.append(b);
-    if (ranked.length) s.append(node('p', 'nm-method', S.method));
+    if (ranked.length) s.append(node('p', 'nm-method', S.method), node('p', 'nm-attribution', S.attribution));
     return s;
   }
 
@@ -312,7 +327,7 @@
     const s = section('nm-soldout', title);
     if (!Object.keys(found.palate.vector).length) s.append(node('p', 'nm-empty', S.soldOutNoPanel));
     else if (!found.ranked.length) s.append(node('p', 'nm-empty', S.soldOutNone));
-    else s.append(node('p', 'nm-lead', S.soldOutLead), cards(S, found.ranked.slice(0, RAIL_MAX), title), node('p', 'nm-method', S.method));
+    else s.append(node('p', 'nm-lead', S.soldOutLead), cards(S, found.ranked.slice(0, RAIL_MAX), title, scoredIn(found.ranked)), node('p', 'nm-method', S.method), node('p', 'nm-attribution', S.attribution));
     return s;
   }
 

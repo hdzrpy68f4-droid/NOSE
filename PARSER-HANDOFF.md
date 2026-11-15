@@ -2014,3 +2014,4 @@ test/b2b-compliance-kit-test.mjs     one count: four other mentions of dispensar
 - [The compliance kit, 2026-10-13](docs/handoff/14-records.md#the-compliance-kit-2026-10-13)
 - [The day the lab finished, in a store's readings, 2026-10-14](docs/handoff/14-records.md#the-day-the-lab-finished-in-a-stores-readings-2026-10-14)
 - [A front door for dispensaries, 2026-11-15](docs/handoff/14-records.md#a-front-door-for-dispensaries-2026-11-15)
+- [How a flower score reads, 2026-11-15](docs/handoff/14-records.md#how-a-flower-score-reads-2026-11-15)

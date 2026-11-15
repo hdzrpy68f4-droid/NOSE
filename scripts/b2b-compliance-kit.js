@@ -130,8 +130,10 @@ const WHEN = Object.freeze({
   soldOutLead: 'the sold-out panel: the line above its cards',
   soldOutNoPanel: 'the sold-out panel, in place of cards, when that product\'s most recent batch has no terpene panel available',
   soldOutNone: 'the sold-out panel, in place of cards, when nothing available can be compared with it',
-  matchLine: 'each card of a batch with a terpene panel: its match label and number',
+  matchLine: 'each card of a batch with a terpene panel: its match label, its number and its place',
   matchAria: 'the same match, as it is read aloud',
+  placeFirst: 'in the match line of the first card: its place among the in-stock batches with a panel it was ranked with',
+  placeNth: 'in the match line of every later card: its place among them',
   noPanel: 'a card of a batch with no terpene panel available, in place of a match and a bar',
   thc: 'each card: the catalog\'s THC figure',
   cbd: 'each card: the catalog\'s CBD figure',
@@ -150,6 +152,7 @@ const WHEN = Object.freeze({
   notUsedOthersOne: 'what the rail is based on: one other order item not used',
   notUsedOthersMany: 'what the rail is based on: other order items not used, counted',
   method: 'under the rail\'s and the sold-out panel\'s cards',
+  attribution: 'under the method line, on the rail and the sold-out panel',
   voteQuestion: 'the vote, after an order: its question',
   voteMatched: 'the vote: the match it asks about',
   voteUp: 'the vote: its first button',
@@ -541,7 +544,12 @@ function tracer(S, feed) {
     name: names.length ? alt(names) : '(?!)', category: alt(Object.values(F.categories)),
     month: `${alt(F.months)} [0-9]{4}`, value: figures.length ? alt(figures) : '(?!)'
   };
-  const asRe = t => new RegExp('^' + t.split(/(\{\w+\})/).map(x => (/^\{\w+\}$/.test(x) ? (ph[x.slice(1, -1)] || '(?!)') : reEsc(x))).join('') + '$');
+  const inner = t => t.split(/(\{\w+\})/).map(x => (/^\{\w+\}$/.test(x) ? (ph[x.slice(1, -1)] || '(?!)') : reEsc(x))).join('');
+  /* A card's place (since 2026-11-15): "closest of 15 in stock", "2nd closest
+     of 15" - the variant's own two templates, an ordinal for {ord}. */
+  ph.ord = '[1-9][0-9]*(?:st|nd|rd|th)';
+  if (typeof F.placeFirst === 'string' && typeof F.placeNth === 'string') ph.place = `(?:${inner(F.placeFirst)}|${inner(F.placeNth)})`;
+  const asRe = t => new RegExp('^' + inner(t) + '$');
   const fl = Object.entries(F).filter(([, t]) => typeof t === 'string').map(([key, t]) => ({ key, re: asRe(t) }));
   const df = Object.entries(S.default).filter(([, t]) => typeof t === 'string').map(([key, t]) => ({ key, re: asRe(t) }));
   const fam = `${alt(O.familyLabels)} [0-9]{1,3}%`;

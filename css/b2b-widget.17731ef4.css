@@ -28,6 +28,7 @@
 .nm-title { margin: 0 0 10px; font-size: 1.125em; font-weight: 700; letter-spacing: -.01em; }
 .nm-lead, .nm-empty, .nm-note, .nm-method { margin: 0 0 10px; }
 .nm-method { margin-top: 10px; font-size: .8125em; opacity: .8; max-width: 60ch; }
+.nm-attribution { margin: 4px 0 0; font-size: .75em; opacity: .7; }
 .nm-note { margin-top: 8px; font-size: .875em; }
 
 /* --- buttons --------------------------------------------------------- */

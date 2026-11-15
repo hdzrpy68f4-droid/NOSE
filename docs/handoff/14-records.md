@@ -2784,3 +2784,44 @@ name shown is Chris Carreon; the contact is contact@nose-app.com; no price.
   only `/dispensaries/` links the demo, by its pitch view. `page-chrome`: 25
   pages. Seen in Chromium at 390 and 1280 px.
 - **Not checked:** that mail to contact@nose-app.com reaches anyone.
+
+### How a flower score reads, 2026-11-15
+
+B4 from `docs/project-notes/nose-blocker-prompts-FULL-2026-10-27.md`. The
+owner chose option D (label plus place) and the attribution line "Flavor
+match by NOSE".
+
+- **The probe:** on the demo store, for the demo's example purchases, the
+  flower rail scored 15 in-stock cards; the first 8 all said "Close match"
+  (97 down to 93), 9 of the 15 did, 5 said "Related profile", 1 "Partial
+  overlap". Every flower pair in the test store: 136 pairs from 17 flower
+  batches with a panel - 44 Close match, 59 Related profile, 21 Partial
+  overlap, 12 Different profile; median 84.
+- **The options shown** on those first 8 cards: A, place only; B, a label
+  relative to this menu (advised against: its cut-offs would be invented);
+  C, the label plus how many share it ("9 of 15 in stock are this close");
+  D, the label plus the card's place.
+- **Built (D):** a scored card reads "Close match · 97 · closest of 15 in
+  stock", then "Close match · 96 · 2nd closest of 15", and a screen reader
+  hears "Close match, 97 out of 100, closest of 15 in stock". The place is
+  among the in-stock batches with a panel the card was ranked with, shown or
+  not, in the rail and the sold-out panel alike. matchBand()'s label is
+  unchanged, so `docs/B2B-PILOT-PLAN.md` section 5 ("the band the shopper
+  was shown") still holds, and the vote still sends the score and band.
+- **New strings**, both variants with the same keys: `placeFirst` ("closest
+  of {n} in stock"), `placeNth` ("{ord} closest of {n}"), and `attribution`:
+  "Flavor match by NOSE", and "Aroma match by NOSE" in the Florida wording,
+  which says aroma throughout (its vote asks "Was the aroma close?"). The
+  attribution line sits under the method line on the rail and the sold-out
+  panel. `css/b2b-widget` gains its one rule.
+- **The compliance kit** places the three new strings and reads a card's place.
+- **Tests:** `b2b-strings-test` allows `{place}` and `{ord}`; `b2b-widget-test`
+  expects each card's place and checks the attribution line; its word list
+  knows the endings of 2nd, 3rd and 4th. Same gate lines.
+- No change to `js/match-math`, the app, the golden file or the methodology
+  page. Release 1's bytes are untouched.
+- **Not yet done, from the Codespace once this deploys:** publish release 2
+  (`node scripts/b2b-release.js --dry-run`, then the release, then its
+  `docs/B2B-RELEASES.md` row committed on its own, then `node
+  scripts/b2b-release-check.js --site https://nose-app.com`), and the
+  compliance kit for it (`node scripts/b2b-compliance-kit.js --release 2`).

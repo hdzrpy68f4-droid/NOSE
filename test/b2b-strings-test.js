@@ -130,7 +130,7 @@ function main() {
     [['concentrate', 'flower', 'pre-roll', 'vape'], ['concentrate', 'flower', 'pre-roll', 'vape'], 12, 12]);
   check('...and no string is empty, holds markup or carries a placeholder of another name',
     [...strings(S.default), ...strings(S.florida)].filter(([, s]) => !s.trim() || /[<>]/.test(s)
-      || placeholders(s).some(p => !['{n}', '{month}', '{category}', '{name}', '{value}', '{label}', '{shown}'].includes(p))).map(([k]) => k),
+      || placeholders(s).some(p => !['{n}', '{month}', '{category}', '{name}', '{value}', '{label}', '{shown}', '{place}', '{ord}'].includes(p))).map(([k]) => k),
     []);
 
   /* --- no effect or recreational words ------------------------------------- */
