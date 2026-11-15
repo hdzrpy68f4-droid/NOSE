@@ -4418,3 +4418,26 @@ Pro "$20/month" with 3,000 credits (both pricing pages read 2026-11-15).
 - **Next, once this page is live:** the owner's clicks - Supabase Pro with its
   spend cap on, daily backups shown for both projects; Netlify Pro and a
   usage notification; then the three more rate-limit rules Pro allows.
+
+### Account emails through Resend: the privacy page first, 2026-11-15
+
+The owner asked for a recommendation; Resend was chosen. Read 2026-11-15:
+Supabase's custom SMTP guide - without it, "Supabase Auth will refuse to
+deliver messages to addresses that are not part of the project's team", "2
+messages per hour"; with it, mail goes to anyone, "a low rate-limit of 30
+messages per hour", adjustable; Resend is among the providers it names.
+Resend's pricing: free, "3,000" a month, "100 emails per day", "3 domains";
+"Open and click tracking is a per-domain setting available on every plan".
+Postmark's free plan is "100 emails/month".
+
+- **The privacy page**, before anything is switched on: under "Who else
+  receives your data", account emails "are to be sent for us by Resend";
+  "Not switched on yet: until it is, Supabase sends them itself, and only to
+  people on our own team"; once on, Resend receives the address and the
+  message, link included, and keeps delivery records under its own policy;
+  open and click tracking switched off. "What changed" gains a tenth change,
+  "not switched on yet".
+- **Still to do:** the owner makes a Resend account, adds its DNS records for
+  nose-app.com, turns tracking off, and enters its SMTP settings in the
+  accounts project (Authentication → Emails → SMTP Settings). Then the page
+  gives the day, and a real address gets a reset email end to end.
