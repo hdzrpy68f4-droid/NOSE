@@ -263,6 +263,14 @@ schema comment if wanted.
   per-address rule; a shared address - a dispensary's wifi, a phone carrier -
   can reach a limit with several people on it.
 
+- **A public name that resolves to a private address still passes the
+  fetcher** (security audit item 6, the part left on 2026-11-14). An address
+  written as the host is checked; closing this needs the connection pinned to
+  an address checked after DNS lookup.
+- **Throttle records are an unkeyed SHA-256 of the address** (security audit
+  item 14, the part left): keying it (HMAC) needs a secret in Netlify's
+  Production context.
+
 ## §14, dispensary integration: still open
 
 - `scripts/download-twice.js` keeps its own looser fetch loop. Moving it onto

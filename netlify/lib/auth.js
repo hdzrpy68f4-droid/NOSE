@@ -93,6 +93,36 @@ export const normaliseEmail = (v) => String(v).trim().toLowerCase();
 const MAX_BODY_CHARS = 4096;
 export const readJsonBody = (request) => readBody(request, { limit: MAX_BODY_CHARS });
 
+// ------------------------------------------------------- where it came from
+
+/**
+ * Is this request a JSON request from a page on this site? Every function
+ * that sets, uses or clears the session cookie asks before reading the body.
+ * Without it, a page on any other site could post a plain form here - a
+ * browser sends a text/plain form cross-site with no preflight - and sign a
+ * visitor into an account of the other site's choosing (login CSRF), or log
+ * them out. Security audit item 4, since 2026-11-14.
+ *
+ * The body must be declared application/json, which no plain HTML form can
+ * send (a bodiless DELETE passes { json: false }, and a browser preflights
+ * any cross-site DELETE, which no CORS header here allows). Then Sec-Fetch-Site, which every current browser sends and a page
+ * cannot set, must say same-origin; a client that sends none must send an
+ * Origin equal to this request's own. Reads two headers that say which site
+ * asked, never who asked, and keeps neither.
+ */
+export function fromThisSite(request, { json: needJson = true } = {}) {
+  const type = (request.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
+  if (needJson && type !== 'application/json') return false;
+  const site = request.headers.get('sec-fetch-site');
+  if (site) return site === 'same-origin';
+  const origin = request.headers.get('origin');
+  if (!origin) return false;
+  try { return new URL(origin).origin === new URL(request.url).origin; } catch { return false; }
+}
+
+export const crossSite = () =>
+  json({ error: 'cross-site', message: 'This request must come from a page on this site.' }, 403);
+
 // ------------------------------------------------------------------- cookies
 
 export function readCookie(request, name) {
@@ -236,9 +266,17 @@ export async function purgeExpiredSessions(now = Date.now()) {
  *
  * Read-modify-write, so concurrent hits can under-count by one or two. That is
  * acceptable for a throttle and not worth a locking scheme.
+ *
+ * Each record holds { start, count } under a SHA-256 of the identity. Since
+ * 2026-11-14 a record past its window is deleted daily
+ * (purgeExpiredThrottles, run by sessions-purge.js), and deleting an account
+ * deletes its address's records (deleteThrottles). Security audit item 14.
  */
+export const THROTTLE_BUCKETS = Object.freeze({ login: 900, signup: 3600, reset: 3600 });
+const throttleDigest = (identity) => createHash('sha256').update(String(identity)).digest('hex').slice(0, 32);
+
 export async function rateLimit(bucket, identity, { limit, windowSeconds }) {
-  const digest = createHash('sha256').update(String(identity)).digest('hex').slice(0, 32);
+  const digest = throttleDigest(identity);
   const key = `rl/${bucket}/${digest}`;
   const store = strongStore(RATELIMIT_STORE);
   const now = Date.now();
@@ -252,6 +290,37 @@ export async function rateLimit(bucket, identity, { limit, windowSeconds }) {
 
   try { await store.setJSON(key, rec); } catch { /* fail open, never 500 a login */ }
   return rec.count <= limit;
+}
+
+/** Delete one address's throttle records, in every bucket. Throws if one
+ *  cannot be deleted, so account-delete can say so. */
+export async function deleteThrottles(email) {
+  const store = strongStore(RATELIMIT_STORE);
+  const digest = throttleDigest(email);
+  for (const bucket of Object.keys(THROTTLE_BUCKETS)) await store.delete(`rl/${bucket}/${digest}`);
+}
+
+/**
+ * Delete every throttle record whose window has ended, and every record that
+ * cannot be read as one. A window is at most an hour, so nothing here is
+ * older than a day and an hour. Returns counts only; throws when the listing
+ * fails.
+ */
+export async function purgeExpiredThrottles(now = Date.now()) {
+  const store = strongStore(RATELIMIT_STORE);
+  let scanned = 0, deleted = 0, failed = 0;
+  for await (const page of store.list({ prefix: 'rl/', paginate: true })) {
+    for (const blob of page.blobs || []) {
+      scanned++;
+      const window = THROTTLE_BUCKETS[blob.key.split('/')[1]];
+      let rec = null;
+      try { rec = await store.get(blob.key, { type: 'json' }); } catch { rec = null; }
+      const live = window && rec && typeof rec.start === 'number' && now - rec.start <= window * 1000;
+      if (live) continue;
+      try { await store.delete(blob.key); deleted++; } catch { failed++; }
+    }
+  }
+  return { scanned, deleted, failed };
 }
 
 // ------------------------------------------------------------------ palates

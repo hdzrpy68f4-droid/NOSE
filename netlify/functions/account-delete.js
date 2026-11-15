@@ -24,11 +24,13 @@
 import {
   readSession, destroyAllSessions, readJsonBody, gotrue,
   palateStore, palateKey, clearedCookie, unauthenticated,
+  fromThisSite, crossSite, deleteThrottles,
 } from '../lib/auth.js';
 import { json, methodNotAllowed } from '../lib/http.js';
 
 export default async (request) => {
   if (request.method !== 'POST') return methodNotAllowed();
+  if (!fromThisSite(request)) return crossSite();
 
   const session = await readSession(request);
   if (!session) return unauthenticated();
@@ -62,6 +64,14 @@ export default async (request) => {
   if (!res.ok) {
     failures.push('identity');
     console.error('[account-delete] supabase user delete failed', { userId, status: res.status });
+  }
+
+  // The address's sign-in throttle records (security audit item 14).
+  try {
+    await deleteThrottles(session.email);
+  } catch (err) {
+    failures.push('throttle');
+    console.error('[account-delete] throttle delete failed', { userId, error: String(err && err.message) });
   }
 
   if (failures.length) {

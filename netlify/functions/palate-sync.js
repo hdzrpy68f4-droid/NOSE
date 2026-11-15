@@ -16,7 +16,7 @@
 // The stored shape matches the export file exactly ({version, profiles}), so a
 // synced palate and a downloaded one are interchangeable.
 
-import { readSession, palateStore, palateKey, unauthenticated } from '../lib/auth.js';
+import { readSession, palateStore, palateKey, unauthenticated, fromThisSite, crossSite } from '../lib/auth.js';
 import { json, methodNotAllowed } from '../lib/http.js';
 
 // A palate is a few hundred bytes per jar. 256KB is roughly 1500 jars: far
@@ -28,6 +28,10 @@ const MAX_BYTES = 262144;
 const MAX_PROFILES = 500;
 
 export default async (request) => {
+  /* A write must come from a page on this site (security audit item 4). A
+     GET changes nothing, and another site cannot read its reply. */
+  if (request.method === 'PUT' && !fromThisSite(request)) return crossSite();
+  if (request.method === 'DELETE' && !fromThisSite(request, { json: false })) return crossSite();
   const session = await readSession(request);
   if (!session) return unauthenticated();
 

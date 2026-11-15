@@ -76,6 +76,10 @@ gate 'fixture lint'   'corpus clean'             '^corpus clean$' \
   node test/fixture-lint.js
 gate 'resolver'       'resolver clean'           '^resolver clean$' \
   node test/resolver-test.js
+# The fetcher refuses every private address form and stops reading a body
+# past its size cap (security audit items 6 and 7).
+gate 'fetch guard'    'fetch-guard clean'        '^fetch-guard clean$' \
+  node test/fetch-guard-test.js
 gate 'kaycha anchors' 'KAY-CAR-001 4.124 KAY-PRR-001 0.944' '^KAY-CAR-001 4\.124 KAY-PRR-001 0\.944$' \
   anchors
 gate 'novelty'        'novelty clean'            '^novelty clean$' \

@@ -860,6 +860,14 @@ async function offline(log = console.log) {
   const unguarded = GUARD.replace(/,\n {2}NOSE_SECRET_KEY/g, '');
   check('...and it is this rule that catches the key: a copy of the guard without it passes the same file',
     [unguarded !== GUARD, site({ tracked: { 'docs/setup.md': `Bearer ${secretKey}\n` }, guard: unguarded }).code], [true, 0]);
+  /* A legacy JWT service-role key, since 2026-11-14 (security audit item 16):
+     made up here, from its parts, so no key is ever written in this file. */
+  const jwt = role => ['{"alg":"HS256","typ":"JWT"}', JSON.stringify({ iss: 'supabase', ref: 'madeupref', role, iat: 1, exp: 2 }), 'signature-made-up-here']
+    .map(p => Buffer.from(p).toString('base64url')).join('.');
+  const roleKey = site({ tracked: { 'docs/env.md': `SUPABASE_SERVICE_KEY=${jwt('service_role')}\n` } });
+  const anonKey = site({ untracked: { 'page.html': `<p data-anon="${jwt('anon')}"></p>\n` } });
+  check('check-published.js: a service-role key in JWT form fails the build, named; the public anon key, a JWT too, passes',
+    [roleKey.code, /docs\/env\.md:1: a Supabase service-role key \(a JWT\) \(in git\)/.test(roleKey.out), anonKey.code], [1, true, 0]);
   const real = spawnSync(process.execPath, [path.join(ROOT, 'scripts/check-published.js')], { cwd: ROOT, encoding: 'utf8' });
   check('...the real tree passes', [real.status, /^==> no database hosts or credentials/m.test(real.stdout)], [0, true]);
   /* The third check, since 2026-11-14: a tracked top-level file or folder

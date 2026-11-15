@@ -9,15 +9,18 @@
 //
 // The log line and the reply hold counts only: never a session id, a user id
 // or an address.
+//
+// Since 2026-11-14 it also deletes sign-in throttle records whose window has
+// ended (purgeExpiredThrottles; security audit item 14).
 
-import { purgeExpiredSessions } from '../lib/auth.js';
+import { purgeExpiredSessions, purgeExpiredThrottles } from '../lib/auth.js';
 
 export const config = { schedule: '@daily' };
 
 export default async () => {
   let counts;
   try {
-    counts = await purgeExpiredSessions();
+    counts = { sessions: await purgeExpiredSessions(), throttle: await purgeExpiredThrottles() };
   } catch (err) {
     console.error('[sessions-purge] list failed', String(err && err.message));
     return new Response('list failed', { status: 500 });

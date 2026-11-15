@@ -13,6 +13,7 @@
 import {
   gotrue, isEmail, normaliseEmail, readJsonBody, rateLimit,
   readSession, destroySession, createSession, sessionCookie, tooMany,
+  fromThisSite, crossSite,
 } from '../lib/auth.js';
 import { json, methodNotAllowed } from '../lib/http.js';
 
@@ -20,6 +21,7 @@ const BAD_CREDENTIALS = { error: 'invalid-credentials', message: 'Email or passw
 
 export default async (request) => {
   if (request.method !== 'POST') return methodNotAllowed();
+  if (!fromThisSite(request)) return crossSite();
 
   const body = await readJsonBody(request);
   if (!body.ok) return json({ error: 'rejected', reason: body.reason }, 400);

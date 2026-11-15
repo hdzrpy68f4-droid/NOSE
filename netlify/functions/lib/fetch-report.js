@@ -46,9 +46,43 @@ const MAX_PAGE_HOPS = 2;   // a portal may put a listings page before the report
 /* Block anything that points back at infrastructure rather than the public
  * internet. Checked on the initial URL and again on every redirect, because a
  * public host is free to redirect to 169.254.169.254. */
+/* Every address range that is not the public internet, for an address written
+   as the link's host. Until 2026-11-14 the checks below were prefix matches,
+   and [::ffff:127.0.0.1], [::ffff:169.254.169.254], [::], 100.64.0.0/10,
+   0.0.0.0/8, 64:ff9b::/96 and fec0::/10 each passed (security audit item 6).
+   An IPv4 address written inside IPv6 (::ffff:a.b.c.d, or 64:ff9b::a.b.c.d,
+   which NAT64 turns into a.b.c.d) is checked as the IPv4 address it names.
+   Ranges from IANA's special-purpose registries (RFC 6890 and updates).
+   A public NAME that resolves to a private address is not caught here: that
+   needs the connection pinned to a checked address, and is its own change
+   (docs/handoff/open.md). */
+const net = require('node:net');
+const BLOCKED = new net.BlockList();
+for (const [a, p] of [['0.0.0.0', 8], ['10.0.0.0', 8], ['100.64.0.0', 10], ['127.0.0.0', 8], ['169.254.0.0', 16],
+  ['172.16.0.0', 12], ['192.0.0.0', 24], ['192.0.2.0', 24], ['192.168.0.0', 16], ['198.18.0.0', 15],
+  ['198.51.100.0', 24], ['203.0.113.0', 24], ['224.0.0.0', 4], ['240.0.0.0', 4]]) BLOCKED.addSubnet(a, p, 'ipv4');
+for (const [a, p] of [['::', 128], ['::1', 128], ['fc00::', 7], ['fe80::', 10], ['fec0::', 10], ['ff00::', 8],
+  ['2001:db8::', 32], ['100::', 64]]) BLOCKED.addSubnet(a, p, 'ipv6');
+function isBlockedAddress(h){
+  const kind = net.isIP(h);
+  if (kind === 4) return BLOCKED.check(h, 'ipv4');
+  if (kind !== 6) return false;
+  /* An IPv4 address carried in IPv6: the last 32 bits, in either notation. */
+  const embedded = /^(?:::ffff:|::ffff:0:|64:ff9b::|::)(\d+\.\d+\.\d+\.\d+)$/i.exec(h);
+  if (embedded) return net.isIP(embedded[1]) === 4 ? BLOCKED.check(embedded[1], 'ipv4') || /^::$/.test(h) : true;
+  const hex = /^(?:::ffff:|64:ff9b::)([0-9a-f]{1,4}):([0-9a-f]{1,4})$/i.exec(h);
+  if (hex) {
+    const n = (parseInt(hex[1], 16) << 16 >>> 0) + parseInt(hex[2], 16);
+    return BLOCKED.check([n >>> 24, (n >>> 16) & 255, (n >>> 8) & 255, n & 255].join('.'), 'ipv4');
+  }
+  if (/^64:ff9b::/i.test(h) || /^::ffff:/i.test(h)) return true;   // an embedded form not parsed above: refuse
+  return BLOCKED.check(h, 'ipv6');
+}
+
 function isBlockedHost(hostname){
   const h = String(hostname || '').toLowerCase().replace(/^\[|\]$/g, '');
   if (!h) return true;
+  if (isBlockedAddress(h)) return true;
   if (h === 'localhost' || h.endsWith('.localhost')) return true;
   if (h.endsWith('.local') || h.endsWith('.internal')) return true;
   if (h === '::1' || h === '0.0.0.0') return true;
@@ -71,6 +105,27 @@ function validateUrl(raw){
   if (isBlockedHost(u.hostname))
     return { error: 'That address points to a private network, not a public lab report.' };
   return { url: u };
+}
+
+/* A reply's body, or null once it passes `max` bytes, when reading stops and
+   the rest is cancelled. A reply with no stream (a stand-in in a test) is read
+   whole, as before. */
+async function readCapped(res, max){
+  if (!res.body || typeof res.body.getReader !== 'function'){
+    const whole = Buffer.from(await res.arrayBuffer());
+    return whole.length > max ? null : whole;
+  }
+  const reader = res.body.getReader();
+  const parts = [];
+  let total = 0;
+  for (;;){
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > max){ reader.cancel().catch(() => {}); return null; }
+    parts.push(Buffer.from(value));
+  }
+  return Buffer.concat(parts, total);
 }
 
 /* Follow redirects by hand so each hop can be re-validated. */
@@ -116,8 +171,18 @@ async function fetchOnce(startUrl, deadline){
     if (Number.isFinite(declared) && declared > MAX_BYTES)
       return { error: 'That file is larger than this tool will fetch.' };
 
-    const buf = Buffer.from(await res.arrayBuffer());
-    if (buf.length > MAX_BYTES)
+    /* Read with a running count and stop past MAX_BYTES, as b2b-catalog.js
+       does: a reply with no Content-Length was read whole before this check
+       until 2026-11-14, so a fast stream could fill the function's memory
+       (security audit item 7). */
+    let buf;
+    try {
+      buf = await readCapped(res, MAX_BYTES);
+    } catch (err) {
+      if (err && err.name === 'AbortError') return { error: 'The lab server took too long to respond.' };
+      return { error: 'Could not reach that address.' };
+    }
+    if (buf === null)
       return { error: 'That file is larger than this tool will fetch.' };
     if (buf.length < 512)
       return { error: 'That link did not return a document.' };

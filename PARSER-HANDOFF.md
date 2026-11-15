@@ -187,7 +187,7 @@ Also run `node test/resolver-test.js` - expect `resolver clean`, and
 **Or all at once:** `bash scripts/gates.sh` (or `npm run gates`, the same
 file) runs, first, `node-version-test` - the Node running the gates is
 `.nvmrc`'s, 24 since 2026-10-15 (§13, "Node 24 everywhere") - then these, the Kaycha anchors,
-`novelty-test`, `coa-dates-test`, `summed-rows-test`, `refusal-words-test`, `store-test`, `probe-test`, `archive-wiring-test`,
+`novelty-test`, `fetch-guard-test`, `coa-dates-test`, `summed-rows-test`, `refusal-words-test`, `store-test`, `probe-test`, `archive-wiring-test`,
 `archive-scripts-test`, `rerun-test`, `review-queue-test`, `match-test`, `match-props-test`,
 `match-feedback-test`, `accounts-test`, `client-error-test`, `analysis-test`, `duplicates-test`, `remove-copies-test`, `remove-document-test`, `b2b-coverage-test`, `b2b-store-test`, `b2b-catalog-test`, `b2b-endpoints-test`, `b2b-rank-test`, `b2b-strings-test`, `b2b-pilot-test`, `check-trust-test` and, after the build, `colour-tokens-test`, `b2b-release-test`, `input-paths-test`, `b2b-widget-test` and `b2b-compliance-kit-test`.
 It prints the line each gate produced and ends with `ALL GATES GREEN`. It passes
@@ -248,6 +248,7 @@ someone to look.
 | `fixture-lint.js` | corpus hygiene: control bytes, shell-hostile names, baseline arithmetic |
 | `mutation-test.js <dir> <parser>` | corrupt fixtures; require identical-or-reject |
 | `resolver-test.js` | viewer-page resolution, offline, against saved portal pages |
+| `fetch-guard-test.js` | the fetcher's guards (§13, "Security audit items 3, 4, 6, 7, 14, 15 and 16"): 27 private host forms refused - IPv4-mapped and NAT64 IPv6, `[::]`, 100.64/10, 0/8, fec0::/10 among them - and 8 public ones passed; a body with no Content-Length past 12 MB refused, its stream cancelled; a small PDF in two pieces arrives whole |
 | `novelty-test.js` | the five `novelty` notes (§7) and the furniture the `unmapped` diagnostic skips; FAILS if an accepted fixture carries any novelty, and lists the refused ones that do, as information |
 | `match-test.js` | the matching maths has one home, `js/match-math.*.js`: the app takes it from there, nothing else holds a copy, and it returns every score in `test/fixtures/match-golden.json` to the last bit; every score is shown and sent through `shownScore()`, floored (§13, "The shown score"), and the worked examples on `learn/intensity-versus-character/` are the numbers the app shows; since 2026-10-14, a profile carrying `harvestOn`, `reportOn` and `totalTerpenes` normalises exactly as without them (§4) |
 | `match-props-test.js` | what must always hold of the maths (§13, "The maths has a property test"): over 20,000 seeded pairs on the 15 keys - every score between 0 and 1; one jar multiplied, the pair swapped, keys or a palate's jars reordered, each moving no score by more than 1e-12 and no shown number or band; a jar against itself shows 100; a below-limit row scores as an absent one; cis- and trans-nerolidol sum; cannabinoids, a date and a total change nothing; an empty jar is skipped; the band edges at 0.55, 0.75 and 0.90. It does not assert the alias table or `coerce()` on `0,45`, which the golden file pins until their own change |
@@ -1816,6 +1817,7 @@ under the cap.
 - [The real reparse after the review's parser changes, 2026-11-14](docs/handoff/13-records.md#the-real-reparse-after-the-reviews-parser-changes-2026-11-14)
 - [The handoff split into what is and what happened, 2026-11-14](docs/handoff/13-records.md#the-handoff-split-into-what-is-and-what-happened-2026-11-14)
 - [Rate limits at Netlify's edge, 2026-11-14](docs/handoff/13-records.md#rate-limits-at-netlifys-edge-2026-11-14)
+- [Security audit items 3, 4, 6, 7, 14, 15 and 16, 2026-11-14](docs/handoff/13-records.md#security-audit-items-3-4-6-7-14-15-and-16-2026-11-14)
 
 ## 14. Dispensary integration
 

@@ -24,7 +24,11 @@ export async function resolveEntitlement(userId) {
 
   const meta = res.data.user_metadata || {};
   // Unknown or absent means free. Failing closed matters more than convenience.
-  const subscription = meta.subscription === 'active' ? 'active' : 'free';
+  // Paid status is read from app_metadata, which only the service key can
+  // write. user_metadata is the user's own to change with their Supabase
+  // token, so a subscription there is never believed. Security audit item 3,
+  // since 2026-11-14.
+  const subscription = (res.data.app_metadata || {}).subscription === 'active' ? 'active' : 'free';
 
   return {
     email: res.data.email,

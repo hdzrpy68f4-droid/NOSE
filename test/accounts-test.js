@@ -87,7 +87,7 @@ globalThis.fetch = async (url, init = {}) => {
   if (m && call.method === 'GET') {
     const user = byId(decodeURIComponent(m[1]));
     if (supa.failAdminGet || !user) return reply(404, { msg: 'User not found' });
-    return reply(200, { id: user.id, email: user.email, user_metadata: user.user_metadata, created_at: user.created_at });
+    return reply(200, { id: user.id, email: user.email, user_metadata: user.user_metadata, app_metadata: user.app_metadata || {}, created_at: user.created_at });
   }
   if (m && call.method === 'DELETE') {
     if (supa.failDelete) return reply(500, { msg: 'stand-in: delete refused' });
@@ -107,10 +107,15 @@ const logged = [];
 const COOKIE = 'HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=1209600';
 const CLEARED = 'nose_session=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0';
 
-async function call(handler, method, body, cookie) {
+/* A request as a page on this site sends it: a body is declared JSON, and the
+   browser says same-origin (since 2026-11-14 every cookie function refuses
+   anything else; security audit item 4). `extra` replaces or removes (null)
+   any header, for the cross-site cases. */
+async function call(handler, method, body, cookie, extra = {}) {
   const headers = {};
-  if (body !== undefined) headers['content-type'] = 'application/json';
+  if (body !== undefined) { headers['content-type'] = 'application/json'; headers['sec-fetch-site'] = 'same-origin'; }
   if (cookie) headers.cookie = cookie;
+  for (const [k, v] of Object.entries(extra)) { if (v === null) delete headers[k]; else headers[k] = v; }
   const { value, lines } = await quietly(() => handler(new Request('https://nose-app.com/.netlify/functions/x',
     { method, headers, body: body === undefined ? undefined : (typeof body === 'string' ? body : JSON.stringify(body)) })));
   logged.push(...lines);
@@ -129,7 +134,13 @@ async function main() {
     'netlify/functions/palate-sync.js', 'netlify/functions/sessions-purge.js']);
   const sessions = () => blobs.keys('auth-sessions');
   addUser(ALICE, PASSWORD, { subscription: 'free', age_attested_at: '2026-01-02T03:04:05.000Z' });
-  addUser(BOB, PASSWORD, { subscription: 'active' });
+  addUser(BOB, PASSWORD, { subscription: 'active' }).app_metadata = { subscription: 'active' };
+  /* Carol set "active" in her own user_metadata, which Supabase lets a
+     signed-in user change; only app_metadata is believed (security audit
+     item 3, since 2026-11-14). */
+  const CAROL = 'carol@example.test';
+  SECRETS.push(CAROL);
+  addUser(CAROL, PASSWORD, { subscription: 'active' });
   /* The throttle counts good logins too, eight in 15 minutes for one address;
      the run signs in more often than that, so each sign-in here starts it over. */
   const signIn = async email => {
@@ -162,9 +173,9 @@ async function main() {
   const sent = supa.calls.at(-1);
   check('signup: the call to Supabase is POST /auth/v1/signup with the address trimmed and lower-cased',
     [sent.method, sent.path, sent.body.email, sent.body.password], ['POST', '/auth/v1/signup', 'new@example.test', PASSWORD]);
-  check('signup: ...its user metadata is exactly age_attested_at, a time, and subscription "free"',
-    [Object.keys(sent.body.data), !Number.isNaN(Date.parse(sent.body.data.age_attested_at)), sent.body.data.subscription],
-    [['age_attested_at', 'subscription'], true, 'free']);
+  check('signup: ...its user metadata is exactly age_attested_at, a time - no subscription, which only app_metadata holds',
+    [Object.keys(sent.body.data), !Number.isNaN(Date.parse(sent.body.data.age_attested_at))],
+    [['age_attested_at'], true]);
   check('signup: ...and carries the service key, never a cookie',
     [sent.headers.apikey, sent.headers.authorization, 'cookie' in sent.headers], ['service-key-for-the-test', 'Bearer service-key-for-the-test', false]);
   const again = await call(signup, 'POST', { email: 'new@example.test', password: PASSWORD, ageAttested: true });
@@ -216,7 +227,9 @@ async function main() {
       sessionExpiresAt: blobs.read('auth-sessions', `sessions/${aliceId2}`).expiresAt }]);
   const bobCookie = await signIn(BOB);
   r = await call(me, 'GET', undefined, bobCookie);
-  check('me: a subscription of "active" is read from Supabase\'s metadata', r.data.subscription, 'active');
+  check('me: a subscription of "active" is read from Supabase\'s app_metadata', r.data.subscription, 'active');
+  r = await call(me, 'GET', undefined, await signIn(CAROL));
+  check('me: "active" in the user\'s own user_metadata is not believed: free', [r.data.signedIn, r.data.subscription], [true, 'free']);
   supa.down = true;
   r = await call(me, 'GET', undefined, `nose_session=${aliceId2}`);
   supa.down = false;
@@ -252,10 +265,26 @@ async function main() {
     sessions().filter(k => k.endsWith(gone)), []);
   check('sessions-purge: a record that cannot be read as a session is deleted', sessions().includes('sessions/' + 'x'.repeat(43)), false);
   check('sessions-purge: every live session is kept', live.every(k => sessions().includes(k)) && live.length >= 2, true);
-  check('sessions-purge: its reply and its one log line hold counts only',
-    [purged.value.status, await purged.value.json(), purged.lines],
-    [200, { scanned: live.length + 2, deleted: 2, failed: 0 },
-      [`log: [sessions-purge] done {"scanned":${live.length + 2},"deleted":2,"failed":0}`]]);
+  const purgedBody = await purged.value.json();
+  const thr = purgedBody.throttle || {};
+  check('sessions-purge: its reply and its one log line hold counts only, for sessions and for throttle records',
+    [purged.value.status, purgedBody.sessions, thr.deleted, thr.failed, Object.keys(thr), purged.lines],
+    [200, { scanned: live.length + 2, deleted: 2, failed: 0 }, 0, 0, ['scanned', 'deleted', 'failed'],
+      [`log: [sessions-purge] done {"sessions":{"scanned":${live.length + 2},"deleted":2,"failed":0},"throttle":{"scanned":${thr.scanned},"deleted":0,"failed":0}}`]]);
+  /* Throttle records past their window go (security audit item 14). */
+  {
+    const rl = blobs.stores.get('auth-ratelimit') || (blobs.getStore({ name: 'auth-ratelimit' }), blobs.stores.get('auth-ratelimit'));
+    const put = (key, v) => rl.set(key, { text: JSON.stringify(v), etag: '"t"', metadata: {} });
+    put('rl/login/' + 'a'.repeat(32), { start: Date.now() - 16 * 60e3, count: 3 });
+    put('rl/login/' + 'b'.repeat(32), { start: Date.now() - 60e3, count: 1 });
+    put('rl/signup/' + 'c'.repeat(32), { start: Date.now() - 59 * 60e3, count: 1 });
+    put('rl/reset/' + 'd'.repeat(32), { start: Date.now() - 61 * 60e3, count: 1 });
+    put('rl/other/' + 'e'.repeat(32), { start: Date.now(), count: 1 });
+    put('rl/login/' + 'f'.repeat(32), 'not a record');
+    await quietly(() => purge());
+    check('sessions-purge: a login count older than 15 minutes, a reset count older than an hour, an unknown bucket and an unreadable record go; counts inside their window stay',
+      ['a', 'b', 'c', 'd', 'e', 'f'].map(x => [...rl.keys()].some(k => k.endsWith(x.repeat(32)))), [false, true, true, false, false, false]);
+  }
   blobs.failList.add('auth-sessions');
   const failedPurge = await quietly(() => purge());
   blobs.failList.delete('auth-sessions');
@@ -315,10 +344,45 @@ async function main() {
       (await call(palate, 'PUT', { profiles: [{ name: 'x', terps: {} }] }, alice)).data],
     ['too-many', 413, { error: 'invalid-json' }, { error: 'bad-shape' }, { error: 'nothing-valid' }]);
   check('palate-sync: 500 jars are kept', (await call(palate, 'PUT', { profiles: Array(500).fill(jar) }, bobCookie)).data.count, 500);
-  r = await call(palate, 'DELETE', undefined, bobCookie);
+  r = await call(palate, 'DELETE', undefined, bobCookie, { 'sec-fetch-site': 'same-origin' });
   check('palate-sync: DELETE removes that user\'s palate and no other',
     [r.data, blobs.keys('palates')], [{ status: 'deleted' }, [`palates/${aliceUser}`]]);
   check('palate-sync: another method is 405', (await call(palate, 'POST', {}, alice)).status, 405);
+
+  /* ---- a request from another site (security audit item 4, since 2026-11-14) ---- */
+  {
+    const CROSS = { error: 'cross-site', message: 'This request must come from a page on this site.' };
+    const asForm = { 'content-type': 'text/plain', 'sec-fetch-site': 'cross-site' };
+    const ways = [
+      ['a plain form posted from another site', asForm],
+      ['JSON from another site', { 'sec-fetch-site': 'cross-site' }],
+      ['text/plain from this site', { 'content-type': 'text/plain' }],
+      ['no Sec-Fetch-Site and no Origin', { 'sec-fetch-site': null }],
+      ['no Sec-Fetch-Site, and another Origin', { 'sec-fetch-site': null, origin: 'https://evil.example' }],
+    ];
+    const before = { sessions: sessions().length, calls: supa.calls.length };
+    const results = [];
+    for (const [, extra] of ways) {
+      results.push((await call(login, 'POST', { email: ALICE, password: PASSWORD }, undefined, extra)).status);
+      results.push((await call(signup, 'POST', { email: 'x@example.test', password: PASSWORD, ageAttested: true }, undefined, extra)).status);
+      results.push((await call(logout, 'POST', { everywhere: true }, bobCookie, extra)).status);
+      results.push((await call(reset, 'POST', { email: ALICE }, undefined, extra)).status);
+      results.push((await call(accountDelete, 'POST', { confirm: 'DELETE' }, bobCookie, extra)).status);
+      results.push((await call(palate, 'PUT', { profiles: [jar] }, bobCookie, extra)).status);
+    }
+    check('every cookie function refuses a cross-site request 403, five ways, before anything else',
+      results.every(s => s === 403) && results.length === 30, true);
+    check('...and no session was made or ended, and Supabase was never asked',
+      [sessions().length - before.sessions, supa.calls.length - before.calls], [0, 0]);
+    check('...with one plain reply', (await call(login, 'POST', { email: ALICE, password: PASSWORD }, undefined, asForm)).data, CROSS);
+    check('a page on this site whose browser sends no Sec-Fetch-Site passes on its own Origin',
+      (await call(me, 'GET', undefined, bobCookie)).data.signedIn
+        && (await call(palate, 'PUT', { profiles: [jar] }, bobCookie, { 'sec-fetch-site': null, origin: 'https://nose-app.com' })).status === 200, true);
+    check('a DELETE from another site is refused; a GET of the palate is not guarded (it changes nothing)',
+      [(await call(palate, 'DELETE', undefined, bobCookie, { 'sec-fetch-site': 'cross-site' })).status,
+        (await call(palate, 'GET', undefined, bobCookie)).status], [403, 200]);
+    await call(palate, 'DELETE', undefined, bobCookie, { 'sec-fetch-site': 'same-origin' });   // as it was before this block
+  }
 
   /* ---- auth-reset ---- */
   const RESET = { status: 'submitted', message: 'If that address has an account, a reset link is on its way.' };
@@ -372,9 +436,11 @@ async function main() {
   r = await call(accountDelete, 'POST', { confirm: 'DELETE' }, alice);
   const steps = blobs.calls.slice(at.blobs).filter(c => c[0] === 'delete' || c[0] === 'list').map(c => `${c[0]} ${c[1]}`);
   check('account-delete: deleted, the cookie cleared', [r.status, r.data, r.cookie], [200, { status: 'deleted' }, CLEARED]);
-  check('account-delete: the order is palate, then sessions, then identity',
-    [steps[0], steps[1], steps.slice(2).every(s => s === 'delete auth-sessions'), supa.calls.slice(at.supa).map(c => `${c.method} ${c.path}`)],
-    ['delete palates', 'list auth-sessions', true, [`DELETE /auth/v1/admin/users/${aliceUser}`]]);
+  check('account-delete: the order is palate, then sessions, then identity, then the address\'s three throttle records',
+    [steps[0], steps[1], steps.slice(2, -3).every(s => s === 'delete auth-sessions'), steps.slice(-3), supa.calls.slice(at.supa).map(c => `${c.method} ${c.path}`)],
+    ['delete palates', 'list auth-sessions', true, ['delete auth-ratelimit', 'delete auth-ratelimit', 'delete auth-ratelimit'], [`DELETE /auth/v1/admin/users/${aliceUser}`]]);
+  check('account-delete: the address\'s login throttle record is gone',
+    blobs.keys('auth-ratelimit').includes(`rl/login/${require('crypto').createHash('sha256').update(ALICE).digest('hex').slice(0, 32)}`), false);
   check('account-delete: the palate, every session on every device and the identity are gone; another user\'s are not',
     [blobs.keys('palates').includes(`palates/${aliceUser}`), sessions().filter(k => k.includes(aliceUser)), supa.users.has(ALICE),
       (await call(me, 'GET', undefined, alice2)).data, (await call(me, 'GET', undefined, bobCookie)).data.signedIn],

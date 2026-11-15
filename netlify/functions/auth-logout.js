@@ -10,11 +10,13 @@
 
 import {
   readSession, destroySession, destroyAllSessions, readJsonBody, clearedCookie,
+  fromThisSite, crossSite,
 } from '../lib/auth.js';
 import { json, methodNotAllowed } from '../lib/http.js';
 
 export default async (request) => {
   if (request.method !== 'POST') return methodNotAllowed();
+  if (!fromThisSite(request)) return crossSite();
 
   const session = await readSession(request);
   if (!session) {

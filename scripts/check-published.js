@@ -55,19 +55,34 @@ const NETLIFY_TOKEN = [/\bnf[pcoub]_[A-Za-z0-9]{20,}/, 'a Netlify access token']
    public npk_ key is not a secret: a store's page names it. */
 const NOSE_SECRET_KEY = [/nsk_[A-Za-z0-9_-]{8,}/, 'a NOSE dispensary secret key (nsk_)'];
 
+/* A Supabase service-role key in the legacy JWT form (eyJ...), found by its
+   own payload: a JWT whose middle part decodes to "role":"service_role". The
+   public anon key is a JWT too, with "role":"anon", and passes. Security
+   audit item 16, since 2026-11-14. */
+const SERVICE_ROLE_JWT = [{
+  test(line) {
+    for (const m of String(line).matchAll(/eyJ[A-Za-z0-9_-]{8,}\.(eyJ[A-Za-z0-9_-]{8,})\.[A-Za-z0-9_-]{8,}/g)) {
+      try { if (JSON.parse(Buffer.from(m[1], 'base64url').toString('utf8')).role === 'service_role') return true; } catch { /* not a JWT */ }
+    }
+    return false;
+  }
+}, 'a Supabase service-role key (a JWT)'];
+
 const PUBLISHED_PATTERNS = [
   [/postgres(?:ql)?:\/\//i, 'a postgres:// URL'],
   [/pooler\.supabase\.com/i, 'the Supabase pooler host'],
   [/\b[a-z0-9-]+\.supabase\.co(?![a-z0-9-])/i, 'a <project>.supabase.co host'],
   [/sb_secret_/, 'a Supabase secret key prefix'],
   NETLIFY_TOKEN,
-  NOSE_SECRET_KEY
+  NOSE_SECRET_KEY,
+  SERVICE_ROLE_JWT
 ];
 const CREDENTIAL_PATTERNS = [
   [/postgres(?:ql)?:\/\/[^\s:@/'"`<>]+:[^\s@/'"`<>]+@/i, 'a database URL with a password in it'],
   [/sb_secret_[A-Za-z0-9_-]{8,}/, 'a Supabase secret key'],
   NETLIFY_TOKEN,
-  NOSE_SECRET_KEY
+  NOSE_SECRET_KEY,
+  SERVICE_ROLE_JWT
 ];
 
 const BINARY = /\.(pdf|png|jpe?g|gif|webp|avif|ico|woff2?|ttf|otf|zip|tar|gz|br)$/i;

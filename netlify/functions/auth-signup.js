@@ -16,7 +16,7 @@
 
 import {
   gotrue, isEmail, isPassword, normaliseEmail, readJsonBody,
-  rateLimit, createSession, sessionCookie, tooMany,
+  rateLimit, createSession, sessionCookie, tooMany, fromThisSite, crossSite,
 } from '../lib/auth.js';
 import { json, methodNotAllowed } from '../lib/http.js';
 
@@ -28,6 +28,7 @@ const NEUTRAL = {
 
 export default async (request) => {
   if (request.method !== 'POST') return methodNotAllowed();
+  if (!fromThisSite(request)) return crossSite();
 
   const body = await readJsonBody(request);
   if (!body.ok) return json({ error: 'rejected', reason: body.reason }, 400);
@@ -53,7 +54,6 @@ export default async (request) => {
       password: d.password,
       data: {
         age_attested_at: new Date().toISOString(),
-        subscription: 'free',
       },
     },
   });

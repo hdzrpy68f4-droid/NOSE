@@ -12,7 +12,7 @@
 // must be configured before launch or reset emails will simply not arrive for
 // real users — a failure that looks like nothing at all from this side.
 
-import { gotrue, isEmail, normaliseEmail, readJsonBody, rateLimit } from '../lib/auth.js';
+import { gotrue, isEmail, normaliseEmail, readJsonBody, rateLimit, fromThisSite, crossSite } from '../lib/auth.js';
 import { json, methodNotAllowed } from '../lib/http.js';
 
 const NEUTRAL = {
@@ -22,6 +22,7 @@ const NEUTRAL = {
 
 export default async (request) => {
   if (request.method !== 'POST') return methodNotAllowed();
+  if (!fromThisSite(request)) return crossSite();
 
   const body = await readJsonBody(request);
   if (!body.ok) return json(NEUTRAL, 200);

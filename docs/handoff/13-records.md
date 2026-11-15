@@ -4011,3 +4011,64 @@ audit item 1, in part.
 - Bundle: `js/nose.81127089.js` became `js/nose.3c9d05e1.js`.
 - **Not yet checked live:** 15 quick POSTs to `coa` answer 400, then 429
   from about the 13th, then 400 again after a minute.
+
+### Security audit items 3, 4, 6, 7, 14, 15 and 16, 2026-11-14
+
+From `docs/project-notes/nose-security-audit-2026-10-15.md` (kept off GitHub).
+Items 1 (in part, "Rate limits at Netlify's edge"), 5, 11, 12 and 17 were
+closed earlier. Still open: 2 (M5), 8, 9, 10 and 13.
+
+- **3, paid status.** `auth-me` reads `subscription` from `app_metadata`,
+  which only the service key can write. It read `user_metadata`, which
+  Supabase lets a signed-in user change with their own token. `auth-signup`
+  no longer writes `subscription: 'free'` into `user_metadata`; absent means
+  free. Nothing is gated yet, so nobody's reply changes. When billing comes,
+  the paid flag goes into `app_metadata` by the service key.
+- **4, login CSRF.** `fromThisSite()` in `auth.js`: a request must declare
+  `application/json`, which no plain HTML form can send, and its browser's
+  `Sec-Fetch-Site` must say `same-origin`, or, with no `Sec-Fetch-Site`, its
+  `Origin` must be this request's own. `auth-login`, `auth-signup`,
+  `auth-logout`, `auth-reset`, `account-delete` and `palate-sync`'s PUT ask
+  first and answer `403 {"error":"cross-site"}`. `palate-sync`'s DELETE has
+  no body, so it skips only the JSON check. GETs are unguarded: they change
+  nothing, and another site cannot read their reply. The account page and
+  the app already send JSON from the same origin.
+- **6, private addresses.** `fetch-report.js` checks an address written as
+  the host against a `net.BlockList` of the special-purpose ranges, IPv4 and
+  IPv6, and checks an IPv4 address carried in IPv6 (`::ffff:`, NAT64
+  `64:ff9b::`) as the IPv4 address it names. The seven forms the audit found
+  passing are refused. **Not closed:** a public name that resolves to a
+  private address. That needs the connection pinned to a checked address
+  (`docs/handoff/open.md`).
+- **7, memory.** The fetcher reads the body with a running count and cancels
+  past 12 MB; a body with no Content-Length was read whole first.
+- **14, throttle records.** `purgeExpiredThrottles()` deletes each record
+  past its window (15 minutes for login, an hour for sign-up and reset) and
+  each unreadable one; `sessions-purge` runs it daily and logs both counts.
+  `account-delete` deletes the address's three records after the identity,
+  naming `throttle` in a `partial` reply if it cannot. **Not done:** keying
+  the hash with a secret (HMAC), which needs a new secret in Netlify.
+- **The privacy page**, "What an account stores", gains: "To slow down
+  password guessing, a count of recent attempts for each email address that
+  tries to sign in, sign up or reset a password, whether or not it has an
+  account. It is kept under a fingerprint of the address (a SHA-256 hash)
+  rather than the address itself; anyone who already knows an address could
+  compute the same fingerprint. An earlier version of this page did not
+  mention these counts." "How long we keep things" gains: "Sign-in attempt
+  counts: each covers fifteen minutes or an hour, and is removed within a
+  day after that. Deleting your account deletes your address's counts at
+  once." Nothing new is collected, so no "What changed" entry.
+- **15, HSTS.** Netlify already sent `Strict-Transport-Security:
+  max-age=31536000` (checked live 2026-11-14). `_headers` now says so too,
+  so it does not rest on Netlify's default. No `preload`.
+- **16, the build guard** refuses a JWT whose payload says
+  `"role":"service_role"`, the legacy form of the Supabase service key, in a
+  published file or anywhere in git. The public anon key, a JWT with
+  `"role":"anon"`, passes.
+- **Tests.** `accounts-test`: five cross-site forms refused by all six
+  functions before Supabase is asked, an `Origin` from this site accepted,
+  `user_metadata` "active" not believed, throttle records purged by window
+  and deleted with the account. `b2b-store-test`: the JWT rule.
+  `fetch-guard-test`, a new gate after `resolver` (40 gates): 27 private
+  forms refused and 8 public passed, the stream cancelled past the cap. It
+  failed on the old fetcher on both counts.
