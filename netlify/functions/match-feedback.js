@@ -19,8 +19,8 @@
 
 import { getStore } from '@netlify/blobs';
 import {
-  VOTES_STORE, readJsonBody, isId, isInt, safeClientTs,
-  contextHash, dayKey, keySuffix, noContent, rejected,
+  VOTES_STORE, readJsonBody, isId, isInt,
+  contextHash, utcDay, keySuffix, noContent, rejected,
 } from '../lib/beacon.js';
 import { methodNotAllowed } from '../lib/http.js';
 
@@ -135,20 +135,19 @@ function validate(d) {
     notes = NOTES.filter((w) => n.includes(w));
   }
 
-  const ts = new Date().toISOString();
+  const day = utcDay();
 
   return {
     ok: true,
     value: {
-      v: 2,                              // schema version: 2 adds notes (2026-10-14); 1 had none
+      v: 3,                              // schema version: 3 keeps the day, no time (2026-11-14); 2 added notes (2026-10-14); 1 had none
       vote,
       band: d.band,                      // canonical casing preserved
       score: d.score,
       candidate: d.candidate,
       palate: d.palate,
       palateSize: d.palateSize,
-      ts,                                // server clock: authoritative
-      clientTs: safeClientTs(d.ts),      // as sent; may be null
+      day,                               // the server's UTC day; never a time. The page's own ts is ignored.
       ctx: contextHash([d.band, d.score, d.candidate, d.palateSize, d.palate.join(',')]),
       notes,                             // smell words, in NOTES order; null when the page sent none
       _bandSlug: bandSlug,               // key building only, stripped below
@@ -159,7 +158,11 @@ function validate(d) {
 // KEY LAYOUT — the whole design, because Blobs is a key-value store and not a
 // query engine:
 //
-//   votes/<band>/<vote>/<YYYY-MM-DD>/<HHMMSSmmm>-<rand>
+//   votes/<band>/<vote>/<YYYY-MM-DD>/<32 hex>
+//
+// The last part is random (beacon.js keySuffix()), never a time, since
+// 2026-11-14: votes on one day cannot be put back in arrival order, and two
+// repeat votes can no longer be told apart by when they came.
 //
 // The band and the vote are IN THE KEY, so the primary hypothesis question —
 // "for a given band, what share of votes were up?" — is answered by listing
@@ -179,7 +182,7 @@ async function persist(record) {
   // vote that was dropped. feedback-read.js already reads strongly; a writer
   // that does not match it turns every spot-check into a false alarm.
   const store = getStore({ name: VOTES_STORE, consistency: 'strong' });
-  const key = `votes/${_bandSlug}/${record.vote}/${dayKey(record.ts)}/${keySuffix(record.ts)}`;
+  const key = `votes/${_bandSlug}/${record.vote}/${record.day}/${keySuffix()}`;
   await store.setJSON(key, value);
 }
 

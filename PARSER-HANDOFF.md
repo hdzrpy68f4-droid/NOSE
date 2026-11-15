@@ -1820,6 +1820,7 @@ under the cap.
 - [Security audit items 3, 4, 6, 7, 14, 15 and 16, 2026-11-14](docs/handoff/13-records.md#security-audit-items-3-4-6-7-14-15-and-16-2026-11-14)
 - [Rate limits need a path: coa and match-feedback move to /api/, 2026-11-14](docs/handoff/13-records.md#rate-limits-need-a-path-coa-and-match-feedback-move-to-api-2026-11-14)
 - [The app's alias table, and coerce(), 2026-11-14](docs/handoff/13-records.md#the-apps-alias-table-and-coerce-2026-11-14)
+- [Votes and error reports keep the day, not the time, 2026-11-14](docs/handoff/13-records.md#votes-and-error-reports-keep-the-day-not-the-time-2026-11-14)
 
 ## 14. Dispensary integration
 

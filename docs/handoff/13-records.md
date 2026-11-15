@@ -4133,3 +4133,59 @@ purpose, for made-up inputs only.
 - **Not done here:** `wip/nose-farnesene-wip.js`, the stale draft that
   removed these folds, is deleted once "WebKit and Firefox in the tests"
   reaches main, since both change `b2b-widget-test`.
+
+### Votes and error reports keep the day, not the time, 2026-11-14
+
+M5 from `docs/project-notes/nose-m-cleanup-prompts-2026-10-15.md`; security
+audit item 2. Follows "Every vote stored" (2026-10-13) and "Smell words on a
+vote" (2026-10-14), which kept the time.
+
+- **Before:** a vote kept `ts` (the server's time to the millisecond) and
+  `clientTs` (the device's), under `votes/<band>/<vote>/<day>/<HHMMSSmmm>-<6
+  random characters>`; an error report the same, under
+  `errors/<day>/<ctx>/<HHMMSSmmm>-...`, beside the browser string and the
+  page. Netlify's request logs hold each request's address and time, so a
+  stored time could be lined up with an address. The privacy page said
+  nothing in a vote "can be traced back to you".
+- **The privacy page, changed first in the same commit:** a vote and an
+  error report send "the day (not the time)"; a new paragraph says a vote is
+  filed under its day and a random code, never a time, that on a day with
+  very few votes one could still be matched with its request in the host's
+  logs, and that the file storage may note when each was saved and NOSE
+  never reads that time - as the dispensary section says of its votes; the
+  "traced back" sentence now says "Nothing in a vote names you or links it to
+  your account" and that an earlier version claimed more; an error report is
+  filed the same way; "What changed" gains an eighth change, dated November
+  14, 2026 (it does not compare them with dispensary votes: the compliance kit
+  counts every paragraph of the page that names dispensaries), saying older records are rewritten by a one-off script "and we
+  say so here once it has run".
+- **`beacon.js`:** `keySuffix()` is 16 random bytes as hex, with no time;
+  `utcDay()` gives the UTC day; `safeClientTs()` is gone.
+- **`match-feedback.js`:** the value keeps `day`, not `ts` or `clientTs`, and
+  is v 3; the key is `votes/<band>/<vote>/<day>/<32 hex>`. `ctx` is
+  unchanged. The page still sends its own `ts`, and it is ignored.
+- **`client-error.js`:** the same; the value is v 2; the key
+  `errors/<day>/<ctx>/<32 hex>`. `errors-purge.js` is unchanged and still
+  deletes by the day in the key.
+- **`feedback-read.js`** reads v1, v2 (with `ts`) and v3 (with `day`). The
+  CSV's first column is `day` (for an older record, the first ten
+  characters of its `ts`), and `clientTs` is gone. The caveat adds that
+  votes have no order within a day. The two synthetic records are named by
+  day.
+- **`scripts/blobs-to-days.js`**, from the Codespace with `NETLIFY_SITE_ID`
+  and `NETLIFY_AUTH_TOKEN`: a dry run by default; with `--yes` each record
+  still keeping a time is written under its new key without it, read back
+  and compared, and only then is the old key deleted. A run that stops part
+  way is finished by a second, which deletes an old key whose copy is
+  already there rather than copying it again. It prints counts only.
+- **Tests:** `match-feedback-test` (the new key and value, no time anywhere,
+  v1, v2 and v3 read, the CSV's columns); `client-error-test` (the report's
+  key and value, `errors-purge` by day on old and new keys, and the script
+  against stand-in stores: a dry run, `--yes` stopped part way and finished
+  by a second run, then 0 to rewrite, counts only). Writing that test found
+  two faults in the script before it ran anywhere: the error report's day
+  went where its ctx belongs, and a stopped run would have copied a record
+  twice.
+- **Not yet done:** running the script on the real stores. Until then,
+  votes and reports stored before this deploy keep their times, and the
+  eighth change's promise is open.

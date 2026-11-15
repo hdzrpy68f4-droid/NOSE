@@ -33,21 +33,21 @@ import { json, methodNotAllowed } from '../lib/http.js';
 // under votes/weak/, which this function no longer reads - and none named
 // 'test-do-not-count'.
 //
-//   ts 2026-10-14T12:18:23.148Z   the deploy check (PARSER-HANDOFF s13, "Every
+//   day 2026-10-14                the deploy check (PARSER-HANDOFF s13, "Every
 //                                 vote stored"): Moderate up, score 74,
 //                                 candidate 'cold-creek', palate 'lemon-tart'
 //
 // That one was pressed by the owner on /app to prove a Moderate vote is
 // stored. Its candidate is a real sample id, the same as any vote on the
-// default pair, so filter it on its ts, not its candidate.
+// default pair, so filter it on its day and notes, not its candidate alone.
 //
-//   ts 2026-10-14T20:04:09.139Z   the smell words deploy check (PARSER-HANDOFF
+//   day 2026-10-14                the smell words deploy check (PARSER-HANDOFF
 //                                 s13, "Smell words on a vote"): Moderate
 //                                 down, score 74, candidate 'cold-creek',
 //                                 palate 'lemon-tart', notes gas skunk
 //
 // Pressed by the owner on /app after Gas or fuel and Skunk, to prove a vote's
-// words reach the store. Filter it on its ts too.
+// words reach the store. Filter it on its day and notes too.
 //
 // Real votes to date (2026-10-14): 1 (candidate 'cold-creek', score 84, up).
 // That is not a finding. It is one vote.
@@ -95,7 +95,7 @@ export default async (request) => {
   }
 
   const parsed = keys.map(parseKey).filter(Boolean).filter((k) => inRange(k, since));
-  parsed.sort((a, b) => (a.key < b.key ? 1 : -1)); // newest first
+  parsed.sort((a, b) => (a.key < b.key ? 1 : -1)); // newest day first; within a day, no order (keys are random)
 
   const summary = summarize(parsed);
 
@@ -120,7 +120,12 @@ export default async (request) => {
 const CAVEAT =
   'Counts are votes, not voters: there is no identifier, so one person voting twice ' +
   'counts twice (group by ctx to collapse repeats). Up-share is meaningless at small n ' +
-  'and is not evidence the aroma-shape hypothesis holds.';
+  'and is not evidence the aroma-shape hypothesis holds. Votes keep the day they arrived and no ' +
+  'time, so within a day they have no order: "newest first" sorts by day only.';
+
+/* A record's day: v3 keeps day; v1 and v2, written before 2026-11-14 and
+   until scripts/blobs-to-days.js rewrites them, keep ts. */
+const dayOf = (r) => (r && typeof r.day === 'string' ? r.day : r && typeof r.ts === 'string' ? r.ts.slice(0, 10) : null);
 
 function authorized(request, expected) {
   const header = request.headers.get('authorization') || '';
@@ -188,7 +193,9 @@ function summarize(parsed) {
 // words (match-feedback.js, since 2026-10-14), space-separated like palate.
 // Empty for a v1 record, which has none, and for a v2 vote with none - the
 // JSON records tell those apart (no field; null; []).
-const COLS = ['ts', 'clientTs', 'vote', 'band', 'score', 'candidate',
+// day replaced ts on 2026-11-14 and clientTs went (a v3 vote keeps the day
+// alone); for an older record still holding ts, its first ten characters.
+const COLS = ['day', 'vote', 'band', 'score', 'candidate',
               'palateSize', 'palate', 'palateTruncated', 'ctx', 'notes'];
 
 function csv(records) {
@@ -197,7 +204,7 @@ function csv(records) {
     return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
   const lines = [COLS.join(',')];
-  for (const r of records) lines.push(COLS.map((c) => esc(r[c])).join(','));
+  for (const r of records) lines.push(COLS.map((c) => esc(c === 'day' ? dayOf(r) : r[c])).join(','));
   return new Response(lines.join('\n') + '\n', {
     status: 200,
     headers: {

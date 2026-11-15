@@ -53,6 +53,7 @@
       <p><strong>A fifth change: dispensaries.</strong> A licensed dispensary can now show NOSE&rsquo;s flavor match on its own website, beside its menu. The section on dispensaries below sets out what a dispensary sends us, what we keep, what its pages ask us for and what a shopper&rsquo;s vote holds. In short: a shopper&rsquo;s list of purchases goes from the dispensary to the shopper&rsquo;s own browser, and never to us. That changed on <strong>October 9, 2026</strong>. This page described it in full before it was switched on, as it promised to.</p>
       <p><strong>A sixth change: smell words on a vote.</strong> When you press &ldquo;Matched&rdquo; or &ldquo;Didn't match&rdquo;, you can now also pick up to three words for what you smelled, from a fixed list &mdash; gas, skunk or hay, say &mdash; and they are sent with your vote. They help us learn which smells our matching misses: a lab report measures terpenes, not everything a jar smells of. You pick them with buttons; nothing you type is sent. That changed on <strong>October 14, 2026</strong>, and this page changed in the same update, not after it. The section on match feedback below lists everything a vote carries.</p>
       <p><strong>A seventh change:</strong> since <strong>October 15, 2026</strong>, a dispensary&rsquo;s batch readings also keep the day the laboratory finished testing &mdash; a date printed on the lab report, about the product and not about anyone.</p>
+      <p><strong>An eighth change, in the other direction:</strong> since <strong>November 14, 2026</strong>, a match vote and an error report keep the day they arrived and no time of day. Those kept before then are rewritten the same way by a one-off script, and we say so here once it has run.</p>
     </article>
 
     <article class="card article-card">
@@ -100,15 +101,16 @@
 
     <article class="card article-card">
       <h2>Match feedback stays anonymous &mdash; including after accounts</h2>
-      <p>When you press &ldquo;Matched&rdquo; or &ldquo;Didn't match&rdquo; on a result, we receive: the similarity score, its match band, how many jars were in your palate, which built-in sample jars were involved, a timestamp, and up to three smell words you picked from a fixed list.</p>
+      <p>When you press &ldquo;Matched&rdquo; or &ldquo;Didn't match&rdquo; on a result, we receive: the similarity score, its match band, how many jars were in your palate, which built-in sample jars were involved, the day (not the time), and up to three smell words you picked from a fixed list.</p>
       <p>Jars you created yourself are reported as the single word <code>custom</code>. Names you typed never leave your browser.</p>
       <p><strong>These votes carry no account identifier, and we made a deliberate decision to keep it that way.</strong> Your session cookie is not read when a vote is sent. Signing in does not attach your identity to anything you rate. We could have linked them and chose not to: testing whether a shared aroma shape predicts shared enjoyment does not require knowing who voted.</p>
-      <p>Because these votes are anonymous, they may inform aggregate research or published findings about how well the matching method works. Nothing in them identifies you or can be traced back to you.</p>
+      <p>A vote is filed under its day and a random code, never a time, so votes cannot be put back in the order they arrived. That is not enough on its own: on a day with very few votes, a vote could still be matched with its request in our host&rsquo;s logs, described above. The file storage that holds votes may also note when each was saved, as file storage generally does. We never read that time or copy it anywhere.</p>
+      <p>Because these votes carry no name and no account, they may inform aggregate research or published findings about how well the matching method works. Nothing in a vote names you or links it to your account. An earlier version of this sentence said nothing in them could be traced back to you, which claimed more than is true: see the paragraph above.</p>
     </article>
 
     <article class="card article-card">
       <h2>Error reports &mdash; automatic</h2>
-      <p>If the site's JavaScript fails, your browser sends us the error message, the script and line it came from, which page you were on, your browser's user-agent string, and a timestamp. It is capped at three reports per page load.</p>
+      <p>If the site's JavaScript fails, your browser sends us the error message, the script and line it came from, which page you were on, your browser's user-agent string, and the day (not the time). Like a vote, a report is filed under its day and a random code, never a time. It is capped at three reports per page load.</p>
       <p>This contains no palate data and nothing you typed. Like match feedback, it carries no account identifier &mdash; an error report from a signed-in user looks the same as one from anybody else. Error reports are deleted after 90 days.</p>
     </article>
 

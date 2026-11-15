@@ -4,7 +4,7 @@
 // risks being registered as a function. Imported via a relative path and
 // inlined by esbuild at build time.
 
-import { createHash } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { readJsonBody as readBody } from './http.js';
 
 export const VOTES_STORE = 'match-feedback';
@@ -39,18 +39,6 @@ export const isInt = (v, min, max) =>
 export const clean = (v, max) =>
   String(v ?? '').replace(/[\u0000-\u001F\u007F]/g, ' ').slice(0, max);
 
-/** ISO-8601 timestamp as sent by the client, or null if implausible.
- *  Never authoritative — the server stamps its own ts. */
-export function safeClientTs(v) {
-  if (typeof v !== 'string' || v.length > 32) return null;
-  const t = Date.parse(v);
-  if (!Number.isFinite(t)) return null;
-  // Reject anything absurd (bad device clock, replay of an ancient payload).
-  const now = Date.now();
-  if (t < now - 30 * 24 * 3600e3 || t > now + 24 * 3600e3) return null;
-  return new Date(t).toISOString();
-}
-
 /** Short hash used only to GROUP records at analysis time. Derived entirely
  *  from fields already stored, so it reveals nothing new. NOT a user id:
  *  two different people voting on the same built-in pair collide by design. */
@@ -62,12 +50,18 @@ export function dayKey(iso) {
   return iso.slice(0, 10); // YYYY-MM-DD
 }
 
-/** Time-of-day + random suffix. Keys must be unique per write; there is no
- *  read-modify-write anywhere in this design, so nothing can be clobbered. */
-export function keySuffix(iso) {
-  const hms = iso.slice(11, 23).replace(/[:.]/g, '');
-  return `${hms}-${Math.random().toString(36).slice(2, 8)}`;
+/** A key's last part: 16 random bytes as hex, as lib/b2b-votes.js's is. No
+ *  time: until 2026-11-14 it began with the time of day to the millisecond,
+ *  which could be lined up with a request in Netlify's logs (PARSER-HANDOFF
+ *  s13, "Votes and error reports keep the day, not the time"). Keys must be
+ *  unique per write; there is no read-modify-write anywhere in this design,
+ *  so nothing can be clobbered. */
+export function keySuffix() {
+  return randomBytes(16).toString('hex');
 }
+
+/** Today's UTC day, YYYY-MM-DD: all a vote or an error report keeps of when. */
+export const utcDay = () => new Date().toISOString().slice(0, 10);
 
 export const noContent = () => new Response(null, { status: 204 });
 

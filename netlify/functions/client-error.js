@@ -16,8 +16,8 @@
 
 import { getStore } from '@netlify/blobs';
 import {
-  ERRORS_STORE, readJsonBody, isInt, clean, safeClientTs,
-  contextHash, dayKey, keySuffix, noContent, rejected,
+  ERRORS_STORE, readJsonBody, isInt, clean,
+  contextHash, utcDay, keySuffix, noContent, rejected,
 } from '../lib/beacon.js';
 import { methodNotAllowed } from '../lib/http.js';
 
@@ -41,12 +41,12 @@ export default async (request) => {
   if (d.col !== null && d.col !== undefined && !isInt(d.col, 0, 1e7)) return rejected('bad-col');
   if (typeof d.page !== 'string' || !d.page.startsWith('/')) return rejected('bad-page');
 
-  const ts = new Date().toISOString();
+  const day = utcDay();   // the day, never a time (since 2026-11-14)
   const message = clean(d.message, 300);
   const page = clean(d.page, 200);
 
   const record = {
-    v: 1,
+    v: 2,   // 2 keeps the day, no time (2026-11-14); 1 kept ts and clientTs
     kind: d.kind,
     message,
     source: clean(d.source, 200),
@@ -54,19 +54,18 @@ export default async (request) => {
     col: isInt(d.col, 0, 1e7) ? d.col : null,
     page,
     ua: clean(d.ua, 180),
-    ts,
-    clientTs: safeClientTs(d.ts),
+    day,
     // Groups identical failures so one broken deploy reads as one bug with a
     // count, rather than a thousand separate entries.
     ctx: contextHash([d.kind, message, page, clean(d.source, 200), String(d.line ?? '')]),
   };
 
   try {
-    // errors/<YYYY-MM-DD>/<ctx>/<suffix> — date first so the purge is a prefix
+    // errors/<YYYY-MM-DD>/<ctx>/<32 hex> — date first so the purge is a prefix
     // scan, ctx second so repeats of one bug group together.
     // Strong consistency, matching the vote store — see match-feedback.js.
     const store = getStore({ name: ERRORS_STORE, consistency: 'strong' });
-    await store.setJSON(`errors/${dayKey(ts)}/${record.ctx}/${keySuffix(ts)}`, record);
+    await store.setJSON(`errors/${day}/${record.ctx}/${keySuffix()}`, record);
   } catch (err) {
     console.error('[client-error] persist failed', {
       kind: record.kind, ctx: record.ctx,

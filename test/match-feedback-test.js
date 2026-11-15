@@ -89,7 +89,11 @@ const EFFECT_WORDS = /relax|calm|sleep|energ|focus|uplift|euphor|sedat|mood|high
 const SMELL_WORDS = [['gas', 'Gas or fuel'], ['skunk', 'Skunk'], ['savory', 'Savory or garlic'], ['chemical', 'Chemical'],
   ['sweet', 'Sweet'], ['fruity', 'Fruity or tropical'], ['hay', 'Hay'], ['citrus', 'Citrus'], ['earthy', 'Earthy'],
   ['spice', 'Spice'], ['pine', 'Pine'], ['floral', 'Floral'], ['herbal', 'Herbal']];
-const FIELDS = ['v', 'vote', 'band', 'score', 'candidate', 'palate', 'palateSize', 'ts', 'clientTs', 'ctx', 'notes'];
+/* Since 2026-11-14 a vote keeps day, never ts or clientTs (PARSER-HANDOFF s13,
+   "Votes and error reports keep the day, not the time"). */
+const FIELDS = ['v', 'vote', 'band', 'score', 'candidate', 'palate', 'palateSize', 'day', 'ctx', 'notes'];
+const NEW_KEY = /^votes\/(strong|good|moderate|low)\/(up|down)\/\d{4}-\d{2}-\d{2}\/[0-9a-f]{32}$/;
+const TODAY = () => new Date().toISOString().slice(0, 10);
 
 /* ------------------------------------------- Netlify Blobs, stood in for */
 
@@ -252,14 +256,16 @@ async function main() {
       [204, '', 1, true, []]);
   }
   check('all four bands stored, each under its slug', SLUGS.map(s => kept.filter(k => k.split('/')[1] === s).length), [1, 1, 1, 1]);
-  check('the key layout has not moved: votes/<slug>/<up|down>/<UTC day>/<HHMMSSmmm>-<rand>, the day the server\'s own',
-    kept.map(k => { const r = recordAt(k); return /^votes\/(strong|good|moderate|low)\/(up|down)\/\d{4}-\d{2}-\d{2}\/\d{9}-[a-z0-9]{1,6}$/.test(k) && k.split('/')[3] === r.ts.slice(0, 10) && k.split('/')[4].slice(0, 9) === r.ts.slice(11, 23).replace(/[:.]/g, ''); }),
+  check('the key: votes/<slug>/<up|down>/<UTC day>/<32 random hex> - the day the server\'s own, no time anywhere in it',
+    kept.map(k => { const r = recordAt(k); return NEW_KEY.test(k) && k.split('/')[3] === r.day && r.day === TODAY(); }),
     [true, true, true, true]);
+  check('...and no time of day anywhere in a stored vote, key or value',
+    kept.filter(k => /T\d{2}:\d{2}|\d{2}:\d{2}:\d{2}|\d{9}-/.test(k + JSON.stringify(recordAt(k)))), []);
   check('one store, "match-feedback", site-wide and strongly consistent, as before',
     [...new Set(blobs.opened.map(o => JSON.stringify(o)))], [JSON.stringify({ name: 'match-feedback', consistency: 'strong' })]);
-  check('the record: its ten fields, then notes - null, as these votes send none - v 2, the band as matchBand() names it, the score as sent',
+  check('the record: its nine fields, then notes - null, as these votes send none - v 3, the band as matchBand() names it, the score as sent',
     kept.map(k => { const r = recordAt(k); return [Object.keys(r), r.v, r.band, r.score, r.notes]; }),
-    NAMES.map((n, i) => [FIELDS, 2, n, M.shownScore(inBand[i]), null]));
+    NAMES.map((n, i) => [FIELDS, 3, n, M.shownScore(inBand[i]), null]));
 
   /* ============================================================ refusals */
 
@@ -310,12 +316,12 @@ async function main() {
     const res = await quietly(() => post(ballot(c.band, M.shownScore(inBand[i]), { vote: c.vote, notes: c.notes, candidate: 'violet-hour' })));
     const added = votesIn().filter(k => !before.includes(k));
     const r = added[0] && recordAt(added[0]);
-    check(`notes stored, ${c.label}: 204, one vote, under votes/${SLUGS[i]}/${c.vote}/, eleven fields, v 2, notes ${JSON.stringify(c.want)}, nothing logged`,
+    check(`notes stored, ${c.label}: 204, one vote, under votes/${SLUGS[i]}/${c.vote}/, ten fields, v 3, notes ${JSON.stringify(c.want)}, nothing logged`,
       [res.value.status, added.length, added.every(k => k.startsWith(`votes/${SLUGS[i]}/${c.vote}/`)), r && Object.keys(r), r && r.v, r && r.notes, res.lines],
-      [204, 1, true, FIELDS, 2, c.want, []]);
+      [204, 1, true, FIELDS, 3, c.want, []]);
     noted.push(...added);
   }
-  /* The same match as the first, without words: v 2, notes null. */
+  /* The same match as the first, without words: v 3, notes null. */
   let unnoted;
   {
     const before = votesIn();
@@ -324,9 +330,9 @@ async function main() {
   }
   kept.push(...noted, unnoted);
   check('a vote with no notes field is stored with notes null - never asked, not the same as none picked',
-    [Object.keys(recordAt(unnoted)), recordAt(unnoted).v, recordAt(unnoted).notes], [FIELDS, 2, null]);
+    [Object.keys(recordAt(unnoted)), recordAt(unnoted).v, recordAt(unnoted).notes], [FIELDS, 3, null]);
   check('...the key layout has not moved for a vote with words',
-    noted.map(k => { const r = recordAt(k); return /^votes\/(strong|good|moderate|low)\/(up|down)\/\d{4}-\d{2}-\d{2}\/\d{9}-[a-z0-9]{1,6}$/.test(k) && k.split('/')[3] === r.ts.slice(0, 10); }),
+    noted.map(k => { const r = recordAt(k); return NEW_KEY.test(k) && k.split('/')[3] === r.day; }),
     noted.map(() => true));
   check('...and the words do not change ctx: the same match with and without them groups together',
     [recordAt(noted[0]).ctx === recordAt(unnoted).ctx, recordAt(noted[1]).ctx === recordAt(unnoted).ctx], [true, false]);
@@ -389,6 +395,12 @@ async function main() {
   await storeNamed('match-feedback').setJSON(V1_KEY, { v: 1, vote: 'up', band: 'Good', score: 84, candidate: 'cold-creek', palate: ['lemon-tart'],
     palateSize: 1, ts: '2026-10-01T12:00:00.000Z', clientTs: null, ctx: 'v1ctx' });
   kept.push(V1_KEY);
+  /* A v2 record, as votes were stored from 2026-10-14 until 2026-11-14: notes,
+     and still ts and clientTs, until scripts/blobs-to-days.js rewrites it. */
+  const V2_KEY = 'votes/strong/down/2026-11-01/093000123-bbb222';
+  await storeNamed('match-feedback').setJSON(V2_KEY, { v: 2, vote: 'down', band: 'Strong', score: 93, candidate: 'forest-window', palate: ['violet-hour'],
+    palateSize: 1, ts: '2026-11-01T09:30:00.123Z', clientTs: '2026-11-01T09:29:59.000Z', ctx: 'v2ctx', notes: ['pine'] });
+  kept.push(V2_KEY);
 
   const counts = slug => {
     const ks = kept.filter(k => k.split('/')[1] === slug);
@@ -402,9 +414,10 @@ async function main() {
   check('...overall too', summary.summary.overall,
     { up: kept.filter(k => k.split('/')[2] === 'up').length, down: kept.filter(k => k.split('/')[2] === 'down').length, total: kept.length,
       upShare: Number((kept.filter(k => k.split('/')[2] === 'up').length / kept.length).toFixed(3)) });
-  check('its caveat stays, word for word', summary.caveat,
+  check('its caveat, word for word, says votes have no order within a day', summary.caveat,
     'Counts are votes, not voters: there is no identifier, so one person voting twice counts twice (group by ctx to collapse repeats). ' +
-    'Up-share is meaningless at small n and is not evidence the aroma-shape hypothesis holds.');
+    'Up-share is meaningless at small n and is not evidence the aroma-shape hypothesis holds. Votes keep the day they arrived and no ' +
+    'time, so within a day they have no order: "newest first" sorts by day only.');
   check('the summary is read from the keys alone: no blob read',
     blobs.calls.filter(c => c[0] === 'get').length, 0);
 
@@ -415,21 +428,23 @@ async function main() {
     [['Low', 'down', 0], ['Low', 'down', M.shownScore(inBand[3])]]);
   const csv = await get('?format=csv');
   const rows = (await csv.text()).trim().split('\n');
-  check('the CSV export: the same columns and a notes column, last; a row for every vote of the four, every band in it',
+  check('the CSV export: day first, no clientTs, notes last; a row for every vote of the four, every band in it',
     [csv.status, csv.headers.get('content-type'), rows[0], rows.length - 1,
-     NAMES.map(n => rows.slice(1).filter(r => r.split(',')[3] === n).length)],
-    [200, 'text/csv; charset=utf-8', 'ts,clientTs,vote,band,score,candidate,palateSize,palate,palateTruncated,ctx,notes', kept.length,
+     NAMES.map(n => rows.slice(1).filter(r => r.split(',')[2] === n).length)],
+    [200, 'text/csv; charset=utf-8', 'day,vote,band,score,candidate,palateSize,palate,palateTruncated,ctx,notes', kept.length,
      SLUGS.map(s => kept.filter(k => k.split('/')[1] === s).length)]);
   /* One row, one record, by what tells them apart here: ctx and vote. */
-  const sample = [...noted, unnoted, V1_KEY];
-  const rowOf = key => { const r = recordAt(key); const m = rows.slice(1).map(x => x.split(',')).filter(c => c[9] === r.ctx && c[2] === r.vote); return m.length === 1 ? m[0] : null; };
+  const sample = [...noted, unnoted, V1_KEY, V2_KEY];
+  const rowOf = key => { const r = recordAt(key); const m = rows.slice(1).map(x => x.split(',')).filter(c => c[8] === r.ctx && c[1] === r.vote); return m.length === 1 ? m[0] : null; };
   check('...each vote\'s words in its notes column, space-separated like palate; empty for none picked, for null and for a v1 record',
-    sample.map(k => { const c = rowOf(k); return c && [c.length, c[10]]; }),
-    [[11, 'gas skunk'], [11, 'gas hay pine'], [11, ''], [11, ''], [11, '']]);
+    sample.map(k => { const c = rowOf(k); return c && [c.length, c[9]]; }),
+    [[10, 'gas skunk'], [10, 'gas hay pine'], [10, ''], [10, ''], [10, ''], [10, 'pine']]);
+  check('...and its day column: today for a new vote; the day of ts for a v1 or v2 record that still keeps one',
+    sample.map(k => rowOf(k) && rowOf(k)[0]), [TODAY(), TODAY(), TODAY(), TODAY(), '2026-10-01', '2026-11-01']);
   const json = await (await get('?limit=50')).json();
   check('the JSON records carry notes as stored: the words, [] and null; a v1 record has no notes field',
     sample.map(k => { const want = recordAt(k); const m = json.records.filter(x => x.ctx === want.ctx && x.vote === want.vote); return m.length === 1 ? [m[0].v, 'notes' in m[0] ? m[0].notes : 'no field'] : null; }),
-    [[2, ['gas', 'skunk']], [2, ['gas', 'hay', 'pine']], [2, []], [2, null], [1, 'no field']]);
+    [[3, ['gas', 'skunk']], [3, ['gas', 'hay', 'pine']], [3, []], [3, null], [1, 'no field'], [2, ['pine']]]);
   {
     const gets = blobs.calls.filter(c => c[0] === 'get').length;
     const again = await (await get()).json();
@@ -531,7 +546,10 @@ async function main() {
     ' ' + sandbox.list().map(w => w[1]).join(' ') + ' ' + limitNote;
   check('no effect word in the feedback block, read or heard - the words\' labels and the note included', (words.match(new RegExp(EFFECT_WORDS.source, 'gi')) || []), []);
   check('the privacy page\'s sentence about votes names what a vote sends, the smell words included',
-    fs.readFileSync(PRIVACY, 'utf8').includes('When you press &ldquo;Matched&rdquo; or &ldquo;Didn\'t match&rdquo; on a result, we receive: the similarity score, its match band, how many jars were in your palate, which built-in sample jars were involved, a timestamp, and up to three smell words you picked from a fixed list.</p>'),
+    fs.readFileSync(PRIVACY, 'utf8').includes('When you press &ldquo;Matched&rdquo; or &ldquo;Didn\'t match&rdquo; on a result, we receive: the similarity score, its match band, how many jars were in your palate, which built-in sample jars were involved, the day (not the time), and up to three smell words you picked from a fixed list.</p>'),
+    true);
+  check('...and says a vote is filed under its day and a random code, never a time, and what that does not prevent',
+    fs.readFileSync(PRIVACY, 'utf8').includes('<p>A vote is filed under its day and a random code, never a time, so votes cannot be put back in the order they arrived. That is not enough on its own:'),
     true);
   check('...and its "What changed" list dates the change',
     fs.readFileSync(PRIVACY, 'utf8').includes('<p><strong>A sixth change: smell words on a vote.</strong>') && /A sixth change: smell words on a vote\.[^\n]*That changed on <strong>October \d{1,2}, 2026<\/strong>/.test(fs.readFileSync(PRIVACY, 'utf8')),
