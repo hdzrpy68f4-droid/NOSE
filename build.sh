@@ -76,6 +76,14 @@ if [ "$qr_got" != "$QR_LIB_SHA256" ]; then
 fi
 echo "    $QR_LIB matches its pinned SHA-256"
 
+# The site header and footer live once, in partials/, and are stamped into
+# every page between its nose:header and nose:footer markers - before the
+# fingerprints, so the stamped pages get the renamed bundles too. A marker
+# missing, doubled or unclosed fails the build (scripts/stamp-chrome.js;
+# PARSER-HANDOFF.md section 13, "One header and one footer").
+echo "==> stamping the header and footer"
+node scripts/stamp-chrome.js || exit 1
+
 # Content-hash a bundle and rewrite every reference to it.
 #   $1 = directory ("" for repo root)   $2 = filename stem   $3 = extension
 #

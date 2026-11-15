@@ -20,7 +20,7 @@
  *      tree, skipping node_modules, .git, vendor, b2b-out and wip/ (a stale
  *      draft loaded by nothing); the six aroma pages' theme-color is checked
  *      in 4 instead
- *   3. every page outside test/ links the tokens file, once, before any other
+ *   3. every page outside test/ and partials/ links the tokens file, once, before any other
  *      stylesheet
  *   4. the copies that cannot read it equal it: js/aroma-bar's FAMILIES,
  *      loaded as Node loads it (color is the fill, text the ink, in family
@@ -125,7 +125,9 @@ if (haveTokens) {
 }
 
 /* ---- 3. every page links the tokens file first --------------------------- */
-const pages = files.filter(f => f.endsWith('.html') && !f.startsWith('test/'));
+/* partials/ holds the header and footer stamped into the pages (since
+   2026-11-14), fragments with no <head>: not pages. */
+const pages = files.filter(f => f.endsWith('.html') && !f.startsWith('test/') && !f.startsWith('partials/'));
 if (tokensPath) {
   const want = `/${tokensPath}`;
   const bad = [];
@@ -139,7 +141,7 @@ if (tokensPath) {
     else if (tokenLinks[0] !== want) bad.push(`${p} links ${tokenLinks[0]}, not ${want}`);
     else if (sheets[0] !== want) bad.push(`${p} links ${sheets[0]} before ${want}`);
   }
-  check(`every page outside test/ (${pages.length}) links ${want} once, before any other stylesheet`,
+  check(`every page outside test/ and partials/ (${pages.length}) links ${want} once, before any other stylesheet`,
         pages.length > 0 && !bad.length, bad.join('\n        ') || 'no pages found');
 }
 

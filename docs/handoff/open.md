@@ -76,7 +76,6 @@ panel it takes the card from, on both paths, so it waits for its own prompt.
 - **The home page still offers "upload a report"** as a way to add a jar
 (`index.html`, "Add a jar you liked"). The Upload tab now says that isn't
 available yet.
-- **`account/index.html`'s footer lists Account twice.**
 - **How `novelty` was verified, 2026-09-23.** No npm here: the gates ran on
 pdfjs-dist 5.7.284 standing in for unpdf (56/3, 56/0, clean, 4.124/0.944 on the
 untouched branch first), PGlite's API over a throwaway Postgres 16 cluster, and

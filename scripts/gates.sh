@@ -158,6 +158,9 @@ gate 'build'          'OK — ready to deploy'     '^OK — ready to deploy$' \
 # The family colours' one home, css/tokens.<hash>.css, linked first by every
 # page as built, and the copies that cannot read it (js/aroma-bar, js/hero,
 # favicon.svg, the aroma pages' theme-color) equal to it. Offline.
+# One header and one footer, stamped into every page (scripts/stamp-chrome.js).
+gate 'page chrome'    'page-chrome clean'        '^page-chrome clean$' \
+  node test/page-chrome-test.js
 gate 'colour tokens'  'colour-tokens clean'      '^colour-tokens clean$' \
   node test/colour-tokens-test.js
 # Pinned widget releases (scripts/b2b-release.js), built from the files the

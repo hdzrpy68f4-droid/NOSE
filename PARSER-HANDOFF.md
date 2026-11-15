@@ -189,7 +189,7 @@ file) runs, first, `node-version-test` - the Node running the gates is
 `.nvmrc`'s, 24 since 2026-10-15 (§13, "Node 24 everywhere") - then these, the Kaycha anchors,
 `novelty-test`, `fetch-guard-test`, `coa-dates-test`, `summed-rows-test`, `refusal-words-test`, `store-test`, `probe-test`, `archive-wiring-test`,
 `archive-scripts-test`, `rerun-test`, `review-queue-test`, `match-test`, `match-props-test`,
-`match-feedback-test`, `accounts-test`, `client-error-test`, `analysis-test`, `duplicates-test`, `remove-copies-test`, `remove-document-test`, `b2b-coverage-test`, `b2b-store-test`, `b2b-catalog-test`, `b2b-endpoints-test`, `b2b-rank-test`, `b2b-strings-test`, `b2b-pilot-test`, `check-trust-test` and, after the build, `colour-tokens-test`, `b2b-release-test`, `input-paths-test`, `b2b-widget-test` and `b2b-compliance-kit-test`.
+`match-feedback-test`, `accounts-test`, `client-error-test`, `analysis-test`, `duplicates-test`, `remove-copies-test`, `remove-document-test`, `b2b-coverage-test`, `b2b-store-test`, `b2b-catalog-test`, `b2b-endpoints-test`, `b2b-rank-test`, `b2b-strings-test`, `b2b-pilot-test`, `check-trust-test` and, after the build, `page-chrome-test`, `colour-tokens-test`, `b2b-release-test`, `input-paths-test`, `b2b-widget-test` and `b2b-compliance-kit-test`.
 It prints the line each gate produced and ends with `ALL GATES GREEN`. It passes
 a gate only on its exact expected line, so when a session legitimately changes
 a count, update the script in the same commit.
@@ -1822,6 +1822,7 @@ under the cap.
 - [The app's alias table, and coerce(), 2026-11-14](docs/handoff/13-records.md#the-apps-alias-table-and-coerce-2026-11-14)
 - [Votes and error reports keep the day, not the time, 2026-11-14](docs/handoff/13-records.md#votes-and-error-reports-keep-the-day-not-the-time-2026-11-14)
 - [WebKit and Firefox in the tests, 2026-11-14](docs/handoff/13-records.md#webkit-and-firefox-in-the-tests-2026-11-14)
+- [One header and one footer, 2026-11-14](docs/handoff/13-records.md#one-header-and-one-footer-2026-11-14)
 
 ## 14. Dispensary integration
 

@@ -4241,3 +4241,42 @@ the workflow installed Chromium alone.
 - **Not done:** a five-minute check on a real iPhone in Safari - /app (a
   sample match, the COA link tab, the camera prompt) and /b2b/demo/ (the
   consent button, the cards, removing and putting back a purchase, a vote).
+
+### One header and one footer, 2026-11-14
+
+M6 from `docs/project-notes/nose-m-cleanup-prompts-2026-10-15.md`.
+
+- **Before:** the header and footer were copied by hand into 23 pages. Three
+  header forms: 19 static pages, `/aromas/` without the brand link's label
+  or the bars' `aria-hidden`, and the home page and `/app` with a mobile
+  menu and Account after Start matching. Seven footer forms: typography
+  varying (' and ’, `&middot;` and ·); `/account/` listing Account twice;
+  the home page and `/app` making the tagline an `h2` with `route-link`
+  classes nothing reads; `/aromas/` and its six family pages with a short
+  footer, no Privacy or Terms link. The family pages marked "Aroma families"
+  `aria-current="page"` though they sit below it; `/account/` marked none.
+- **`partials/`**: `header.html` (static), `header-app.html` (the home page
+  and `/app`, with the mobile menu `js/nose` drives) and `footer.html` (the
+  full footer, Privacy and Terms, the tagline as a paragraph, ’ and ·, no
+  `route-link`). One nav order everywhere, the mobile menu included: Aroma
+  families, Learn, Methodology, About, Account, Start matching.
+- **`scripts/stamp-chrome.js`**, run by `build.sh` before the fingerprints:
+  each page carries `<!-- nose:header static|app -->` ...
+  `<!-- /nose:header -->` and `<!-- nose:footer -->` ...
+  `<!-- /nose:footer -->`, and what is between them becomes the partial. On
+  the static header it sets `aria-current`: "page" on the page's own link,
+  "true" on its section's (Learn on a guide, Aroma families on a family
+  page). A marker missing, doubled or unclosed fails the build. `b2b/demo`
+  has its own head and none. The stamped pages are committed.
+- `_redirects` forces a 404 for `/partials/*`; the build guard requires it.
+- **`test/page-chrome-test.js`**, a new gate after the build (41 gates): both
+  markers once on every page but the demo, exactly the partial between them,
+  `aria-current` right for each address, Privacy and Terms in every footer,
+  one nav order, and, in a scratch tree, a missing, doubled or unclosed
+  marker refused and a page edited between its markers caught by `--check`.
+- **Seen in Chromium** at 390 and 1280 px: the home page, `/aromas/earthy/`
+  and `/account/` with the new footer and header. The home page's tagline,
+  an `h2` until now, is the smaller paragraph the other 15 footers already
+  used; no stylesheet rule was added. No "before" pictures were taken.
+- No `js/` or `css/` file changed. `js/nose` still finds `menuButton` and
+  `mobileMenu` and sets `aria-current` on the app header by path.
