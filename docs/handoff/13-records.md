@@ -4185,9 +4185,8 @@ vote" (2026-10-14), which kept the time.
   two faults in the script before it ran anywhere: the error report's day
   went where its ctx belongs, and a stopped run would have copied a record
   twice.
-- **Not yet done:** running the script on the real stores. Until then,
-  votes and reports stored before this deploy keep their times, and the
-  eighth change's promise is open.
+- **Done 2026-11-15:** the script ran on the real stores ("The stored votes
+  and error reports rewritten without a time").
 
 ### WebKit and Firefox in the tests, 2026-11-14
 
@@ -4280,3 +4279,22 @@ M6 from `docs/project-notes/nose-m-cleanup-prompts-2026-10-15.md`.
   used; no stylesheet rule was added. No "before" pictures were taken.
 - No `js/` or `css/` file changed. `js/nose` still finds `menuButton` and
   `mobileMenu` and sets `aria-current` on the app header by path.
+
+### The stored votes and error reports rewritten without a time, 2026-11-15
+
+The last step of "Votes and error reports keep the day, not the time". Run in
+the Codespace once `8e1533f` was live:
+
+- `node scripts/blobs-to-days.js`: votes 5 scanned, 5 still keeping a time;
+  error reports 1 scanned, 1.
+- `node scripts/blobs-to-days.js --yes`: 5 votes and 1 error report rewritten
+  without a time, 0 failed.
+- The dry run again: 0 to rewrite in each store.
+
+The privacy page's eighth change now says so: "Those kept before then were
+rewritten the same way on November 15, 2026, so no stored vote or error
+report holds a time of day." It said the script would run "and we say so here
+once it has run".
+
+The two synthetic votes `feedback-read.js` names (2026-10-14) are among the
+five, and keep their day and notes; filter them by those.

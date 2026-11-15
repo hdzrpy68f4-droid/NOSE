@@ -1823,6 +1823,7 @@ under the cap.
 - [Votes and error reports keep the day, not the time, 2026-11-14](docs/handoff/13-records.md#votes-and-error-reports-keep-the-day-not-the-time-2026-11-14)
 - [WebKit and Firefox in the tests, 2026-11-14](docs/handoff/13-records.md#webkit-and-firefox-in-the-tests-2026-11-14)
 - [One header and one footer, 2026-11-14](docs/handoff/13-records.md#one-header-and-one-footer-2026-11-14)
+- [The stored votes and error reports rewritten without a time, 2026-11-15](docs/handoff/13-records.md#the-stored-votes-and-error-reports-rewritten-without-a-time-2026-11-15)
 
 ## 14. Dispensary integration
 
