@@ -1826,6 +1826,7 @@ under the cap.
 - [The stored votes and error reports rewritten without a time, 2026-11-15](docs/handoff/13-records.md#the-stored-votes-and-error-reports-rewritten-without-a-time-2026-11-15)
 - [A password reset that finishes, 2026-11-14](docs/handoff/13-records.md#a-password-reset-that-finishes-2026-11-14)
 - [The reset page works with Supabase's default email, 2026-11-15](docs/handoff/13-records.md#the-reset-page-works-with-supabases-default-email-2026-11-15)
+- [Backups on the privacy page, before any exist, 2026-11-15](docs/handoff/13-records.md#backups-on-the-privacy-page-before-any-exist-2026-11-15)
 
 ## 14. Dispensary integration
 

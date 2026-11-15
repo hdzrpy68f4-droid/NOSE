@@ -4374,3 +4374,47 @@ will be sent using the default templates."
   hour (`docs/handoff/open.md`). So no one but the owner gets a sign-up
   confirmation or a reset email today, and the reset page cannot help anyone
   else until an email service is set up.
+
+### Backups on the privacy page, before any exist, 2026-11-15
+
+B6 from `docs/project-notes/nose-blocker-prompts-FULL-2026-10-27.md`, its
+first half. The owner confirmed (2026-11-15) Supabase Pro for the
+organization and Netlify Pro, about $55 a month before usage: Supabase Pro
+"from $25/month" with "$10/month in compute credits" covering one project on
+Micro (the second project, the accounts, adds its own compute), and Netlify
+Pro "$20/month" with 3,000 credits (both pricing pages read 2026-11-15).
+
+- **What the docs say** (read 2026-11-15): Supabase backups - "We
+  automatically back up all Pro, Team, and Enterprise Plan projects on a
+  daily basis", "Pro Plan projects can access the last 7 days of daily
+  backups"; free projects get none; restoring an earlier backup loses what
+  came after it. Supabase pricing: "Projects on paid plans are not paused
+  for inactivity"; "Spend caps are on by default on the Pro Plan". Netlify
+  Blobs (last updated 2026-10-16): no backup, version or recovery of a
+  deleted blob is described.
+- **The privacy page**, before the plan changes:
+  - "How long we keep things" gains "Backups": the databases are kept by
+    Supabase, which on the paid plan backs each up daily and keeps each
+    backup seven days, so a deleted record can remain in those backups for
+    up to seven days; a backup would only be restored to recover from a
+    failure, restoring one would bring back what was deleted after it, and
+    any restore will be said on the page with the backup's date; Netlify's
+    file storage (synced palates, sessions, votes, error reports, PDFs) has
+    no backup described in Netlify's documentation, "we have not had that
+    confirmed by Netlify".
+  - Beside each deletion - the account, a removed lab report, a dispensary
+    leaving - one sentence on the seven days in Supabase's backups, and that
+    the file-storage part has no backup Netlify describes.
+  - "What changed" gains a ninth change, dated November 15, 2026.
+- **Not promised:** that a restore would delete again what was deleted after
+  the backup. Nothing records a deleted account's identity to do that with,
+  so the page promises only to say so if a backup is ever restored.
+- **The two Supabase projects:** accounts in "hdzrpy68f4-droid's Project"
+  (Canada Central) and the archive and dispensary tables in "nose" (East US).
+  On 2026-11-15 the owner set the accounts project's Site URL to
+  `https://nose-app.com` and added `https://nose-app.com/account/reset/` to
+  its Redirect URLs, as "The reset page works with Supabase's default email"
+  needs. The owner confirmed mail to contact@nose-app.com arrives.
+- **Next, once this page is live:** the owner's clicks - Supabase Pro with its
+  spend cap on, daily backups shown for both projects; Netlify Pro and a
+  usage notification; then the three more rate-limit rules Pro allows.
