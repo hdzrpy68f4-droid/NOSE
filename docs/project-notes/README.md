@@ -34,3 +34,15 @@ The docs refer to each other by their old Project paths, such as `claude/nose-ar
 ## Not included
 
 The Project's 21 screenshots (`2.1.jpg`, `3.1.PNG` and so on) are not in this folder.
+
+## Moved here on 2026-11-16
+
+Five dated change logs that sat in `docs/` until then, moved whole and unchanged. They describe the site as it was up to 2026-10-15 and are history, not instructions. Older notes that name them as `docs/<name>` mean these files.
+
+| File | What it is |
+|---|---|
+| `FIXES.md` | Fixes applied to an early build of the site |
+| `TIER1-CHANGES.md` | The product-integrity pass |
+| `TIER2-CHANGES.md` | The second pass of changes |
+| `TIER3-CHANGES.md` | The third pass of changes |
+| `LAUNCH-CHECKLIST.md` | The launch checklist as it stood then |

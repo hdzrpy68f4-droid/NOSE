@@ -123,8 +123,9 @@ const CAVEAT =
   'and is not evidence the aroma-shape hypothesis holds. Votes keep the day they arrived and no ' +
   'time, so within a day they have no order: "newest first" sorts by day only.';
 
-/* A record's day: v3 keeps day; v1 and v2, written before 2026-11-14 and
-   until scripts/blobs-to-days.js rewrites them, keep ts. */
+/* A record's day: v3 keeps day. v1 and v2, written before 2026-11-14, kept
+   ts; every stored one was rewritten on 2026-11-15, and reading ts stays so
+   that a record restored from before then still has a day. */
 const dayOf = (r) => (r && typeof r.day === 'string' ? r.day : r && typeof r.ts === 'string' ? r.ts.slice(0, 10) : null);
 
 function authorized(request, expected) {

@@ -4624,3 +4624,42 @@ emails' links to point at nose-app.com (commit 6839021).
   The owner tries one; whether it still lands in junk is open.
 - `auth-signup` and `auth-reset` still pass `redirect_to`; the new templates
   do not use it. Left in place: it is what makes "Reset template" safe.
+
+### An audit for dead weight: five small removals, 2026-11-16
+
+The owner asked for an audit of unnecessary complexity, duplicated logic and
+assumptions that no longer hold, then for the smallest changes, with no
+history lost from the project notes. Nothing the site serves changes.
+
+- **`archive-health.js` measures against the plan the projects are on**: 8 GB
+  of disk included for a Pro project ("8 GB disk size per project included,
+  then $0.125 per GB", supabase.com/pricing, read 2026-11-16), where it
+  measured against the free plan's 500 MB. The share prints to two decimals.
+- **`scripts/blobs-to-days.js` is removed**, with its checks in
+  `client-error-test`. Its job ended on 2026-11-15, when the dry run after
+  `--yes` found 0 to rewrite in each store ("The stored votes and error
+  reports rewritten"). Commit 9a78e47 is the last that has it.
+  `feedback-read.js` still reads a record that keeps `ts`: one expression,
+  kept so a record restored from before then still has a day, and
+  `match-feedback-test` still gives it one.
+- **`TOKEN_HASH` has one home**, `netlify/lib/auth.js`; `auth-confirm.js` and
+  `auth-reset-finish.js` each had a copy.
+- **`scripts/archive-status.js` is removed**: `archive-health.js` prints the
+  rows per table and the newest parse, and no test or gate ran the smaller
+  script. Commit 9a78e47 is the last that has it.
+- **Five dated documents moved, whole, to `docs/project-notes/`**:
+  `FIXES.md`, `TIER1-`, `TIER2-`, `TIER3-CHANGES.md` and
+  `LAUNCH-CHECKLIST.md` (`git mv`, not a byte changed). They describe the
+  site as it was before 2026-10-15; that folder's README says so. Older
+  notes that name them by `docs/<name>` mean these files.
+- **Looked at and left:**
+  - the old email-link route (the session after "#" on both account pages,
+    `access_token` in `auth-reset-finish`, `redirect_to` in `auth-signup` and
+    `auth-reset`): "Reset template" in Supabase would need it again;
+  - `set-writer-password.js` and `set-b2b-password.js`, about a third alike:
+    run rarely, by hand, on credentials;
+  - `css/shell` and `family.css`, 79 selectors in common: merging them
+    changes every page's bytes, so it is its own prompt;
+  - the rate-limit comment repeated in five functions.
+- **Not audited:** `parse-coa.js`, the dispensary code beyond which scripts
+  a test or gate runs, and the tests' own repetition.

@@ -403,7 +403,8 @@ async function main() {
     palateSize: 1, ts: '2026-10-01T12:00:00.000Z', clientTs: null, ctx: 'v1ctx' });
   kept.push(V1_KEY);
   /* A v2 record, as votes were stored from 2026-10-14 until 2026-11-14: notes,
-     and still ts and clientTs, until scripts/blobs-to-days.js rewrites it. */
+     and still ts and clientTs. None is stored since 2026-11-15; the reader
+     still takes one. */
   const V2_KEY = 'votes/strong/down/2026-11-01/093000123-bbb222';
   await storeNamed('match-feedback').setJSON(V2_KEY, { v: 2, vote: 'down', band: 'Strong', score: 93, candidate: 'forest-window', palate: ['violet-hour'],
     palateSize: 1, ts: '2026-11-01T09:30:00.123Z', clientTs: '2026-11-01T09:29:59.000Z', ctx: 'v2ctx', notes: ['pine'] });

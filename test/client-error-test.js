@@ -108,57 +108,10 @@ async function main() {
       [value.status, purgeBlobs.keys('client-errors').map(k => k.split('/')[1]), lines.length], [200, [day(89), TODAY()].sort(), 1]);
   }
 
-  /* scripts/blobs-to-days.js, against stand-in stores. */
-  {
-    const script = require(path.join(ROOT, 'scripts/blobs-to-days.js'));
-    const b = makeBlobs();
-    const votes = b.getStore('match-feedback'), errs = b.getStore('client-errors');
-    const oldVote = (k, ts, extra = {}) => votes.setJSON(k, { v: 2, vote: 'up', band: 'Good', score: 80, candidate: 'cold-creek', palate: ['lemon-tart'],
-      palateSize: 1, ts, clientTs: ts, ctx: 'ctx1', notes: null, ...extra });
-    await oldVote('votes/good/up/2026-10-20/101500123-abc123', '2026-10-20T10:15:00.123Z');
-    await oldVote('votes/low/down/2026-10-21/235959999-def456', '2026-10-21T23:59:59.999Z', { vote: 'down', band: 'Low', score: 30 });
-    await votes.setJSON(`votes/good/up/${TODAY()}/${'e'.repeat(32)}`, { v: 3, vote: 'up', band: 'Good', day: TODAY(), ctx: 'new' });
-    await errs.setJSON('errors/2026-10-22/0123456789ab/120000000-xyz789', { v: 1, kind: 'error', message: 'm', source: '', line: 1, col: 1,
-      page: '/app', ua: 'u', ts: '2026-10-22T12:00:00.000Z', clientTs: null, ctx: '0123456789ab' });
-    const printed = [];
-    const run = (args, opts = {}) => script.main(args, { out: l => printed.push(l), err: l => printed.push(l), getStore: n => (n === 'match-feedback' ? votes : n === 'client-errors' ? errs : b.getStore(n)), ...opts });
-
-    const refused = [];
-    check('the script refuses without NETLIFY_SITE_ID and NETLIFY_AUTH_TOKEN',
-      await script.main([], { env: {}, out: l => refused.push(l), err: l => refused.push(l) }), 1);
-    const before = JSON.stringify([b.keys('match-feedback'), b.keys('client-errors')]);
-    const dry = await run([]);
-    check('a dry run counts what still keeps a time - 2 votes, 1 error report - and writes nothing',
-      [dry, printed.slice(-3), JSON.stringify([b.keys('match-feedback'), b.keys('client-errors')]) === before],
-      [0, ['votes: 3 scanned, 2 still keep a time and would be rewritten', 'error reports: 1 scanned, 1 still keep a time and would be rewritten',
-        'dry run - nothing was written; add --yes to rewrite'], true]);
-
-    /* A run that stops part way: the delete of the second old vote fails. */
-    const realDelete = votes.delete.bind(votes);
-    let deletes = 0;
-    votes.delete = async k => { if (++deletes === 2) throw new Error('stand-in: stopped part way'); return realDelete(k); };
-    const partial = await run(['--yes']);
-    votes.delete = realDelete;
-    const second = await run(['--yes']);
-    const vKeys = b.keys('match-feedback'), eKeys = b.keys('client-errors');
-    const vRecs = vKeys.map(k => b.read('match-feedback', k));
-    check('--yes, stopped part way, says so; a second run finishes it',
-      [partial, second], [1, 0]);
-    check('...every vote now under votes/<band>/<vote>/<day>/<32 hex>, its band, vote and day kept, no ts or clientTs, v 3',
-      [vKeys.every(k => /^votes\/(good|low)\/(up|down)\/\d{4}-\d{2}-\d{2}\/[0-9a-f]{32}$/.test(k)),
-       vRecs.map(r => [r.band, r.vote, r.day, 'ts' in r, 'clientTs' in r, r.v]).sort()],
-      [true, [['Good', 'up', '2026-10-20', false, false, 3], ['Good', 'up', TODAY(), false, false, 3], ['Low', 'down', '2026-10-21', false, false, 3]].sort()]);
-    check('...the stopped vote counted once, not twice', vKeys.length, 3);
-    check('...the error report under errors/<day>/<ctx>/<32 hex>, day and ctx kept, no ts or clientTs, v 2',
-      [eKeys.length, /^errors\/2026-10-22\/0123456789ab\/[0-9a-f]{32}$/.test(eKeys[0]), b.read('client-errors', eKeys[0])],
-      [1, true, { v: 2, kind: 'error', message: 'm', source: '', line: 1, col: 1, page: '/app', ua: 'u', day: '2026-10-22', ctx: '0123456789ab' }]);
-    printed.length = 0;
-    await run([]);
-    check('...and a dry run after it finds 0 to rewrite', printed.slice(0, 2),
-      ['votes: 3 scanned, 0 still keep a time and would be rewritten', 'error reports: 1 scanned, 0 still keep a time and would be rewritten']);
-    check('the script prints counts only: no key, no value, no time',
-      [...printed, ...refused].filter(l => /votes\/|errors\/|ctx1|cold-creek|T\d{2}:/.test(l)), []);
-  }
+  /* scripts/blobs-to-days.js rewrote every record that kept a time on
+     2026-11-15 (13-records, "The stored votes and error reports rewritten");
+     the script and its checks were removed on 2026-11-16. Commit 9a78e47 is
+     the last that has them. */
 
   finished = true;
   if (failures) { console.log(`\nclient-error: ${failures} failure${failures === 1 ? '' : 's'}`); process.exit(1); }

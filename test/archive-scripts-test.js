@@ -298,7 +298,7 @@ async function main() {
     assert.strictEqual(bad, false);
     assert.match(out, /documents\s+2\b/);
     assert.match(out, /parses\s+3\b/);
-    assert.match(out, /12\.0 MB of the free plan's 500 MB \(2\.4%\)/);
+    assert.match(out, /12\.0 MB of the 8 GB the Pro plan includes \(0\.15%\)/);
     assert.match(out, /newest parse\s+#7\s+2026-09-23\s+production/);
     assert.match(out, /parser abc1234 \| extractor 0123456789ab/);
     assert.match(out, /files\s+2\b/);

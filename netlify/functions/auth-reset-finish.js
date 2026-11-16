@@ -9,8 +9,10 @@
 //   - Supabase's default email: its link goes to Supabase, which checks it and
 //     sends the browser on to /account/reset/#access_token=...&type=recovery
 //     (auth-reset.js asks for that address). The page sends { access_token }.
-//     Supabase's free plan allows no other template without custom SMTP.
-//   - A custom template linking /account/reset/?token_hash=...&type=recovery:
+//     Emails sent before 2026-11-16 work this way, and "Reset template" in
+//     the dashboard would bring it back.
+//   - The template since 2026-11-16 (13-records, "Email links that come to
+//     NOSE") links /account/reset/#token_hash=...&type=recovery:
 //     the page sends { token_hash } only when the button is pressed, so an
 //     email scanner that opens the link first does not use the code up.
 // Here:
@@ -25,7 +27,7 @@
 // and a status, never the address.
 
 import {
-  gotrue, isPassword, readJsonBody, destroyAllSessions, fromThisSite, crossSite,
+  gotrue, isPassword, readJsonBody, destroyAllSessions, fromThisSite, crossSite, TOKEN_HASH,
 } from '../lib/auth.js';
 import { json, methodNotAllowed } from '../lib/http.js';
 
@@ -33,7 +35,6 @@ const EXPIRED = {
   error: 'link-expired',
   message: 'This reset link has expired or was already used. Ask for a new one on the account page.',
 };
-const TOKEN_HASH = /^[A-Za-z0-9_-]{16,256}$/;
 const ACCESS_TOKEN = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;   // a JWT
 const userIdOf = (jwt) => { try { return JSON.parse(Buffer.from(jwt.split('.')[1], 'base64url').toString('utf8')).sub || null; } catch { return null; } };
 

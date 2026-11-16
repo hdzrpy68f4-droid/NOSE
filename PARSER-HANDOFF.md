@@ -1011,7 +1011,6 @@ test/date-probe.js                                    read-only: the dates each 
 scripts/embed-supabase-ca.js                          writes supabase-ca.js from the download
 scripts/set-writer-password.js                        rotates nose_writer, prints NOSE_DB_URL once
 scripts/probe-db.js                                   checks the real project
-scripts/archive-status.js                             counts and latest parses, read-only
 scripts/archive-health.js                             both halves: rows, sizes, orphans, newest parse
 scripts/seed-from-fixtures.js                         every fixture PDF through storeScan, context seed
 scripts/reparse.js                                    every document through today's parser (--reextract: extractor too)
@@ -1425,7 +1424,8 @@ to name the code that ran. Safe to run again: it adds only what is missing. Run 
 any real scan depends on the PDF half: it proves both halves end to end.
 
 `node scripts/archive-health.js` prints rows per table, the newest parse in
-full, database size against the free plan's 500 MB, PDF count and bytes, and
+full, database size against the 8 GB of disk the Pro plan includes (500 MB on the
+free plan, until 2026-11-15), PDF count and bytes, and
 the PDFs and documents that lack their other half. A PDF with a document row
 is measured from the row — its key is the hash of those very bytes — so only
 orphans are downloaded; `--verify` downloads and re-hashes every file. It
@@ -1750,8 +1750,7 @@ Since 2026-11-16 a push that changes only notes and tests does not move
 `live`, and there is nothing to check ("After the review").
 Then:
 
-1. `node scripts/archive-health.js` in the Codespace (reads as `nose_writer`;
-`archive-status.js` still works for the database half alone).
+1. `node scripts/archive-health.js` in the Codespace (reads as `nose_writer`).
 2. Scan one real jar on the live site.
 3. Run it again: the newest parse is that jar, dated today (UTC), context
 `production`, with the deploy's commit as its parser version, and one more PDF
@@ -1845,6 +1844,7 @@ under the cap.
 - [After the review: notes-only pushes do not deploy, 2026-11-16](docs/handoff/13-records.md#after-the-review-notes-only-pushes-do-not-deploy-2026-11-16)
 - [A sign-up tested on the live site, 2026-11-16](docs/handoff/13-records.md#a-sign-up-tested-on-the-live-site-2026-11-16)
 - [Email links that come to NOSE, 2026-11-16](docs/handoff/13-records.md#email-links-that-come-to-nose-2026-11-16)
+- [An audit for dead weight: five small removals, 2026-11-16](docs/handoff/13-records.md#an-audit-for-dead-weight-five-small-removals-2026-11-16)
 
 ## 14. Dispensary integration
 

@@ -8,7 +8,9 @@
  * Reports:
  *   - rows per table, and the newest parse in full (the day, never a time -
  *     the archive does not record times)
- *   - database size against the Supabase free plan's 500 MB
+ *   - database size against the 8 GB of disk Supabase's Pro plan includes for a
+ *     project (its pricing page, read 2026-11-16; the projects moved to Pro on
+ *     2026-11-15 - until then this measured against the free plan's 500 MB)
  *   - how many PDFs Netlify Blobs holds, and their total bytes
  *   - PDFs with no document row, and documents with no PDF
  *
@@ -34,7 +36,7 @@ const { clientConfig } = require(path.join(LIB, 'store.js'));
 const pdfStore = require(path.join(LIB, 'pdf-store.js'));
 const { reason } = require(path.join(LIB, 'archive.js'));
 
-const FREE_PLAN_BYTES = 500 * 1000 * 1000;   // decimal MB: never understates the share used
+const INCLUDED_BYTES = 8 * 1000 * 1000 * 1000;   // decimal GB: never understates the share used
 const MB = n => `${(n / 1e6).toFixed(1)} MB`;
 const short = sha => `${String(sha).slice(0, 12)}...`;
 const secretHelp = n => (n === 1 ? 'is not set - it is a Codespaces secret; add it' : 'are not set - they are Codespaces secrets; add them') +
@@ -112,9 +114,9 @@ function report({ db, dbError, blobKeys, blobError, measured = new Map(), verify
     lines.push(`  documents      ${n.documents}`);
     lines.push(`  extractions    ${n.extractions}`);
     lines.push(`  parses         ${n.parses}`);
-    lines.push(`  size           ${MB(dbBytes)} of the free plan's 500 MB ` +
-               `(${(100 * dbBytes / FREE_PLAN_BYTES).toFixed(1)}%) - the archive's own tables are ${MB(Number(n.nose_bytes))} of it`);
-    if (dbBytes > 0.8 * FREE_PLAN_BYTES) attention.push('the database is past 80% of the free plan');
+    lines.push(`  size           ${MB(dbBytes)} of the 8 GB the Pro plan includes ` +
+               `(${(100 * dbBytes / INCLUDED_BYTES).toFixed(2)}%) - the archive's own tables are ${MB(Number(n.nose_bytes))} of it`);
+    if (dbBytes > 0.8 * INCLUDED_BYTES) attention.push('the database is past 80% of the 8 GB the Pro plan includes');
     const p = db.newest;
     if (!p) {
       lines.push('  newest parse   none yet');
@@ -230,7 +232,7 @@ async function main() {
   process.exit(failed ? 1 : 0);
 }
 
-module.exports = { report, COUNTS_SQL, NEWEST_SQL, DOCUMENTS_SQL, FREE_PLAN_BYTES };
+module.exports = { report, COUNTS_SQL, NEWEST_SQL, DOCUMENTS_SQL, INCLUDED_BYTES };
 if (require.main === module) {
   main().catch(e => { console.error('archive-health failed:', reason(e)); process.exit(1); });
 }

@@ -17,14 +17,13 @@
 // Nothing is kept: no code, no address. Console lines name a step and a
 // status, never the address. No cookie is read or set.
 
-import { gotrue, readJsonBody, fromThisSite, crossSite } from '../lib/auth.js';
+import { gotrue, readJsonBody, fromThisSite, crossSite, TOKEN_HASH } from '../lib/auth.js';
 import { json, methodNotAllowed } from '../lib/http.js';
 
 const EXPIRED = {
   error: 'link-expired',
   message: 'This confirmation link has expired or was already used. Try signing in; if your address is not confirmed yet, signing up again with it sends a new link.',
 };
-const TOKEN_HASH = /^[A-Za-z0-9_-]{16,256}$/;
 
 export default async (request) => {
   if (request.method !== 'POST') return methodNotAllowed();

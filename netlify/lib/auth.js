@@ -88,6 +88,10 @@ export const isPassword = (v) => typeof v === 'string' && v.length >= 10 && v.le
 
 export const normaliseEmail = (v) => String(v).trim().toLowerCase();
 
+/* The shape of the one-time code in an email link (Supabase's token_hash).
+   One of the wrong shape never reaches Supabase. */
+export const TOKEN_HASH = /^[A-Za-z0-9_-]{16,256}$/;
+
 // An auth request's body: a JSON object of at most 4096 characters, read by
 // http.js's readJsonBody - the beacons' reader too, each with its own limit.
 const MAX_BODY_CHARS = 4096;
