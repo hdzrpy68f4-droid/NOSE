@@ -193,7 +193,7 @@ async function main() {
   const fresh = await call(signup, 'POST', { email: ' New@Example.test ', password: PASSWORD, ageAttested: true });
   const sent = supa.calls.at(-1);
   check('signup: the call to Supabase is POST /auth/v1/signup with the address trimmed and lower-cased',
-    [sent.method, sent.path, sent.body.email, sent.body.password], ['POST', '/auth/v1/signup', 'new@example.test', PASSWORD]);
+    [sent.method, sent.path, sent.body.email, sent.body.password], ['POST', '/auth/v1/signup?redirect_to=https%3A%2F%2Fnose-app.com%2Faccount%2Fconfirmed%2F', 'new@example.test', PASSWORD]);
   check('signup: ...its user metadata is exactly age_attested_at, a time - no subscription, which only app_metadata holds',
     [Object.keys(sent.body.data), !Number.isNaN(Date.parse(sent.body.data.age_attested_at))],
     [['age_attested_at'], true]);

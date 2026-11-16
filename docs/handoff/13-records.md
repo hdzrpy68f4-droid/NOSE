@@ -4514,3 +4514,27 @@ password was set. `open.md` loses "No page finishes a password reset" and
 both custom-SMTP items; "Supabase's session is left in the address" narrows
 to sign-up confirmations, which still land on the Site URL with tokens after
 `#`.
+
+### A confirmation page, 2026-11-15
+
+A sign-up confirmation link passed through Supabase and landed on the Site
+URL with Supabase's `access_token` and `refresh_token` after `#`, which
+nothing read or cleared, so they stayed in the browser's history.
+
+- `auth-signup` asks Supabase for `/signup?redirect_to=https://nose-app.com/account/confirmed/`.
+  The address must be in the accounts project's Redirect URLs; until it is,
+  Supabase falls back to the Site URL, as before.
+- **`/account/confirmed/`** (new, noindex, no-referrer): `initConfirmed()`
+  in `js/account` reads the address once and takes it out at once with
+  `history.replaceState`. It says "Your email address is confirmed" for
+  `type=signup` with an `access_token`; that the link "has expired or was
+  already used" for an `error` or `error_code`; otherwise that it needs the
+  email's link. Nothing from the address is kept or sent: NOSE signs people
+  in with its own sessions, so Supabase's session has no use here.
+- Tests: `accounts-test` pins the signup call's `redirect_to`;
+  `input-paths-test` opens the page from a confirmation, an expired link and
+  no link, and checks the address is cleared and no request is made
+  (Chromium and Firefox here; WebKit on CI); `page-chrome-test` counts 26
+  pages.
+- `open.md` loses "A sign-up confirmation still leaves Supabase's session in
+  the address".

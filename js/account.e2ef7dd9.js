@@ -325,7 +325,25 @@
     });
   }
 
-  var start = document.getElementById('panel-newpass') ? initReset : init;
+  /* /account/confirmed/ (since 2026-11-15, PARSER-HANDOFF s13, "A confirmation
+     page"): a sign-up confirmation link passes through Supabase, which sends
+     the browser here with its session after "#" - or an error, if the link
+     had expired or been used. NOSE signs people in with its own sessions, so
+     nothing from the address is kept or sent anywhere: it is read once,
+     taken out of the address at once, so it stays in neither the history nor
+     a Referer, and the page says which it was. */
+  function initConfirmed() {
+    var hash = new URLSearchParams(location.hash.replace(/^#/, ''));
+    var ok = hash.get('type') === 'signup' && !!hash.get('access_token');
+    var failed = !ok && !!(hash.get('error') || hash.get('error_code'));
+    if (location.search || location.hash) history.replaceState(null, '', location.pathname);
+    show($('confirmed-ok'), ok);
+    show($('confirmed-failed'), failed);
+    show($('confirmed-nolink'), !ok && !failed);
+  }
+
+  var start = document.getElementById('panel-newpass') ? initReset
+    : document.getElementById('panel-confirmed') ? initConfirmed : init;
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', start);
   } else {

@@ -20,6 +20,12 @@ import {
 } from '../lib/auth.js';
 import { json, methodNotAllowed } from '../lib/http.js';
 
+/* Where the confirmation email's link lands, after Supabase (since 2026-11-15,
+   PARSER-HANDOFF s13, "A confirmation page"): the page clears Supabase's
+   session from the address. It must be in the accounts project's Redirect
+   URLs, or Supabase sends the link to its Site URL instead. */
+const CONFIRM_PAGE = 'https://nose-app.com/account/confirmed/';
+
 // Deliberately identical for every outcome.
 const NEUTRAL = {
   status: 'submitted',
@@ -58,7 +64,7 @@ export default async (request) => {
   const allowed = await rateLimit('signup', email, { limit: 5, windowSeconds: 3600 });
   if (!allowed) return tooMany();
 
-  const res = await gotrue('/signup', {
+  const res = await gotrue(`/signup?redirect_to=${encodeURIComponent(CONFIRM_PAGE)}`, {
     body: {
       email,
       password: d.password,

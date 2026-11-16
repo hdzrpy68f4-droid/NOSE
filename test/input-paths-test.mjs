@@ -1096,6 +1096,25 @@ try {
     try { viaHash = JSON.parse(finishes[0]); } catch {}
     check('reset page: from the default email, the session leaves the address at once and is sent with the password, the refresh token never',
       [new URL(p.url()).hash, viaHash], ['', { access_token: SESSION, password: 'a brand new password' }]);
+
+    /* /account/confirmed/ (since 2026-11-15, "A confirmation page"): Supabase's
+       session leaves the address at once and goes nowhere. */
+    const confirmCalls = [];
+    p.on('request', r => { if (/\/(\.netlify\/functions|api)\//.test(new URL(r.url()).pathname)) confirmCalls.push(r.url()); });
+    const vis = () => Promise.all(['#confirmed-ok', '#confirmed-failed', '#confirmed-nolink'].map(s => p.isVisible(s)));
+    await p.goto('about:blank');
+    await p.goto(`${BASE}/account/confirmed/#access_token=${SESSION}&refresh_token=r&expires_in=3600&token_type=bearer&type=signup`);
+    await p.waitForFunction(() => location.hash === '');
+    check('confirmed page: from a confirmation link, the session leaves the address at once, nothing is sent, and it says the address is confirmed',
+      [new URL(p.url()).pathname + new URL(p.url()).hash, await vis(), confirmCalls.length], ['/account/confirmed/', [true, false, false], 0]);
+    await p.goto('about:blank');
+    await p.goto(`${BASE}/account/confirmed/#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired`);
+    await p.waitForFunction(() => location.hash === '');
+    check('confirmed page: from an expired link, it says so',
+      [await vis(), confirmCalls.length], [[false, true, false], 0]);
+    await p.goto(`${BASE}/account/confirmed/`);
+    check('confirmed page: opened without a link, it says the email\'s link is needed',
+      [await vis(), confirmCalls.length], [[false, false, true], 0]);
     await ctx.close();
   }
 

@@ -1837,6 +1837,7 @@ under the cap.
 - [Backups were already there, 2026-11-15](docs/handoff/13-records.md#backups-were-already-there-2026-11-15)
 - [Account emails switched on through Resend, 2026-11-15](docs/handoff/13-records.md#account-emails-switched-on-through-resend-2026-11-15)
 - [Reset tested on the live site, 2026-11-15](docs/handoff/13-records.md#reset-tested-on-the-live-site-2026-11-15)
+- [A confirmation page, 2026-11-15](docs/handoff/13-records.md#a-confirmation-page-2026-11-15)
 
 ## 14. Dispensary integration
 

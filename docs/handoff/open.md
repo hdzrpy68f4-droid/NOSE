@@ -109,13 +109,6 @@ file either.
   and sets the new password. The link still passes through Supabase's own
   site first, so Supabase sees the clicker's IP address, as the privacy page
   says.
-- **A sign-up confirmation still leaves Supabase's session in the address.**
-  The reset page clears its own (`history.replaceState`), but a confirmation
-  link redirects to the Site URL (`https://nose-app.com`) with an
-  `access_token` and `refresh_token` after `#` (Supabase's documented flow;
-  not yet watched), which nothing reads or clears, so they stay in that
-  browser's history. A confirmation landing page, like the reset page,
-  would end it.
 - **The stored address keeps a link's path.** Only what follows "?" (and "#")
 is dropped, so a one-off link that carries a code in its path keeps it. "The
 store holds nothing about the person who scanned" relies on that being rare:
