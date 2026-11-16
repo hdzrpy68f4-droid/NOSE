@@ -4928,3 +4928,19 @@ variable reaches the functions only with a new deploy, and no push was due.
   user for the account page, and deleting an account.
 - **To undo:** delete the variable in Netlify and deploy again; every call
   carries the service key as before.
+
+### The real archive after the parser review, 2026-11-16
+
+The step "The parser reviewed" and "Total tiles" left for the Codespace. Run
+by the owner there, at `c0ff192`, which holds every parser change of the day:
+
+```
+reparse --dry-run: parser c0ff192
+dry run - nothing was written
+69 documents: 69 unchanged / 0 values changed / 0 accepted→rejected / 0 rejected→accepted / 0 failed
+```
+
+No archived report reads differently, and none is newly refused. A first run
+the same hour printed `parser d8c19b7`: the Codespace had not pulled, so it
+compared the old parser with itself and showed nothing; the line naming the
+parser is what to read first.
