@@ -4504,3 +4504,13 @@ Usage & billing. A production deploy costs 15 credits: about 200 a month.
 - **Privacy page:** the Resend paragraph now says "Since November 15,
   2026", from no-reply@nose-app.com; the tenth change loses "not switched on
   yet".
+
+### Reset tested on the live site, 2026-11-15
+
+The owner asked for a password reset for their own account on
+nose-app.com/account/: the email arrived (from NOSE <no-reply@nose-app.com>,
+through Resend), and its link loaded `/account/reset/`, where the new
+password was set. `open.md` loses "No page finishes a password reset" and
+both custom-SMTP items; "Supabase's session is left in the address" narrows
+to sign-up confirmations, which still land on the Site URL with tokens after
+`#`.

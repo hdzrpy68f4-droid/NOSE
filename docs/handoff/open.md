@@ -103,33 +103,19 @@ Emails → Templates (Confirm sign up, Reset password) - not found on
 Supabase's own site, the new paragraph changes. The account functions'
 `SUPABASE_URL` and `SUPABASE_SERVICE_KEY` are not described anywhere in this
 file either.
-- **No page finishes a password reset.** After a reset link, Supabase verifies
-it and sends the browser to the Site URL (`https://nose-app.com`) with a
-session in the address after `#` - Supabase's documented flow for a request
-made without PKCE, as `auth-reset.js` makes it; not yet watched on the live
-site. Nothing on NOSE reads it, asks for a new password, or calls Supabase to
-set one - no function calls `/user`, read in the code on 2026-10-03 - so a
-reset email cannot lead to a new password today. Routing the links through
-nose-app.com (a landing page, and a server call that verifies the link's
-`token_hash`) would fix this and the IP-address point together, and email
-scanners that open links before people do are the known trap there. It needs
-its own prompt.
-- **Supabase's session is left in the address.** The same redirect, after a
-confirmation or a reset link, puts an `access_token` and a `refresh_token`
-after `#` on nose-app.com (the documented flow again; not yet watched). NOSE
-never reads or clears them - the app's router reads `#` only to name a page -
-so they would stay in that browser's history. Ending the redirect (the item
-above) ends this too.
-- **Custom SMTP is not set up (seen in the dashboard 2026-11-15), so account
-  emails reach no one but the owner.** The accounts project says "Set up
-  custom SMTP to edit templates". Needs an email service, its sender domain
-  checked, and the privacy page naming it before it is switched on.
-- **(Earlier note) Custom SMTP: not known whether it is on.** Supabase's docs (read
-2026-10-03): without it, the built-in service delivers only to the project's
-team members, 2 messages an hour, so real people would get no confirmation or
-reset email. With it, that company receives every address it delivers to, and
-the privacy page's "Nobody else" would have to name it; and if it tracks
-clicks, the email links go through its own address first.
+- **A password reset works end to end since 2026-11-15** (13-records, "Account
+  emails switched on through Resend" and "Reset tested"): the email arrives
+  from Resend, its link lands on `/account/reset/`, which clears the address
+  and sets the new password. The link still passes through Supabase's own
+  site first, so Supabase sees the clicker's IP address, as the privacy page
+  says.
+- **A sign-up confirmation still leaves Supabase's session in the address.**
+  The reset page clears its own (`history.replaceState`), but a confirmation
+  link redirects to the Site URL (`https://nose-app.com`) with an
+  `access_token` and `refresh_token` after `#` (Supabase's documented flow;
+  not yet watched), which nothing reads or clears, so they stay in that
+  browser's history. A confirmation landing page, like the reset page,
+  would end it.
 - **The stored address keeps a link's path.** Only what follows "?" (and "#")
 is dropped, so a one-off link that carries a code in its path keeps it. "The
 store holds nothing about the person who scanned" relies on that being rare:
