@@ -539,8 +539,11 @@ Wanted work, not yet built.
   NOSE"). Whether that is enough is not known: the sending domain is days
   old, and a mail provider's trust in one grows with mail that is opened.
   The reset email with the new link arrived in the **inbox** on 2026-11-16
-  and its link set a new password (the owner's test). Still to see: a
-  sign-up email with the new link, and the button on the confirmation page.
+  and its link set a new password (the owner's test). A sign-up
+  email with the new link followed the same day: its link opened the
+  confirmation page and the button confirmed the address (the owner's test).
+  Which folder that one landed in was not said. Both links are proven; what
+  stays open is only whether mail keeps reaching the inbox as more is sent.
 - **Since 2026-11-16 the login emails no longer show Supabase the clicker's
   IP address** (13-records, "Email links that come to NOSE"): the two
   templates link to this site. It holds only while the templates do: "Reset
