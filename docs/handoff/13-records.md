@@ -4484,3 +4484,23 @@ Netlify, read the same day: team on Pro (3,000 credits a month, expiring
 December 15), auto recharge disabled - nothing is bought past the monthly
 credits without the owner - and no separate usage alert setting found on
 Usage & billing. A production deploy costs 15 credits: about 200 a month.
+
+### Account emails switched on through Resend, 2026-11-15
+
+- **Resend:** domain nose-app.com, region North Virginia (us-east-1), click
+  and open tracking off (the defaults, left unticked). DNS records added by
+  hand in Cloudflare (not Resend's "Auto configure", which would have been
+  given access to the Cloudflare account): CNAME `send` →
+  `send.forge.rmta.net` and `rsend` → `rsend.forge.rmta.net` (DNS only), TXT
+  `resend._domainkey` (Resend's public DKIM key), TXT `_dmarc`
+  `v=DMARC1; p=none;`. None of the four names existed before; the root
+  MX/SPF for Cloudflare Email Routing (contact@) is unchanged. Resend:
+  "Domain verified".
+- **Supabase**, accounts project, Authentication → Emails → SMTP Settings:
+  custom SMTP on - sender `no-reply@nose-app.com`, name `NOSE`, host
+  `smtp.resend.com`, port 465, username `resend`, the password a Resend
+  sending-access key the owner made and pasted (never seen here). Supabase
+  now caps auth email at 30 an hour (Authentication → Rate Limits).
+- **Privacy page:** the Resend paragraph now says "Since November 15,
+  2026", from no-reply@nose-app.com; the tenth change loses "not switched on
+  yet".
