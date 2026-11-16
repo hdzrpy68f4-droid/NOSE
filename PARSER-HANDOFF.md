@@ -1843,6 +1843,7 @@ under the cap.
 - [Reset tested on the live site, 2026-11-15](docs/handoff/13-records.md#reset-tested-on-the-live-site-2026-11-15)
 - [A confirmation page, 2026-11-15](docs/handoff/13-records.md#a-confirmation-page-2026-11-15)
 - [After the review: notes-only pushes do not deploy, 2026-11-16](docs/handoff/13-records.md#after-the-review-notes-only-pushes-do-not-deploy-2026-11-16)
+- [A sign-up tested on the live site, 2026-11-16](docs/handoff/13-records.md#a-sign-up-tested-on-the-live-site-2026-11-16)
 
 ## 14. Dispensary integration
 

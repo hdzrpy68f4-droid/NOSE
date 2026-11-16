@@ -530,3 +530,12 @@ Wanted work, not yet built.
   matches their palate. Wanted as an option after the pilot. Preferred build:
   the dispensary's server runs the ranking engine on purchase history it
   already holds, so NOSE never receives it.
+- **The first confirmation email went to junk** (2026-11-16, the owner's
+  second address; 13-records, "A sign-up tested on the live site"). SPF, DKIM
+  and DMARC (`p=none`) are in place. Likely causes, none measured: the
+  sending domain was a day old, and the email's only link points at
+  Supabase's domain while the sender is nose-app.com. A link to
+  nose-app.com itself (a template built on `{{ .TokenHash }}`, verified by a
+  function, as `/account/reset/` already accepts) would remove the mismatch
+  and keep the clicker's IP address from Supabase - and change the privacy
+  page's paragraph about it. Its own prompt.

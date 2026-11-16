@@ -4569,3 +4569,15 @@ from it.
   prompt.
 - Three notes corrected the same day (commit 499b6f6): the after-deploy list
   no longer runs keep-awake, and two open items say what is true now.
+
+### A sign-up tested on the live site, 2026-11-16
+
+The owner signed up at nose-app.com/account/ with a second address of their
+own. The confirmation email arrived through Resend, **in the junk folder**;
+its link landed on `/account/confirmed/`, which said the address was
+confirmed and left nothing after the path; signing in with the new address
+and password worked. That is the first real proof of the sign-up email and
+the confirmation page ("A confirmation page").
+
+Junk is open (open.md): the sending domain is a day old, and the email's one
+link points at Supabase's domain, not nose-app.com.
