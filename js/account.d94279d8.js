@@ -335,7 +335,10 @@
   function initConfirmed() {
     var hash = new URLSearchParams(location.hash.replace(/^#/, ''));
     var ok = hash.get('type') === 'signup' && !!hash.get('access_token');
-    var failed = !ok && !!(hash.get('error') || hash.get('error_code'));
+    /* Supabase writes a failed link's error after "#", and may write it
+       after "?" as well; either one is enough. */
+    var query = new URLSearchParams(location.search);
+    var failed = !ok && !!(hash.get('error') || hash.get('error_code') || query.get('error') || query.get('error_code'));
     if (location.search || location.hash) history.replaceState(null, '', location.pathname);
     show($('confirmed-ok'), ok);
     show($('confirmed-failed'), failed);

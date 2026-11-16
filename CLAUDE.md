@@ -57,7 +57,7 @@ After any parser change, the Kaycha anchors must not move: `KAY-CAR-001` → 4.1
 
 ## Deploy model
 
-There's no manual deploy. On every push to `main`, `.github/workflows/gates.yml` runs `gates.sh` on a fresh machine with no secrets. If the run is green, the `promote` job fast-forwards the branch `live`, and Netlify builds `live`. CI also fails if the gates leave the tree changed. So after editing a bundle, run `bash build.sh` and commit the renamed files. After promote, the workflow's `live-check` job runs `scripts/live-check.sh` against the real site. The checks only a person can do are in PARSER-HANDOFF §13, "After a deploy — check it".
+There's no manual deploy. On every push to `main`, `.github/workflows/gates.yml` runs `gates.sh` on a fresh machine with no secrets. If the run is green, the `promote` job fast-forwards the branch `live`, and Netlify builds `live`. A push that changes only `docs/`, `test/` or a top-level `.md` leaves `live` alone and deploys nothing (since 2026-11-16); the next other push carries it. CI also fails if the gates leave the tree changed. So after editing a bundle, run `bash build.sh` and commit the renamed files. After promote, the workflow's `live-check` job runs `scripts/live-check.sh` against the real site. The checks only a person can do are in PARSER-HANDOFF §13, "After a deploy — check it".
 
 ## Architecture
 

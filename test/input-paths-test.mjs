@@ -1112,6 +1112,11 @@ try {
     await p.waitForFunction(() => location.hash === '');
     check('confirmed page: from an expired link, it says so',
       [await vis(), confirmCalls.length], [[false, true, false], 0]);
+    await p.goto('about:blank');
+    await p.goto(`${BASE}/account/confirmed/?error=access_denied&error_code=otp_expired`);
+    await p.waitForFunction(() => location.search === '');
+    check('confirmed page: an error after "?" alone says expired too, and leaves the address',
+      [await vis(), confirmCalls.length], [[false, true, false], 0]);
     await p.goto(`${BASE}/account/confirmed/`);
     check('confirmed page: opened without a link, it says the email\'s link is needed',
       [await vis(), confirmCalls.length], [[false, false, true], 0]);

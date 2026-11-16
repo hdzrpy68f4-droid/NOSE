@@ -17,10 +17,6 @@
  * clientConfig() is lib/db.js's, re-exported here, where the Codespace
  * scripts have always taken it from.
  *
- * touch() was the keep-awake read (keep-awake.js, removed 2026-11-15 when the
- * projects moved to a paid plan, which does not pause): one cheap query as nose_writer, so the free
- * Supabase project sees activity and is not paused.
- *
  * Never a query `name`: named queries are prepared statements, which the
  * transaction pooler cannot run.
  *
@@ -123,23 +119,11 @@ async function saveScan(payload, { client, timeoutMs = 4000, _Client } = {}) {
   return db.withClient(async c => unwrap(await c.query(SAVE_SQL, [body])), { urlEnv: URL_ENV, timeoutMs, _Client });
 }
 
-/* A read of a real table, not "select 1": Supabase counts user activity on the
- * database, and a query that touches no table is the one most likely not to
- * count. An index probe, so its cost does not grow with the archive. */
-const TOUCH_SQL = 'select id from nose.documents order by id desc limit 1';
-
-async function touch({ timeoutMs = 8000, _Client } = {}) {
-  await db.withClient(c => c.query(TOUCH_SQL), { urlEnv: URL_ENV, timeoutMs, _Client });
-  return true;
-}
-
 /* clean and findPersonalKey are public: the dispensary store refuses and
    cleans by them, and scripts/lib/rerun.js cleans by clean. */
 module.exports = {
   saveScan,
-  touch,
   clientConfig: db.clientConfig,
-  TOUCH_SQL,
   PERSONAL_KEYS,
   clean,
   findPersonalKey,

@@ -7,6 +7,11 @@
 # and Netlify builds it. A red run moves nothing: the site stays at the last
 # green commit, and a later green commit carrying the fix takes it forward.
 #
+# Since 2026-11-16 a push that changes only notes and tests - docs/, test/,
+# and the .md files at the top - leaves live where it is: none of them is on
+# the site (each answers 404 there), and a Netlify production deploy costs
+# credits. The next push that changes anything else carries them along.
+#
 # No secrets: the gates run offline on stand-ins (PARSER-HANDOFF.md s5), and
 # the only token is GitHub's own, read-only but for promote's one push.
 # Each action is pinned to the commit of its release, read from its releases
@@ -90,15 +95,26 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    outputs:
+      moved: ${{ steps.move.outputs.moved }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
       - name: move live to this commit
+        id: move
         run: |
           if git rev-parse --verify --quiet refs/remotes/origin/live >/dev/null; then
             if git merge-base --is-ancestor "$GITHUB_SHA" refs/remotes/origin/live; then
               echo "live already contains $GITHUB_SHA - nothing to move"
+              exit 0
+            fi
+            # Everything live does not have yet, not this push alone: notes
+            # left behind earlier still count as notes.
+            changed=$(git diff --name-only refs/remotes/origin/live "$GITHUB_SHA")
+            if ! grep -qvE '^(docs/|test/|[^/]+\.md$)' <<<"$changed"; then
+              echo "only notes and tests differ from live - live stays, and nothing is deployed:"
+              echo "$changed"
               exit 0
             fi
             echo "live is at $(git rev-parse refs/remotes/origin/live); moving it to $GITHUB_SHA"
@@ -108,12 +124,14 @@ jobs:
           # Never forced: git refuses unless live is behind this commit, and
           # then this job fails and nothing moves.
           git push origin "$GITHUB_SHA:refs/heads/live"
+          echo "moved=true" >> "$GITHUB_OUTPUT"
 
   # Is the site serving the commit promote just moved live to? Waits up to 10
-  # minutes for Netlify's build.
+  # minutes for Netlify's build. Only when promote moved live: a notes-only
+  # push deploys nothing, so the site rightly serves an older commit.
   live-check:
     needs: promote
-    if: needs.promote.result == 'success'
+    if: needs.promote.outputs.moved == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:

@@ -985,7 +985,7 @@ supabase/migrations/20261002180000_nose_one_document_per_text.sql   save_scan fi
 supabase/migrations/20261002230000_nose_removals_and_cap.sql   removals, withheld, the daily cap; save_scan checks both first
 supabase/migrations/20261015000000_nose_tested_on.sql   parses.tested_on; batch_series dated by harvest, else tested, else report, and says which
 supabase/config.toml                                  minimal, for the CLI
-netlify/functions/lib/store.js                        saveScan(payload, { client, timeoutMs }), touch(); clientConfig re-exported from db.js
+netlify/functions/lib/store.js                        saveScan(payload, { client, timeoutMs }); clientConfig re-exported from db.js
 netlify/functions/lib/db.js                           withClient(), clientConfig(), checkUrl(), scrub(): one copy, shared with the dispensary store (since 2026-10-16)
 netlify/functions/lib/supabase-ca.js                  generated; Supabase's public root CA
 netlify/functions/lib/archive.js                      storeScan(): the storage path, both halves; archiveScan(), archiveOn() and the limits, coa.js's call
@@ -1746,6 +1746,8 @@ First, the run on GitHub is green and `live` has moved: Actions → gates → th
 newest run shows both jobs, gates and promote, green; the Code tab's branch
 menu lists `live`, at that commit. Netlify then builds `live` by itself, and
 its deploy log names the branch `live` (§13, "Every gate on every push").
+Since 2026-11-16 a push that changes only notes and tests does not move
+`live`, and there is nothing to check ("After the review").
 Then:
 
 1. `node scripts/archive-health.js` in the Codespace (reads as `nose_writer`;
@@ -1840,6 +1842,7 @@ under the cap.
 - [Account emails switched on through Resend, 2026-11-15](docs/handoff/13-records.md#account-emails-switched-on-through-resend-2026-11-15)
 - [Reset tested on the live site, 2026-11-15](docs/handoff/13-records.md#reset-tested-on-the-live-site-2026-11-15)
 - [A confirmation page, 2026-11-15](docs/handoff/13-records.md#a-confirmation-page-2026-11-15)
+- [After the review: notes-only pushes do not deploy, 2026-11-16](docs/handoff/13-records.md#after-the-review-notes-only-pushes-do-not-deploy-2026-11-16)
 
 ## 14. Dispensary integration
 

@@ -948,23 +948,13 @@ async function main() {
     assert.strictEqual(FakeClient.made.length, before);
   });
 
-  await test('touch: one indexed read of a real table, bounded, closed', async () => {
-    behave(ok, () => Promise.resolve({ rows: [] }));
-    assert.strictEqual(await store.touch({ timeoutMs: 200, _Client: FakeClient }), true);
-    const c = FakeClient.made.at(-1);
-    await tick();
-    assert.strictEqual(c.sql, store.TOUCH_SQL);
-    assert.match(c.sql, /from nose\.documents order by id desc limit 1/);
-    assert.strictEqual(c.ended, 1);
-    behave(ok, hang);
-    await assert.rejects(store.touch({ timeoutMs: 40, _Client: FakeClient }), /gave up/);
-  });
-
   /* keep-awake.js was removed on 2026-11-15: the projects moved to Supabase's
      paid plan, whose projects are not paused for inactivity (PARSER-HANDOFF
      s13, "Five rate limits on Netlify Pro"). */
   await test('keep-awake is gone: paid projects do not pause', async () => {
     assert.ok(!fs.existsSync(path.join(FN, 'keep-awake.js')));
+    /* its read, store.touch(), went on 2026-11-16: nothing called it */
+    assert.strictEqual(store.touch, undefined);
   });
 
 

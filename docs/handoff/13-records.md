@@ -4538,3 +4538,34 @@ nothing read or cleared, so they stayed in the browser's history.
   pages.
 - `open.md` loses "A sign-up confirmation still leaves Supabase's session in
   the address".
+
+### After the review: notes-only pushes do not deploy, 2026-11-16
+
+The owner asked for a review of the B4-B6 work, then for what could be done
+from it.
+
+- **A push that changes only notes and tests leaves `live` where it is.**
+  `promote` compares everything `live` does not have yet with the commit; if
+  every file is under `docs/` or `test/`, or is a `.md` at the top, it moves
+  nothing and Netlify builds nothing. None of those is on the site: `/README.md`,
+  `/CLAUDE.md`, `/PARSER-HANDOFF.md`, `/test/match-test.js` and
+  `/docs/B2B-RELEASES.md` each answered 404 on 2026-11-16. Why: a production
+  deploy costs 15 of Pro's 3,000 monthly credits, and November had 48
+  commits. `live-check` runs only when `promote` moved `live` (its output
+  `moved`), since otherwise the site rightly serves an older commit. The next
+  push that changes anything else carries the notes along. **Not yet seen on
+  GitHub when this was written**: the first notes-only push after this one is
+  its proof - promote's log says "only notes and tests differ from live".
+- **The confirmation page reads a failed link's error after "?" as well as
+  after "#".** Supabase's redirect writes it after "#"; some versions write
+  it in both places. `input-paths-test` has a fourth check for the page.
+- **`store.touch()` is removed**, with its test: keep-awake was its only
+  caller. `archive-wiring-test` checks it is gone.
+- **Not done, and why: edge rate limits for `auth-reset` and
+  `auth-reset-finish`.** The review suggested them; Pro allows five rules
+  and all five are in use ("Five rate limits on Netlify Pro"). The per-email
+  throttle stays (3 an hour for a reset). Giving one a rule means taking it
+  from `client-error`, or serving two functions from one path - its own
+  prompt.
+- Three notes corrected the same day (commit 499b6f6): the after-deploy list
+  no longer runs keep-awake, and two open items say what is true now.
