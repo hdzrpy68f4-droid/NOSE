@@ -130,8 +130,19 @@ async function record(store, { slug, day, band, vote, candidate, score, palateSi
   if (await countDay(store, slug, day) >= cap) return 'capped';
   const value = { candidate, score, palateSize };
   const res = await store.setJSON(key, value, { onlyIfNew: true });
-  if (res && res.modified === true && typeof res.etag === 'string' && res.etag) return 'kept';
-  throw new Error('b2b-votes: Netlify Blobs did not confirm the write (no ETag) - counted as failed');
+  if (!(res && res.modified === true && typeof res.etag === 'string' && res.etag))
+    throw new Error('b2b-votes: Netlify Blobs did not confirm the write (no ETag) - counted as failed');
+  /* Counted again once the vote is in (since 2026-11-16). Votes arriving
+     together each saw room before any had landed, so a day one short of its
+     cap kept all of them: more than the cap, which the privacy page says is
+     the most kept. A vote that finds the day over its cap takes itself back
+     out. Two that land together may both go, leaving the day one short;
+     never over. */
+  if (await countDay(store, slug, day) > cap) {
+    await store.delete(key);
+    return 'capped';
+  }
+  return 'kept';
 }
 
 /* Every vote of one store, as keys: what delete-store counts. */

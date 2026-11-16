@@ -725,6 +725,24 @@ async function main() {
     capped.map(() => ['error: b2b-vote: a store reached its daily cap - vote dropped, reply unaffected']));
   const otherVote = await sendVote(ballot({ key: otherPublic, candidate: 'P-O1' }), { origin: OTHER });
   check('...per store: another store\'s first vote that day is kept', [otherVote.status, voteKeys().filter(k => k.startsWith('votes/other-shop/')).length], [204, 1]);
+  /* Votes arriving together (since 2026-11-16): each sees room before any has
+     landed. Straight at the library, on a store of its own. */
+  {
+    const held = new Map();
+    const fake = {
+      list: async ({ prefix }) => ({ blobs: [...held.keys()].filter(k => k.startsWith(prefix)).map(key => ({ key })) }),
+      setJSON: async (key, value) => { held.set(key, value); return { modified: true, etag: 'e' }; },
+      delete: async key => { held.delete(key); }
+    };
+    const one = () => votesLib.record(fake, { slug: 'race-shop', day: today, band: 'Good', vote: 'up', candidate: 'P-1', score: 80, palateSize: 2 }, { cap: 5 });
+    for (let i = 0; i < 4; i++) await one();
+    const together = await Promise.all([one(), one(), one(), one(), one(), one()]);
+    check('six votes arriving together on a day one short of its cap of 5: the day never ends over its cap',
+      [held.size <= 5, together.filter(o => o === 'capped').length >= 5, together.every(o => o === 'kept' || o === 'capped')], [true, true, true]);
+    const next = await one();
+    check('...and a day left short of its cap by that takes the next vote, up to the cap and no further',
+      [held.size <= 5, next === 'kept' || held.size === 5], [true, true]);
+  }
   process.env.B2B_VOTE_DAILY_CAP = '0';
   const none = await sendVote(ballot({ key: otherPublic, candidate: 'P-O1' }), { origin: OTHER });
   check('...a cap of 0 keeps no vote at all, with the same reply', [none.status, voteKeys().filter(k => k.startsWith('votes/other-shop/')).length], [204, 1]);

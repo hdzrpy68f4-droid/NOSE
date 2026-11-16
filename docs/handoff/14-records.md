@@ -2848,3 +2848,59 @@ The last steps of "How a flower score reads", run in the Codespace.
   the Codespace first; the lock file was put back afterwards.
 - A store on release 1 sees no change until its page carries release 2's
   tag, given in `docs/B2B-RELEASES.md` and `docs/B2B-INTEGRATION.md`.
+
+### The dispensary code read against the privacy page, 2026-11-16
+
+The owner asked for the dispensary code checked line by line against what
+the privacy page promises ("Dispensaries that use NOSE"). Read whole:
+`js/b2b-widget`, `b2b-vote.js`, `b2b-feed.js`, `lib/b2b-votes.js`; the keys,
+readings, feed and vote parts of `lib/b2b-store.js`; the header check in
+`lib/b2b-catalog-format.js`; the grants in the b2b migration; and
+`delete-store`. Every network and storage call in the dispensary bundles was
+listed: two `fetch` calls and one `localStorage` pair in the widget, one
+`console.warn`, nothing else.
+
+**One promise the code did not keep, fixed:**
+- "At most 100 votes a day are kept from one dispensary." `record()` counted
+  the day, then wrote. Votes arriving together each saw room before any had
+  landed, so a day one short of its cap kept all of them. It now counts
+  again once the vote is in, and a vote that finds the day over its cap
+  takes itself back out. Two landing together may both go, leaving the day
+  one short; never over. `b2b-endpoints-test` sends six together at a day
+  one short of a cap of 5; it fails on the library as it was.
+  A vote now costs two counts of the day (16 listings) where it cost one.
+
+**Held, each against the code:**
+- Before a shopper says yes: nothing is asked for but the code and, when
+  the button is shown, the stylesheet. A control-group or denied widget
+  shows and loads nothing.
+- After: one GET of the feed naming the public key and nothing else, and a
+  vote of exactly six fields. Neither carries a purchase; `purchases` is
+  read only when consent is granted, and only in the browser.
+- No cookie and no referrer: `credentials: "omit"` and `no-referrer` on
+  both requests, `no-referrer` on the stylesheet, and a release's
+  stylesheet asked for anonymously.
+- The vote function reads the Origin header and the body, nothing else, and
+  logs fixed lines only. The key is day and 16 random bytes; the value is
+  candidate, score and palate size.
+- The feed selects no field the page does not list, and terpenes only for
+  an accepted reading of the batch's own link. Its reply varies by Origin
+  in Netlify's cache ("values ... sent with the standard `Vary` HTTP
+  response header are factored into cache keys", Netlify's caching
+  overview, read 2026-11-16).
+- Keys are kept as SHA-256 only; `nose_b2b` is granted nothing in schema
+  `nose`; a catalog with a column outside the format, or one that looks
+  like it is about a person, is refused before a row is read; no catalog
+  path loads `coa.js`, `lib/archive.js` or `lib/pdf-store.js`;
+  `delete-store` deletes readings, batches, keys and the store, then votes.
+
+**Small things, left:**
+- The page's list of what the feed holds leaves out `list_position`, where
+  the batch came in the catalog. It names it under what is kept.
+- The Origin rule is a browser's rule: a request made outside a browser can
+  say any Origin. The page says "requests that say they come from", which
+  is exact. The feed holds a store's public menu and readings, nothing
+  about a shopper.
+- Not read line by line: `js/b2b-rank` (the maths runs in the browser and
+  makes no request - checked by listing its calls), the pilot scripts, the
+  catalog reader beyond its imports.
