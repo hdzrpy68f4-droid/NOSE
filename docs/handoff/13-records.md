@@ -4878,3 +4878,34 @@ later hop).
   the consumer app keeps no product form with a saved jar, so it compares
   across forms and cannot say so; and a "closest liked jar" score against
   the averaged palate (the critique's addendum has the table).
+
+### A result across product forms says so, 2026-11-16
+
+The maths critique found that two thirds of "Close match" pairs among the
+fixtures are across product forms, and that the app could not know: a saved
+jar held its name, a subtitle and its terpenes. The owner left the choice to
+the session ("do what you think is best").
+
+- **A jar added from a lab report keeps the report's product form in this
+  browser** - `form`: flower, vape or concentrate, the parser's own names,
+  and nothing for any other. A sample jar, a jar entered by hand and a jar
+  saved before today have none.
+- **The result says one sentence when the compared jar and a palate jar
+  each carry a form and the two differ**: "These are different kinds of
+  product: flower and a vape. The score compares the shape of their terpene
+  profiles, not their intensity." (`#resultFormNote`, under the result's
+  explanation.) No score, label or band changes.
+- **It never reaches the account.** A backup sends the four fields
+  `palate-sync.js` keeps and no other, and that function drops any other, so a palate loaded back from the account has
+  no forms and shows no note. The privacy page's description of a synced
+  palate is unchanged; what the browser keeps is the person's own.
+- `input-paths-test`: flower against a vape shows the sentence beside
+  "Close match"; flower against flower, and a jar with no form on either
+  side, show none.
+- **Decided against, the same day: scoring by the closest liked jar instead
+  of the averaged palate.** It finds jars like the ones a person named far
+  better (a re-measured liked jar ranks 2nd, against about 11th), and hands
+  out three times the "Close match" labels for unlike jars. It changes every
+  score ahead of a pilot whose votes are the only evidence of what
+  people enjoy; the method is revised on that evidence, as the plan says.
+  The table is in the local critique.

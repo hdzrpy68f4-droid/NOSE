@@ -1163,6 +1163,32 @@ try {
     await p.goto(`${BASE}/account/confirmed/`);
     check('confirmed page: opened without a link, it says the email\'s link is needed',
       [await vis(), confirmCalls.length], [[false, false, true], 0]);
+
+    /* A result across product forms says so (since 2026-11-16). Three jars
+       as a confirmed report saves them, two with a form. */
+    await p.addInitScript(() => {
+      try {
+        localStorage.setItem('nose-age-ok', '1');
+        localStorage.setItem('nose-palate-v1', JSON.stringify([
+          { id: 'saved-form-flower', name: 'Form flower', subtitle: '3 measured compounds', terps: { limonene: 0.6, myrcene: 0.3, linalool: 0.1 }, form: 'flower' },
+          { id: 'saved-form-vape', name: 'Form vape', subtitle: '3 measured compounds', terps: { limonene: 5.8, myrcene: 3.1, linalool: 1.2 }, form: 'vape' },
+          { id: 'saved-form-none', name: 'Form none', subtitle: '3 measured compounds', terps: { limonene: 0.5, myrcene: 0.4, linalool: 0.1 } }]));
+      } catch (e) {}
+    });
+    await p.goto(`${BASE}/app`);
+    await p.waitForSelector('#candidateSamples .sample-chip[data-profile="saved-form-vape"]');
+    const pick = async (palate, candidate) => {
+      for (const on of await p.$$eval('#palateSamples .sample-chip[aria-pressed="true"]', ns => ns.map(n => n.dataset.profile))) await p.click(`#palateSamples .sample-chip[data-profile="${on}"]`);
+      await p.click(`#palateSamples .sample-chip[data-profile="${palate}"]`);
+      await p.click(`#candidateSamples .sample-chip[data-profile="${candidate}"]`);
+      return [await p.isVisible('#resultFormNote'), await p.textContent('#resultFormNote'), await p.textContent('#resultBadge')];
+    };
+    check('a flower palate against a vape: the result says they are different kinds of product, beside its label',
+      await pick('saved-form-flower', 'saved-form-vape'),
+      [true, 'These are different kinds of product: flower and a vape. The score compares the shape of their terpene profiles, not their intensity.', 'Close match']);
+    check('...flower against flower: no note', (await pick('saved-form-flower', 'saved-form-flower')).slice(0, 2), [false, '']);
+    check('...a jar with no form on either side: no note',
+      [(await pick('saved-form-none', 'saved-form-vape'))[0], (await pick('saved-form-flower', 'saved-form-none'))[0], (await pick('lemon-tart', 'saved-form-vape'))[0]], [false, false, false]);
     await ctx.close();
   }
 

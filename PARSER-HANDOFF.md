@@ -1852,6 +1852,7 @@ under the cap.
 - [A pilot walked through on a made-up store, 2026-11-16](docs/handoff/13-records.md#a-pilot-walked-through-on-a-made-up-store-2026-11-16)
 - [A name that resolves to a private address, 2026-11-16](docs/handoff/13-records.md#a-name-that-resolves-to-a-private-address-2026-11-16)
 - [Total tiles, and the open list tidied, 2026-11-16](docs/handoff/13-records.md#total-tiles-and-the-open-list-tidied-2026-11-16)
+- [A result across product forms says so, 2026-11-16](docs/handoff/13-records.md#a-result-across-product-forms-says-so-2026-11-16)
 
 ## 14. Dispensary integration
 

@@ -305,6 +305,18 @@
       });
     }
 
+    /* A result across product forms says so. The score compares the shape
+       of two profiles and leaves intensity out (methodology, step 2), and a
+       cartridge or a concentrate is several times a flower's total: "Close
+       match" between the two was shown with no note (the maths critique,
+       2026-11-16). Said only when the compared jar and a palate jar each
+       carry a form and the two differ. */
+    const FORM_WORDS={flower:'flower',vape:'a vape',concentrate:'a concentrate'};
+    function formNote(palate,candidate){
+      const other=palate.map(p=>p.form).find(f=>FORM_WORDS[f]&&FORM_WORDS[candidate.form]&&f!==candidate.form);
+      return other?`These are different kinds of product: ${FORM_WORDS[other]} and ${FORM_WORDS[candidate.form]}. The score compares the shape of their terpene profiles, not their intensity.`:'';
+    }
+
     function updateFullResult(){
       const b=profileById(state.appCandidate);
       const palateVec=palateVector();
@@ -323,6 +335,8 @@
       document.getElementById('resultScore').textContent=shownScore(score);
       document.getElementById('resultSummary').textContent=`${shownScore(score)}% aroma similarity`;
       document.getElementById('resultExplanation').textContent=describeMatch(a,b,score);
+      const formLine=document.getElementById('resultFormNote');
+      if(formLine){ const said=formNote(palateProfiles(),b); formLine.textContent=said; formLine.hidden=!said; }
       resetFeedback(score,b);
       document.getElementById('sharedBackbone').textContent=shared.length?shared.slice(0,2).map(key=>FAMILIES[key].label).join(' + '):'No strong shared family';
       document.getElementById('biggestDifference').textContent=`${FAMILIES[biggest[0]].label} ${biggest[1]>=0?'higher':'lower'} by ${Math.round(Math.abs(biggest[1])*100)} points`;
@@ -679,6 +693,13 @@
          profile behaves identically everywhere downstream. */
       const profile={id:`saved-${slugify(name)}-${Date.now()}`,name,
         subtitle:`${Object.keys(terps).length} measured compounds`,terps};
+      /* The report's product form, kept with the jar in this browser (since
+         2026-11-16) so a result across forms can say so (formNote). Only the
+         three inhalable forms the parser names; a sample jar, a jar entered
+         by hand and a jar saved before then have none. palate-sync.js keeps
+         four fields and drops this one, so it never reaches the account. */
+      const form=coaPending.data&&coaPending.data.productClass;
+      if(FORM_WORDS[form]) profile.form=form;
       state.saved.push(profile);
       const persisted=persistSaved();
       if(!state.palateIds.includes(profile.id)) state.palateIds.push(profile.id);
@@ -953,7 +974,9 @@
         method:'PUT',
         headers:{'content-type':'application/json'},
         credentials:'same-origin',
-        body:JSON.stringify({version:1,profiles:state.saved})
+        /* The four fields palate-sync.js keeps, and no other: a jar's product
+           form (since 2026-11-16) stays in this browser. */
+        body:JSON.stringify({version:1,profiles:state.saved.map(p=>({id:p.id,name:p.name,subtitle:p.subtitle,terps:p.terps}))})
       }).then(res=>res.json().catch(()=>({})).then(data=>({ok:res.ok,status:res.status,data})))
         .then(res=>{
           if(button) button.disabled=false;
