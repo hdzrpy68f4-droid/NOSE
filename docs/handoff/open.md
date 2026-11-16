@@ -244,9 +244,16 @@ schema comment if wanted.
   fetcher** (security audit item 6, the part left on 2026-11-14). An address
   written as the host is checked; closing this needs the connection pinned to
   an address checked after DNS lookup.
-- **Throttle records are an unkeyed SHA-256 of the address** (security audit
-  item 14, the part left): keying it (HMAC) needs a secret in Netlify's
-  Production context.
+- **Two security switches wait for the owner** (13-records, "Security items
+  8, 9, 10 and the keyed fingerprint", 2026-11-16). The code is live and
+  does nothing until each variable is set in Netlify:
+  `SUPABASE_PUBLISHABLE_KEY` (the service key then goes to `/admin/*`
+  calls only), and `NOSE_THROTTLE_SECRET` (throttle records keyed with an
+  HMAC) - the second together with the privacy page's sentence about those
+  counts, which says SHA-256 until then.
+- **`auth-reset`, `auth-reset-finish` and `auth-confirm` have no edge rate
+  limit** (security audit item 9, the part left): Pro's five rules are in
+  use.
 
 ## §14, dispensary integration: still open
 

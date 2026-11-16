@@ -579,6 +579,54 @@ async function main() {
   check('every request went to Supabase\'s auth API, with the service key',
     supa.calls.every(c => c.host === 'supabase.test' && c.path.startsWith('/auth/v1/') && c.headers.apikey === 'service-key-for-the-test'), true);
 
+  /* ---- the two keys (security audit item 10, since 2026-11-16) ---- */
+  {
+    process.env.SUPABASE_PUBLISHABLE_KEY = 'publishable-key-for-the-test';
+    const FAY = 'fay@example.test';
+    SECRETS.push(FAY);
+    const at = supa.calls.length;
+    await call(signup, 'POST', { email: FAY, password: PASSWORD, ageAttested: true });
+    addUser(FAY, PASSWORD);   // the stand-in's sign-up route keeps no user since the call gained redirect_to
+    const fay = await signIn(FAY);
+    await call(reset, 'POST', { email: FAY });
+    const code = 'pkce_' + '9'.repeat(40);
+    supa.confirm.set(code, FAY);
+    await call(confirm, 'POST', { token_hash: code });
+    await call(me, 'GET', undefined, fay);
+    await call(accountDelete, 'POST', { confirm: 'DELETE' }, fay);
+    const made = supa.calls.slice(at);
+    const admin = made.filter(c => c.path.startsWith('/auth/v1/admin/')), open = made.filter(c => !c.path.startsWith('/auth/v1/admin/'));
+    check('with a publishable key set: sign-up, sign-in, reset, a link\'s code and its logout carry it, never the service key',
+      [open.length >= 5, open.filter(c => c.headers.apikey !== 'publishable-key-for-the-test' || c.headers.authorization.includes('service-key')).map(c => c.path)], [true, []]);
+    check('...and only /admin/ calls carry the service key',
+      [admin.length >= 1, admin.filter(c => c.headers.apikey !== 'service-key-for-the-test' || c.headers.authorization !== 'Bearer service-key-for-the-test').map(c => c.path)], [true, []]);
+    delete process.env.SUPABASE_PUBLISHABLE_KEY;
+  }
+
+  /* ---- a keyed throttle fingerprint (security audit item 14, since 2026-11-16) ---- */
+  {
+    const crypto2 = require('crypto');
+    const GUS = 'gus@example.test';
+    SECRETS.push(GUS);
+    addUser(GUS, PASSWORD);
+    const plain = `rl/login/${crypto2.createHash('sha256').update(GUS).digest('hex').slice(0, 32)}`;
+    const gus0 = await signIn(GUS);
+    check('with no secret set, the throttle record is under the plain SHA-256, as before', blobs.keys('auth-ratelimit').includes(plain), true);
+    process.env.NOSE_THROTTLE_SECRET = 'a-secret-for-the-test';
+    const keyed = `rl/login/${crypto2.createHmac('sha256', 'a-secret-for-the-test').update(GUS).digest('hex').slice(0, 32)}`;
+    const gus = await signIn(GUS);
+    check('with a secret set, the record is under the keyed fingerprint, which is not the plain one',
+      [blobs.keys('auth-ratelimit').includes(keyed), keyed !== plain], [true, true]);
+    const tries = [];
+    for (let i = 0; i < 9; i++) tries.push((await call(login, 'POST', { email: GUS, password: 'wrong password!' })).status);
+    check('...and the throttle still counts: the window started again, and the ninth try inside it is 429', tries.at(-1), 429);
+    r = await call(accountDelete, 'POST', { confirm: 'DELETE' }, gus);
+    check('deleting the account deletes the address\'s records under both fingerprints',
+      [r.status, blobs.keys('auth-ratelimit').includes(keyed), blobs.keys('auth-ratelimit').includes(plain)], [200, false, false]);
+    delete process.env.NOSE_THROTTLE_SECRET;
+    void gus0;
+  }
+
   finished = true;
   if (failures) { console.log(`\naccounts: ${failures} failure${failures === 1 ? '' : 's'}`); process.exit(1); }
   console.log('\naccounts clean');

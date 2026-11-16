@@ -1847,6 +1847,7 @@ under the cap.
 - [Email links that come to NOSE, 2026-11-16](docs/handoff/13-records.md#email-links-that-come-to-nose-2026-11-16)
 - [An audit for dead weight: five small removals, 2026-11-16](docs/handoff/13-records.md#an-audit-for-dead-weight-five-small-removals-2026-11-16)
 - [The parser reviewed: shifted rows and weight units, 2026-11-16](docs/handoff/13-records.md#the-parser-reviewed-shifted-rows-and-weight-units-2026-11-16)
+- [Security items 8, 9, 10 and the keyed fingerprint, 2026-11-16](docs/handoff/13-records.md#security-items-8-9-10-and-the-keyed-fingerprint-2026-11-16)
 
 ## 14. Dispensary integration
 

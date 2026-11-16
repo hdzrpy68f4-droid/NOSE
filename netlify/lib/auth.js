@@ -23,7 +23,7 @@
 // to Blobs keyed by user id. The auth provider never sees what anyone liked.
 
 import { getStore } from '@netlify/blobs';
-import { createHash, randomBytes } from 'node:crypto';
+import { createHash, createHmac, randomBytes } from 'node:crypto';
 import { readJsonBody as readBody, json } from './http.js';
 
 export const SESSIONS_STORE = 'auth-sessions';
@@ -47,10 +47,18 @@ function env(name) {
 
 const supabaseUrl = () => env('SUPABASE_URL').replace(/\/+$/, '');
 const serviceKey = () => env('SUPABASE_SERVICE_KEY');
+/* Which key a call carries (security audit item 10, since 2026-11-16). The
+   service key can do anything in the project; only /admin/* needs it. Every
+   other call - sign-up, sign-in, reset, verifying a link's code, a user's own
+   session - is one Supabase serves to its public key, so that is the key it
+   gets, when SUPABASE_PUBLISHABLE_KEY is set. Until it is set those calls
+   carry the service key, as they always have. */
+const keyFor = (path) =>
+  (path.startsWith('/admin/') ? null : process.env.SUPABASE_PUBLISHABLE_KEY) || serviceKey();
 
 /**
  * Call Supabase's auth (GoTrue) REST API server-side.
- * `accessToken` overrides the service key for user-scoped calls.
+ * `accessToken` overrides the key for user-scoped calls.
  */
 export async function gotrue(path, { method = 'POST', body, accessToken } = {}) {
   let res;
@@ -58,8 +66,8 @@ export async function gotrue(path, { method = 'POST', body, accessToken } = {}) 
     res = await fetch(`${supabaseUrl()}/auth/v1${path}`, {
       method,
       headers: {
-        apikey: serviceKey(),
-        authorization: `Bearer ${accessToken || serviceKey()}`,
+        apikey: keyFor(path),
+        authorization: `Bearer ${accessToken || keyFor(path)}`,
         'content-type': 'application/json',
       },
       body: body === undefined ? undefined : JSON.stringify(body),
@@ -271,13 +279,22 @@ export async function purgeExpiredSessions(now = Date.now()) {
  * Read-modify-write, so concurrent hits can under-count by one or two. That is
  * acceptable for a throttle and not worth a locking scheme.
  *
- * Each record holds { start, count } under a SHA-256 of the identity. Since
+ * Each record holds { start, count } under a fingerprint of the identity: a
+ * SHA-256, or, once NOSE_THROTTLE_SECRET is set, an HMAC-SHA-256 keyed with
+ * it, which nobody without the secret can compute from an address (security
+ * audit item 14's last part, since 2026-11-16). Setting the secret starts
+ * every window again, once; the privacy page's sentence about these counts
+ * says SHA-256 and changes with it. Since
  * 2026-11-14 a record past its window is deleted daily
  * (purgeExpiredThrottles, run by sessions-purge.js), and deleting an account
  * deletes its address's records (deleteThrottles). Security audit item 14.
  */
 export const THROTTLE_BUCKETS = Object.freeze({ login: 900, signup: 3600, reset: 3600 });
-const throttleDigest = (identity) => createHash('sha256').update(String(identity)).digest('hex').slice(0, 32);
+const plainDigest = (identity) => createHash('sha256').update(String(identity)).digest('hex').slice(0, 32);
+const throttleDigest = (identity) => {
+  const secret = process.env.NOSE_THROTTLE_SECRET;
+  return secret ? createHmac('sha256', secret).update(String(identity)).digest('hex').slice(0, 32) : plainDigest(identity);
+};
 
 export async function rateLimit(bucket, identity, { limit, windowSeconds }) {
   const digest = throttleDigest(identity);
@@ -300,8 +317,11 @@ export async function rateLimit(bucket, identity, { limit, windowSeconds }) {
  *  cannot be deleted, so account-delete can say so. */
 export async function deleteThrottles(email) {
   const store = strongStore(RATELIMIT_STORE);
-  const digest = throttleDigest(email);
-  for (const bucket of Object.keys(THROTTLE_BUCKETS)) await store.delete(`rl/${bucket}/${digest}`);
+  /* Both fingerprints once a secret is set: a record written before it was
+     set is under the plain one until its window ends. */
+  const digests = [...new Set([throttleDigest(email), plainDigest(email)])];
+  for (const digest of digests)
+    for (const bucket of Object.keys(THROTTLE_BUCKETS)) await store.delete(`rl/${bucket}/${digest}`);
 }
 
 /**

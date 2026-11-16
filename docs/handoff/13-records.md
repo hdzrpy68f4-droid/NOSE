@@ -4718,3 +4718,45 @@ wrong value):
 - Also read and probed without a finding: totals above, below and beside
   the table, a panel printed twice, cannabinoid rows inside the table,
   caryophyllene oxide, uncertainty cells, percent signs on values.
+
+### Security items 8, 9, 10 and the keyed fingerprint, 2026-11-16
+
+The owner asked for what was left of the security audit: items 8, 9 and 10,
+and the HMAC from item 14. Two are code, each switched on by an environment
+variable the owner sets in Netlify; until it is set, nothing changes.
+
+- **Item 10, the two keys.** `gotrue()` in `netlify/lib/auth.js` gives the
+  service key only to `/admin/*` calls. Every other call - sign-up, sign-in,
+  reset, a link's code, a user's own session and its logout - carries
+  `SUPABASE_PUBLISHABLE_KEY` when that is set, and the service key, as
+  always, when it is not. **To switch on:** in Netlify, add
+  `SUPABASE_PUBLISHABLE_KEY` (the accounts project's publishable or anon
+  key, Supabase → Project Settings → API Keys), then sign in once on the
+  live site. That key is public by design; it is still the owner who types
+  it.
+- **Item 14's last part, a keyed fingerprint.** A throttle record's key is
+  an HMAC-SHA-256 of the address once `NOSE_THROTTLE_SECRET` is set, and
+  the plain SHA-256, as before, until then. Setting it starts every window
+  again, once (a window is at most an hour). Deleting an account deletes
+  the address's records under both fingerprints. **To switch on:** a long
+  random value in Netlify's Production context, AND the privacy page's
+  sentence about these counts in the same hour - it says "a SHA-256 hash ...
+  anyone who already knows an address could compute the same fingerprint",
+  which stops being true. Wording to be approved first.
+- **Item 9, what is left.** Sign-in and sign-up have Netlify's per-address
+  limit since 2026-11-15. `auth-reset`, `auth-reset-finish` and
+  `auth-confirm` do not: Pro's five rules are in use. Their per-email
+  throttle stays (3 resets an hour). That anyone can use up a known
+  address's eight sign-ins in 15 minutes is the cost of a per-email
+  throttle, and stays.
+- **Item 8, what is left.** The pilot report already names the days that
+  reached the vote cap (`b2b-pilot-report.js`, "Days that reached the daily
+  cap"). An edge limit is not possible while pinned releases call
+  `/.netlify/functions/b2b-vote`. The report compares against the default
+  cap of 100, not `B2B_VOTE_DAILY_CAP`: if that variable is ever set, the
+  report needs it too.
+- `accounts-test`: with a publishable key set, only `/admin/` calls carry
+  the service key; with a secret set, the record is under the keyed
+  fingerprint, the throttle still counts, and account deletion clears both.
+  Its stand-in for Supabase's sign-up keeps no user since the call gained
+  `redirect_to` on 2026-11-15; the new checks add theirs directly.
