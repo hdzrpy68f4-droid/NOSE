@@ -417,6 +417,9 @@ schema comment if wanted.
   gates drive Playwright's Linux WebKit, Safari's engine but not iOS Safari,
   and leave it out on Windows, whose build behaves unlike Safari. The
   compliance kit still draws in Chromium alone, as a record of the screens.
+  On 2026-11-16 the owner opened nose-app.com in Safari on an iPhone and
+  everything looked right. That was the site itself; the widget on a
+  store's own page in iOS Safari is still the pilot store's check.
 - **A release request is in Netlify's request logs**, with its address and
   time, like the feed's. Netlify's documented log fields hold no `Origin`
   ([Log Drains](https://docs.netlify.com/monitor-sites/log-drains)), and a
