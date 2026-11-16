@@ -1755,7 +1755,9 @@ Then:
 `production`, with the deploy's commit as its parser version, and one more PDF
 than before the first time a report is seen; nothing new for the same report
 again.
-4. Netlify → Logs → Functions → `keep-awake` → Run now → `[keep-awake] ok`.
+4. (Until 2026-11-15 this step ran `keep-awake` by hand. The function is
+removed; there is nothing to run. Step 1 is the check that the database
+answers.)
 5. Netlify → Logs → Functions → `coa`: no `archive incomplete` line. One names
 which half failed, and why, with nothing about the report. An `archive at its
 daily cap` line means that UTC day reached the cap (§13, "What gets kept").

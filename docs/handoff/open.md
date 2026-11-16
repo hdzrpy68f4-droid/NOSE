@@ -10,7 +10,8 @@ What is known and not yet done, moved here from PARSER-HANDOFF.md on 2026-11-14 
   a withheld one and names it, and `remove-document.js` deletes it.
 - **The cap bounds a day, not the total.** At 100 new documents a day, the
   worst a day can add is about 25.6 MB of text to the database (256KB each;
-  the free plan's 500 MB would last about 19 such days) and 1.2 GB of PDFs to
+  the free plan's 500 MB would have lasted about 19 such days; Pro, since
+  2026-11-15, includes more - read the project's Usage page for the figure) and 1.2 GB of PDFs to
   Blobs (12 MB each). It is one number in a migration; change it with a new
   one.
 - **The privacy page dates the fourth change "October 2026"**, the month,
@@ -97,10 +98,11 @@ to Supabase's own domain, so whoever clicks one reaches Supabase from their
 own browser, and Supabase's auth logs record the address. If the accounts
 share the archive's project, those logs sit in the same database - which is
 why the privacy page says the IP address never reaches the *store*, not the
-database. **Still to read in the dashboard**: the link in Authentication →
-Emails → Templates (Confirm sign up, Reset password) - not found on
-2026-10-03 - and Emails → SMTP Settings. If the links point anywhere but
-Supabase's own site, the new paragraph changes. The account functions'
+database. SMTP Settings were read and set on 2026-11-15 (Resend; 13-records,
+"Account emails switched on through Resend"), and a reset link was followed
+that day: it goes to Supabase's own site first, as the page says. **Still to
+read in the dashboard**: the two templates' own text (Authentication →
+Emails → Templates), which are Supabase's defaults as far as anyone has seen. The account functions'
 `SUPABASE_URL` and `SUPABASE_SERVICE_KEY` are not described anywhere in this
 file either.
 - **A password reset works end to end since 2026-11-15** (13-records, "Account
@@ -432,11 +434,12 @@ schema comment if wanted.
   B2B keeps or sends - a field, a store, the default window, the vote cap
   (`B2B_VOTE_DAILY_CAP` is unset, and the page says 100) - changes that
   section in the same commit.
-- **Backups.** Supabase's free plan keeps none; a paid plan's daily backups
-  would keep a deleted dispensary's rows for days afterwards (7 on Pro), and a
-  deleted account's or removed report's alike. The privacy page says nothing
-  about backups yet, and has to before the plan changes - the move the plan
-  asks for before a licensee depends on NOSE.
+- **Backups: said on the privacy page since 2026-11-15, and both projects
+  are on Pro** (13-records, "Backups on the privacy page" and "Backups were
+  already there"). Each project is backed up daily and a backup is kept seven
+  days, so a deleted row can remain that long. What is still open: nobody has
+  restored one. A restore replaces the whole project, so a first trial
+  belongs before a licensee depends on NOSE, not after.
 - **The privacy page does not describe the end-of-pilot export yet.** Its
   dispensary section lists what a dispensary sends NOSE - the catalog, and a
   catalog read once before signing up - and the integration guide says
