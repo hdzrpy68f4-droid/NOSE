@@ -90,6 +90,10 @@ gate 'coa dates'      'coa-dates clean'          '^coa-dates clean$' \
 # report is refused - on made-up reports; no fixture prints both.
 gate 'summed rows'    'summed-rows clean'        '^summed-rows clean$' \
   node test/summed-rows-test.js
+# A reading is never one row out or ten times high - on made-up reports in
+# layouts no fixture has (name / limit / result, a table in mg/g alone).
+gate 'shifted rows'   'shifted-rows clean'       '^shifted-rows clean$' \
+  node test/shifted-rows-test.js
 # The sentences a refused report shows a person hold none of the parser's
 # own words.
 gate 'refusal words'  'refusal-words clean'      '^refusal-words clean$' \

@@ -4663,3 +4663,58 @@ history lost from the project notes. Nothing the site serves changes.
   - the rate-limit comment repeated in five functions.
 - **Not audited:** `parse-coa.js`, the dispensary code beyond which scripts
   a test or gate runs, and the tests' own repetition.
+
+### The parser reviewed: shifted rows and weight units, 2026-11-16
+
+The owner asked for a deep review of `parse-coa.js`, looking for inputs that
+give a believable wrong fingerprint. Method: the whole file read, then
+made-up reports in layouts no fixture has, one cell per line, each compared
+value by value with what it printed. Four were accepted wrong; each is
+fixed, and `test/shifted-rows-test.js` (the gate `shifted rows`) holds them -
+it fails 11 checks on the parser as it was at 6fc8f7b.
+
+- **Name / limit / result, an inline total, no verdict column: every value
+  one row out, accepted with no warning.** The backward reader's margin
+  compared its share with the FIRST cell after each name. On this layout
+  those are the limits, so "each name takes the result of the row above"
+  won. It now compares with the forward reading as committed (the larger of
+  that and the first cells, so it wins no more often than before).
+- **Name / result under a small stray figure, the last row without a result
+  (N/A, NT, a dash): the same shift**, through the edge test. Cell for cell
+  that sequence IS a value-first table, and the two sum alike. The edge test
+  now needs the document to have printed its TOTAL value-first too ("2.24%"
+  then "Total Terpenes"), as both fixtures read backward do (MCL-FLW-003,
+  -005). The same edges without it are refused: "NOSE cannot tell whether
+  this report prints each figure before or after the name of its terpene, so
+  it cannot be sure which figure belongs to which". **A cost:** a
+  value-first table in no particular order whose total is printed label
+  first was read correctly before and is refused now. No fixture is one.
+- **A table in mg/g alone read as percentages, ten times high** - silently
+  for a cartridge, whose typical ceiling is 20. Refused now: "this report
+  gives its terpene figures by weight (such as mg/g), not as percentages,
+  and NOSE reads percentages only". The test is the document's own: across
+  the rows read and 15 lines either side, a mass unit is printed and a
+  percent sign is not. All 56 accepted fixtures print a percent sign there
+  (43 beside a mass unit, 13 without one).
+- **"Total Terpenes: 20.00 mg/g (2.000%)" read 20**, and rows printing mg/g
+  beside % then reconciled in mg/g. It reads the figure its percent sign
+  follows. The comment in the file had named this as unhandled.
+
+**Nothing in the corpus moves:** 56 accepted / 3 rejected, parity 56 / 0,
+both backward fixtures still backward, the Kaycha anchors untouched (the
+gates pin them). **Not done from here:** `node scripts/reparse.js --dry-run`
+against the real archive, which needs the Codespace. Expect no reading to
+change; a report it newly refuses is one of the four layouts above.
+
+**Probed and left as they are** (each a refusal or a warning, never a silent
+wrong value):
+- A bare "Ocimene" beside its isomers adds, with the arithmetic warning past
+  1% (`summed-rows-test` holds this on purpose).
+- "Total THC / 24.1% / Total Terpenes / 2.0%" as label-then-value tiles
+  takes 24.1 as the total and refuses for coverage: a correct report
+  refused for the wrong reason. Its own prompt, with a real document.
+- A name and its figure on one line, figures in ppm, a decimal comma: all
+  refused.
+- Also read and probed without a finding: totals above, below and beside
+  the table, a panel printed twice, cannabinoid rows inside the table,
+  caryophyllene oxide, uncertainty cells, percent signs on values.

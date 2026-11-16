@@ -362,8 +362,10 @@ const NON_DETECT = /^(ND|N\/D|NOT DETECTED|BQL|BLQ|ABSENT|<\s*LOQ)$/i;
    can object, which it will not do on any product whose real total is modest.
    mg/unit cannot be converted at all without knowing the unit's mass. Leave the
    total unread rather than assert it: a missing total refuses, a wrong one is
-   believed. NOTE: a line printing BOTH units ("21.5 mg/g (2.15%)") still reads
-   the first number. No fixture does this; widen the test if one appears. */
+   believed. A line printing BOTH units ("21.5 mg/g (2.15%)") reads the figure
+   its percent sign follows (since 2026-11-16; it read the first number, and a
+   table printing mg/g beside % then reconciled in mg/g, ten times high, with
+   only a warning). No fixture prints both; test/shifted-rows-test.js does. */
 const INLINE_MASS_UNIT = /(?:^|[^A-Za-z])(?:mg\s*\/\s*g|mg\s*\/\s*unit|(?:u|\u00B5)g\s*\/\s*g)(?![A-Za-z])/i;
 
 /* A line shaped like a compound name rather than a table cell: three or more
@@ -573,6 +575,10 @@ function parseCoa(text){
   let summedDisagree = [];
   let legendUntil = -1;   // index before which analyte rows are chart legend
   let totalPinned = false;
+  /* The total's figure was printed BEFORE its label ("2.24%" then "Total
+     Terpenes"): the document's own sign that it prints values ahead of
+     names. Read by the backward reader's edge test alone. */
+  let totalBeforeLabel = false;
   let totalCandidates = [];
   /* Set when a multi-column row layout has been resolved by reconciliation.
      The backward reader must not then re-pair the table: this document is
@@ -580,6 +586,10 @@ function parseCoa(text){
   /* Set by the unit-ratio cross-check further down, which runs before the
      warnings array exists. Merged in with the other warnings at the end. */
   let columnCrossCheck = null;
+  /* Set by the backward reader's decision when the table reads equally well
+     with each figure before its name and after it, and nothing on the
+     document says which. Refused further down. */
+  let orderUndecided = false;
   /* Which reader produced the values that survive. `layout` only separates
      column-major from everything else, so the three row-wise readers are
      indistinguishable in the output - and "which stage read this?" was
@@ -672,8 +682,10 @@ function parseCoa(text){
     if (inlineTotal){
       /* ...and only when the figure is a percentage - see INLINE_MASS_UNIT. */
       const inlineText = inlineTotal[1];
-      if (!(INLINE_MASS_UNIT.test(inlineText) && inlineText.indexOf('%') < 0))
-        totalTerpenes = resultToNumber(inlineText);
+      if (!(INLINE_MASS_UNIT.test(inlineText) && inlineText.indexOf('%') < 0)){
+        const beforePercent = INLINE_MASS_UNIT.test(inlineText) ? inlineText.match(/(\d[\d.,]*)\s*%/) : null;
+        totalTerpenes = resultToNumber(beforePercent ? beforePercent[1] : inlineText);
+      }
       continue;
     }
 
@@ -696,7 +708,7 @@ function parseCoa(text){
       for (let k = i + 1; k < legendUntil && k < i + 4; k++){
         if (!/^TOTAL TERPENES$/i.test(lines[k])) continue;
         const pv = resultToNumber(lines[k - 1]);
-        if (pv != null && pv > 0 && pv <= PERCENT_CEILING){ totalTerpenes = pv; totalPinned = true; }
+        if (pv != null && pv > 0 && pv <= PERCENT_CEILING){ totalTerpenes = pv; totalPinned = true; totalBeforeLabel = true; }
         break;
       }
       continue;
@@ -904,6 +916,7 @@ function parseCoa(text){
         const pv = prv && /%\s*$/.test(prv) && !ownerAboveIsAnalyte(i)
           ? resultToNumber(prv) : null;
         totalTerpenes = (pv != null && pv > 0 && pv <= PERCENT_CEILING) ? pv : value;
+        if (totalTerpenes === pv && pv != null) totalBeforeLabel = true;
         /* Kept UNFILTERED. A mg/g total legitimately exceeds 100 (221.34 on a
            live resin), and dropping it here left too few candidates for the
            column selector to run at all - so the whole table fell back to the
@@ -1142,14 +1155,42 @@ function parseCoa(text){
 
   if (!columnResolved && totalTerpenes > 0 && rowKeys.length >= 4){
     const sum = arr => arr.reduce((a, v) => a + (v || 0), 0);
-    const fwdShare = sum(afterByRow) / totalTerpenes;
+    /* The forward reading as COMMITTED above - the column the chooser settled
+       on - not the first cell after each name. On a name-first table printing
+       a limit before each result (name, LOQ, result; inline total, no verdict
+       column) the first cells are the limits: they sum to almost nothing, so
+       the backward reading - each name given the result of the row ABOVE it -
+       beat that by the margin and replaced a correct reading with every value
+       one row out, accepted with no warning. Found 2026-11-16 on made-up
+       reports (test/shifted-rows-test.js); no fixture has that layout. On a
+       table of one cell per row the two are the same number. Where the first cells sum
+       to MORE than the committed reading (ACS prints a dilution of 30 first)
+       that larger figure still stands, as it did, so the backward reading
+       wins no more often than before. */
+    const committed = Object.values(terps).reduce((x, v) => x + (v || 0), 0) + unmodelledTotal;
+    const fwdShare = Math.max(sum(afterByRow), committed) / totalTerpenes;
     const bwdShare = sum(beforeByRow) / totalTerpenes;
     const fits = x => x <= 1 + RECONCILE_TOLERANCE;
         /* Edge evidence, independent of the margin: a value-first table prints a
        number before its FIRST analyte and nothing after its LAST. The margin
        alone only catches this when the table is sorted descending; on an
        alphabetical one fwdShare and bwdShare sit too close together. */
-    const valueFirstEdges = beforeByRow[0] != null && beforeByRow[0] <= 100 && afterByRow[afterByRow.length - 1] == null;
+    /* ...and only on a document that printed its TOTAL value-first too. The
+       edges alone cannot tell a value-first table from a name-first one with
+       a small stray figure above it (the last cell of the table before, a
+       limit under a heading) whose last row has no result (N/A, NT, a
+       dash): cell for cell the two are the same sequence, and they sum to
+       the same total. Read backward, the second had every value one row
+       out and was accepted. Both fixtures read this way print the total
+       before its label; the made-up reports that were misread do not
+       (test/shifted-rows-test.js, 2026-11-16). */
+    const valueFirstEdges = totalBeforeLabel && beforeByRow[0] != null && beforeByRow[0] <= 100 && afterByRow[afterByRow.length - 1] == null;
+    /* The same edges on a document that did NOT print its total value-first:
+       a value-first table, or a name-first one under a stray figure. Either
+       reading reconciles and one of them has every value one row out, so
+       neither is asserted. No fixture is in this state. */
+    const edgesAlone = !totalBeforeLabel && beforeByRow[0] != null && beforeByRow[0] <= 100 && afterByRow[afterByRow.length - 1] == null;
+    if (edgesAlone && fits(bwdShare) && bwdShare >= MIN_BACKWARD_SHARE && !(bwdShare > fwdShare + BACKWARD_MARGIN)) orderUndecided = true;
     if (fits(bwdShare) && bwdShare >= MIN_BACKWARD_SHARE && (bwdShare > fwdShare + BACKWARD_MARGIN || valueFirstEdges)){
       readBy = 'backward';
       Object.keys(terps).forEach(k => delete terps[k]);
@@ -1285,6 +1326,24 @@ function parseCoa(text){
   if (mappedTotal > 0 && top / mappedTotal > 0.85 && nonZero > 2)
     warnings.push('one terpene accounts for most of the profile — unusual, though some cultivars genuinely are');
 
+  /* A terpene table printed by weight alone. "Result (mg/g)" over rows of
+     6.12, 4.31, 3.52 and a bare total of 20.0 reconciles perfectly - as 20%
+     total terpenes, ten times the truth, and silently wherever the form's
+     typical ceiling is above it (a cartridge's is 20). INLINE_MASS_UNIT
+     already declines a total that says mg/g on its own line; this is the
+     same refusal for a table whose heading says it. The test is the
+     document's own: across the rows read, and 15 lines either side, a mass
+     unit is printed and a percent sign is not. All 56 accepted fixtures
+     print a percent sign there (43 beside a mass unit, 13 without one). */
+  if (layout === 'row' && rowKeys.length){
+    const from = Math.max(0, rowKeys[0].index - UNIT_WINDOW);
+    const to = Math.min(lines.length, rowKeys[rowKeys.length - 1].index + UNIT_WINDOW);
+    const around = lines.slice(from, to);
+    if (around.some(l => TABLE_MASS_UNIT.test(l)) && !around.some(l => l.indexOf('%') >= 0))
+      rejectReasons.push('this report gives its terpene figures by weight (such as mg/g), not as percentages, and NOSE reads percentages only');
+  }
+  if (orderUndecided && layout === 'row')
+    rejectReasons.push('NOSE cannot tell whether this report prints each figure before or after the name of its terpene, so it cannot be sure which figure belongs to which');
   for (const key of summedDisagree)
     rejectReasons.push(`this report lists ${printedName(key)} both as a total and as separate rows, and the two disagree, so NOSE cannot tell which to use`);
 
@@ -1504,6 +1563,11 @@ const MIN_MEASURED_COVERAGE = 0.80;
    two on a flower COA is a parse that collapsed, not a real profile. */
 const MIN_ANALYTES_INHALABLE = 3;
 const INHALABLE = new Set(['flower', 'concentrate', 'vape']);
+
+/* A mass unit as a table prints it, and how far either side of the rows read
+   the table's headings and its total may sit. */
+const TABLE_MASS_UNIT = /mg\s*\/\s*g|mg\s*\/\s*unit|(?:u|\u00B5|\u03BC)g\s*\/\s*g/i;
+const UNIT_WINDOW = 15;
 
 const MIN_ROW_SHARE = 0.5;          // a row-wise column must explain half the total
 
