@@ -113,5 +113,16 @@ x = read([...HEAD, ...cells(DESC, ([n, v]) => [n, f(v)]), `Total Terpenes: ${(Nu
 check('a total in mg/g alone is still left unread, and the report refused',
   [x.r.usable, x.r.totalTerpenes], [false, null]);
 
+/* --- 5. totals printed as tiles ---------------------------------------------- */
+const TABLE = cells(DESC, ([n, v]) => [n, f(v)]);
+x = read(['Some New Lab LLC', 'Matrix: Flower', 'Total THC', '24.1%', 'Total Terpenes', `${TOTAL}%`, 'Terpenes', 'Tested', ...TABLE]);
+check('label-then-value tiles, "Total THC / 24.1% / Total Terpenes / 2.000%": the terpene total is its own figure, not the one above',
+  [x.state, x.r.totalTerpenes], ['correct', 2]);
+x = read(['Some New Lab LLC', 'Matrix: Flower', 'THCA', '27.3%', 'Total Terpenes', `${TOTAL}%`, 'Terpenes', 'Tested', ...TABLE]);
+check('...and under a single cannabinoid\'s tile', [x.state, x.r.totalTerpenes], ['correct', 2]);
+x = read(['Some New Lab LLC', 'Matrix: Flower', '24.1%', 'Total THC', `${TOTAL}%`, 'Total Terpenes', 'Analyte', '%', ...cells(ALPHA, ([n, v]) => [f(v), n])], ALPHA);
+check('value-then-label tiles over a value-first table (Modern Canna\'s summary) read as before: the figure above the label',
+  [x.state, x.r.totalTerpenes, x.r.readBy], ['correct', 2, 'backward']);
+
 if (failures) { console.log(`\nshifted-rows: ${failures} failure${failures === 1 ? '' : 's'}`); process.exit(1); }
 console.log('\nshifted-rows clean');

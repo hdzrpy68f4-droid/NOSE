@@ -4850,3 +4850,31 @@ later hop).
   answers - each with a stand-in lookup. The other tests name hosts that do
   not exist; their lookups fail in tens of milliseconds, and the gates take
   as long as before.
+
+### Total tiles, and the open list tidied, 2026-11-16
+
+- **"Total THC / 24.1% / Total Terpenes / 2.0%" read 24.1 as the terpene
+  total** and refused a correctly printed report for recovering 8% of it
+  (left open by "The parser reviewed", the same day). The figure above a
+  bare "Total Terpenes" label is now left alone when the nearest name above
+  it is a cannabinoid or a cannabinoid total AND the line below the label is
+  itself a percentage - the label's own figure. A value-first run, Modern
+  Canna's summary, has a heading below the label and reads as it did.
+  `shifted-rows-test` has both, and a single cannabinoid's tile. 56 accepted
+  / 3 rejected and parity 56 / 0, unmoved.
+- **`open.md`: four items taken off, three reworded, four moved.** Off: the
+  login emails as they were before 2026-11-16 and the password reset
+  "working" (both closed by "Email links that come to NOSE"), the guard that
+  checked host names only (closed by "A name that resolves to a private
+  address"), and the `wip/` draft (deleted 2026-11-14). Reworded to what is
+  true now: the vote cap, pre-registration's date, the demo page. Moved out
+  from under "§14: later", where four of 2026-11-16's items had been
+  appended by mistake.
+- **Looked at and left open, not verified from here:** the two "not pushed
+  until the walk-through runs" items in §14 need the database to check; the
+  home page still says "upload a report" (`index.html`), public wording; the
+  sitemap's `lastmod` for `/` and `/app` is still 2026-07-20.
+- **Two things measured and filed in the local critique, changing nothing:**
+  the consumer app keeps no product form with a saved jar, so it compares
+  across forms and cannot say so; and a "closest liked jar" score against
+  the averaged palate (the critique's addendum has the table).

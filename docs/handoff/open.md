@@ -90,33 +90,6 @@ built from its published types (v10: `set` returns `{ modified }`, and
 - The terms page's "Before launch" box still lists the operating entity's legal
 name and address, a governing-law clause, an effective date, and a lawyer's
 review.
-- **Until 2026-11-16 the login emails showed Supabase the clicker's IP
-address; the item "Since 2026-11-16 the login emails no longer..." below says
-what is true now. As it was, for Supabase's default templates, and said on
-the privacy page since 2026-10-03** (above, "Three
-privacy sentences"). Sign-up and password reset call Supabase's auth API from
-the server (`netlify/lib/auth.js`, no forwarded address), but the emails link
-to Supabase's own domain, so whoever clicks one reaches Supabase from their
-own browser, and Supabase's auth logs record the address. If the accounts
-share the archive's project, those logs sit in the same database - which is
-why the privacy page says the IP address never reaches the *store*, not the
-database. SMTP Settings were read and set on 2026-11-15 (Resend; 13-records,
-"Account emails switched on through Resend"), and a reset link was followed
-that day: it goes to Supabase's own site first, as the page says. The two templates were read on 2026-11-16
-(Authentication → Emails → Templates): "Confirm your email address" and
-"Reset your password", a heading, one or two plain sentences and one link,
-each link `{{ .ConfirmationURL }}` - Supabase's own site first, as the page
-says. Neither names NOSE or cannabis; the sender's name is NOSE. The Resend
-key was read the same day: Sending access, nose-app.com only, the one key.
-The account functions'
-`SUPABASE_URL` and `SUPABASE_SERVICE_KEY` are not described anywhere in this
-file either.
-- **A password reset works end to end since 2026-11-15** (13-records, "Account
-  emails switched on through Resend" and "Reset tested"): the email arrives
-  from Resend, its link lands on `/account/reset/`, which clears the address
-  and sets the new password. The link still passes through Supabase's own
-  site first, so Supabase sees the clicker's IP address, as the privacy page
-  says.
 - **The stored address keeps a link's path.** Only what follows "?" (and "#")
 is dropped, so a one-off link that carries a code in its path keeps it. "The
 store holds nothing about the person who scanned" relies on that being rare:
@@ -231,6 +204,30 @@ schema comment if wanted.
   10s budget, the chain's 8s and the archive's 2s stay as they were; using
   more is its own decision, and the documented limit is now the one that
   applies to `coa.js` (above, "Comments that match the code").
+- **The first confirmation email went to junk** (2026-11-16, the owner's
+  second address; 13-records, "A sign-up tested on the live site"). SPF, DKIM
+  and DMARC (`p=none`) are in place, and since the same day the email's
+  link points at nose-app.com, not Supabase ("Email links that come to
+  NOSE"). Whether that is enough is not known: the sending domain is days
+  old, and a mail provider's trust in one grows with mail that is opened.
+  The reset email with the new link arrived in the **inbox** on 2026-11-16
+  and its link set a new password (the owner's test). A sign-up
+  email with the new link followed the same day: its link opened the
+  confirmation page and the button confirmed the address (the owner's test).
+  It landed in the inbox too. Both links are proven; what
+  stays open is only whether mail keeps reaching the inbox as more is sent.
+- **Since 2026-11-16 the login emails no longer show Supabase the clicker's
+  IP address** (13-records, "Email links that come to NOSE"): the two
+  templates link to this site. It holds only while the templates do: "Reset
+  template" in the dashboard, or a new template (invite, magic link, email
+  change - none is used), puts Supabase's own link back, and the privacy
+  page would then be wrong.
+- **The methodology page's "one time in four" and "two times in three" are
+  not under a gate** (13-records, "The methodology page says how often
+  unrelated jars earn a label", 2026-11-16): 26% and 67% of the flower pairs
+  among the accepted fixtures. A new fixture, or a change to the maths, can
+  move them; recompute before trusting the sentence. The page gives no count
+  of reports, on purpose.
 
 ---
 
@@ -273,10 +270,6 @@ schema comment if wanted.
 - `scripts/download-twice.js` keeps its own looser fetch loop. Moving it onto
   `lib/fetch-report.js` would change what it reports (redirects re-checked,
   8 s for a link it waits 30 s for today), so it waits for its own prompt.
-- The guard checks host names, not the addresses they resolve to, as it
-  always has in coa.js: a public name pointing at a private address passes
-  `isBlockedHost`. In the Codespace the script runs by hand, on one
-  dispensary's file.
 - A lab NOSE does not know reads as refused or "(lab not recognised)". The
   by-lab table is the list of labs a fixture would help most (§10). A
   coverage figure is today's parser's, and moves when the parser does.
@@ -337,10 +330,14 @@ schema comment if wanted.
 - **The feed is cached up to 60 seconds**, by browsers and by Netlify, apart
   for each origin: a catalog upload, a revoked key or a deleted store shows
   within the minute, a deploy at once. Nothing purges it by hand.
-- **The cap is counted, not locked** - eight listings a vote - so votes
-  arriving together can pass it by their number. Which store reached it is not
+- **The cap is counted, not locked**: the day is counted before a vote is
+  kept and again after, 16 listings a vote, and a vote that finds the day
+  over its cap takes itself back out (14-records, "The dispensary code read
+  against the privacy page", 2026-11-16). Two that land together may both
+  go, leaving the day one short; never over. Which store reached it is not
   logged ("Logs", above). `B2B_VOTE_DAILY_CAP`, like every variable, changes
-  only with a new deploy.
+  only with a new deploy, and the pilot report compares against the default
+  100, not that variable.
 - **Netlify's request logs record the address and time of every feed and vote
   request**, and the feed's address names the store's public key. NOSE copies
   nothing from them. A vote's key ends in random bytes, so the store's listing
@@ -410,19 +407,16 @@ schema comment if wanted.
   carries its own stylesheet and names it, with its hash, and stays a
   classic script (above, "Pinned releases"); the integration guide says not
   to load it as a module.
-- **The demo page goes live with the next deploy**, at `/b2b/demo/`: static,
-  noindex, linked only from /dispensaries/ (its pitch view, since 2026-11-15), its feed a file. Its votes reach the
-  production b2b-vote, which answers 404 until Prompt 8 and then refuses the
-  made-up key as no store's. Its test store is rewritten by
-  `node scripts/b2b-demo-feed.js` after a parser change moves a fixture's
-  reading - the widget test fails until it is.
+- **The demo page is live at `/b2b/demo/`**: static, noindex, linked only
+  from /dispensaries/ (its pitch view, since 2026-11-15), its feed a file.
+  Its votes reach the production b2b-vote, which refuses the made-up key as
+  no store's. Its test store is rewritten by `node scripts/b2b-demo-feed.js`
+  after a parser change moves a fixture's reading - the widget test fails
+  until it is.
 - **At most 12 cards** on the rail and the sold-out panel, a constant in the
   widget; the rest of the menu is the store's page. The basis counts every
   purchase it does not use and names only those of the category with no
   panel.
-- **`wip/nose-farnesene-wip.js` still holds an old copy of the bar**, as it
-  does of the maths: an unfinished draft of the whole old bundle, loaded by
-  nothing. The widget test lists it, as `match-test` does.
 - **The feed and the vote are not versioned.** A release pins the widget's
   code, not what it reads: a change to `b2b-feed`'s fields or to what
   `b2b-vote` accepts changes every pinned page. `b2b-endpoints-test` pins
@@ -487,8 +481,10 @@ schema comment if wanted.
   card a shopper opened. The template's marker on `product_url` is one way;
   whatever the store uses is written into the plan before the first day.
 - **Pre-registration rests on git's committer date**, which a committer can
-  set. Pushing the plan to GitHub before the first day is the record others
-  can see; the report checks the date it is given.
+  set: a dry run on 2026-11-16 passed with a date six months back. The
+  report still reads git. The record others can check is the push's gates
+  run on GitHub, dated by GitHub's clock; the plan template's checklist asks
+  for its address since 2026-11-16.
 - **Votes cast after the last day** - on purchases made in the pilot - are
   not counted: the band check reads the pilot's days, first to last.
 - **The split check's threshold, p below 0.001, is fixed in the report** and
@@ -537,6 +533,11 @@ schema comment if wanted.
   Reading the open state from the page when drawing again would end it, but
   that changes `js/b2b-widget` - a new file, and a new release for a pinned
   page - so it needs its own prompt.
+- **A first pilot may be too small to decide** (13-records, "A pilot walked
+  through on a made-up store", 2026-11-16): a 10% lift at a mean of 1.8 and
+  a spread of 2.1 needs 2,137 shoppers a group, and the band check needs as
+  many Low votes as Strong ones. Ask a store for its mean and spread before
+  agreeing dates.
 
 ## §14: later
 
@@ -546,32 +547,3 @@ Wanted work, not yet built.
   matches their palate. Wanted as an option after the pilot. Preferred build:
   the dispensary's server runs the ranking engine on purchase history it
   already holds, so NOSE never receives it.
-- **The first confirmation email went to junk** (2026-11-16, the owner's
-  second address; 13-records, "A sign-up tested on the live site"). SPF, DKIM
-  and DMARC (`p=none`) are in place, and since the same day the email's
-  link points at nose-app.com, not Supabase ("Email links that come to
-  NOSE"). Whether that is enough is not known: the sending domain is days
-  old, and a mail provider's trust in one grows with mail that is opened.
-  The reset email with the new link arrived in the **inbox** on 2026-11-16
-  and its link set a new password (the owner's test). A sign-up
-  email with the new link followed the same day: its link opened the
-  confirmation page and the button confirmed the address (the owner's test).
-  It landed in the inbox too. Both links are proven; what
-  stays open is only whether mail keeps reaching the inbox as more is sent.
-- **Since 2026-11-16 the login emails no longer show Supabase the clicker's
-  IP address** (13-records, "Email links that come to NOSE"): the two
-  templates link to this site. It holds only while the templates do: "Reset
-  template" in the dashboard, or a new template (invite, magic link, email
-  change - none is used), puts Supabase's own link back, and the privacy
-  page would then be wrong.
-- **The methodology page's "one time in four" and "two times in three" are
-  not under a gate** (13-records, "The methodology page says how often
-  unrelated jars earn a label", 2026-11-16): 26% and 67% of the flower pairs
-  among the accepted fixtures. A new fixture, or a change to the maths, can
-  move them; recompute before trusting the sentence. The page gives no count
-  of reports, on purpose.
-- **A first pilot may be too small to decide** (13-records, "A pilot walked
-  through on a made-up store", 2026-11-16): a 10% lift at a mean of 1.8 and
-  a spread of 2.1 needs 2,137 shoppers a group, and the band check needs as
-  many Low votes as Strong ones. Ask a store for its mean and spread before
-  agreeing dates.

@@ -630,6 +630,30 @@ function parseCoa(text){
     return false;
   };
 
+  /* Is the percentage above a bare "Total Terpenes" label the figure of a
+     cannabinoid tile, with this label's own figure below it? On a run of
+     label-then-value tiles
+
+       Total THC | 24.1% | Total Terpenes | 2.0%
+
+     lines[i-1] is Total THC's figure. Taken as the terpene total it refused
+     a correctly printed report for recovering 8% of "the lab's total"
+     (found 2026-11-16 on a made-up report; no fixture prints tiles this
+     way). Both halves must hold - the nearest name above is a cannabinoid
+     or a cannabinoid total, AND the line below the label is itself a
+     percentage - so a value-first run ("24.1% | Total THC | 2.24% | Total
+     Terpenes | Analyte", Modern Canna's summary) reads as it always has:
+     there the line below is a heading. */
+  const aboveIsCannabinoidTile = (idx) => {
+    const below = lines[idx + 1];
+    if (!below || !/%\s*$/.test(below) || !isResultToken(below)) return false;
+    for (let k = idx - 1; k >= 0 && k >= idx - LOOKAHEAD_LINES; k--){
+      if (isResultToken(lines[k])) continue;
+      return CANNABINOID.test(lines[k].toUpperCase()) || TOTAL_OF_CANNABINOID.test(lines[k]);
+    }
+    return false;
+  };
+
   for (let i = 0; i < lines.length; i++){
     const line = lines[i];
 
@@ -913,7 +937,7 @@ function parseCoa(text){
          denominator. Prefer an immediately preceding percentage. */
       if (!totalPinned){
         const prv = i > 0 ? lines[i - 1] : null;
-        const pv = prv && /%\s*$/.test(prv) && !ownerAboveIsAnalyte(i)
+        const pv = prv && /%\s*$/.test(prv) && !ownerAboveIsAnalyte(i) && !aboveIsCannabinoidTile(i)
           ? resultToNumber(prv) : null;
         totalTerpenes = (pv != null && pv > 0 && pv <= PERCENT_CEILING) ? pv : value;
         if (totalTerpenes === pv && pv != null) totalBeforeLabel = true;
