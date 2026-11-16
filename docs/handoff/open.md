@@ -100,9 +100,13 @@ share the archive's project, those logs sit in the same database - which is
 why the privacy page says the IP address never reaches the *store*, not the
 database. SMTP Settings were read and set on 2026-11-15 (Resend; 13-records,
 "Account emails switched on through Resend"), and a reset link was followed
-that day: it goes to Supabase's own site first, as the page says. **Still to
-read in the dashboard**: the two templates' own text (Authentication →
-Emails → Templates), which are Supabase's defaults as far as anyone has seen. The account functions'
+that day: it goes to Supabase's own site first, as the page says. The two templates were read on 2026-11-16
+(Authentication → Emails → Templates): "Confirm your email address" and
+"Reset your password", a heading, one or two plain sentences and one link,
+each link `{{ .ConfirmationURL }}` - Supabase's own site first, as the page
+says. Neither names NOSE or cannabis; the sender's name is NOSE. The Resend
+key was read the same day: Sending access, nose-app.com only, the one key.
+The account functions'
 `SUPABASE_URL` and `SUPABASE_SERVICE_KEY` are not described anywhere in this
 file either.
 - **A password reset works end to end since 2026-11-15** (13-records, "Account
