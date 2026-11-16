@@ -4760,3 +4760,21 @@ variable the owner sets in Netlify; until it is set, nothing changes.
   fingerprint, the throttle still counts, and account deletion clears both.
   Its stand-in for Supabase's sign-up keeps no user since the call gained
   `redirect_to` on 2026-11-15; the new checks add theirs directly.
+
+### The methodology page says how often unrelated jars earn a label, 2026-11-16
+
+The maths critique's second proposal (local only,
+`docs/reviews/matching-maths-critique-2026-11-16.md`). Under "4. Name the
+result", after the sentence that the cut-offs are ones NOSE chose, the page
+now says: among the lab reports the reader is tested with, two flower jars
+chosen without regard to each other score "Close match" about one time in
+four and at least "Related profile" about two times in three; that a label
+says how two profiles compare, not that the match is rare; and that the set
+is small and the figures will change.
+
+- **The figures:** 26% and 67% of the 300 pairs of flower jars among the
+  accepted fixtures, by `cosine()` on `normalize()`d readings.
+- **The page does not say how many reports that is**, at the owner's word.
+- **Not under a gate.** If the fixture corpus or the maths changes, these two
+  fractions are recomputed by hand; `open.md` says so.
+- The sitemap's `lastmod` for the page moves to 2026-11-16.

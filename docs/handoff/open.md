@@ -563,3 +563,9 @@ Wanted work, not yet built.
   template" in the dashboard, or a new template (invite, magic link, email
   change - none is used), puts Supabase's own link back, and the privacy
   page would then be wrong.
+- **The methodology page's "one time in four" and "two times in three" are
+  not under a gate** (13-records, "The methodology page says how often
+  unrelated jars earn a label", 2026-11-16): 26% and 67% of the flower pairs
+  among the accepted fixtures. A new fixture, or a change to the maths, can
+  move them; recompute before trusting the sentence. The page gives no count
+  of reports, on purpose.

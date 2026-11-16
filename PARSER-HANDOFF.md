@@ -1848,6 +1848,7 @@ under the cap.
 - [An audit for dead weight: five small removals, 2026-11-16](docs/handoff/13-records.md#an-audit-for-dead-weight-five-small-removals-2026-11-16)
 - [The parser reviewed: shifted rows and weight units, 2026-11-16](docs/handoff/13-records.md#the-parser-reviewed-shifted-rows-and-weight-units-2026-11-16)
 - [Security items 8, 9, 10 and the keyed fingerprint, 2026-11-16](docs/handoff/13-records.md#security-items-8-9-10-and-the-keyed-fingerprint-2026-11-16)
+- [The methodology page says how often unrelated jars earn a label, 2026-11-16](docs/handoff/13-records.md#the-methodology-page-says-how-often-unrelated-jars-earn-a-label-2026-11-16)
 
 ## 14. Dispensary integration
 
