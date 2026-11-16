@@ -4581,3 +4581,46 @@ the confirmation page ("A confirmation page").
 
 Junk is open (open.md): the sending domain is a day old, and the email's one
 link points at Supabase's domain, not nose-app.com.
+
+### Email links that come to NOSE, 2026-11-16
+
+After the first real sign-up's email went to junk, the owner asked for the
+emails' links to point at nose-app.com (commit 6839021).
+
+- **Templates, accounts project (Authentication → Emails → Templates), saved
+  2026-11-16 and read back after a reload.** Only the links changed:
+  - Confirm sign up: `{{ .SiteURL }}/account/confirmed/#token_hash={{ .TokenHash }}&type=signup`
+  - Reset password: `{{ .SiteURL }}/account/reset/#token_hash={{ .TokenHash }}&type=recovery`
+
+  Site URL is `https://nose-app.com`. Before, each was
+  `{{ .ConfirmationURL }}`, Supabase's own site. "Reset template" on each
+  page puts that back.
+- **The code is after "#"**, which a browser sends to no server, so it is in
+  no request log - Netlify's included. Both pages read it, take it out of
+  the address at once, and send it only when the button is pressed, so an
+  email scanner that opens the link does not use it up. Both still read a
+  code after "?", and the session after "#" that an email sent before the
+  change comes back with.
+- **`auth-confirm.js`** (new): POST `{ token_hash }` → Supabase `/verify`,
+  type `signup` → the session Supabase answers with is ended at once
+  (`/logout`, scope global). No cookie; the person signs in with their
+  password. A used, expired or wrong-shaped code gets one plain sentence; a
+  reset code is not accepted. It has no edge rate limit (Pro's five are in
+  use) and no throttle of its own: a code is unguessable, and a wrong shape
+  never reaches Supabase.
+- **`/account/confirmed/`** shows a button, "Confirm email address", when it
+  is opened with a code. `auth-reset-finish.js` is unchanged: it already took
+  a `token_hash`.
+- **Privacy page**, wording approved by the owner: since November 16 the
+  link points at this site and Supabase no longer sees the clicker's IP
+  address; a link from an earlier email still goes to Supabase first. An
+  eleventh change says so.
+- **Tests:** `accounts-test` runs `auth-confirm` offline (eight checks);
+  `input-paths-test` opens the confirmation page with a code after "#" and
+  after "?", presses the button, and tries a used code and a reset code; and
+  opens the reset page with a code after "#".
+- **Seen live:** the page serves the button, and `auth-confirm` answers a
+  made-up code with 400. **Not yet seen:** a real email with the new link.
+  The owner tries one; whether it still lands in junk is open.
+- `auth-signup` and `auth-reset` still pass `redirect_to`; the new templates
+  do not use it. Left in place: it is what makes "Reset template" safe.

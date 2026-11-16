@@ -532,10 +532,14 @@ Wanted work, not yet built.
   already holds, so NOSE never receives it.
 - **The first confirmation email went to junk** (2026-11-16, the owner's
   second address; 13-records, "A sign-up tested on the live site"). SPF, DKIM
-  and DMARC (`p=none`) are in place. Likely causes, none measured: the
-  sending domain was a day old, and the email's only link points at
-  Supabase's domain while the sender is nose-app.com. A link to
-  nose-app.com itself (a template built on `{{ .TokenHash }}`, verified by a
-  function, as `/account/reset/` already accepts) would remove the mismatch
-  and keep the clicker's IP address from Supabase - and change the privacy
-  page's paragraph about it. Its own prompt.
+  and DMARC (`p=none`) are in place, and since the same day the email's
+  link points at nose-app.com, not Supabase ("Email links that come to
+  NOSE"). Whether that is enough is not known: the sending domain is days
+  old, and a mail provider's trust in one grows with mail that is opened.
+  The owner tries a new sign-up; this item closes or stays on what they see.
+- **Since 2026-11-16 the login emails no longer show Supabase the clicker's
+  IP address** (13-records, "Email links that come to NOSE"): the two
+  templates link to this site. It holds only while the templates do: "Reset
+  template" in the dashboard, or a new template (invite, magic link, email
+  change - none is used), puts Supabase's own link back, and the privacy
+  page would then be wrong.

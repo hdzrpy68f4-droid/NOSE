@@ -1844,6 +1844,7 @@ under the cap.
 - [A confirmation page, 2026-11-15](docs/handoff/13-records.md#a-confirmation-page-2026-11-15)
 - [After the review: notes-only pushes do not deploy, 2026-11-16](docs/handoff/13-records.md#after-the-review-notes-only-pushes-do-not-deploy-2026-11-16)
 - [A sign-up tested on the live site, 2026-11-16](docs/handoff/13-records.md#a-sign-up-tested-on-the-live-site-2026-11-16)
+- [Email links that come to NOSE, 2026-11-16](docs/handoff/13-records.md#email-links-that-come-to-nose-2026-11-16)
 
 ## 14. Dispensary integration
 
