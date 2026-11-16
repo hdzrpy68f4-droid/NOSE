@@ -251,6 +251,12 @@ schema comment if wanted.
   calls only), and `NOSE_THROTTLE_SECRET` (throttle records keyed with an
   HMAC) - the second together with the privacy page's sentence about those
   counts, which says SHA-256 until then.
+  The owner approved that sentence's new wording on 2026-11-16, to publish
+  the day the secret is set: "It is kept under a fingerprint of the address
+  rather than the address itself. Since [that date], the fingerprint is made
+  with a secret key that only our server holds, so knowing an address is not
+  enough to compute it. Before that date it was a plain SHA-256 hash, which
+  anyone who knew an address could compute."
 - **`auth-reset`, `auth-reset-finish` and `auth-confirm` have no edge rate
   limit** (security audit item 9, the part left): Pro's five rules are in
   use.
