@@ -225,15 +225,22 @@ async function main() {
 
   const { vote, voteConfig, read } = await loadFunctions();
   /* Netlify's rate limits at its edge, since 2026-11-14 (PARSER-HANDOFF s13,
-     "Rate limits at Netlify's edge"). The Personal plan allows two rules:
-     coa 12 and match-feedback 30 a minute per address. No other function
-     may claim a third. */
+     "Rate limits at Netlify's edge"). Two on the Personal plan; five since
+     2026-11-15 on Pro ("Five rate limits on Netlify Pro"). b2b-vote has
+     none: a pinned release calls it at /.netlify/functions/b2b-vote and can
+     never change, and a rule needs a path of its own. */
   check('match-feedback exports its rate limit: 30 a minute per IP address',
     voteConfig, { path: '/api/match-feedback', rateLimit: { windowLimit: 30, windowSize: 60, aggregateBy: ['ip', 'domain'] } });
   {
     const dir = path.join(ROOT, 'netlify/functions');
     const limited = fs.readdirSync(dir).filter(f => f.endsWith('.js') && /\brateLimit\s*:/.test(codeOf(fs.readFileSync(path.join(dir, f), 'utf8')))).sort();
-    check('exactly two functions carry a rate limit, the Personal plan\'s two rules', limited, ['coa.js', 'match-feedback.js']);
+    check('exactly five functions carry a rate limit, Pro\'s five rules - b2b-vote not among them', limited,
+      ['auth-login.js', 'auth-signup.js', 'client-error.js', 'coa.js', 'match-feedback.js']);
+    const ruleOf = f => { const src = codeOf(fs.readFileSync(path.join(dir, f), 'utf8'));
+      return [(src.match(/path: '([^']+)'/) || [])[1], Number((src.match(/windowLimit: (\d+)/) || [])[1])]; };
+    check('...each at /api/<name>, with its number a minute: coa 12, match-feedback 30, auth-login 10, auth-signup 10, client-error 15',
+      ['coa.js', 'match-feedback.js', 'auth-login.js', 'auth-signup.js', 'client-error.js'].map(ruleOf),
+      [['/api/coa', 12], ['/api/match-feedback', 30], ['/api/auth-login', 10], ['/api/auth-signup', 10], ['/api/client-error', 15]]);
   }
   const post = body => vote(new Request('https://nose-app.com/.netlify/functions/match-feedback', {
     method: 'POST', headers: { 'content-type': 'application/json' }, body: typeof body === 'string' ? body : JSON.stringify(body) }));

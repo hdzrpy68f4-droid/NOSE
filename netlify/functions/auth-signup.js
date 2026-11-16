@@ -26,6 +26,16 @@ const NEUTRAL = {
   message: 'Check your email to finish setting up your account.',
 };
 
+/* Netlify's rate limit at its edge, counted per IP address over 60 seconds,
+   since 2026-11-15 (PARSER-HANDOFF s13, "Five rate limits on Netlify Pro"):
+   request 11 in a minute from one address gets Netlify's 429. Each sign-up can send an email; this keeps one address from sending many. A
+   function's rule applies only with a path of its own, so it is served at
+   /api/auth-signup, not /.netlify/functions/auth-signup. NOSE stores no address. */
+export const config = {
+  path: '/api/auth-signup',
+  rateLimit: { windowLimit: 10, windowSize: 60, aggregateBy: ['ip', 'domain'] },
+};
+
 export default async (request) => {
   if (request.method !== 'POST') return methodNotAllowed();
   if (!fromThisSite(request)) return crossSite();

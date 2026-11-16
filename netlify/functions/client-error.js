@@ -28,6 +28,16 @@ const KINDS = new Set(['error', 'unhandledrejection']);
 const INIT_KIND = /^init:[a-z ]{1,40}$/;
 const isKind = (v) => typeof v === 'string' && (KINDS.has(v) || INIT_KIND.test(v));
 
+/* Netlify's rate limit at its edge, counted per IP address over 60 seconds,
+   since 2026-11-15 (PARSER-HANDOFF s13, "Five rate limits on Netlify Pro"):
+   request 16 in a minute from one address gets Netlify's 429. The page sends at most three reports a load; this caps a flood. A
+   function's rule applies only with a path of its own, so it is served at
+   /api/client-error, not /.netlify/functions/client-error. NOSE stores no address. */
+export const config = {
+  path: '/api/client-error',
+  rateLimit: { windowLimit: 15, windowSize: 60, aggregateBy: ['ip', 'domain'] },
+};
+
 export default async (request) => {
   if (request.method !== 'POST') return methodNotAllowed();
 

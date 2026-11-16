@@ -19,6 +19,16 @@ import { json, methodNotAllowed } from '../lib/http.js';
 
 const BAD_CREDENTIALS = { error: 'invalid-credentials', message: 'Email or password is incorrect.' };
 
+/* Netlify's rate limit at its edge, counted per IP address over 60 seconds,
+   since 2026-11-15 (PARSER-HANDOFF s13, "Five rate limits on Netlify Pro"):
+   request 11 in a minute from one address gets Netlify's 429. Beside the per-email throttle, it slows one address trying many accounts. A
+   function's rule applies only with a path of its own, so it is served at
+   /api/auth-login, not /.netlify/functions/auth-login. NOSE stores no address. */
+export const config = {
+  path: '/api/auth-login',
+  rateLimit: { windowLimit: 10, windowSize: 60, aggregateBy: ['ip', 'domain'] },
+};
+
 export default async (request) => {
   if (request.method !== 'POST') return methodNotAllowed();
   if (!fromThisSite(request)) return crossSite();

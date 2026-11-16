@@ -31,9 +31,9 @@
           ts:new Date().toISOString()
         });
         if(navigator.sendBeacon){
-          navigator.sendBeacon('/.netlify/functions/client-error', new Blob([payload],{type:'application/json'}));
+          navigator.sendBeacon('/api/client-error', new Blob([payload],{type:'application/json'}));
         } else {
-          fetch('/.netlify/functions/client-error',{method:'POST',headers:{'Content-Type':'application/json'},body:payload,keepalive:true}).catch(function(){});
+          fetch('/api/client-error',{method:'POST',headers:{'Content-Type':'application/json'},body:payload,keepalive:true}).catch(function(){});
         }
       }catch(e){ /* reporting must never break the page */ }
     }

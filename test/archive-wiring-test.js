@@ -29,7 +29,7 @@
  *     above the daily cap, and only the cap logs (one fixed line)
  *   - store.js bounds a write end to end, and survives the failures that
  *     arrive after it stopped waiting - the ones that crash a function later
- *   - keep-awake runs often enough to keep a free project awake
+ *   - keep-awake is gone, since the projects moved to a paid plan (2026-11-15)
  */
 
 delete process.env.NOSE_DB_URL;
@@ -960,23 +960,11 @@ async function main() {
     await assert.rejects(store.touch({ timeoutMs: 40, _Client: FakeClient }), /gave up/);
   });
 
-  /* --- keep-awake --------------------------------------------------------- */
-
-  await test('keep-awake: scheduled at least four times a day, reads through store.touch', async () => {
-    const src = fs.readFileSync(path.join(FN, 'keep-awake.js'), 'utf8');
-    assert.match(src, /import store from '\.\/lib\/store\.js';/);
-    assert.match(src, /await store\.touch\(/);
-    assert.match(src, /if \(!process\.env\.NOSE_DB_URL\)/);
-    const m = /export const config = \{ schedule: '([^']+)' \};/.exec(src);
-    assert.ok(m, 'no schedule');
-    const [minute, hour, dom, month, dow] = m[1].trim().split(/\s+/);
-    assert.ok(/^\d+$/.test(minute) && +minute < 60, `minute "${minute}"`);
-    assert.deepStrictEqual([dom, month, dow], ['*', '*', '*']);
-    let hours;
-    if (hour === '*') hours = 24;
-    else if (/^\*\/\d+$/.test(hour)) hours = Math.ceil(24 / +hour.slice(2));
-    else hours = hour.split(',').length;
-    assert.ok(hours >= 4 && hours <= 24, `${hours} runs a day`);
+  /* keep-awake.js was removed on 2026-11-15: the projects moved to Supabase's
+     paid plan, whose projects are not paused for inactivity (PARSER-HANDOFF
+     s13, "Five rate limits on Netlify Pro"). */
+  await test('keep-awake is gone: paid projects do not pause', async () => {
+    assert.ok(!fs.existsSync(path.join(FN, 'keep-awake.js')));
   });
 
 

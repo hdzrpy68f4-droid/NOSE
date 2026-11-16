@@ -45,7 +45,8 @@
   // Always returns { ok, status, data } — never throws, so no call site has to
   // guard against a rejected promise on a flaky connection.
   function post(path, payload) {
-    return fetch(API + path, {
+    /* /api/... is a function with a rate limit of its own (since 2026-11-15). */
+    return fetch((path.indexOf('/api/') === 0 ? '' : API) + path, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       credentials: 'same-origin',
@@ -145,7 +146,7 @@
       message($('login-message'), '', null);
       busy(btn, true, 'Signing in…');
 
-      post('/auth-login', { email: email, password: password }).then(function (res) {
+      post('/api/auth-login', { email: email, password: password }).then(function (res) {
         busy(btn, false);
         if (res.ok) {
           $('login-password').value = '';
@@ -185,7 +186,7 @@
       message($('signup-message'), '', null);
       busy(btn, true, 'Creating…');
 
-      post('/auth-signup', { email: email, password: password, ageAttested: true })
+      post('/api/auth-signup', { email: email, password: password, ageAttested: true })
         .then(function (res) {
           busy(btn, false);
           if (res.ok) {

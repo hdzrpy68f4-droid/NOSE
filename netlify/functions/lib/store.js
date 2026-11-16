@@ -17,7 +17,8 @@
  * clientConfig() is lib/db.js's, re-exported here, where the Codespace
  * scripts have always taken it from.
  *
- * touch() is the keep-awake read: one cheap query as nose_writer, so the free
+ * touch() was the keep-awake read (keep-awake.js, removed 2026-11-15 when the
+ * projects moved to a paid plan, which does not pause): one cheap query as nose_writer, so the free
  * Supabase project sees activity and is not paused.
  *
  * Never a query `name`: named queries are prepared statements, which the

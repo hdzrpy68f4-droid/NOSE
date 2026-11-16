@@ -4441,3 +4441,29 @@ Postmark's free plan is "100 emails/month".
   nose-app.com, turns tracking off, and enters its SMTP settings in the
   accounts project (Authentication → Emails → SMTP Settings). Then the page
   gives the day, and a real address gets a reset email end to end.
+
+### Five rate limits on Netlify Pro, and keep-awake removed, 2026-11-15
+
+B6's second half. The owner moved the Netlify team to Pro and the Supabase
+organization to Pro on 2026-11-15 (both projects).
+
+- **Three more rate limits**, per IP address over 60 seconds, each with a
+  path of its own as Netlify requires: `auth-login` 10 a minute at
+  `/api/auth-login`, `auth-signup` 10 at `/api/auth-signup`, `client-error`
+  15 at `/api/client-error`. With `coa` 12 and `match-feedback` 30, that is
+  Pro's five.
+- **Not `b2b-vote`**, M4's planned third: pinned releases 1 and 2 call it at
+  `/.netlify/functions/b2b-vote` and never change, and a rule needs a path,
+  which would move it away from them. Its per-store daily cap stays (open).
+- `js/account` posts sign-in and sign-up to the new addresses; `js/nose`
+  sends error reports to `/api/client-error`. A page opened before the
+  deploy and not reloaded calls the old addresses until it is.
+- **Privacy page:** Netlify counts requests to "five of our server functions
+  - the lab-report reader, match feedback, error reports, sign-in and
+  sign-up". Nothing new is collected.
+- **`keep-awake.js` removed:** paid projects "are not paused for inactivity"
+  (Supabase pricing, read 2026-11-15). `store.touch()` stays, with its
+  tests. `archive-wiring-test` checks the function is gone.
+- `match-feedback-test` pins the five functions, their addresses and numbers.
+- **Not done:** a Netlify usage notification. Its place in the dashboard was
+  not confirmed in Netlify's docs; the owner sets it.

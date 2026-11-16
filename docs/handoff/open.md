@@ -37,9 +37,6 @@ any `.html` with inline script. The guards check only what the build sees; a
 preview kept elsewhere needs `node scripts/check-published.js <file>` and
 `node scripts/check-trust.mjs <file>` run on it - it may still carry the old
 promise that NOSE keeps nothing.
-- Supabase free projects pause after a week idle, which looks like a connection
-fault. `keep-awake.js` exists to prevent it; if its log says FAILED, resume the
-project from the dashboard before debugging anything else.
 - **The static preview keeps its own copy of the maths** (it is not in this
   repo, §13 above). `match-test.js` cannot see it; a preview built after
   today should load `js/match-math.<hash>.js` rather than carry a copy. Its
@@ -250,13 +247,11 @@ schema comment if wanted.
 
 ---
 
-- **Only two functions are rate-limited at Netlify's edge** (since 2026-11-14,
-  "Rate limits at Netlify's edge"): the Personal plan allows two rules, so
-  `coa` and `match-feedback` have them and `auth-login`, `auth-signup`,
-  `auth-reset`, `client-error` and `b2b-vote` do not (security audit items 8
-  and 9 stay open). Pro allows five. A flood from many addresses passes any
-  per-address rule; a shared address - a dispensary's wifi, a phone carrier -
-  can reach a limit with several people on it.
+- **`b2b-vote` has no edge rate limit** (since 2026-11-15, "Five rate limits on
+  Netlify Pro"): a pinned release calls it at `/.netlify/functions/b2b-vote`
+  and never changes, and a rule needs a path of its own; its per-store daily
+  cap stays its guard (security audit item 8). A flood from many addresses
+  passes any per-address rule, and a shared address can reach a limit.
 
 - **A public name that resolves to a private address still passes the
   fetcher** (security audit item 6, the part left on 2026-11-14). An address
