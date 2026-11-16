@@ -4909,3 +4909,22 @@ the session ("do what you think is best").
   score ahead of a pilot whose votes are the only evidence of what
   people enjoy; the method is revised on that evidence, as the plan says.
   The table is in the local critique.
+
+### The publishable key switched on, 2026-11-16
+
+Security audit item 10, finished. The owner copied the accounts project's
+publishable key (Supabase → Settings → API Keys, the `default` key under
+"Publishable key") into Netlify as `SUPABASE_PUBLISHABLE_KEY`, Production
+context only, as the other keys are. A deploy was started by hand from
+Netlify's Deploys page (Trigger deploy → Deploy project, 26 seconds): a
+variable reaches the functions only with a new deploy, and no push was due.
+
+- **Seen:** `live-check.sh` clean; a made-up address gets the fixed
+  "Email or password is incorrect"; a made-up code gets the confirmation
+  page's "expired" sentence; and **the owner signed in on the live site** -
+  the proof that Supabase takes the new key, since a refused key and a wrong
+  password get the same reply by design.
+- From now the service key is sent only on `/admin/*` calls: reading a
+  user for the account page, and deleting an account.
+- **To undo:** delete the variable in Netlify and deploy again; every call
+  carries the service key as before.
