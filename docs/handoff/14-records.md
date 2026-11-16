@@ -2904,3 +2904,33 @@ listed: two `fetch` calls and one `localStorage` pair in the widget, one
 - Not read line by line: `js/b2b-rank` (the maths runs in the browser and
   makes no request - checked by listing its calls), the pilot scripts, the
   catalog reader beyond its imports.
+
+### The vote asks before it tells, 2026-11-16
+
+From the maths critique the owner asked for
+(`docs/reviews/matching-maths-critique-2026-11-16.md`), its first proposal,
+which the owner approved.
+
+- **The vote screen shows its question and two buttons, and nothing else,
+  until the shopper answers.** Until now the label and score sat above the
+  question - "Matched to the rest of what you've bought here as Partial
+  overlap · 67", then "Was the flavor close?" - so the shopper was told
+  NOSE's answer before being asked for theirs, and the votes exist to test
+  that answer (`docs/B2B-PILOT-PLAN.md` §5). The same line is now shown
+  after the thanks, once answered, and when the page is opened again for a
+  product already voted on.
+- No word changes: `voteMatched` is the same string in `js/b2b-strings`, so
+  that bundle keeps its hash. The vote still sends the same six fields.
+- **Releases 1 and 2 are as they were**: a pinned page shows the label first
+  until its store moves to a release cut after this. **Release 3 is not cut
+  yet** - `scripts/b2b-release.js` in the Codespace, the owner's step, and
+  worth doing before a pilot store goes live.
+- `b2b-widget-test`: before the answer, no `.nm-lead` and no label anywhere
+  in the widget; after it, and after a reload, the matched line. The
+  compliance kit names the line "the vote, once answered: the match it was
+  about"; its screen 05 no longer shows it and screen 08 does.
+- **The dispensaries page's picture of the vote is retaken**:
+  `images/dispensaries/vote-ask.png` (700 x 122) from the demo's test store,
+  product D-106, in place of `vote.png` - a new name, since `/images/*` is
+  cached for a year. Its alt text no longer says "the match label it was
+  given".

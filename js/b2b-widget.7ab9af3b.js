@@ -333,7 +333,11 @@
 
   /* The vote, on order history: for a product the shopper bought and NOSE
      could score against the rest of their purchases in its category. One
-     vote per product in this browser. */
+     vote per product in this browser. The label and score it was matched at
+     are shown only once the shopper has answered (since 2026-11-16): shown
+     above the question, as they were, they told the shopper NOSE's answer
+     before asking for theirs, and the votes exist to test that answer
+     (PARSER-HANDOFF s14, "The vote asks before it tells"). */
   function voteView(S, feed, purchases, removed, product, key) {
     const listed = feed.batches.find(b => b && b.product_id === product);
     if (!listed) return null;
@@ -344,12 +348,13 @@
     const question = node('p', 'nm-question', S.voteQuestion);
     question.id = 'nm-vote-question';
     s.setAttribute('aria-labelledby', question.id);
-    s.append(question, node('p', 'nm-lead', fill(S.voteMatched, { label: v.label, shown: v.shown })));
+    s.append(question);
+    const matched = node('p', 'nm-lead', fill(S.voteMatched, { label: v.label, shown: v.shown }));
     const thanks = node('p', 'nm-thanks');
     thanks.setAttribute('role', 'status');
     if (readList(VOTED_KEY).includes(product)) {
       thanks.textContent = S.voteThanks;
-      s.append(thanks);
+      s.append(thanks, matched);
       return s;
     }
     const group = node('div', 'nm-vote-buttons');
@@ -375,6 +380,7 @@
         writeList(VOTED_KEY, readList(VOTED_KEY).concat([product]));
         buttons.forEach(b => { b.disabled = true; b.setAttribute('aria-pressed', String(b === button)); });
         thanks.textContent = S.voteThanks;
+        s.append(matched);
       });
       return button;
     });

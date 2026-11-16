@@ -154,7 +154,7 @@ const WHEN = Object.freeze({
   method: 'under the rail\'s and the sold-out panel\'s cards',
   attribution: 'under the method line, on the rail and the sold-out panel',
   voteQuestion: 'the vote, after an order: its question',
-  voteMatched: 'the vote: the match it asks about',
+  voteMatched: 'the vote, once answered: the match it was about',
   voteUp: 'the vote: its first button',
   voteDown: 'the vote: its second button',
   voteThanks: 'the vote, once answered',
@@ -431,7 +431,7 @@ function stringsInPage({ HIDDEN_SHOWN, HIDDEN_READ }) {
     if (el.closest('.nm-question')) return 'the vote: its question';
     if (el.closest('.nm-vote-buttons')) return 'the vote: a button';
     if (el.closest('.nm-thanks')) return 'the vote, once answered';
-    if (el.closest('.nm-vote .nm-lead')) return 'the vote: the match it asks about';
+    if (el.closest('.nm-vote .nm-lead')) return 'the vote, once answered: the match it was about';
     if (el.closest('.nm-lead')) return 'the line above the cards';
     if (el.closest('.nm-empty')) return 'in place of cards';
     if (el.closest('.nm-method')) return 'the note under the cards';

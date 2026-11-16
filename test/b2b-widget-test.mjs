@@ -806,9 +806,10 @@ try {
     await page.waitForFunction(() => document.querySelector('nose-matches').shadowRoot.querySelector('.nm-vote'));
     const { mine } = split(FEED, PURCHASES, 'flower');
     const v = R.voteScore(FEED, mine, 'D-103', { removed: [] });
-    const shown = await page.evaluate(() => { const r = document.querySelector('nose-matches').shadowRoot; return [r.querySelector('.nm-question').textContent, r.querySelector('.nm-lead').textContent, [...r.querySelectorAll('button')].map(b => b.textContent)]; });
-    check('vote: "Was the flavor close?", the match it is about, and up and down',
-      same(shown, [S.default.voteQuestion, fill(S.default.voteMatched, { label: v.label, shown: v.shown }), [S.default.voteUp, S.default.voteDown]]), JSON.stringify(shown));
+    const shown = await page.evaluate(() => { const r = document.querySelector('nose-matches').shadowRoot; return [r.querySelector('.nm-question').textContent, r.querySelector('.nm-lead') ? r.querySelector('.nm-lead').textContent : null, [...r.querySelectorAll('button')].map(b => b.textContent)]; });
+    check('vote: "Was the flavor close?" and up and down - and no label or score before the shopper answers',
+      same(shown, [S.default.voteQuestion, null, [S.default.voteUp, S.default.voteDown]])
+        && !(await page.evaluate(() => document.querySelector('nose-matches').shadowRoot.textContent)).includes(String(v.label)), JSON.stringify(shown));
     await wordsCheck(c, 'the vote shows');
     const tabbed = await tabThrough(page, 2);
     check('vote: Tab reaches up, then down', same(tabbed, [`button|${S.default.voteUp}`, `button|${S.default.voteDown}`]), JSON.stringify(tabbed));
@@ -829,12 +830,15 @@ try {
         && BANDS.includes(body.band) && body.score === M.shownScore(v.score),
       JSON.stringify(body));
     const after = await page.evaluate(() => { const r = document.querySelector('nose-matches').shadowRoot; return [[...r.querySelectorAll('button')].map(b => [b.disabled, b.getAttribute('aria-pressed')]), r.querySelector('.nm-thanks').textContent, r.querySelector('.nm-thanks').getAttribute('role')]; });
+    const told = await page.evaluate(() => { const r = document.querySelector('nose-matches').shadowRoot; const l = r.querySelector('.nm-vote .nm-lead'); return l ? l.textContent : null; });
+    check('vote: once answered, the match it was about is shown - the label and the score', told === fill(S.default.voteMatched, { label: v.label, shown: v.shown }), JSON.stringify(told));
     check('vote: both buttons off, up pressed, the thanks said as a status', same(after, [[[true, 'true'], [true, 'false']], S.default.voteThanks, 'status']), JSON.stringify(after));
     await page.reload();
     await page.waitForFunction(() => document.querySelector('nose-matches').shadowRoot.querySelector('.nm-thanks'));
     await page.waitForTimeout(300);
-    check('vote: once per product in this browser - reloaded, it thanks and offers no buttons, and sends nothing',
+    check('vote: once per product in this browser - reloaded, it thanks, shows the match and offers no buttons, and sends nothing',
       (await page.evaluate(() => document.querySelector('nose-matches').shadowRoot.querySelectorAll('button').length)) === 0
+        && (await page.evaluate(() => { const l = document.querySelector('nose-matches').shadowRoot.querySelector('.nm-vote .nm-lead'); return l ? l.textContent : null; })) === fill(S.default.voteMatched, { label: v.label, shown: v.shown })
         && since(c).filter(r => kind(r) === 'vote').length === 1);
     await close(c);
   }
