@@ -44,10 +44,15 @@
   <section class="section-tight"><div class="wrap acct-wrap">
     <div class="card acct-card" id="panel-confirmed">
       <h2 id="confirmed-title">Email confirmation</h2>
+      <div id="confirmed-ask" hidden>
+        <p>Press the button to confirm the email address of your NOSE account.</p>
+        <p class="acct-message" id="confirmed-message" role="status" aria-live="polite" hidden></p>
+        <p><button class="button button-primary" id="confirmed-submit" type="button">Confirm email address</button></p>
+      </div>
       <p id="confirmed-ok" hidden>Your email address is confirmed. Sign in with it and your password.</p>
       <p id="confirmed-failed" hidden>This confirmation link has expired or was already used. Try signing in; if your address is not confirmed yet, signing up again with it sends a new link.</p>
       <p id="confirmed-nolink">This page needs the link from your confirmation email.</p>
-      <p><a class="button button-primary" href="/account/">Go to sign in</a></p>
+      <p id="confirmed-signin"><a class="button button-primary" href="/account/">Go to sign in</a></p>
     </div>
   </div></section>
 </main>
@@ -67,6 +72,6 @@
     </div>
   </footer>
 <!-- /nose:footer -->
-<script src="/js/account.d94279d8.js" defer></script>
+<script src="/js/account.3f7b6490.js" defer></script>
 </body>
 </html>

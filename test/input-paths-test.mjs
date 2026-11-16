@@ -1097,6 +1097,19 @@ try {
     check('reset page: from the default email, the session leaves the address at once and is sent with the password, the refresh token never',
       [new URL(p.url()).hash, viaHash], ['', { access_token: SESSION, password: 'a brand new password' }]);
 
+    /* Since 2026-11-16 the reset email's link carries the code after "#". */
+    finishes.length = 0;
+    await p.goto('about:blank');
+    await p.goto(`${BASE}/account/reset/#token_hash=${CODE}&type=recovery`);
+    await p.waitForFunction(() => location.hash === '');
+    await p.fill('#newpass-password', 'a brand new password');
+    await p.click('#newpass-submit');
+    await p.waitForSelector('#newpass-done:not([hidden])');
+    let viaFragment = null;
+    try { viaFragment = JSON.parse(finishes[0]); } catch {}
+    check('reset page: a code after "#" leaves the address at once and is sent with the password on the button',
+      [new URL(p.url()).hash, viaFragment], ['', { token_hash: CODE, password: 'a brand new password' }]);
+
     /* /account/confirmed/ (since 2026-11-15, "A confirmation page"): Supabase's
        session leaves the address at once and goes nowhere. */
     const confirmCalls = [];
@@ -1117,6 +1130,36 @@ try {
     await p.waitForFunction(() => location.search === '');
     check('confirmed page: an error after "?" alone says expired too, and leaves the address',
       [await vis(), confirmCalls.length], [[false, true, false], 0]);
+    /* Since 2026-11-16 the email's link carries the code to this page. */
+    const confirms = [];
+    await p.route('**/.netlify/functions/auth-confirm', async route => {
+      confirms.push(route.request().postData());
+      const used = confirms.length > 1;
+      await route.fulfill({ status: used ? 400 : 200, contentType: 'application/json',
+        body: JSON.stringify(used ? { error: 'link-expired', message: 'x' } : { status: 'confirmed' }) });
+    });
+    const CCODE = 'pkce_' + 'f'.repeat(40);
+    const ask = () => Promise.all(['#confirmed-ask', '#confirmed-ok', '#confirmed-failed', '#confirmed-nolink', '#confirmed-signin'].map(s => p.isVisible(s)));
+    await p.goto('about:blank');
+    await p.goto(`${BASE}/account/confirmed/#token_hash=${CCODE}&type=signup`);
+    await p.waitForFunction(() => location.hash === '');
+    check('confirmed page: from the new link, the code leaves the address at once and nothing is sent until the button is pressed',
+      [new URL(p.url()).pathname + new URL(p.url()).hash, await ask(), confirms.length], ['/account/confirmed/', [true, false, false, false, false], 0]);
+    await p.click('#confirmed-submit');
+    await p.waitForSelector('#confirmed-ok', { state: 'visible' });
+    check('confirmed page: the button sends the code alone, and the page says the address is confirmed',
+      [confirms.map(c => JSON.parse(c)), await ask()], [[{ token_hash: CCODE }], [false, true, false, false, true]]);
+    await p.goto('about:blank');
+    await p.goto(`${BASE}/account/confirmed/?token_hash=${CCODE}&type=signup`);
+    await p.waitForFunction(() => location.search === '');
+    await p.click('#confirmed-submit');
+    await p.waitForSelector('#confirmed-failed', { state: 'visible' });
+    check('confirmed page: a used code says expired, with the way to sign in', [await ask()], [[false, false, true, false, true]]);
+    await p.goto('about:blank');
+    await p.goto(`${BASE}/account/confirmed/?token_hash=${CCODE}&type=recovery`);
+    check('confirmed page: a reset link\'s code is not read here', [await ask()], [[false, false, false, true, true]]);
+    await p.unroute('**/.netlify/functions/auth-confirm');
+    confirmCalls.length = 0;
     await p.goto(`${BASE}/account/confirmed/`);
     check('confirmed page: opened without a link, it says the email\'s link is needed',
       [await vis(), confirmCalls.length], [[false, false, true], 0]);

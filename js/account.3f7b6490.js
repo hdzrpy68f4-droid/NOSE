@@ -291,6 +291,9 @@
     var params = new URLSearchParams(location.search);
     var hash = new URLSearchParams(location.hash.replace(/^#/, ''));
     var tokenHash = params.get('type') === 'recovery' ? params.get('token_hash') : null;
+    /* Since 2026-11-16 the email's link carries the code after "#", which a
+       browser never sends to a server. */
+    if (!tokenHash && hash.get('type') === 'recovery') tokenHash = hash.get('token_hash') || null;
     /* Supabase's default email comes back with its session after "#". */
     var accessToken = !tokenHash && hash.get('type') === 'recovery' ? hash.get('access_token') : null;
     if (location.search || location.hash) history.replaceState(null, '', location.pathname);
@@ -326,20 +329,48 @@
   }
 
   /* /account/confirmed/ (since 2026-11-15, PARSER-HANDOFF s13, "A confirmation
-     page"): a sign-up confirmation link passes through Supabase, which sends
-     the browser here with its session after "#" - or an error, if the link
-     had expired or been used. NOSE signs people in with its own sessions, so
-     nothing from the address is kept or sent anywhere: it is read once,
-     taken out of the address at once, so it stays in neither the history nor
-     a Referer, and the page says which it was. */
+     page"). Since 2026-11-16 ("Email links that come to NOSE") the email's
+     link is #token_hash=...&type=signup on this site: the code is read once,
+     taken out of the address at once, and sent to auth-confirm only when the
+     person presses the button, so an email scanner that opens the link first
+     does not use it up. An email sent before that day passes through
+     Supabase, which sends the browser here with its session after "#" - or
+     an error; NOSE signs people in with its own sessions, so that session is
+     dropped, sent nowhere, and the page says which it was. */
   function initConfirmed() {
     var hash = new URLSearchParams(location.hash.replace(/^#/, ''));
     var ok = hash.get('type') === 'signup' && !!hash.get('access_token');
     /* Supabase writes a failed link's error after "#", and may write it
        after "?" as well; either one is enough. */
     var query = new URLSearchParams(location.search);
+    /* The email's link carries the code after "#", which a browser never
+       sends to a server; after "?" is read as well. */
+    var tokenHash = hash.get('type') === 'signup' ? hash.get('token_hash') : null;
+    if (!tokenHash && query.get('type') === 'signup') tokenHash = query.get('token_hash');
     var failed = !ok && !!(hash.get('error') || hash.get('error_code') || query.get('error') || query.get('error_code'));
     if (location.search || location.hash) history.replaceState(null, '', location.pathname);
+    if (tokenHash) {
+      show($('confirmed-nolink'), false);
+      show($('confirmed-signin'), false);
+      show($('confirmed-ask'), true);
+      $('confirmed-submit').addEventListener('click', function () {
+        var btn = $('confirmed-submit');
+        busy(btn, true, 'Confirming…');
+        post('/auth-confirm', { token_hash: tokenHash }).then(function (res) {
+          busy(btn, false);
+          var expired = !res.ok && res.data && res.data.error === 'link-expired';
+          if (!res.ok && !expired) {
+            message($('confirmed-message'), 'Your address could not be confirmed just now. Try again in a moment.', 'error');
+            return;
+          }
+          show($('confirmed-ask'), false);
+          show($('confirmed-ok'), res.ok);
+          show($('confirmed-failed'), expired);
+          show($('confirmed-signin'), true);
+        });
+      });
+      return;
+    }
     show($('confirmed-ok'), ok);
     show($('confirmed-failed'), failed);
     show($('confirmed-nolink'), !ok && !failed);

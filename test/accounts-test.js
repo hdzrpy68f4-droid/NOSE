@@ -56,7 +56,7 @@ function check(label, actual, expected) {
 
 /* ------------------------------------------------ Supabase, stood in for */
 
-const supa = { users: new Map(), calls: [], down: false, failDelete: false, failAdminGet: false, recovery: new Map(), access: new Map() };
+const supa = { users: new Map(), calls: [], down: false, failDelete: false, failAdminGet: false, recovery: new Map(), confirm: new Map(), access: new Map() };
 function addUser(email, password, meta = {}) {
   const user = { id: crypto.randomUUID(), email, password, user_metadata: meta, created_at: '2026-01-02T03:04:05.000Z' };
   supa.users.set(email, user);
@@ -86,6 +86,14 @@ globalThis.fetch = async (url, init = {}) => {
   /* The reset's three calls (since 2026-11-14): a recovery code verified once,
      the password set with the session that answer carries, that session ended. */
   if (p === '/verify' && call.method === 'POST') {
+    /* a sign-up confirmation code (since 2026-11-16), used once */
+    if (body.type === 'signup' && supa.confirm.has(body.token_hash)) {
+      const who = supa.confirm.get(body.token_hash);
+      supa.confirm.delete(body.token_hash);
+      const t = 'access-' + crypto.randomBytes(8).toString('hex');
+      supa.access.set(t, who);
+      return reply(200, { access_token: t, refresh_token: 'r', user: { id: supa.users.get(who).id, email: who } });
+    }
     const email = supa.recovery.get(body.token_hash);
     if (body.type !== 'recovery' || !email) return reply(403, { error_code: 'otp_expired', msg: 'Token has expired or is invalid' });
     supa.recovery.delete(body.token_hash);
@@ -149,10 +157,10 @@ const sessionOf = r => (/^nose_session=([^;]+);/.exec(r.cookie || '') || [])[1] 
 
 async function main() {
   const blobs = makeBlobs();
-  const [signup, login, me, logout, reset, accountDelete, palate, purge, resetFinish] = await loadFunctions(blobs, [
+  const [signup, login, me, logout, reset, accountDelete, palate, purge, resetFinish, confirm] = await loadFunctions(blobs, [
     'netlify/functions/auth-signup.js', 'netlify/functions/auth-login.js', 'netlify/functions/auth-me.js',
     'netlify/functions/auth-logout.js', 'netlify/functions/auth-reset.js', 'netlify/functions/account-delete.js',
-    'netlify/functions/palate-sync.js', 'netlify/functions/sessions-purge.js', 'netlify/functions/auth-reset-finish.js']);
+    'netlify/functions/palate-sync.js', 'netlify/functions/sessions-purge.js', 'netlify/functions/auth-reset-finish.js', 'netlify/functions/auth-confirm.js']);
   const sessions = () => blobs.keys('auth-sessions');
   addUser(ALICE, PASSWORD, { subscription: 'free', age_attested_at: '2026-01-02T03:04:05.000Z' });
   addUser(BOB, PASSWORD, { subscription: 'active' }).app_metadata = { subscription: 'active' };
@@ -403,6 +411,42 @@ async function main() {
       [(await call(palate, 'DELETE', undefined, bobCookie, { 'sec-fetch-site': 'cross-site' })).status,
         (await call(palate, 'GET', undefined, bobCookie)).status], [403, 200]);
     await call(palate, 'DELETE', undefined, bobCookie, { 'sec-fetch-site': 'same-origin' });   // as it was before this block
+  }
+
+  /* ---- auth-confirm (since 2026-11-16, "Email links that come to NOSE") ---- */
+  {
+    const EVE = 'eve@example.test';
+    SECRETS.push(EVE);
+    addUser(EVE, PASSWORD);
+    const code = 'pkce_' + 'c'.repeat(40);
+    supa.confirm.set(code, EVE);
+    SECRETS.push(code);
+    const GONE = { error: 'link-expired', message: 'This confirmation link has expired or was already used. Try signing in; if your address is not confirmed yet, signing up again with it sends a new link.' };
+    const from = logged.length;
+    r = await call(confirm, 'POST', { token_hash: code }, undefined, { 'sec-fetch-site': 'cross-site' });
+    check('confirm: refused from another site, the code not used up', [r.status, supa.confirm.has(code)], [403, true]);
+    r = await call(confirm, 'POST', { token_hash: 'x<script>' });
+    check('confirm: a code of the wrong shape never reaches Supabase', [r.status, r.data, supa.calls.filter(c => c.body && c.body.token_hash === 'x<script>').length], [400, GONE, 0]);
+    r = await call(confirm, 'GET');
+    check('confirm: only a POST', r.status, 405);
+    const at = supa.calls.length;
+    r = await call(confirm, 'POST', { token_hash: code });
+    check('confirm: the code verified as a sign-up, then Supabase\'s session ended; no cookie set',
+      [r.status, r.data.status, r.cookie, supa.calls.slice(at).map(c => `${c.method} ${c.path} ${c.body ? c.body.type : ''}`.trim()), supa.access.size >= 0 && ![...supa.access.values()].includes(EVE)],
+      [200, 'confirmed', null, ['POST /auth/v1/verify signup', 'POST /auth/v1/logout?scope=global'], true]);
+    r = await call(confirm, 'POST', { token_hash: code });
+    check('confirm: the same code a second time is refused with one plain sentence', [r.status, r.data], [400, GONE]);
+    const rec = 'pkce_' + 'd'.repeat(40);
+    supa.recovery.set(rec, EVE);
+    r = await call(confirm, 'POST', { token_hash: rec });
+    check('confirm: a reset code is not a confirmation code, and is not used up', [r.status, supa.recovery.has(rec)], [400, true]);
+    supa.recovery.delete(rec);
+    supa.down = true;
+    r = await call(confirm, 'POST', { token_hash: 'pkce_' + 'e'.repeat(40) });
+    supa.down = false;
+    check('confirm: Supabase unreachable is a 503, not "expired"', [r.status, r.data.error], [503, 'unavailable']);
+    check('confirm: no console line holds the address or the code',
+      logged.slice(from).some(l => l.includes(EVE) || l.includes(code)), false);
   }
 
   /* ---- auth-reset-finish (security audit item 13, since 2026-11-14) ---- */
