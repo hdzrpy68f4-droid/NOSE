@@ -4467,3 +4467,20 @@ organization to Pro on 2026-11-15 (both projects).
 - `match-feedback-test` pins the five functions, their addresses and numbers.
 - **Not done:** a Netlify usage notification. Its place in the dashboard was
   not confirmed in Netlify's docs; the owner sets it.
+
+### Backups were already there, 2026-11-15
+
+Checked in the Supabase dashboard (Database → Backups) after the upgrade:
+the accounts project lists daily physical backups from 12 November, and
+"nose" from 9 November - seven days, before the move to Pro. The ninth
+change had said "Until that plan is in place, Supabase keeps no backups of
+them": wrong. It now says Supabase was already keeping seven days of daily
+backups before the paid plan, that the page should have said so earlier,
+and that a first version of the note was wrong. "Backups" under "How long
+we keep things" drops "on the paid plan we use". Organization "NOSE" shows
+"Pro Plan · 2 projects"; "nose" shows nano compute.
+
+Netlify, read the same day: team on Pro (3,000 credits a month, expiring
+December 15), auto recharge disabled - nothing is bought past the monthly
+credits without the owner - and no separate usage alert setting found on
+Usage & billing. A production deploy costs 15 credits: about 200 a month.

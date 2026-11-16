@@ -1834,6 +1834,7 @@ under the cap.
 - [Backups on the privacy page, before any exist, 2026-11-15](docs/handoff/13-records.md#backups-on-the-privacy-page-before-any-exist-2026-11-15)
 - [Account emails through Resend: the privacy page first, 2026-11-15](docs/handoff/13-records.md#account-emails-through-resend-the-privacy-page-first-2026-11-15)
 - [Five rate limits on Netlify Pro, and keep-awake removed, 2026-11-15](docs/handoff/13-records.md#five-rate-limits-on-netlify-pro-and-keep-awake-removed-2026-11-15)
+- [Backups were already there, 2026-11-15](docs/handoff/13-records.md#backups-were-already-there-2026-11-15)
 
 ## 14. Dispensary integration
 
