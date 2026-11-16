@@ -90,8 +90,10 @@ built from its published types (v10: `set` returns `{ modified }`, and
 - The terms page's "Before launch" box still lists the operating entity's legal
 name and address, a governing-law clause, an effective date, and a lawyer's
 review.
-- **Login emails show Supabase the clicker's IP address - said on the privacy
-page since 2026-10-03, for Supabase's default templates** (above, "Three
+- **Until 2026-11-16 the login emails showed Supabase the clicker's IP
+address; the item "Since 2026-11-16 the login emails no longer..." below says
+what is true now. As it was, for Supabase's default templates, and said on
+the privacy page since 2026-10-03** (above, "Three
 privacy sentences"). Sign-up and password reset call Supabase's auth API from
 the server (`netlify/lib/auth.js`, no forwarded address), but the emails link
 to Supabase's own domain, so whoever clicks one reaches Supabase from their
@@ -536,7 +538,9 @@ Wanted work, not yet built.
   link points at nose-app.com, not Supabase ("Email links that come to
   NOSE"). Whether that is enough is not known: the sending domain is days
   old, and a mail provider's trust in one grows with mail that is opened.
-  The owner tries a new sign-up; this item closes or stays on what they see.
+  The reset email with the new link arrived in the **inbox** on 2026-11-16
+  and its link set a new password (the owner's test). Still to see: a
+  sign-up email with the new link, and the button on the confirmation page.
 - **Since 2026-11-16 the login emails no longer show Supabase the clicker's
   IP address** (13-records, "Email links that come to NOSE"): the two
   templates link to this site. It holds only while the templates do: "Reset
