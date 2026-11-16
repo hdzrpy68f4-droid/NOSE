@@ -59,6 +59,33 @@ check('a redirect to a private host is refused, as before', typeof FR.fetchPdf, 
   }), { status: 200, headers: { 'content-type': 'application/pdf' } });
   const small = await FR.fetchPdf(new URL('https://lab.example/small.pdf'));
   check('a small PDF streamed in two pieces arrives whole', [small.error || null, small.buffer && Buffer.compare(small.buffer, pdf)], [null, 0]);
+  /* A public name that resolves to a private address (since 2026-11-16). */
+  {
+    const asked = [];
+    let fetched = 0;
+    globalThis.fetch = async () => { fetched++; return new Response(pdf, { status: 200 }); };
+    const answers = { 'rebind.example': [{ address: '10.0.0.5', family: 4 }], 'mixed.example': [{ address: '93.184.216.34', family: 4 }, { address: '::ffff:169.254.169.254', family: 6 }],
+      'fine.example': [{ address: '93.184.216.34', family: 4 }, { address: '2606:2800:220:1::1', family: 6 }], 'hop.example': [{ address: '127.0.0.1', family: 4 }] };
+    const was = FR._setResolver(async host => { asked.push(host); if (host === 'gone.example') throw new Error('ENOTFOUND'); if (host === 'slow.example') return new Promise(() => {}); return answers[host] || []; });
+    const one = await FR.fetchPdf(new URL('https://rebind.example/r.pdf'));
+    check('a public name that resolves to a private address is refused, and never requested', [one.error, fetched], [PRIVATE, 0]);
+    const two = await FR.fetchPdf(new URL('https://mixed.example/r.pdf'));
+    check('...one private address among several is enough', [two.error, fetched], [PRIVATE, 0]);
+    const three = await FR.fetchPdf(new URL('https://fine.example/r.pdf'));
+    check('a name whose every address is public is fetched', [three.error || null, fetched], [null, 1]);
+    const four = await FR.fetchPdf(new URL('https://gone.example/r.pdf'));
+    check('a lookup that fails decides nothing: the request goes on', [four.error || null, fetched], [null, 2]);
+    const t0 = Date.now();
+    const five = await FR.fetchPdf(new URL('https://slow.example/r.pdf'));
+    check('a lookup that never answers is given up on, inside two seconds, and decides nothing', [five.error || null, fetched, Date.now() - t0 < 2000], [null, 3, true]);
+    globalThis.fetch = async url => (String(url).includes('fine.example')
+      ? new Response(null, { status: 302, headers: { location: 'https://hop.example/r.pdf' } }) : (fetched++, new Response(pdf, { status: 200 })));
+    const six = await FR.fetchPdf(new URL('https://fine.example/r.pdf'));
+    check('a redirect to a name that resolves to a private address is refused before it is requested', [six.error, fetched], ['That link redirects somewhere it should not.', 3]);
+    const seven = await FR.fetchPdf(new URL('https://8.8.8.8/r.pdf'));
+    check('an address written as the host is not looked up', [asked.includes('8.8.8.8'), seven.error || null], [false, null]);
+    FR._setResolver(was);
+  }
   globalThis.fetch = realFetch;
 
   if (failures) { console.log(`\nfetch-guard: ${failures} failure${failures === 1 ? '' : 's'}`); process.exit(1); }

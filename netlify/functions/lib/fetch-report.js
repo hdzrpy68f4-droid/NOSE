@@ -53,9 +53,8 @@ const MAX_PAGE_HOPS = 2;   // a portal may put a listings page before the report
    An IPv4 address written inside IPv6 (::ffff:a.b.c.d, or 64:ff9b::a.b.c.d,
    which NAT64 turns into a.b.c.d) is checked as the IPv4 address it names.
    Ranges from IANA's special-purpose registries (RFC 6890 and updates).
-   A public NAME that resolves to a private address is not caught here: that
-   needs the connection pinned to a checked address, and is its own change
-   (docs/handoff/open.md). */
+   A public NAME that resolves to a private address is caught before each
+   request since 2026-11-16 (resolvesPrivate, below). */
 const net = require('node:net');
 const BLOCKED = new net.BlockList();
 for (const [a, p] of [['0.0.0.0', 8], ['10.0.0.0', 8], ['100.64.0.0', 10], ['127.0.0.0', 8], ['169.254.0.0', 16],
@@ -94,6 +93,40 @@ function isBlockedHost(hostname){
   if (/^f[cd][0-9a-f]{2}:/i.test(h)) return true;       // IPv6 unique-local
   if (/^fe80:/i.test(h)) return true;                   // IPv6 link-local
   return false;
+}
+
+/* A public name that resolves to a private address (security audit item 6,
+   the part left until 2026-11-16). Before each request - the first and every
+   redirect or page hop - the host's name is looked up and every address it
+   gives is held to isBlockedAddress; one private address refuses the link.
+
+   What this does NOT do: pin the connection. fetch() looks the name up again
+   for itself, so a name server that answers the two lookups differently
+   still gets through. Closing that needs the request made on the address
+   that was checked, which Node's fetch gives no way to do without the undici
+   package; https and its certificate check stay the guard for it, since a
+   private machine would have to hold a certificate for the public name.
+
+   A lookup that fails or runs past LOOKUP_MS decides nothing: the request
+   goes on and fails, or not, as it would have. Bounded by the chain's own
+   budget too. */
+const dns = require('node:dns');
+const LOOKUP_MS = 1500;
+let resolveAll = host => dns.promises.lookup(host, { all: true, verbatim: true });
+async function resolvesPrivate(hostname, deadline){
+  const h = String(hostname || '').toLowerCase().replace(/^\[|\]$/g, '');
+  if (!h || net.isIP(h)) return false;   // an address written as the host: isBlockedHost has judged it
+  const left = Math.min(LOOKUP_MS, (deadline || Infinity) - Date.now());
+  if (left <= 0) return false;
+  let timer;
+  try {
+    const found = await Promise.race([
+      Promise.resolve().then(() => resolveAll(h)).catch(() => null),
+      new Promise(resolve => { timer = setTimeout(() => resolve(null), left); })
+    ]);
+    return Array.isArray(found) && found.some(a => a && typeof a.address === 'string' && isBlockedAddress(a.address.toLowerCase()));
+  } catch { return false; }
+  finally { clearTimeout(timer); }
 }
 
 function validateUrl(raw){
@@ -136,7 +169,9 @@ async function fetchOnce(startUrl, deadline){
     const controller = new AbortController();
     const left = (deadline || Infinity) - Date.now();
     if (left <= 0) return { error: 'The lab server took too long to respond.' };
-    const timer = setTimeout(() => controller.abort(), Math.min(TIMEOUT_MS, left));
+    if (await resolvesPrivate(current.hostname, deadline))
+      return { error: hop === 0 && current === startUrl ? 'That address points to a private network, not a public lab report.' : 'That link redirects somewhere it should not.' };
+    const timer = setTimeout(() => controller.abort(), Math.min(TIMEOUT_MS, Math.max(1, (deadline || Infinity) - Date.now())));
     let res;
     try {
       res = await fetch(current.toString(), {
@@ -308,5 +343,7 @@ module.exports = {
   validateUrl,
   fetchPdf,
   resolvePdfFromPage,
+  /* For test/fetch-guard-test.js: stand in for the name lookup, and put it back. */
+  _setResolver(fn){ const was = resolveAll; resolveAll = fn; return was; },
   LIMITS: Object.freeze({ MAX_BYTES, TOTAL_BUDGET_MS, TIMEOUT_MS, MAX_REDIRECTS, MAX_PAGE_HOPS })
 };

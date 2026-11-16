@@ -98,8 +98,20 @@ const listed = list => list.map(n => (n === '' ? '(an empty name)' : `"${shown(n
 
 /* The header decides whether the file is read at all. Personal-looking
    columns first, so the reason given is the one that matters. */
+/* A header read as ONE column that holds semicolons or tabs: the file is not
+   comma-separated - a spreadsheet set to another region saves it so. Said
+   plainly (since 2026-11-16); it was refused as "a column outside the
+   format", naming the whole first line as that column. null otherwise. */
+function wrongSeparator(header) {
+  if (header.length !== 1) return null;
+  const mark = header[0].includes(';') ? 'semicolons' : header[0].includes('\t') ? 'tabs' : null;
+  return mark ? `its values are separated by ${mark}, not commas - save it as "CSV UTF-8 (Comma delimited)"` : null;
+}
+
 function checkHeader(header) {
   const raw = header.map((h, i) => (i === 0 ? h.replace(/^\uFEFF/, '') : h).trim());
+  const separator = wrongSeparator(raw);
+  if (separator) return refuse(separator);
   const personal = raw.filter(looksPersonal);
   if (personal.length) {
     return refuse(`the header has ${personal.length === 1 ? 'a column' : 'columns'} that looks like it is about a person - ` +
@@ -189,5 +201,5 @@ function readCatalog(buffer) {
 
 module.exports = {
   COLUMNS, REQUIRED, CATEGORIES, ROUTES, STOCK, PERSONAL_WORDS, MAX_FILE_BYTES, FORMAT_DOC, ROW_REFUSED,
-  looksPersonal, parseCsv, checkHeader, readRows, readCatalog, shown
+  looksPersonal, wrongSeparator, parseCsv, checkHeader, readRows, readCatalog, shown
 };

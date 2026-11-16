@@ -112,6 +112,8 @@ const listed = list => list.map(n => (n === '' ? '(an empty name)' : `"${format.
 
 function checkExportHeader(header) {
   const raw = header.map((h, i) => (i === 0 ? h.replace(/^﻿/, '') : h).trim());
+  const separator = format.wrongSeparator(raw);
+  if (separator) return refuse(separator);
   const personal = raw.filter(looksIdentifying);
   if (personal.length) {
     return refuse(`the header has ${personal.length === 1 ? 'a column' : 'columns'} that looks like it is about a person - ` +
@@ -551,10 +553,12 @@ async function pilotReport({ plan, planRel, values, exported, exportName, slug, 
         : `no difference shown - ${where} includes zero.`}`);
   }
   if (mt.sd !== null && mc.sd !== null) {
-    const wider = Math.max(mt.sd, mc.sd) > plan.sd;
+    /* Which group, said (since 2026-11-16): it read "a wider spread than
+       planned" beside a control spread that was narrower. */
+    const wider = mt.sd > plan.sd && mc.sd > plan.sd ? 'in both groups' : mt.sd > plan.sd ? 'in the test group' : mc.sd > plan.sd ? 'in the control group' : null;
     log(`  The plan assumed ${values.mean} inhalable orders a shopper, standard deviation ${values.sd}; the pilot shows control at ` +
         `${figure(mc.m, 3)}, standard deviation ${figure(mc.sd, 3)} (test ${figure(mt.sd, 3)})` +
-        (wider ? ' - a wider spread than planned, so the test was less likely than planned to find the lift.' : '.'));
+        (wider ? ` - a wider spread than planned ${wider}, so the test was less likely than planned to find the lift.` : '.'));
   }
   log('  Beside it, deciding nothing - shoppers with an inhalable order, per assigned shopper:');
   const bt = buyersOf(g.test, Z95);

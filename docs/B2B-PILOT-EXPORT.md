@@ -69,6 +69,8 @@ be anything.
   is read.
 - **Any other column outside the list above**, named in the refusal.
 - A column missing from the header, or named twice.
+- A file whose values are separated by semicolons or tabs, not commas: a
+  spreadsheet set to another region saves it so. The refusal says so.
 - A file that is not UTF-8, is empty, is larger than 20 MB, has no header
   row, ends inside a quoted value, or has no shopper rows.
 - **Any row it cannot read.** Unlike the catalog, one such row refuses the

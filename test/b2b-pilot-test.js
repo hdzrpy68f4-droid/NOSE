@@ -314,6 +314,9 @@ async function main() {
   check('a column outside the format is refused by name; a missing or doubled one too',
     [read(`${HEADER},store_note\n${row()},x\n`).refusal, read(`${HEADER.replace(',revenue', '')}\n`).refusal, read(`${HEADER},orders\n`).refusal].map(r => (r || '').replace(/ Nothing.*$/, '')),
     ['refused: a column outside the format: "store_note".', 'refused: a column is missing: "revenue".', 'refused: a column appears more than once: "orders".']);
+  check('a file whose values are separated by semicolons or tabs says so, and names no column',
+    [read(`${HEADER.replace(/,/g, ';')}\n${row().replace(/,/g, ';')}\n`).refusal, read(`${HEADER.replace(/,/g, '\t')}\n${row().replace(/,/g, '\t')}\n`).refusal].map(r => (r || '').replace(/ Nothing.*$/, '')),
+    ['refused: its values are separated by semicolons, not commas - save it as "CSV UTF-8 (Comma delimited)".', 'refused: its values are separated by tabs, not commas - save it as "CSV UTF-8 (Comma delimited)".']);
   check('a file that is empty, not UTF-8, larger than 20 MB, headerless, or never closes a quote is refused',
     [report.readExport(Buffer.alloc(0)).refusal, report.readExport(Buffer.from([0x67, 0x72, 0xe9, 0x0a])).refusal,
       report.readExport(Buffer.alloc(format.MAX_FILE_BYTES + 1, 0x61)).refusal, read('\n\n').refusal, read(`${HEADER}\n"test,1`).refusal]
@@ -431,7 +434,7 @@ async function main() {
   check('...and says so by the pre-registered rule',
     line(a.lines, '  RESULT: more'), `  RESULT: more inhalable orders per assigned shopper in the test group - the 95% interval of the difference, +${f3(dd - z95 * seD)} to +${f3(dd + z95 * seD)} a shopper, is wholly above zero.`);
   check('...the plan\'s mean and spread set beside the pilot\'s - here a wider spread than planned, said',
-    line(a.lines, '  The plan assumed'), `  The plan assumed 0.45 inhalable orders a shopper, standard deviation 0.75; the pilot shows control at 0.450, standard deviation ${f3(C.sd)} (test ${f3(T.sd)}) - a wider spread than planned, so the test was less likely than planned to find the lift.`);
+    line(a.lines, '  The plan assumed'), `  The plan assumed 0.45 inhalable orders a shopper, standard deviation 0.75; the pilot shows control at 0.450, standard deviation ${f3(C.sd)} (test ${f3(T.sd)}) - a wider spread than planned ${T.sd > 0.75 && C.sd > 0.75 ? 'in both groups' : T.sd > 0.75 ? 'in the test group' : 'in the control group'}, so the test was less likely than planned to find the lift.`);
   const t95 = report.wilson(180, 450).map(v => (v * 100).toFixed(1));
   const c95 = report.wilson(132, 440).map(v => (v * 100).toFixed(1));
   const d95 = report.newcombe(180, 450, 132, 440).map(v => (v * 100).toFixed(1));

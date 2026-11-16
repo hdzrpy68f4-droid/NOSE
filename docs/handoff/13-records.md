@@ -4778,3 +4778,75 @@ is small and the figures will change.
 - **Not under a gate.** If the fixture corpus or the maths changes, these two
   fractions are recomputed by hand; `open.md` says so.
 - The sitemap's `lastmod` for the page moves to 2026-11-16.
+
+### A pilot walked through on a made-up store, 2026-11-16
+
+The owner asked for a dry run of the whole pilot before a real store does
+one. Done in a scratch clone, nothing kept: the sample size, a plan made from
+the template and committed, an export of 489 made-up shoppers with a real 30%
+lift, and the report - its votes from a stand-in store, since the real ones
+need the Codespace's secrets.
+
+**What ran as written:** both sample-size modes; the plan's `pilot` block
+read back; every check in the report (committed before the first day, ended,
+both groups full, the size it needed, the split, no leak from control); the
+primary result with its interval ("more inhalable orders ... wholly above
+zero" on a made-up 30% lift); the secondary figures, the guardrail, the band
+table, the days at the cap; and refusals for a shopper column, a currency
+sign and TRUE/FALSE. Without the two Netlify secrets it refuses and says
+which.
+
+**Three small things fixed:**
+- **An export saved with semicolons or tabs was refused as "a column outside
+  the format"**, naming the whole first line as that column. It now says its
+  values are separated by semicolons (or tabs), not commas, and how to save
+  it. The catalog reader shares the check (`wrongSeparator`,
+  `lib/b2b-catalog-format.js`).
+- **"A wider spread than planned" was said when only one group's was.** The
+  dry run printed it beside a control spread narrower than the plan's. It
+  now names the group: in both groups, in the test group, or in the control
+  group.
+- **The plan's date check trusts the date git shows, which the committer
+  sets.** The dry run's plan was "committed on 2026-05-20" on 2026-11-16 and
+  passed. The template's checklist now asks for the address of that push's
+  gates run on GitHub, whose time is GitHub's clock - what a reader outside
+  NOSE can check. The script still reads git; the proof is the public run.
+
+**What the numbers say about a first pilot, not fixed by code:**
+- A past mean of 1.8 inhalable orders a shopper with a spread of 2.1 needs
+  **2,137 shoppers in each group** to find a 10% lift (238 for a 30% lift).
+  A store's own mean and spread decide it; ask for them early.
+- The band check needs the same number of votes in Strong AND Low (170 each
+  at a 50% up share in Low and a 30% relative rise). Votes are asked about
+  products a shopper bought, so Low will be rare; with the cap of 100 a day,
+  a pilot can end with no result for the band check. The report says so
+  plainly ("RESULT: none - Strong has 212 and Low 20 of the 170").
+
+**Not walked, and why:** `b2b-store.js create`, the catalog upload,
+`b2b-read-catalog.js` and the coverage report against real links need the
+database, the Codespace's secrets and a store's real catalog. The gates run
+each against stand-ins; the first real run is still the first real run.
+
+### A name that resolves to a private address, 2026-11-16
+
+Security audit item 6, the part left. Before each request - the first, and
+every redirect and page hop - `fetch-report.js` looks the host's name up and
+holds every address it gives to the same list a written-out address is held
+to; one private address refuses the link, with the sentence a private
+address already gets ("That link redirects somewhere it should not" on a
+later hop).
+
+- **Not a pin.** `fetch()` looks the name up again for itself, so a name
+  server that answers the two lookups differently still gets through.
+  Closing that needs the request made on the checked address, which Node's
+  fetch cannot do without the `undici` package. https and its certificate
+  check remain the guard: a private machine would need a certificate for
+  the public name.
+- A lookup that fails, or runs past 1.5 seconds, decides nothing: the
+  request goes on as before. An address written as the host is not looked
+  up.
+- `fetch-guard-test`: a name resolving to 10.0.0.5, one private address
+  among several, a redirect to such a name, a failed lookup, one that never
+  answers - each with a stand-in lookup. The other tests name hosts that do
+  not exist; their lookups fail in tens of milliseconds, and the gates take
+  as long as before.

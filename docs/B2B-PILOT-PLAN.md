@@ -254,6 +254,10 @@ to.
 - [ ] This file, filled in, committed and pushed:
       `git log -1 --format=%cI -- docs/pilots/<slug>.md` shows a day before the
       first day.
+- [ ] That push's run on GitHub (Actions → gates) is dated before the first
+      day, and its address is written here: ____. The date git shows is the
+      committer's own claim and can be set to any day; the run's time is
+      GitHub's clock, and it is what a reader outside NOSE can check.
 
 ## Incident log
 

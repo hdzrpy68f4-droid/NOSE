@@ -240,10 +240,11 @@ schema comment if wanted.
   cap stays its guard (security audit item 8). A flood from many addresses
   passes any per-address rule, and a shared address can reach a limit.
 
-- **A public name that resolves to a private address still passes the
-  fetcher** (security audit item 6, the part left on 2026-11-14). An address
-  written as the host is checked; closing this needs the connection pinned to
-  an address checked after DNS lookup.
+- **The fetcher checks a name's addresses but does not pin the connection**
+  (13-records, "A name that resolves to a private address", 2026-11-16;
+  security audit item 6). A name server that answers two lookups
+  differently still gets through; https and its certificate check are the
+  guard. Pinning needs the `undici` package.
 - **Two security switches wait for the owner** (13-records, "Security items
   8, 9, 10 and the keyed fingerprint", 2026-11-16). The code is live and
   does nothing until each variable is set in Netlify:
@@ -569,3 +570,8 @@ Wanted work, not yet built.
   among the accepted fixtures. A new fixture, or a change to the maths, can
   move them; recompute before trusting the sentence. The page gives no count
   of reports, on purpose.
+- **A first pilot may be too small to decide** (13-records, "A pilot walked
+  through on a made-up store", 2026-11-16): a 10% lift at a mean of 1.8 and
+  a spread of 2.1 needs 2,137 shoppers a group, and the band check needs as
+  many Low votes as Strong ones. Ask a store for its mean and spread before
+  agreeing dates.
