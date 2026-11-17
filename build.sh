@@ -177,6 +177,7 @@ fingerprint css tokens  css
 fingerprint css shell   css
 fingerprint css world   css
 fingerprint css home    css
+fingerprint css dispensaries css
 fingerprint js  hero    js
 fingerprint css agegate css
 fingerprint js  agegate js

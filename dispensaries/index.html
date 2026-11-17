@@ -14,10 +14,10 @@
 <meta property="og:image" content="https://nose-app.com/images/families/citrus.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="/css/tokens.8fb6b363.css">
-<link rel="stylesheet" href="/family.b560c575.css">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/agegate.d7cfbf28.css">
   <link rel="stylesheet" href="/css/world.e44ff5af.css">
+  <link rel="stylesheet" href="/css/dispensaries.fd1c5158.css">
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to content</a>
@@ -37,67 +37,92 @@
   </header>
 <!-- /nose:header -->
 <main id="main">
-  <nav class="wrap breadcrumb u-pt-20" aria-label="Breadcrumb"><a href="/">Home</a><span aria-hidden="true">/</span><span>For dispensaries</span></nav>
+  <nav class="wrap breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span aria-hidden="true">/</span><span>For dispensaries</span></nav>
 
-  <section class="page-head"><div class="wrap">
-    <p class="eyebrow">For dispensaries</p>
-    <h1>Help shoppers find what they like the smell of, on your own menu.</h1>
+  <section class="wrap d-hero" aria-labelledby="d-title">
+    <h1 id="d-title">Help shoppers find what they like the smell of, on your own menu.</h1>
     <!-- docs/B2B-INTEGRATION.md, opening paragraph -->
-    <p>NOSE puts a small widget on your website. It shows a shopper the in-stock products whose terpene profile, as the lab measured it, is closest to what they have bought from you before, and says which of their purchases it used. Aroma and flavor only: it says nothing about how a product makes anyone feel.</p>
-    <p><a class="button button-primary" href="/b2b/demo/?view=pitch">Try the demo</a></p>
-  </div></section>
-
-  <section class="section-tight"><div class="wrap">
-    <h2>What your shoppers see</h2>
-    <p>Three views, one for each place on your site. The store and products below are a made-up test store; every terpene panel is a real lab report's.</p>
-    <!-- docs/B2B-INTEGRATION.md section 3 (mode rail, sold-out, vote); images taken from /b2b/demo/, the test store b2b/demo/test-store.json -->
-    <div class="page-grid">
-      <figure class="card article-card shot"><img src="/images/dispensaries/rail.png" width="700" height="700" loading="lazy" alt="A row of product cards headed Closest to your usual. Each card shows a product name, its brand, a match label such as Close match 96, a bar of six aroma families, and its THC and CBD figures. Below, a line says which of the shopper's purchases the matches are based on."><figcaption><strong>The rail.</strong> In-stock products closest to the shopper's usual, with the purchases it used.</figcaption></figure>
-      <figure class="card article-card shot"><img src="/images/dispensaries/sold-out.png" width="700" height="700" loading="lazy" alt="A panel saying the product the shopper buys most is sold out, followed by the in-stock products whose aroma profile is closest to it."><figcaption><strong>The sold-out panel.</strong> When the usual is out, the closest in-stock alternatives.</figcaption></figure>
-      <figure class="card article-card shot"><img src="/images/dispensaries/vote-ask.png" width="700" height="122" loading="lazy" alt="A question asking whether the flavor was close, and two buttons, Yes and No."><figcaption><strong>The vote.</strong> After a purchase, one tap on whether the flavor was close.</figcaption></figure>
+    <p class="d-lede">NOSE puts a small widget on your website. It shows a shopper the in-stock products whose terpene profile, as the lab measured it, is closest to what they have bought from you before, and says which of their purchases it used. Aroma and flavor only: it says nothing about how a product makes anyone feel.</p>
+    <div class="button-row">
+      <a class="button button-primary" href="/b2b/demo/?view=pitch">Try the demo</a>
+      <a class="button button-secondary" href="mailto:contact@nose-app.com">Write to us</a>
     </div>
-  </div></section>
+  </section>
 
-  <section class="section-tight"><div class="wrap page-grid">
-    <article class="card article-card">
-      <h2>Your shoppers' purchase history never reaches NOSE</h2>
-      <!-- docs/B2B-INTEGRATION.md, "The core promise"; privacy/index.html#dispensaries -->
-      <p>Your page hands a shopper's batch IDs to that shopper's own browser, and the widget ranks your menu there. NOSE serves the code, one feed of your catalog that is the same for every visitor, and takes votes that carry nothing about who voted. What NOSE keeps is set out on the <a href="/privacy/#dispensaries">privacy page</a>.</p>
-      <!-- docs/B2B-INTEGRATION.md section 4 -->
-      <p>The widget asks the shopper first, and reads their purchases only after they say yes.</p>
-    </article>
-    <article class="card article-card">
-      <h2>What your web team does</h2>
-      <!-- docs/B2B-INTEGRATION.md sections 1, 2, 3 and 7 -->
-      <p>One script tag for a pinned release, checked by its hash, so your page shows what you tested until you change the tag. Three lines in your Content-Security-Policy. One element where the widget goes. And a catalog upload from your server, with a secret key that never appears on a page.</p>
-      <p>The <a href="https://github.com/hdzrpy68f4-droid/NOSE/blob/main/docs/B2B-INTEGRATION.md">integration guide</a> has every step.</p>
-    </article>
-    <article class="card article-card">
-      <h2>What we do first</h2>
-      <!-- scripts/b2b-coverage.js; docs/B2B-CATALOG-FORMAT.md -->
-      <p>A coverage report on your menu: how many of your in-stock flower, pre-roll, vape and concentrate batches have a terpene panel NOSE can read, by category and by lab, and the reason for every one it can't. A batch NOSE can't read shows no panel and no score. Nothing is estimated.</p>
-    </article>
-    <article class="card article-card">
-      <h2>Compliance</h2>
-      <!-- js/b2b-strings.*.js (default and florida); scripts/b2b-compliance-kit.js; docs/B2B-RELEASES.md -->
-      <p>Every word the widget shows is in one file you can review, with Florida wording alongside the default. A compliance kit gives you each screen as a picture, with its words and the data it shows, to send to your regulator. NOSE never changes a release you've tested; moving to a new one is your choice.</p>
-    </article>
-    <article class="card article-card">
-      <h2>The pilot</h2>
-      <!-- docs/B2B-PILOT-PLAN.md sections 2, 3 and 10 -->
-      <p>One store. Half your signed-in shoppers see the widget and half see your usual menu, by a random draw kept on your side. One measure decides it: inhalable orders per shopper. The plan is written down before day one, read once at the end, and published whatever it shows, with nothing about any shopper in it.</p>
-    </article>
-    <article class="card article-card">
-      <h2>What NOSE won't do</h2>
-      <!-- CLAUDE.md scope rule; js/b2b-rank.*.js (no panel, no score); js/b2b-strings.*.js "method" (still being tested) -->
-      <p>Say anything about how a product makes someone feel. Guess a profile from a strain name. Score a batch without a lab report it could read. The match score is a hypothesis the pilot exists to test, and the widget says so under its matches.</p>
-    </article>
-  </div></section>
+  <section class="wrap d-shots" aria-labelledby="d-see">
+    <div class="d-head">
+      <h2 id="d-see">What your shoppers see</h2>
+      <p>Three views, one for each place on your site. The store and products below are a made-up test store; every terpene panel is a real lab report's.</p>
+    </div>
+    <!-- docs/B2B-INTEGRATION.md section 3 (mode rail, sold-out, vote); images taken from /b2b/demo/, the test store b2b/demo/test-store.json -->
+    <div class="d-shot-grid">
+      <figure class="d-shot d-shot-rail"><div class="d-frame"><img src="/images/dispensaries/rail.png" width="700" height="676" alt="A row of product cards headed Closest to your usual. Each card shows a product name, its brand, a match label such as Close match 96, a bar of six aroma families, and its THC and CBD figures. Below, a line says which of the shopper's purchases the matches are based on."></div><figcaption><strong>The rail.</strong> In-stock products closest to the shopper's usual, with the purchases it used.</figcaption></figure>
+      <figure class="d-shot"><div class="d-frame"><img src="/images/dispensaries/sold-out.png" width="700" height="630" loading="lazy" alt="A panel saying the product the shopper buys most is sold out, followed by the in-stock products whose aroma profile is closest to it."></div><figcaption><strong>The sold-out panel.</strong> When the usual is out, the closest in-stock alternatives.</figcaption></figure>
+      <figure class="d-shot"><div class="d-frame"><img src="/images/dispensaries/vote-ask.png" width="700" height="123" loading="lazy" alt="A question asking whether the flavor was close, and two buttons, Yes and No."></div><figcaption><strong>The vote.</strong> After a purchase, one tap on whether the flavor was close.</figcaption></figure>
+    </div>
+  </section>
 
-  <section class="section-tight"><div class="wrap"><div class="callout">
-    <h2>Talk to us</h2>
-    <p>NOSE is run by Chris Carreon. Write to <a href="mailto:contact@nose-app.com">contact@nose-app.com</a>, or <a href="/b2b/demo/?view=pitch">try the demo</a> first: a test store, with the widget ready to use.</p>
-  </div></div></section>
+  <section class="d-band" aria-labelledby="d-privacy">
+    <div class="wrap d-split">
+      <h2 id="d-privacy" class="d-statement">Your shoppers' purchase history never reaches NOSE</h2>
+      <div class="d-copy">
+        <!-- docs/B2B-INTEGRATION.md, "The core promise"; privacy/index.html#dispensaries -->
+        <p>Your page hands a shopper's batch IDs to that shopper's own browser, and the widget ranks your menu there. NOSE serves the code, one feed of your catalog that is the same for every visitor, and takes votes that carry nothing about who voted. What NOSE keeps is set out on the <a href="/privacy/#dispensaries">privacy page</a>.</p>
+        <!-- docs/B2B-INTEGRATION.md section 4 -->
+        <p>The widget asks the shopper first, and reads their purchases only after they say yes.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="d-band" aria-labelledby="d-steps">
+    <div class="wrap">
+      <h2 id="d-steps">From your menu to a published result</h2>
+      <ol class="d-steps">
+        <li>
+          <h3>What we do first</h3>
+          <!-- scripts/b2b-coverage.js; docs/B2B-CATALOG-FORMAT.md -->
+          <p>A coverage report on your menu: how many of your in-stock flower, pre-roll, vape and concentrate batches have a terpene panel NOSE can read, by category and by lab, and the reason for every one it can't. A batch NOSE can't read shows no panel and no score. Nothing is estimated.</p>
+        </li>
+        <li>
+          <h3>What your web team does</h3>
+          <!-- docs/B2B-INTEGRATION.md sections 1, 2, 3 and 7 -->
+          <p>One script tag for a pinned release, checked by its hash, so your page shows what you tested until you change the tag. Three lines in your Content-Security-Policy. One element where the widget goes. And a catalog upload from your server, with a secret key that never appears on a page.</p>
+          <p>The <a href="https://github.com/hdzrpy68f4-droid/NOSE/blob/main/docs/B2B-INTEGRATION.md">integration guide</a> has every step.</p>
+        </li>
+        <li>
+          <h3>The pilot</h3>
+          <!-- docs/B2B-PILOT-PLAN.md sections 2, 3 and 10 -->
+          <p>One store. Half your signed-in shoppers see the widget and half see your usual menu, by a random draw kept on your side. One measure decides it: inhalable orders per shopper. The plan is written down before day one, read once at the end, and published whatever it shows, with nothing about any shopper in it.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="d-band" aria-label="Compliance and limits">
+    <div class="wrap d-pair">
+      <div>
+        <h2>Compliance</h2>
+        <!-- js/b2b-strings.*.js (default and florida); scripts/b2b-compliance-kit.js; docs/B2B-RELEASES.md -->
+        <p>Every word the widget shows is in one file you can review, with Florida wording alongside the default. A compliance kit gives you each screen as a picture, with its words and the data it shows, to send to your regulator. NOSE never changes a release you've tested; moving to a new one is your choice.</p>
+      </div>
+      <div>
+        <h2>What NOSE won't do</h2>
+        <!-- CLAUDE.md scope rule; js/b2b-rank.*.js (no panel, no score); js/b2b-strings.*.js "method" (still being tested) -->
+        <p>Say anything about how a product makes someone feel. Guess a profile from a strain name. Score a batch without a lab report it could read. The match score is a hypothesis the pilot exists to test, and the widget says so under its matches.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="d-band d-final" aria-labelledby="d-talk">
+    <div class="wrap">
+      <h2 id="d-talk">Talk to us</h2>
+      <p>NOSE is run by Chris Carreon. Write to <a href="mailto:contact@nose-app.com">contact@nose-app.com</a>, or <a href="/b2b/demo/?view=pitch">try the demo</a> first: a test store, with the widget ready to use.</p>
+      <div class="button-row">
+        <a class="button button-primary" href="mailto:contact@nose-app.com">Write to us</a>
+        <a class="button button-secondary" href="/b2b/demo/?view=pitch">Try the demo</a>
+      </div>
+    </div>
+  </section>
 </main>
 <!-- nose:footer -->
 <footer class="footer">
