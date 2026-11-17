@@ -23,9 +23,9 @@
 
 /* /learn/: a guide is a row; its title is the link and covers the row */
 .guide-card{position:relative}
-.guide-card h2 a{text-decoration:none}
+.guide-card h2 a{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:6px;text-decoration-color:var(--soft)}
 .guide-card h2 a::after{border-radius:0}
-.guide-card:hover h2 a{text-decoration:underline;text-underline-offset:5px;text-decoration-thickness:1px}
+.guide-card:hover h2 a{text-decoration-color:var(--ink);text-decoration-thickness:2px}
 .guide-card .read-more{display:none}
 .page-grid > .guide-card > p:not(.eyebrow){grid-row:1 / span 2}
 .page-grid > .guide-card > h2{margin-top:8px}

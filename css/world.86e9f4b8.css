@@ -158,7 +158,7 @@ input,select,textarea,table,.data-table,.result-stat,.position-row{border-radius
 .coa-pin,.feedback-btn[aria-pressed="true"],.step-number{color:var(--field)}
 .step-number{background:var(--ink)}
 .tab-button[aria-selected="true"]{background:var(--ink);color:var(--field);border-color:var(--ink)}
-.badge{min-height:0;padding:2px 8px;background:none;border:1px solid var(--rule);color:var(--ink)}
+.badge{min-height:0;padding:6px 10px;background:none;border:1px solid var(--rule);color:var(--ink);justify-content:center;text-align:center;line-height:1.25}
 .error-message{background:var(--raised);color:var(--ink);border:1px solid var(--spice)}
 .success-message{background:var(--raised);color:var(--ink);border:1px solid var(--pine)}
 .icon-button{color:var(--ink)}
