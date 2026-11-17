@@ -5173,3 +5173,27 @@ the install in chat after the session's permission check had refused it.
   browser gates failed "Playwright is not installed" until
   `npm install --no-save playwright@1.64.1` put it back (the browsers stay
   downloaded). The same holds after any `npm ci`, as CLAUDE.md says.
+
+### The preview takes the camera's shape, and the card's fingerprint on the desk, 2026-11-17
+
+The owner scanned a new jar on an iPhone: the camera's picture looked widened
+and the code took longer to read; and the card's "Aroma fingerprint" should
+be the equalizer.
+
+- **The preview box takes the camera's own shape on a phone**
+  (`coverPreview` in `js/nose`, rewritten): its `aspect-ratio` is set from
+  the stream's `videoWidth / videoHeight` whenever they are known or change,
+  and its 360px height cap is lifted, so the whole picture shows, neither
+  cropped nor stretched. The cover sizing of the same morning ("The camera
+  fills its box") zoomed the picture to fill a 4:3 box, cutting off its
+  edges, and drew it with `object-fit: fill`, which stretches it if the size
+  the browser reports is not the size it draws - a likely cause of the
+  widened picture and of the slower aim. In Chromium: a 3:4 camera (360x480)
+  gives a 316x421 box, a 4:3 one a 316x237 box. Wider screens unchanged.
+- **The confirmation card's fingerprint is on the desk** (`renderDesk` in
+  place of `renderBar` for `coaConfirmBar`), with the six family names under
+  it as on the match result, and the bar as its fallback without
+  `NoseDesk`. The desk re-measures when the card is shown (its
+  ResizeObserver), so it is drawn at the card's width.
+- Watched in Chromium, `input-paths-test` clean (its card pictures show the
+  desk). How the preview looks on the iPhone is the owner's to see.

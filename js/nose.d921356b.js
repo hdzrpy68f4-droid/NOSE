@@ -608,7 +608,7 @@
         meta.append(dt,dd);
       });
 
-      renderBar('coaConfirmBar',known);
+      renderDesk('coaConfirmBar',known);   // on the desk, as the result is (2026-11-17)
 
       /* Several labs publish only a top ten. When the fingerprint rests on a
          partial panel the person is told, rather than left to assume. */
@@ -803,26 +803,21 @@
       return started.then(()=>{ coverPreview(); return true; });
     }
 
-    /* On a phone the preview box is 4:3 and the camera's picture often is
-       not (an iPhone's is square in portrait). object-fit:cover is not
-       applied to a live camera in every Safari, which left the picture
-       letterboxed in the box (2026-11-17), so the video is sized here to
-       cover the box, centred: what is cropped is still read, since the
-       scanner reads the camera's own frames. Wider screens leave it alone. */
+    /* On a phone the preview box takes the camera's own shape, so the whole
+       picture shows, neither cropped nor stretched. A 4:3 box left an
+       iPhone's squarer picture letterboxed; sizing the video to cover the box
+       then zoomed and cropped it, and drawn with object-fit:fill it could be
+       stretched, which made the code harder to aim (the owner, 2026-11-17).
+       The box's aspect-ratio is set from the stream's size whenever it is
+       known or changes; wider screens are left as they were. */
     const PHONE=matchMedia('(max-width:720px)');
     function coverPreview(){
       const reader=$id('qrReader'), video=reader&&reader.querySelector('video');
-      if(!video) return;
-      if(!video.dataset.cover){ video.dataset.cover='1'; video.addEventListener('loadedmetadata',coverPreview); video.addEventListener('resize',coverPreview); }
-      const props=['width','height','left','top','right','bottom','object-fit','max-width'];
-      if(!PHONE.matches||!video.videoWidth||!video.videoHeight){ props.forEach(x=>video.style.removeProperty(x)); return; }
-      const box=reader.getBoundingClientRect();
-      const scale=Math.max(box.width/video.videoWidth,box.height/video.videoHeight);
-      const w=video.videoWidth*scale, h=video.videoHeight*scale;
-      const set=(k,v)=>video.style.setProperty(k,v,'important');
-      set('width',`${w}px`); set('height',`${h}px`); set('max-width','none');
-      set('left',`${(box.width-w)/2}px`); set('top',`${(box.height-h)/2}px`);
-      set('right','auto'); set('bottom','auto'); set('object-fit','fill');
+      if(!reader) return;
+      if(video&&!video.dataset.cover){ video.dataset.cover='1'; video.addEventListener('loadedmetadata',coverPreview); video.addEventListener('resize',coverPreview); }
+      if(!PHONE.matches||!video||!video.videoWidth||!video.videoHeight){ reader.style.removeProperty('aspect-ratio'); reader.style.removeProperty('max-height'); return; }
+      reader.style.setProperty('aspect-ratio',`${video.videoWidth} / ${video.videoHeight}`,'important');
+      reader.style.setProperty('max-height','none','important');   // a portrait picture is taller than the 4:3 box's cap
     }
     window.addEventListener('resize',()=>coverPreview());
 

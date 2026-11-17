@@ -1863,6 +1863,7 @@ under the cap.
 - [The camera fills its box, and leaving it while it starts, 2026-11-17](docs/handoff/13-records.md#the-camera-fills-its-box-and-leaving-it-while-it-starts-2026-11-17)
 - [A message left over nothing, and one text floor, 2026-11-17](docs/handoff/13-records.md#a-message-left-over-nothing-and-one-text-floor-2026-11-17)
 - [The fetcher's connection pinned, 2026-11-17](docs/handoff/13-records.md#the-fetchers-connection-pinned-2026-11-17)
+- [The preview takes the camera's shape, and the card's fingerprint on the desk, 2026-11-17](docs/handoff/13-records.md#the-preview-takes-the-cameras-shape-and-the-cards-fingerprint-on-the-desk-2026-11-17)
 
 ## 14. Dispensary integration
 
