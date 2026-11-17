@@ -51,7 +51,9 @@
     function pass() {
       try { localStorage.setItem(KEY, '1'); } catch (e) {}
       overlay.remove(); unlock();
-      if (lastFocus && lastFocus.focus) lastFocus.focus();
+      /* preventScroll: focusing <main> again made Safari scroll it to the top of
+         the window, under the sticky header, cutting off the headline (2026-11-17). */
+      if (lastFocus && lastFocus.focus) lastFocus.focus({ preventScroll: true });
     }
     function denied() {
       overlay.innerHTML = deny;
