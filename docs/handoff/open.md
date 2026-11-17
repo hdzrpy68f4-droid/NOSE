@@ -210,11 +210,6 @@ schema comment if wanted.
   cap stays its guard (security audit item 8). A flood from many addresses
   passes any per-address rule, and a shared address can reach a limit.
 
-- **The fetcher checks a name's addresses but does not pin the connection**
-  (13-records, "A name that resolves to a private address", 2026-11-16;
-  security audit item 6). A name server that answers two lookups
-  differently still gets through; https and its certificate check are the
-  guard. Pinning needs the `undici` package.
 - **`auth-reset`, `auth-reset-finish` and `auth-confirm` have no edge rate
   limit** (security audit item 9, the part left): Pro's five rules are in
   use.
@@ -342,11 +337,12 @@ schema comment if wanted.
   and since Prompt 6 js/aroma-bar and js/b2b-widget, two scripts on one line
   fail the build, and an `async` script would pass it and still run out of
   order. No page does either today.
-- **The no-panel sentence is not the prompt's** (s14, "The widget"): "No
-  terpene panel available for this batch", because "No terpene panel on this
-  batch's report" would be untrue of a batch whose report NOSE has not read
-  or could not fetch. The owner decides; one line in `js/b2b-strings` changes
-  it.
+- **Settled 2026-11-17: the no-panel sentence stays** "No terpene panel
+  available for this batch" (s14, "The widget"), not the prompt's "No terpene
+  panel on this batch's report": the owner agreed it is true whether the
+  batch has no report, a report NOSE could not fetch or read, or one with no
+  panel, blames neither store nor lab, matches its two sibling strings, and
+  changing it would need a new release and compliance kit.
 - **The Florida variant is NOSE's reading of 64ER25-6**, not counsel's.
   Whether the rule reaches a vendor's widget, and whether words like
   "palate" or a store's flavor-named products count, is for the

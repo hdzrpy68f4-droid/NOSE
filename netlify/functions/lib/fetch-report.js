@@ -105,12 +105,14 @@ function isBlockedHost(hostname){
    redirect or page hop - the host's name is looked up and every address it
    gives is held to isBlockedAddress; one private address refuses the link.
 
-   What this does NOT do: pin the connection. fetch() looks the name up again
-   for itself, so a name server that answers the two lookups differently
-   still gets through. Closing that needs the request made on the address
-   that was checked, which Node's fetch gives no way to do without the undici
-   package; https and its certificate check stay the guard for it, since a
-   private machine would have to hold a certificate for the public name.
+   Since 2026-11-17 the connection is pinned too: every request goes through
+   PINNED, an undici Agent whose connect step looks the name up with
+   guardedLookup, which refuses a private address there and hands the socket
+   only addresses it has checked. A name server that answers the early lookup
+   with a public address and the connect-time one with a private address is
+   refused at the second, on the very address the socket would have used.
+   The early lookup stays, for the plain sentence it gives before any
+   request; https and its certificate check stay as well.
 
    A lookup that fails or runs past LOOKUP_MS decides nothing: the request
    goes on and fails, or not, as it would have. Bounded by the chain's own
@@ -133,6 +135,32 @@ async function resolvesPrivate(hostname, deadline){
   } catch { return false; }
   finally { clearTimeout(timer); }
 }
+
+/* The connect-time lookup (net.connect's `lookup` option, which undici's
+   connector passes through): the same resolver, every address held to
+   isBlockedAddress, a refusal carrying PRIVATE_CODE so fetchOnce can say
+   which sentence applies. */
+const PRIVATE_CODE = 'NOSE_PRIVATE_ADDRESS';
+function guardedLookup(hostname, options, callback){
+  if (typeof options === 'function'){ callback = options; options = {}; }
+  const h = String(hostname || '').toLowerCase().replace(/^\[|\]$/g, '');
+  Promise.resolve().then(() => resolveAll(h)).then(found => {
+    const list = (Array.isArray(found) ? found : []).filter(a => a && typeof a.address === 'string');
+    if (!list.length){ const e = new Error(`no address for ${h}`); e.code = 'ENOTFOUND'; return callback(e); }
+    if (list.some(a => isBlockedAddress(a.address.toLowerCase()))){
+      const e = new Error('that name resolves to a private address'); e.code = PRIVATE_CODE; return callback(e);
+    }
+    const family = a => a.family === 6 || a.family === 'IPv6' ? 6 : 4;
+    if (options && options.all) return callback(null, list.map(a => ({ address: a.address, family: family(a) })));
+    return callback(null, list[0].address, family(list[0]));
+  }, err => callback(err));
+}
+const { Agent } = require('undici');
+const PINNED = new Agent({ connect: { lookup: guardedLookup } });
+const refusedPrivate = err => {
+  for (let e = err, i = 0; e && i < 5; e = e.cause, i++) if (e.code === PRIVATE_CODE) return true;
+  return false;
+};
 
 function validateUrl(raw){
   let u;
@@ -182,12 +210,15 @@ async function fetchOnce(startUrl, deadline){
       res = await fetch(current.toString(), {
         redirect: 'manual',
         signal: controller.signal,
+        dispatcher: PINNED,
         headers: { 'Accept': 'application/pdf,text/html;q=0.8,*/*;q=0.5' }
       });
     } catch (err) {
       clearTimeout(timer);
       if (err && err.name === 'AbortError')
         return { error: 'The lab server took too long to respond.' };
+      if (refusedPrivate(err))
+        return { error: hop === 0 && current === startUrl ? 'That address points to a private network, not a public lab report.' : 'That link redirects somewhere it should not.' };
       return { error: 'Could not reach that address.' };
     }
     clearTimeout(timer);
@@ -350,5 +381,6 @@ module.exports = {
   resolvePdfFromPage,
   /* For test/fetch-guard-test.js: stand in for the name lookup, and put it back. */
   _setResolver(fn){ const was = resolveAll; resolveAll = fn; return was; },
+  _guardedLookup: guardedLookup,
   LIMITS: Object.freeze({ MAX_BYTES, TOTAL_BUDGET_MS, TIMEOUT_MS, MAX_REDIRECTS, MAX_PAGE_HOPS })
 };

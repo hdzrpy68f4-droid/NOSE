@@ -88,6 +88,26 @@ check('a redirect to a private host is refused, as before', typeof FR.fetchPdf, 
   }
   globalThis.fetch = realFetch;
 
+  /* The connection is pinned (since 2026-11-17): the connect-time lookup
+     refuses a private address itself, so a name server that answers the
+     early check with a public address and the connection with a private one
+     is refused on the address the socket would have used. Run through the
+     real fetch and the real undici Agent; the refusal comes before any
+     socket opens, so nothing leaves the machine. */
+  {
+    const lookup = (host, options) => new Promise(resolve => FR._guardedLookup(host, options, (err, a, f) => resolve(err ? ['error', err.code] : [a, f])));
+    const was = FR._setResolver(async host => ({ 'pub.example': [{ address: '93.184.216.34', family: 4 }, { address: '2606:2800:220:1::1', family: 6 }],
+      'priv.example': [{ address: '93.184.216.34', family: 4 }, { address: '10.0.0.5', family: 4 }] })[host] || []);
+    check('the connect-time lookup: public addresses handed over, one or all as asked; a private one refused; none at all is "not found"',
+      [await lookup('pub.example', {}), await lookup('pub.example', { all: true }), await lookup('priv.example', { all: true }), await lookup('none.example', {})],
+      [['93.184.216.34', 4], [[{ address: '93.184.216.34', family: 4 }, { address: '2606:2800:220:1::1', family: 6 }], undefined], ['error', 'NOSE_PRIVATE_ADDRESS'], ['error', 'ENOTFOUND']]);
+    let calls = 0;
+    FR._setResolver(async () => (++calls === 1 ? [{ address: '93.184.216.34', family: 4 }] : [{ address: '127.0.0.1', family: 4 }]));
+    const flip = await FR.fetchPdf(new URL('https://flip.example/r.pdf'));
+    check('a name that answers public, then private at connect, is refused there with the private-network sentence', [flip.error, calls >= 2], [PRIVATE, true]);
+    FR._setResolver(was);
+  }
+
   if (failures) { console.log(`\nfetch-guard: ${failures} failure${failures === 1 ? '' : 's'}`); process.exit(1); }
   console.log('\nfetch-guard clean');
 })().catch(e => { console.error(e); process.exit(1); });

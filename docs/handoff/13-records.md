@@ -5138,3 +5138,38 @@ Two open items, taken up once Scan QR became the first way in.
   `reparse.js`, `backfill-from-blobs.js` and `seed-from-fixtures.js` refuse
   below the very number the scanner does. `rerun-test` checks the two are
   one and that `rerun.js` writes no number of its own.
+
+### The fetcher's connection pinned, 2026-11-17
+
+Security audit item 6, its last part, with the owner's agreement to add one
+dependency: `undici` 7.30.1, exact, the version Node 24's own fetch runs on
+(`process.versions.undici`), from the Node.js project. The owner asked for
+the install in chat after the session's permission check had refused it.
+
+- **Every request the fetcher makes goes through `PINNED`**, an undici
+  `Agent` passed to the global `fetch` as its `dispatcher`, whose connect
+  step looks the name up with `guardedLookup`: the same resolver as the
+  early check, every address held to `isBlockedAddress`, and only checked
+  addresses handed to the socket (one, or all when the connector asks for
+  all). A private one is refused with `NOSE_PRIVATE_ADDRESS`, which
+  `fetchOnce` turns into the private-network sentence (or the redirect one,
+  after a hop). The early lookup (2026-11-16) stays, for its sentence before
+  any request; https and its certificate check stay.
+- The global `fetch` is still the one called, so the tests' stand-ins work as
+  before and ignore the dispatcher.
+- **`fetch-guard-test`**: the connect-time lookup alone (public handed over,
+  one or all; private refused; none is "not found"), and the attack itself
+  through the real fetch and Agent: a name answering public to the early
+  check and 127.0.0.1 at connect is refused with the private-network
+  sentence, before any socket opens. With `dispatcher: PINNED` taken out, that
+  check fails ("Could not reach that address."), so it tests the pin.
+- By hand, on this machine: a public PDF (w3.org's dummy.pdf, 13,264 bytes)
+  fetched through the pinned agent; `localtest.me`, a public name for
+  127.0.0.1, refused with the private-network sentence.
+- esbuild, which Netlify bundles the functions with, was not run here;
+  `undici` is plain JavaScript. The deploy's live-check calls `coa`.
+- **`npm install <package>` removes Playwright**: it was installed with
+  `--no-save`, and npm prunes what `package.json` does not list, so the three
+  browser gates failed "Playwright is not installed" until
+  `npm install --no-save playwright@1.64.1` put it back (the browsers stay
+  downloaded). The same holds after any `npm ci`, as CLAUDE.md says.

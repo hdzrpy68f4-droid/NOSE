@@ -23,6 +23,7 @@
   "dependencies": {
     "@netlify/blobs": "^10.7.11",
     "pg": "^8.23.0",
+    "undici": "7.30.1",
     "unpdf": "^1.8.0"
   },
   "devDependencies": {
