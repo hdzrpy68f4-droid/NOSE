@@ -76,10 +76,9 @@
             <h2 class="u-fs-20">Add a report</h2>
             <p class="small">Choose the easiest method. Camera permission is never required.</p>
             <div class="tab-list" role="tablist" aria-label="Report input methods">
-              <button class="tab-button" role="tab" aria-selected="true" aria-controls="samplePanel" id="sampleTab" data-tab="sample">Samples <span aria-hidden="true">→</span></button>
-              <button class="tab-button" role="tab" aria-selected="false" aria-controls="scanPanel" id="scanTab" data-tab="scan">Scan QR <span aria-hidden="true">→</span></button>
+              <button class="tab-button" role="tab" aria-selected="true" aria-controls="scanPanel" id="scanTab" data-tab="scan">Scan QR <span aria-hidden="true">→</span></button>
+              <button class="tab-button" role="tab" aria-selected="false" aria-controls="samplePanel" id="sampleTab" data-tab="sample">Samples <span aria-hidden="true">→</span></button>
               <button class="tab-button" role="tab" aria-selected="false" aria-controls="urlPanel" id="urlTab" data-tab="url">COA link <span aria-hidden="true">→</span></button>
-              <button class="tab-button" role="tab" aria-selected="false" aria-controls="uploadPanel" id="uploadTab" data-tab="upload">Upload <span aria-hidden="true">→</span></button>
               <button class="tab-button" role="tab" aria-selected="false" aria-controls="manualPanel" id="manualTab" data-tab="manual">Manual <span aria-hidden="true">→</span></button>
             </div>
             <details class="saved-palate-block" open>
@@ -103,7 +102,7 @@
           </aside>
 
           <div>
-            <section class="card panel input-panel" role="tabpanel" id="samplePanel" aria-labelledby="sampleTab">
+            <section class="card panel input-panel" role="tabpanel" id="samplePanel" aria-labelledby="sampleTab" hidden>
               <h2>Try a sample</h2>
               <p class="small">Choose a saved favorite, then choose a new jar to compare.</p>
               <h3 class="u-fs-15 u-mt-22">Your favorite</h3>
@@ -113,7 +112,7 @@
               <div class="sample-grid" id="candidateSamples"></div>
             </section>
 
-            <section class="card panel input-panel" role="tabpanel" id="scanPanel" aria-labelledby="scanTab" hidden>
+            <section class="card panel input-panel" role="tabpanel" id="scanPanel" aria-labelledby="scanTab">
               <h2>Scan a QR code</h2>
               <p class="small">Use the rear camera to scan a COA QR code, or choose a saved QR image. Camera access is requested only after you press Start camera.</p>
               <p class="small">When a code is read, our server fetches the lab report it points to and keeps a copy of the report and what it says &mdash; nothing about you. <a href="/privacy/#lab-reports">What we keep</a>.</p>
@@ -124,7 +123,7 @@
                   <select id="cameraSelect" aria-label="Choose camera"></select>
                 </div>
                 <div class="scanner-actions">
-                  <button class="button button-primary" id="startScannerButton" type="button">Restart camera</button>
+                  <button class="button button-primary" id="startScannerButton" type="button">Start camera</button>
                   <button class="button button-secondary" id="stopScannerButton" type="button" disabled>Stop camera</button>
                   <button class="button button-quiet" id="chooseQrImageButton" type="button">Choose QR image</button>
                 </div>
@@ -161,13 +160,6 @@
               <div id="urlMessage" class="inline-message" role="status" hidden></div>
             </section>
 
-            <section class="card panel input-panel" role="tabpanel" id="uploadPanel" aria-labelledby="uploadTab" hidden>
-              <h2>Upload a report</h2>
-              <p class="small">Reading an uploaded file isn&rsquo;t available yet. Use Scan QR or COA link to read a lab report, or Manual to type its values in. A file chosen here is not sent anywhere.</p>
-              <label for="reportFile">COA file</label>
-              <input id="reportFile" type="file" accept="application/pdf,image/jpeg,image/png,image/webp">
-              <div id="uploadMessage" class="inline-message" role="status" hidden></div>
-            </section>
 
             <section class="card panel input-panel" role="tabpanel" id="manualPanel" aria-labelledby="manualTab" hidden>
               <h2>Enter values manually</h2>
@@ -271,7 +263,7 @@
   <script src="/js/match-math.65bb9941.js" defer></script>
   <script src="/js/aroma-bar.4c8dc6b3.js" defer></script>
   <script src="/js/hero.1133f86a.js" defer></script>
-  <script src="/js/nose.fa02dd05.js" defer></script>
+  <script src="/js/nose.eec101c4.js" defer></script>
   <script src="/js/agegate.47a7d3ff.js" defer></script>
 </body>
 </html>

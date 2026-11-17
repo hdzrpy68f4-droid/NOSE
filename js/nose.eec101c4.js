@@ -416,7 +416,11 @@
 
     function setScannerButtons(running){
       qrScannerRunning=running;
-      document.getElementById('startScannerButton').disabled=running;
+      const start=document.getElementById('startScannerButton');
+      start.disabled=running;
+      /* "Start camera" until the camera has run once, then "Restart camera":
+         the matcher opens on Scan QR with the camera off (2026-11-17). */
+      if(running) start.textContent='Restart camera';
       document.getElementById('stopScannerButton').disabled=!running;
     }
 
@@ -1059,7 +1063,6 @@
       if(!r.ok){ showMessage('urlMessage',r.message,'error'); hideCoaConfirm(); return; }
       fetchCoaReport(r.url.href,'urlMessage');
     }
-    function validateUpload(file){ if(!file){ document.getElementById('uploadMessage').hidden=true; return; } const allowed=['application/pdf','image/jpeg','image/png','image/webp']; if(!allowed.includes(file.type)){ showMessage('uploadMessage','Use a PDF, JPG, PNG, or WebP file.','error'); return; } if(file.size>10*1024*1024){ showMessage('uploadMessage','The selected file is larger than 10 MB.','error'); return; } showMessage('uploadMessage','Reading an uploaded file isn’t available yet, and this file was not sent anywhere. Use Scan QR or COA link to read the lab report, or Manual to type its values in.','neutral'); }
 
     /* Routing after the Tier-2 split.
        Every destination is now a real URL:
@@ -1144,7 +1147,6 @@
       on('manualRows','click',event=>{ const button=event.target.closest('.remove-row'); if(button&&document.querySelectorAll('#manualRows tr').length>1) button.closest('tr').remove(); });
       on('saveManualButton','click',saveManualProfile);
       on('validateUrlButton','click',validateUrl);
-      on('reportFile','change',event=>validateUpload(event.target.files[0]));
       on('exportButton','click',exportSaved);
       on('importButton','click',()=>{ const f=$id('importFile'); if(f) f.click(); });
       on('importFile','change',event=>{ const file=event.target.files[0]; event.target.value=''; if(file) importSaved(file); });

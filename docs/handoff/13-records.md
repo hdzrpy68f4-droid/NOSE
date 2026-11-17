@@ -5049,3 +5049,30 @@ The three pages "The new look went live" left re-skinned, rebuilt to
   (validateUrl and fetchPdf, for `coa.js`), the two dispensary scripts that
   check catalog links with validateUrl, `scripts/download-twice.js`
   (resolvePdfFromPage), and the three tests. A comment only; no code changed.
+
+### Scan QR first, and no Upload tab, 2026-11-17
+
+The owner, shown the Upload tab on a phone: hide it, and put the focus on
+scanning the jar, the easiest way for most people.
+
+- **The Upload tab, its panel and its handler are gone** (`app.html`,
+  `js/nose`'s `validateUpload`). Reading an uploaded file was never built:
+  the tab offered a file picker that only checked a file's type and size and
+  said reading it "isn't available yet". Bringing it back is
+  `git revert` of this commit's `app.html` and `js/nose` parts.
+- **The matcher opens on Scan QR**, first of four tabs (Scan QR, Samples,
+  COA link, Manual), with the camera off: it still starts only when a person
+  presses the button, which says "Start camera" until the camera has run and
+  "Restart camera" after (`setScannerButtons`). Pressing the Scan QR tab
+  itself still starts it, as before.
+- **The home page's first step**, the owner's wording asked for: "Scan the QR
+  code on the jar's label. No code to scan? Paste a COA link, try a sample,
+  or enter terpene values manually." in place of "Use a sample, paste a COA
+  link, upload a report, or enter terpene values manually."
+- **`input-paths-test`**: a check that the matcher opens on Scan QR with
+  "Start camera"; the Upload checks replaced by one that no Upload tab, panel
+  or file input exists; the tab-key checks in the new order. Home and the
+  wrap now land on Scan QR, which starts the camera, so the test waits for
+  it to settle before leaving: leaving at once let Chromium report "The
+  play() request was interrupted because the media was removed from the
+  document" as an uncaught error, once in three runs.

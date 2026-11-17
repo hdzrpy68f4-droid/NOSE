@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-/* NOSE - the app's ways in, used in a real browser: Scan QR, COA link, Upload.
+/* NOSE - the app's ways in, used in a real browser: Scan QR, COA link, and
+ * (since 2026-11-17) no Upload.
  *
  *   node test/input-paths-test.mjs        expect: input-paths clean
  *
@@ -59,9 +60,9 @@
  *     other new field; the words fixed after the vote, cleared by a new
  *     result. Since 2026-10-14 (PARSER-HANDOFF s13, "Smell words on a vote");
  *     INPUT_PATHS_SHOTS also saves the block, picked and voted
- *   - Upload: the tab and the message after choosing a file say plainly that
- *     reading an uploaded file isn't available yet and point to Scan QR, COA
- *     link and Manual; the page makes no request, so the file goes nowhere
+ *   - no Upload tab, panel or file input (taken out 2026-11-17: reading a
+ *     file was never built), and the matcher opens on Scan QR with the
+ *     camera off and its button saying "Start camera"
  *   - no uncaught error on the page
  *
  * coa-link.png encodes https://lab.example/coa/input-paths-test.pdf (a
@@ -583,7 +584,11 @@ try {
 
   await page.goto(`${BASE}/app`);
   await page.click('.ag-yes');                 // the age gate, answered as a person answers it
-  await page.waitForSelector('#palateSamples .sample-chip');
+  await page.waitForSelector('#palateSamples .sample-chip', { state: 'attached' });
+  check('the matcher opens on Scan QR, its panel shown, the camera off and its button "Start camera" (since 2026-11-17)',
+    ...(got => [JSON.stringify(got) === JSON.stringify(['true', true, false, 'Start camera', false]), JSON.stringify(got)])(
+      [await page.getAttribute('#scanTab', 'aria-selected'), await page.isVisible('#scanPanel'), await page.isVisible('#samplePanel'),
+       (await page.textContent('#startScannerButton')).trim(), await page.isDisabled('#startScannerButton')]));
 
   /* ---- Scan QR, by camera ------------------------------------------------ */
   queue.push(FIXTURES.plain);
@@ -848,26 +853,14 @@ try {
     await page.unroute('**/api/match-feedback');
   }
 
-  /* ---- Upload -------------------------------------------------------------- */
-  await page.click('#uploadTab');
-  const intro = await text('#uploadPanel');
-  check('Upload: the tab says reading an uploaded file isn\'t available yet, and names Scan QR, COA link and Manual',
-    /isn['\u2019]t available yet/.test(intro) && ['Scan QR', 'COA link', 'Manual'].every(t => intro.includes(t)), `the tab says "${intro}"`);
-  check('Upload: no "static preview" left in the tab', !/static preview/i.test(intro));
-
-  const requests = [];
-  const record = r => requests.push(`${r.method()} ${r.url()}`);
-  page.on('request', record);
-  await page.setInputFiles('#reportFile', { name: 'lab-report.pdf', mimeType: 'application/pdf', buffer: PDF });
-  const answered = await messageMatches('uploadMessage', /isn['\u2019]t available yet/);
-  await page.waitForTimeout(750);
-  page.off('request', record);
-  const said = await text('#uploadMessage');
-  check('Upload: choosing a report says plainly that reading it isn\'t available yet',
-    answered && !/static preview/i.test(said), `the message says "${said}"`);
-  check('Upload: ...and points to Scan QR, COA link and Manual', ['Scan QR', 'COA link', 'Manual'].every(t => said.includes(t)),
-    `the message says "${said}"`);
-  check('Upload: the page makes no request - the file goes nowhere', requests.length === 0, requests.join(', '));
+  /* ---- Upload: gone since 2026-11-17 ----------------------------------------
+     Reading an uploaded file was never built; the tab offered a file picker
+     that read nothing, so it was taken out, and the matcher opens on Scan QR. */
+  check('Upload: no Upload tab, panel or file input, and no tab between COA link and Manual',
+    ...(got => [JSON.stringify(got) === JSON.stringify([null, null, null, 'scanTab sampleTab urlTab manualTab', false]), JSON.stringify(got)])(
+      [await page.$('#uploadTab'), await page.$('#uploadPanel'), await page.$('#reportFile'),
+       await page.$$eval('[role="tab"]', ts => ts.map(t => t.id).join(' ')),
+       await page.evaluate(() => /isn['’]t available yet/.test(document.body.textContent))]));
 
   /* ---- a jar that is gone is never replaced by another (since 2026-11-14) --- */
   /* Delete, Import, Remove and Load from account, each on a fresh start of
@@ -894,7 +887,7 @@ try {
       route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ version: 1, profiles: account }) }));
     await p.goto(`${BASE}/app`);
     await p.click('.ag-yes');
-    await p.waitForSelector('#palateSamples .sample-chip');
+    await p.waitForSelector('#palateSamples .sample-chip', { state: 'attached' });
     const t = async sel => ((await p.locator(sel).textContent()) || '').trim();
     const LEMON = 'Lemon Tart Pucker';
     const EMPTY = 'Select one or more jars you like. Your palate is their averaged aroma shape.';
@@ -1009,20 +1002,30 @@ try {
        Tab order; Right and Left move focus and selection and wrap; Home and
        End go to the ends. From COA link, so the camera is never asked for. */
     const tabs = () => p.$$eval('[role="tab"]', ts => ts.map(x => [x.id, x.getAttribute('aria-selected'), x.tabIndex, x === document.activeElement]));
-    const only = id => JSON.stringify(['sampleTab', 'scanTab', 'urlTab', 'uploadTab', 'manualTab'].map(x => [x, String(x === id), x === id ? 0 : -1, x === id]));
+    /* Landing on Scan QR starts the camera; leave only once it has settled
+       (running, or a message shown), or Chromium reports the video removed
+       while it was starting. */
+    const settled = () => p.waitForFunction(() => !document.getElementById('stopScannerButton').disabled
+      || !document.getElementById('scannerMessage').hidden, null, { timeout: 8000 }).catch(() => {});
+    const only = id => JSON.stringify(['scanTab', 'sampleTab', 'urlTab', 'manualTab'].map(x => [x, String(x === id), x === id ? 0 : -1, x === id]));
     await p.click('#urlTab');
     check('tabs: the chosen tab alone is selected, focused and in the Tab order', JSON.stringify(await tabs()) === only('urlTab'), JSON.stringify(await tabs()));
     await p.keyboard.press('ArrowRight');
     check('tabs: Right moves focus and selection to the next tab, and shows its panel',
-      JSON.stringify(await tabs()) === only('uploadTab') && await p.isVisible('#uploadPanel') && !(await p.isVisible('#urlPanel')), JSON.stringify(await tabs()));
+      JSON.stringify(await tabs()) === only('manualTab') && await p.isVisible('#manualPanel') && !(await p.isVisible('#urlPanel')), JSON.stringify(await tabs()));
+    await p.keyboard.press('ArrowLeft');
+    check('tabs: Left moves back', JSON.stringify(await tabs()) === only('urlTab'), JSON.stringify(await tabs()));
     await p.keyboard.press('End');
     check('tabs: End goes to the last tab', JSON.stringify(await tabs()) === only('manualTab'), JSON.stringify(await tabs()));
     await p.keyboard.press('ArrowRight');
-    check('tabs: Right from the last tab wraps to the first', JSON.stringify(await tabs()) === only('sampleTab'), JSON.stringify(await tabs()));
+    check('tabs: Right from the last tab wraps to the first, Scan QR', JSON.stringify(await tabs()) === only('scanTab'), JSON.stringify(await tabs()));
+    await settled();
     await p.keyboard.press('ArrowLeft');
     check('tabs: Left from the first tab wraps to the last', JSON.stringify(await tabs()) === only('manualTab'), JSON.stringify(await tabs()));
     await p.keyboard.press('Home');
-    check('tabs: Home goes to the first tab', JSON.stringify(await tabs()) === only('sampleTab'), JSON.stringify(await tabs()));
+    check('tabs: Home goes to the first tab', JSON.stringify(await tabs()) === only('scanTab'), JSON.stringify(await tabs()));
+    await settled();
+    await p.click('#urlTab');   // leaves Scan QR, which stops the camera it started
 
     /* A failed link read is said in a status region. */
     await p.route('**/api/coa', route => route.fulfill({ status: 422, contentType: 'application/json',
@@ -1043,8 +1046,8 @@ try {
     await p.waitForFunction(() => /last minute/.test(document.getElementById('urlMessage').textContent));
     check('a 429 from Netlify\'s rate limit says to wait a minute',
       (await t('#urlMessage')) === 'Too many reports read from this connection in the last minute. Wait a minute, then try again.', await t('#urlMessage'));
-    check('the Upload and Manual messages are status regions too',
-      (await p.getAttribute('#uploadMessage', 'role')) === 'status' && (await p.getAttribute('#manualMessage', 'role')) === 'status');
+    check('the Manual message is a status region too',
+      (await p.getAttribute('#manualMessage', 'role')) === 'status');
 
     /* A manual row's remove button is named for the row's compound. */
     await p.click('#manualTab');
@@ -1176,6 +1179,7 @@ try {
       } catch (e) {}
     });
     await p.goto(`${BASE}/app`);
+    await p.click('#sampleTab');   // the matcher opens on Scan QR since 2026-11-17
     await p.waitForSelector('#candidateSamples .sample-chip[data-profile="saved-form-vape"]');
     const pick = async (palate, candidate) => {
       for (const on of await p.$$eval('#palateSamples .sample-chip[aria-pressed="true"]', ns => ns.map(n => n.dataset.profile))) await p.click(`#palateSamples .sample-chip[data-profile="${on}"]`);
