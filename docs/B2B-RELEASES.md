@@ -23,3 +23,4 @@ this table. PARSER-HANDOFF.md §14, "Pinned releases".
 |---|---|---|---|
 | 1 | 77f96a89aa35c3e8cf393c368555b44ebcd05f43 | sha384-suJ0VaeiOSOCl4dkl3RGcgkgkgx2Q/x2l7JZZlO6ecVdOS6DS70MTdcMolJWRW2l | sha384-+XwTP39J7VPdIIBaJs/ypa2cFnJ3Y048Vp1faabsNCwHMkduDlB/PnOa6cD9HZhn |
 | 2 | c96b15ad1002f53942e0dd7ae61fbb3d5b370fa6 | sha384-ria5Ei+NaS29qm0wrTCxfib/zOXnVZvEeAwaKZBRnHYcfTKIYBaFMkVUs/ZgAUa8 | sha384-R2Sxy67O6gPnbBB7Gx4hwPTj/C85nqi1xO/mthRYsfhTTYCfCtkAk+5tc5nVWLNW |
+| 3 | a429e244412e1f258de51d3e2fe1ae3c8ee31f75 | sha384-n4aXIwLMO7wGi7tOODJiTx+GhzMUQuR/eVIl243UHcqJ15+vQnd3iD6h1CLx5STk | sha384-R2Sxy67O6gPnbBB7Gx4hwPTj/C85nqi1xO/mthRYsfhTTYCfCtkAk+5tc5nVWLNW |
