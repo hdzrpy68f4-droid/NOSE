@@ -49,3 +49,19 @@
   .page-grid > .guide-card > p:not(.eyebrow){grid-row:auto}
   .page-grid > .guide-card > p:not(.eyebrow){order:3}
 }
+
+/* /about/: its two-up card grids, as the same rows */
+.grid{display:block}
+.grid > .card{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);grid-auto-flow:row dense;column-gap:56px;align-items:start;margin:0;padding:32px 0;border:0;border-top:1px solid var(--rule);border-radius:0;background:none}
+.grid > .card > *{grid-column:2;margin-top:0}
+.grid > .card > h3,.grid > .card > h2{grid-column:1;grid-row:1 / span 6;font-size:clamp(1.5rem,2.6vw,2rem);line-height:1.1}
+.grid > .card > p{color:var(--soft)}
+.grid > .card > :last-child{margin-bottom:0}
+.section{padding:var(--section) 0;border-top:1px solid var(--rule)}
+.section .eyebrow + h2,.section > .wrap > h2{font-size:clamp(2rem,4.6vw,3.25rem);line-height:1.05;letter-spacing:-.02em}
+@media (max-width:899px){
+  .grid > .card{grid-template-columns:1fr}
+  .grid > .card > *,.grid > .card > h3,.grid > .card > h2{grid-column:1;grid-row:auto}
+}
+.grid > .card > * + *,.page-grid > .article-card > * + *{margin-top:12px}
+.grid > .card > h3 + *,.grid > .card > h2 + *,.page-grid > .article-card > h2 + *,.page-grid > .article-card > .eyebrow + *{margin-top:0}
