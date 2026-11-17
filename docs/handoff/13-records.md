@@ -5216,3 +5216,22 @@ The owner, scanning again on an iPhone: the box now had the picture's shape
 - **The card's buttons**: `.buttons` is `family.css`'s, which `/app` does not
   load, so the two sat flush; `css/shell` now gives the card's row a 10px gap
   and 24px above it.
+
+### A readout of the camera on the iPhone, and a test that tested nothing, 2026-11-17
+
+- **`?camdebug=1` on `/app`** (TEMPORARY, `js/nose`'s `camDebug`): every
+  second, under the preview, the viewport, the box's size, display, position
+  and aspect-ratio, and each child's size, place, display, position, width,
+  height, object-fit and transform, with the video's stream size, inline
+  style and attributes. Shown only with that parameter. It is there because
+  two fixes for the iPhone's small camera picture were guesses, and the
+  layout measures right in Chromium and WebKit; to be removed once the
+  owner's readout shows the cause.
+- **`rerun-test`'s check that `rerun.js` writes no `MIN_TEXT` number of its
+  own tested nothing**: written through a shell here-document, its `\b`
+  became a backspace character, so the pattern looked for a backspace before
+  `MIN_TEXT` and never matched. Fixed; it now fails when a `const MIN_TEXT =
+  200;` is put back in `rerun.js`, and passes without it. The readout's first
+  version had the same fault (no readout appeared). A search of every tracked
+  source file for control characters finds none left but the vendored
+  `html5-qrcode`'s own.

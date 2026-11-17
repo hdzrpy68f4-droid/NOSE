@@ -1865,6 +1865,7 @@ under the cap.
 - [The fetcher's connection pinned, 2026-11-17](docs/handoff/13-records.md#the-fetchers-connection-pinned-2026-11-17)
 - [The preview takes the camera's shape, and the card's fingerprint on the desk, 2026-11-17](docs/handoff/13-records.md#the-preview-takes-the-cameras-shape-and-the-cards-fingerprint-on-the-desk-2026-11-17)
 - [The iPhone's camera layer laid out again, and the card's buttons apart, 2026-11-17](docs/handoff/13-records.md#the-iphones-camera-layer-laid-out-again-and-the-cards-buttons-apart-2026-11-17)
+- [A readout of the camera on the iPhone, and a test that tested nothing, 2026-11-17](docs/handoff/13-records.md#a-readout-of-the-camera-on-the-iphone-and-a-test-that-tested-nothing-2026-11-17)
 
 ## 14. Dispensary integration
 

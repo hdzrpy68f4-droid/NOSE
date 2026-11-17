@@ -811,6 +811,26 @@
        The box's aspect-ratio is set from the stream's size whenever it is
        known or changes; wider screens are left as they were. */
     const PHONE=matchMedia('(max-width:720px)');
+    /* TEMPORARY (2026-11-17): ?camdebug=1 prints what Safari actually laid
+       out, to find why an iPhone draws the camera smaller than its box.
+       Shown only with that parameter; to be removed once found. */
+    const CAMDEBUG=new URLSearchParams(location.search).get('camdebug')==='1';
+    function camDebug(){
+      if(!CAMDEBUG) return;
+      const reader=$id('qrReader'); if(!reader) return;
+      let out=$id('camDebugOut');
+      if(!out){ out=document.createElement('pre'); out.id='camDebugOut'; out.style.cssText='white-space:pre-wrap;font-size:12px;line-height:1.35;margin:8px 0 0;color:var(--ink)'; reader.insertAdjacentElement('afterend',out); }
+      const r=reader.getBoundingClientRect(), rc=getComputedStyle(reader);
+      const lines=[`viewport ${innerWidth}x${innerHeight} dpr ${devicePixelRatio} phone ${PHONE.matches}`,
+        `box ${r.width.toFixed(1)}x${r.height.toFixed(1)} display ${rc.display} pos ${rc.position} ar ${rc.aspectRatio}`];
+      [...reader.children].forEach(el=>{
+        const b=el.getBoundingClientRect(), c=getComputedStyle(el);
+        lines.push(`${el.tagName.toLowerCase()} ${b.width.toFixed(1)}x${b.height.toFixed(1)} at ${(b.left-r.left).toFixed(1)},${(b.top-r.top).toFixed(1)} display ${c.display} pos ${c.position} w ${c.width} h ${c.height} fit ${c.objectFit} transform ${c.transform}`);
+        if(el.tagName==='VIDEO') lines.push(`  stream ${el.videoWidth}x${el.videoHeight} inline "${el.getAttribute('style')}" attrs w=${el.getAttribute('width')} h=${el.getAttribute('height')}`);
+      });
+      out.textContent=lines.join(String.fromCharCode(10));
+    }
+    if(CAMDEBUG) setInterval(camDebug,1000);
     function coverPreview(){
       const reader=$id('qrReader'), video=reader&&reader.querySelector('video');
       if(!reader) return;
