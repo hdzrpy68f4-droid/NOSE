@@ -167,3 +167,9 @@ input,select,textarea,table,.data-table,.result-stat,.position-row{border-radius
 /* a store's own page is light, and so are the pictures of the widget on one */
 .demo-shop{background:#fff;color:#18211B}
 .shot img{padding:16px;background:#fff}
+
+/* the matcher's result: each profile on the desk (js/hero's NoseDesk) */
+.result-eq{display:block;width:100%;height:132px}
+.desk-channels{display:grid;grid-template-columns:repeat(6,1fr);margin:8px 0 0;padding:6px 0 0;list-style:none;border-top:1px solid var(--rule)}
+.desk-channels li{text-align:center;font-size:.8125rem;color:var(--soft)}
+@media (max-width:560px){.result-eq{height:104px}.desk-channels li{font-size:.75rem}}

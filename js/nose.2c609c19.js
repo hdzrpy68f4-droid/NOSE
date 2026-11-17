@@ -116,6 +116,26 @@
       return `The measured profile points in a different direction, led by ${candidateTop}.`;
     }
 
+    /* The match result shows each profile on the desk (js/hero's NoseDesk): a
+       column per family, lit to the family's share of the profile. Without
+       NoseDesk it falls back to the bar. DESIGN.md, "The desk". */
+    const DESK_ORDER=['citrus','earthy','spice','pine','floral','herbal'];
+    const DESK_FULL=.6;   /* the share that lights a whole column */
+    const desks={};
+    function renderDesk(id,values){
+      const element=document.getElementById(id); if(!element) return;
+      if(!window.NoseDesk) return renderBar(id,values);
+      if(!desks[id]){
+        const canvas=document.createElement('canvas'); canvas.className='result-eq'; canvas.setAttribute('aria-hidden','true');
+        element.replaceChildren(canvas); desks[id]=window.NoseDesk.create(canvas);
+        if(!desks[id]){ delete desks[id]; return renderBar(id,values); }
+      }
+      const shares=familyShares(values);
+      element.setAttribute('role','img');
+      element.setAttribute('aria-label',`Aroma profile: ${DESK_ORDER.filter(key=>shares[key]>.001).map(key=>`${FAMILIES[key].label} ${Math.round(shares[key]*100)}%`).join(', ') || 'no values'}`);
+      desks[id].set(DESK_ORDER.map(key=>shares[key]||0),DESK_FULL);
+    }
+
     function updateHero(){
       const a=profileById(state.heroPalate), b=profileById(state.heroCandidate);
       const score=cosine(normalize(a.terps),normalize(b.terps));
@@ -345,7 +365,7 @@
       document.getElementById('sharedBackbone').textContent=shared.length?shared.slice(0,2).map(key=>FAMILIES[key].label).join(' + '):'No strong shared family';
       document.getElementById('biggestDifference').textContent=`${FAMILIES[biggest[0]].label} ${biggest[1]>=0?'higher':'lower'} by ${Math.round(Math.abs(biggest[1])*100)} points`;
       document.getElementById('resultConfidence').textContent=confidence([...palateProfiles(),b]);
-      renderBar('resultPalateBar',a.terps); renderBar('resultCandidateBar',b.terps);
+      renderDesk('resultPalateBar',a.terps); renderDesk('resultCandidateBar',b.terps);
       const tbody=document.getElementById('accessibleResultRows'); tbody.replaceChildren();
       FAMILY_ORDER.forEach(key=>{ const tr=document.createElement('tr'); [FAMILIES[key].label,`${Math.round(familyA[key]*100)}%`,`${Math.round(familyB[key]*100)}%`,`${Math.round((familyB[key]-familyA[key])*100)} pts`].forEach(text=>{ const td=document.createElement('td'); td.textContent=text; tr.append(td); }); tbody.append(tr); });
     }
