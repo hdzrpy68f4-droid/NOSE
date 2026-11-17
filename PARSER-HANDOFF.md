@@ -2049,3 +2049,4 @@ test/b2b-compliance-kit-test.mjs     one count: four other mentions of dispensar
 - [Release 2 published, 2026-11-15](docs/handoff/14-records.md#release-2-published-2026-11-15)
 - [The dispensary code read against the privacy page, 2026-11-16](docs/handoff/14-records.md#the-dispensary-code-read-against-the-privacy-page-2026-11-16)
 - [The vote asks before it tells, 2026-11-16](docs/handoff/14-records.md#the-vote-asks-before-it-tells-2026-11-16)
+- [Release 3 published, 2026-11-17](docs/handoff/14-records.md#release-3-published-2026-11-17)

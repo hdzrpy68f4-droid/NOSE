@@ -2934,3 +2934,24 @@ which the owner approved.
   product D-106, in place of `vote.png` - a new name, since `/images/*` is
   cached for a year. Its alt text no longer says "the match label it was
   given".
+
+### Release 3 published, 2026-11-17
+
+The last step of "The vote asks before it tells", run in the Codespace
+(driven from the owner's browser, at the owner's request).
+
+- `git pull` brought it to `a429e24`; `git status --short` was empty, so
+  `package-lock.json` needed no reset.
+- `node scripts/b2b-release.js` (after a dry run): release 3 from commit
+  `a429e24`, `nose-matches.js` 67,021 bytes,
+  `sha384-n4aXIwLMO7wGi7tOODJiTx+GhzMUQuR/eVIl243UHcqJ15+vQnd3iD6h1CLx5STk`;
+  `nose-matches.css` 5,788 bytes,
+  `sha384-R2Sxy67O6gPnbBB7Gx4hwPTj/C85nqi1xO/mthRYsfhTTYCfCtkAk+5tc5nVWLNW`,
+  the same stylesheet as release 2. Both written, read back and matched; the
+  row committed on its own as `5f21b50`.
+- `node scripts/b2b-release-check.js --site https://nose-app.com`: releases 1
+  (`77f96a8`), 2 (`c96b15a`) and 3 (`a429e24`) each "git ok store ok site ok".
+- A store on release 1 or 2 still shows the label before the vote is answered
+  until its page carries release 3's tag, given in `docs/B2B-RELEASES.md`.
+  No compliance kit was made for release 3 this time
+  (`node scripts/b2b-compliance-kit.js --release 3`, in the Codespace).
