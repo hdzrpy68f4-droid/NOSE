@@ -1,0 +1,115 @@
+/* NOSE home page (DESIGN.md). Linked after css/world. build.sh fingerprints it:
+   css/home.<hash>.css. Colours in js/hero and js/aroma-bar are set by script
+   through the CSSOM, which the CSP (style-src 'self') allows. */
+
+/* ---- the opening screen: one screen, the desk at the bottom of it ---- */
+.hero{min-height:calc(100svh - 65px);display:flex;flex-direction:column;padding:28px 0 20px}
+.hero h1{margin:0;font-size:clamp(3.1rem,8.6vw,7.25rem);line-height:.98;letter-spacing:-.03em;text-align:center}
+.hero h1 span{display:block}
+.lede{max-width:33em;margin:16px auto 0;color:var(--soft);text-align:center}
+.hero .button-row{justify-content:center;margin-top:22px}
+
+.desk{flex:1;display:flex;flex-direction:column;margin-top:28px}
+.vol-row{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding-bottom:12px;border-bottom:1px solid var(--rule)}
+.vol-label{font-size:.9375rem;color:var(--soft)}
+.vol{font-family:var(--display);font-size:2.5rem;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.vol small{font-size:.5em}
+.eq-box{position:relative;flex:1;min-height:170px;margin-top:16px}
+.eq-box canvas{position:absolute;inset:0;width:100%;height:100%}
+.channels{display:grid;grid-template-columns:repeat(6,1fr);margin:10px 0 0;padding:0;list-style:none;border-top:1px solid var(--rule)}
+.channels li{padding-top:8px;text-align:center;font-size:.8125rem;color:var(--soft)}
+.channels b{display:block;color:var(--ink);font-weight:650;font-variant-numeric:tabular-nums}
+.picker{display:flex;align-items:center;gap:12px;margin-top:14px}
+.picker button{flex:none;width:44px;height:44px;background:none;color:var(--ink);border:1px solid var(--rule);border-radius:var(--r);font-size:1.125rem;cursor:pointer}
+.picker button:hover{border-color:var(--ink)}
+.jar{flex:1;min-width:0;text-align:center}
+.jar strong{display:block;font-family:var(--display);font-weight:400;font-size:1.625rem;line-height:1.1;letter-spacing:-.01em}
+.jar span{display:block;margin-top:4px;font-size:.9375rem;color:var(--soft)}
+.desk-note{margin:12px 0 0;font-size:.8125rem;color:var(--soft);text-align:center}
+@media (min-width:900px){
+  .hero{padding-top:56px}
+  .hero h1 span{display:inline}
+  .vol{font-size:3.75rem}
+  .picker{width:560px;margin-inline:auto}
+  .jar strong{font-size:2.5rem}
+  .jar span{font-size:1rem}
+}
+
+/* ---- sections ---- */
+.section{padding:var(--section) 0;border-top:1px solid var(--rule);scroll-margin-top:72px}
+.section h2{max-width:16em;margin-bottom:0;font-size:clamp(2rem,4.6vw,3.5rem);line-height:1.05;letter-spacing:-.02em}
+.section-lead{max-width:33em;margin:18px 0 0;color:var(--soft)}
+.small{font-size:.9375rem;color:var(--soft)}
+
+/* three plain statements on rules */
+.principles{display:grid;grid-template-columns:repeat(3,1fr);margin:0;padding:0;list-style:none;border-top:1px solid var(--rule)}
+.principles li{padding:22px 24px 24px 0}
+.principles li + li{padding-left:24px;border-left:1px solid var(--rule)}
+.principles strong{display:block;font-weight:650}
+.principles span{color:var(--soft);font-size:.9375rem}
+
+/* two jars compared */
+.compare-grid{display:grid;grid-template-columns:1fr 1.15fr;gap:56px;align-items:start}
+.compare-panel{padding:24px;background:var(--raised);border:1px solid var(--rule)}
+.compare-controls{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.compare-controls label{display:grid;gap:6px;font-size:.9375rem;color:var(--soft)}
+.compare-controls select{width:100%;min-height:48px;padding:0 12px;background:var(--field);color:var(--ink);border:1px solid var(--rule);border-radius:var(--r)}
+.profile-label{margin:20px 0 8px;font-size:.9375rem;color:var(--soft)}
+.profile-bar{display:flex;height:30px;overflow:hidden;background:var(--field)}
+.profile-segment{display:flex;align-items:center;justify-content:center;overflow:hidden;min-width:0;transition:width .42s cubic-bezier(.2,.8,.2,1)}
+.profile-segment span{padding-inline:7px;font-size:.8125rem;font-weight:650;white-space:nowrap}
+.score-row{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center;margin-top:22px;padding-top:20px;border-top:1px solid var(--rule)}
+.score{font-family:var(--display);font-size:3.75rem;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.score small{font-size:.5em}
+.score-label{font-weight:650}
+.score-copy{margin:2px 0 0;color:var(--soft);font-size:.9375rem}
+.compare-note{margin:16px 0 0;font-size:.8125rem;color:var(--soft)}
+@media (prefers-reduced-motion:reduce){.profile-segment{transition:none}}
+
+/* three steps: a real sequence, so it is numbered */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);margin:44px 0 0;padding:0;list-style:none;counter-reset:step;border-top:1px solid var(--rule)}
+.steps li{counter-increment:step;padding:24px 24px 0 0}
+.steps li + li{padding-left:24px;border-left:1px solid var(--rule)}
+.steps li::before{content:counter(step);display:block;font-family:var(--display);font-size:2.5rem;line-height:1;color:var(--soft)}
+.steps h3{margin:18px 0 8px;font-size:1.625rem;line-height:1.15}
+.steps p{margin:0;color:var(--soft)}
+
+/* the six families: each is a thing a person opens, so each is a card */
+.families{display:grid;grid-template-columns:repeat(3,1fr);gap:40px 24px;margin-top:44px}
+.family-card{display:flex;flex-direction:column;text-decoration:none}
+.family-figure{margin:0;overflow:hidden;aspect-ratio:4 / 3;background:var(--raised)}
+.family-figure img{display:block;width:100%;height:100%;object-fit:cover}
+.family-swatch{height:4px}
+.family-card h3{margin:16px 0 4px;font-size:1.625rem;line-height:1.15}
+.family-card p{margin:0;color:var(--soft);font-size:.9375rem}
+.family-link{display:none}
+.family-card:hover h3{text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:1px}
+
+/* the position */
+.position-grid{display:grid;grid-template-columns:1fr 1.15fr;gap:56px;align-items:start}
+.position-grid .button{margin-top:26px}
+.position-list{margin:0;border-top:1px solid var(--rule)}
+.position-row{display:grid;grid-template-columns:9em 1fr;gap:20px;padding:20px 0;border-bottom:1px solid var(--rule)}
+.position-row dt{font-weight:650}
+.position-row dd{margin:0;color:var(--soft)}
+
+.final{text-align:center}
+.final h2{max-width:none}
+.final p{margin:18px auto 0;color:var(--soft)}
+.final .button-row{justify-content:center;margin-top:26px}
+.final .small{margin-top:28px}
+
+@media (max-width:899px){
+  .compare-grid,.position-grid{grid-template-columns:1fr;gap:32px}
+  .principles,.steps{grid-template-columns:1fr}
+  .principles li,.principles li + li{padding:18px 0;border-left:0}
+  .principles li + li,.steps li + li{border-top:1px solid var(--rule)}
+  .steps li,.steps li + li{padding:22px 0;border-left:0}
+  .steps li:last-child{padding-bottom:0}
+  .families{grid-template-columns:repeat(2,1fr);gap:28px 16px}
+  .position-row{grid-template-columns:1fr;gap:4px}
+  .compare-panel{padding:18px}
+}
+@media (max-width:420px){
+  .compare-controls{grid-template-columns:1fr}
+}

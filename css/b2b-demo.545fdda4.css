@@ -25,12 +25,12 @@
 .demo-field textarea {
   width: 100%;
   border: 1px solid var(--line-strong);
-  border-radius: 10px;
-  background: white;
+  border-radius:var(--radius);
+  background:var(--paper);
   color: var(--ink);
   padding: 8px 10px;
 }
-.demo-field textarea { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.8125rem; min-height: 180px; }
+.demo-field textarea { font-family: var(--body); font-size: 0.8125rem; min-height: 180px; }
 .demo-routes { border: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 14px; align-content: start; }
 .demo-routes legend { padding: 0; margin-bottom: 5px; }
 .demo-routes label { display: inline-flex; gap: 6px; align-items: center; color: var(--ink); }
@@ -38,12 +38,12 @@
 .demo-stage { min-width: 0; }
 /* ?view=pitch: the widget alone, full width, until the controls are shown. */
 .demo-pitch .demo-grid { grid-template-columns: minmax(0, 1fr); }
-.demo-shop { background: white; border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; color: var(--ink); }
-.demo-events { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.8125rem; }
+.demo-shop { background:var(--paper); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; color: var(--ink); }
+.demo-events { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-family: var(--body); font-size: 0.8125rem; }
 .demo-events:empty { display: none; }
 
 .demo-menu { margin-top: 34px; }
-.demo-menu .data-table td:first-child { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: nowrap; }
+.demo-menu .data-table td:first-child { font-family: var(--body); white-space: nowrap; }
 
 @media (max-width: 520px) {
   .demo-form { grid-template-columns: minmax(0, 1fr); }

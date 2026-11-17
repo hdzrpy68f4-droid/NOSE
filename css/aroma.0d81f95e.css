@@ -1,0 +1,74 @@
+/* NOSE aroma pages (DESIGN.md): /aromas/ and the six family pages. Linked
+   after css/world, with no older stylesheet. build.sh fingerprints it:
+   css/aroma.<hash>.css. A family's colour appears as light (a rule, a swatch),
+   never as text: on the dark field pine and earthy fall under 4.5:1. */
+
+body.theme-citrus,.a-citrus{--family:var(--citrus)}
+body.theme-earthy,.a-earthy{--family:var(--earthy)}
+body.theme-spice,.a-spice{--family:var(--spice)}
+body.theme-pine,.a-pine{--family:var(--pine)}
+body.theme-floral,.a-floral{--family:var(--floral)}
+body.theme-herbal,.a-herbal{--family:var(--herbal)}
+
+.breadcrumb{display:flex;flex-wrap:wrap;gap:8px;padding-top:20px;font-size:.875rem;color:var(--soft)}
+.breadcrumb a{text-decoration:none}
+.breadcrumb a:hover{color:var(--ink);text-decoration:underline}
+
+/* ---- opening ---- */
+.a-hero{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center;padding:clamp(32px,6vw,72px) 0 clamp(48px,7vw,88px)}
+.a-hero h1{margin:0;font-size:clamp(3.4rem,10vw,8rem);line-height:.95;letter-spacing:-.035em}
+.a-hero-index h1{font-size:clamp(2.6rem,6.6vw,5.5rem);line-height:1;max-width:12em}
+.a-hero-index{grid-template-columns:1fr}
+.a-lede{max-width:30em;margin:22px 0 0;color:var(--soft);font-size:1.125rem}
+.a-photo{margin:0;border-bottom:4px solid var(--family)}
+.a-photo img{display:block;width:100%;height:auto;aspect-ratio:4 / 3;object-fit:cover}
+
+/* ---- sections ---- */
+.a-band{padding:var(--section) 0;border-top:1px solid var(--rule)}
+.a-band h2{margin:0;font-size:clamp(1.9rem,4vw,3rem);line-height:1.05;letter-spacing:-.02em}
+.a-band p{margin:18px 0 0;max-width:33em;color:var(--soft)}
+.a-split{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:start}
+
+/* the words a family brings to mind, on rules */
+.a-notes,.a-compounds{margin:0;padding:0;list-style:none;border-top:1px solid var(--rule)}
+.a-notes li,.a-compounds li{display:flex;align-items:center;gap:14px;padding:16px 0;border-bottom:1px solid var(--rule);font-family:var(--display);font-size:clamp(1.375rem,2.4vw,1.875rem);line-height:1.15}
+.a-notes li::before,.a-compounds li::before{content:"";flex:none;width:4px;align-self:stretch;background:var(--family)}
+
+.a-pair{display:grid;grid-template-columns:1fr 1fr;gap:56px}
+.a-pair h2{font-size:clamp(1.6rem,3vw,2.25rem)}
+
+.a-final{text-align:center}
+.a-final p{margin-inline:auto}
+.a-final .button-row{justify-content:center;margin-top:28px}
+
+/* the loop through the six */
+.a-pager{display:grid;grid-template-columns:1fr auto 1fr;gap:16px;align-items:center;padding:28px 0 56px;border-top:1px solid var(--rule)}
+.a-pager a{display:flex;flex-direction:column;justify-content:center;min-height:44px;text-decoration:none;font-family:var(--display);font-size:1.5rem;line-height:1.1}
+.a-pager a span{font-family:var(--body);font-size:.875rem;color:var(--soft)}
+.a-pager a[rel="next"]{text-align:right;align-items:flex-end}
+.a-pager a:not([rel]){font-family:var(--body);font-size:.9375rem;color:var(--soft);text-decoration:underline;text-underline-offset:4px}
+.a-pager a:hover{color:var(--ink)}
+
+/* ---- /aromas/: each family is a thing a person opens ---- */
+.a-index{padding-bottom:var(--section)}
+.a-families{display:grid;grid-template-columns:repeat(3,1fr);gap:44px 24px;margin:0;padding:0;list-style:none}
+.a-family a{display:flex;flex-direction:column;height:100%;text-decoration:none}
+.a-family-photo{margin:0;overflow:hidden;background:var(--raised)}
+.a-family-photo img{display:block;width:100%;height:auto;aspect-ratio:4 / 3;object-fit:cover}
+.a-swatch{height:4px;background:var(--family)}
+.a-family h2{margin:16px 0 0;font-size:1.875rem;line-height:1.1}
+.a-anchor{margin:6px 0 0;color:var(--ink);font-weight:650;font-size:.9375rem}
+.a-family p:last-child{margin:6px 0 0;color:var(--soft);font-size:.9375rem}
+.a-family a:hover h2{text-decoration:underline;text-underline-offset:5px;text-decoration-thickness:1px}
+
+@media (max-width:899px){
+  .a-hero,.a-split,.a-pair{grid-template-columns:1fr;gap:28px}
+  .a-photo{order:-1}
+  .a-pair{gap:44px}
+  .a-families{grid-template-columns:repeat(2,1fr);gap:32px 16px}
+  .a-family h2{font-size:1.5rem}
+  .a-pager a{font-size:1.25rem}
+}
+@media (max-width:420px){
+  .a-families{grid-template-columns:1fr}
+}
