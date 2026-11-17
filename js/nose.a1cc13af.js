@@ -780,6 +780,47 @@
 
     /* Resolves true once the camera is live (or already was), false if it
        could not start — the Scan QR tab uses this to decide whether to scroll. */
+    /* The library's start, remembered until it settles. Stopping while it is
+       still starting removed the video mid-play(): Chromium threw "The play()
+       request was interrupted", and the camera would not start again on
+       coming back to Scan QR (2026-11-17). stopQrScanner waits for it. */
+    let qrStarting=Promise.resolve();
+    function libStart(camera,config){
+      const started=qrScanner.start(camera,config,handleQrResult,()=>{});
+      /* the library's promise settles before its video's play() does: a
+         start is over once the video plays (or two seconds have passed) */
+      const playing=()=>new Promise(resolve=>{
+        const video=document.querySelector('#qrReader video');
+        if(!video||(!video.paused&&video.readyState>=3)) return resolve();   // paused turns false as soon as play() is asked
+        video.addEventListener('playing',resolve,{once:true}); setTimeout(resolve,2000);
+      });
+      qrStarting=started.then(playing,()=>{});
+      return started.then(()=>{ coverPreview(); return true; });
+    }
+
+    /* On a phone the preview box is 4:3 and the camera's picture often is
+       not (an iPhone's is square in portrait). object-fit:cover is not
+       applied to a live camera in every Safari, which left the picture
+       letterboxed in the box (2026-11-17), so the video is sized here to
+       cover the box, centred: what is cropped is still read, since the
+       scanner reads the camera's own frames. Wider screens leave it alone. */
+    const PHONE=matchMedia('(max-width:720px)');
+    function coverPreview(){
+      const reader=$id('qrReader'), video=reader&&reader.querySelector('video');
+      if(!video) return;
+      if(!video.dataset.cover){ video.dataset.cover='1'; video.addEventListener('loadedmetadata',coverPreview); video.addEventListener('resize',coverPreview); }
+      const props=['width','height','left','top','right','bottom','object-fit','max-width'];
+      if(!PHONE.matches||!video.videoWidth||!video.videoHeight){ props.forEach(x=>video.style.removeProperty(x)); return; }
+      const box=reader.getBoundingClientRect();
+      const scale=Math.max(box.width/video.videoWidth,box.height/video.videoHeight);
+      const w=video.videoWidth*scale, h=video.videoHeight*scale;
+      const set=(k,v)=>video.style.setProperty(k,v,'important');
+      set('width',`${w}px`); set('height',`${h}px`); set('max-width','none');
+      set('left',`${(box.width-w)/2}px`); set('top',`${(box.height-h)/2}px`);
+      set('right','auto'); set('bottom','auto'); set('object-fit','fill');
+    }
+    window.addEventListener('resize',()=>coverPreview());
+
     async function startQrScanner(cameraId=''){
       if(!scannerAvailable()) return false;
       if(qrScannerRunning) return true;
@@ -794,6 +835,7 @@
       try {
         qrScanner ||= new Html5Qrcode('qrReader', {formatsToSupport:[Html5QrcodeSupportedFormats.QR_CODE],verbose:false});
         const cameras=await loadCameraChoices();
+        if(superseded()){ setScannerButtons(false); return false; }   // left before the camera was asked for
         const rear=cameras.find(camera=>/back|rear|environment/i.test(camera.label));
         const chosen=cameraId || selectedCameraId || rear?.id || '';
         const cameraConfig=chosen ? {deviceId:{exact:chosen}} : {facingMode:{ideal:'environment'}};
@@ -804,7 +846,7 @@
           disableFlip:false,
           experimentalFeatures:{useBarCodeDetectorIfSupported:true}
         };
-        await qrScanner.start(cameraConfig,config,handleQrResult,()=>{});
+        await libStart(cameraConfig,config);
         if(superseded()){ await stopQrScanner(); return false; }
         selectedCameraId=chosen || document.getElementById('cameraSelect').value;
         setScannerButtons(true);
@@ -812,11 +854,12 @@
         setTimeout(improveCameraFocus,500);
         return true;
       } catch(error){
+        if(superseded()){ setScannerButtons(false); return false; }   // stopped while starting: no retry
         // Some iPhones reject an exact device id before labels are available. Retry by facing mode.
         try {
           qrScanner ||= new Html5Qrcode('qrReader', {formatsToSupport:[Html5QrcodeSupportedFormats.QR_CODE],verbose:false});
           const config={fps:15,aspectRatio:1.333333,disableFlip:false,experimentalFeatures:{useBarCodeDetectorIfSupported:true}};
-          await qrScanner.start({facingMode:'environment'},config,handleQrResult,()=>{});
+          await libStart({facingMode:'environment'},config);
           if(superseded()){ await stopQrScanner(); return false; }
           setScannerButtons(true);
           await loadCameraChoices();
@@ -860,10 +903,25 @@
 
     async function stopQrScanner(){
       if(!qrScanner) return;
-      if(qrScannerRunning){
-        try { await qrScanner.stop(); } catch {}
+      scanAttempt++;   // a start still in progress sees it was superseded
+      await qrStarting;
+      if(!qrScanner) return;   // another stop, meanwhile, let the scanner go
+      /* the library's own state: a start that has just finished may not have
+         set qrScannerRunning yet (Html5QrcodeScannerState.SCANNING is 2) */
+      if(qrScannerRunning || qrScanner.getState?.()===2){
+        try { await qrScanner.stop(); }
+        catch {
+          /* a failed stop leaves the library sure it is still scanning, and
+             it then refuses every start: let the camera go and begin again
+             with a new scanner */
+          document.querySelectorAll('#qrReader video').forEach(video=>{ video.srcObject?.getTracks?.().forEach(track=>track.stop()); });
+          $id('qrReader').replaceChildren();
+          qrScanner=null;
+          setScannerButtons(false);
+          return;
+        }
       }
-      try { await qrScanner.clear(); } catch {}
+      try { await qrScanner?.clear(); } catch {}
       setScannerButtons(false);
     }
 

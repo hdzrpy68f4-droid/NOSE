@@ -5076,3 +5076,42 @@ scanning the jar, the easiest way for most people.
   it to settle before leaving: leaving at once let Chromium report "The
   play() request was interrupted because the media was removed from the
   document" as an uncaught error, once in three runs.
+
+### The camera fills its box, and leaving it while it starts, 2026-11-17
+
+The owner, on an iPhone: the camera's picture did not fill the preview's box
+(a narrower picture centred in the 4:3 box, dark bands either side); and fix
+the race noted that morning.
+
+- **The preview is sized in `js/nose`** (`coverPreview`): on a phone (720px
+  and under) the video is set to cover the box at its own proportions,
+  centred, the overflow cut off by the box. css/world asked for
+  `object-fit: cover`, which Chromium applies, but the iPhone showed the
+  picture letterboxed; object-fit has not always been applied to a live
+  camera in Safari. It runs when the scanner starts, when the stream's size
+  changes (`loadedmetadata`, `resize`) and when the window does; wider
+  screens are left as they were. What is cut off is still read: the scanner
+  reads the camera's own frames. In Chromium, with a fake 640x480 camera the
+  video is the box (316x237); with a 3:4 one (360x480) it is 316x421, 92px
+  above and below cut off, nothing stretched.
+- **Leaving Scan QR while its camera was starting broke the camera**, not only
+  the console. Reproduced in Chromium with a fake camera, pressing Start
+  camera then COA link after 0 to 800ms, twice each: at 0 and 20ms the
+  library's `stop()` removed the video before its `play()` had finished,
+  threw, and was left sure it was still scanning, so it refused every later
+  start - the camera would not come back on returning to Scan QR (8 problems
+  in 20 tries). Now:
+  - every start goes through `libStart`, remembered until the video is really
+    playing (its `playing` event; `paused` turns false as soon as play() is
+    asked) or two seconds pass, and `stopQrScanner` waits for it;
+  - a stop counts as superseding a start in progress (`scanAttempt`), so a
+    start that has not reached the camera yet stops there, and a failed first
+    start is not retried;
+  - the stop asks the library's own state (`getState() === 2`, scanning),
+    since a start that has just finished may not have said so yet;
+  - if the library's stop fails anyway, its camera tracks are stopped, the
+    box emptied and a new scanner made at the next start.
+  The same 20 tries twice: no problem. `input-paths-test` gained a check
+  (Chromium, with the fake camera): left at 0, 15 and 40ms, the camera starts
+  again on coming back each time, with no uncaught error.
+- Watched in Chromium only; Safari is the owner's to see (`open.md`).

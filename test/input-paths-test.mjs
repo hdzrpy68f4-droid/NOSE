@@ -1027,6 +1027,26 @@ try {
     await settled();
     await p.click('#urlTab');   // leaves Scan QR, which stops the camera it started
 
+    /* Leaving Scan QR while its camera is still starting (since 2026-11-17).
+       It used to remove the video mid-play(): an uncaught "The play() request
+       was interrupted", and the scanner, sure it was still scanning, refused
+       every later start. Now: no uncaught error (the page-error check at the
+       end), and the camera starts again on coming back. */
+    if (CAMERA) {
+      const back = [];
+      for (const wait of [0, 15, 40]) {
+        await p.click('#scanTab');
+        if (wait) await p.waitForTimeout(wait);
+        await p.click('#urlTab');
+        await p.waitForTimeout(1200);
+        await p.click('#scanTab');
+        back.push(await p.waitForFunction(() => !document.getElementById('stopScannerButton').disabled, null, { timeout: 8000 }).then(() => true, () => false));
+        await p.click('#urlTab');
+        await p.waitForTimeout(300);
+      }
+      check('Scan QR left while its camera starts: the camera starts again on coming back, each of three times', back.every(Boolean), JSON.stringify(back));
+    }
+
     /* A failed link read is said in a status region. */
     await p.route('**/api/coa', route => route.fulfill({ status: 422, contentType: 'application/json',
       body: JSON.stringify({ error: 'That report could not be read reliably.', reasons: ['made up for this check'] }) }));

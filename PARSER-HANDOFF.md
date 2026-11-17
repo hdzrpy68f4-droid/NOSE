@@ -1860,6 +1860,7 @@ under the cap.
 - [The account pages, 404 and the demo rebuilt, 2026-11-17](docs/handoff/13-records.md#the-account-pages-404-and-the-demo-rebuilt-2026-11-17)
 - [Two small open items closed, 2026-11-17](docs/handoff/13-records.md#two-small-open-items-closed-2026-11-17)
 - [Scan QR first, and no Upload tab, 2026-11-17](docs/handoff/13-records.md#scan-qr-first-and-no-upload-tab-2026-11-17)
+- [The camera fills its box, and leaving it while it starts, 2026-11-17](docs/handoff/13-records.md#the-camera-fills-its-box-and-leaving-it-while-it-starts-2026-11-17)
 
 ## 14. Dispensary integration
 

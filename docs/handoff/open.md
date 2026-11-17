@@ -71,13 +71,11 @@ panel it takes the card from, on both paths, so it waits for its own prompt.
   Its normal weight comes from the element's `style` property, which MDN
   says `style-src` does not block; Safari and Firefox have not been looked
   at.
-- **Leaving Scan QR within a second of starting the camera throws in
-  Chromium**: "The play() request was interrupted because the media was
-  removed from the document", an unhandled rejection from the scanner
-  library's video (13-records, "Scan QR first, and no Upload tab"). Nothing
-  shows on the page; it may reach the client-error beacon. Seen in
-  `input-paths-test` when the camera was stopped while starting; the test now
-  waits. Catching it means wrapping the library's start in `js/nose`.
+- **The camera preview's cover sizing was watched in Chromium only** (13-records,
+  "The camera fills its box, and leaving it while it starts", 2026-11-17),
+  with fake cameras at 4:3 and 3:4. The owner's iPhone showed the picture
+  letterboxed before it; whether it now fills the box there is for the owner
+  to see.
 - **How `novelty` was verified, 2026-09-23.** No npm here: the gates ran on
 pdfjs-dist 5.7.284 standing in for unpdf (56/3, 56/0, clean, 4.124/0.944 on the
 untouched branch first), PGlite's API over a throwaway Postgres 16 cluster, and
