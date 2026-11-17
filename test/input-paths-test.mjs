@@ -654,6 +654,9 @@ try {
     moved && (await panelOf()) === '#scanPanel', `card in ${await panelOf()}`);
   check('...and the COA link panel no longer holds it',
     await page.evaluate(() => !document.getElementById('urlPanel').contains(document.getElementById('coaConfirm'))));
+  await page.click('#urlTab');
+  check('...nor its message: the COA link tab no longer says "Check the values below" over nothing (since 2026-11-17)',
+    !(await visible('#urlMessage')), `the COA link tab says "${await text('#urlMessage')}"`);
 
   /* ---- a refused report ---------------------------------------------------- */
   await page.click('#urlTab');

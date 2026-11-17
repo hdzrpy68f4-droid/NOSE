@@ -31,7 +31,6 @@ const version = require(path.join(LIB, 'version.js'));
 const STAMPED_FILES = ['netlify/functions/lib/parse-coa.js', 'netlify/functions/lib/coa-dates.js',
                        'netlify/functions/lib/extract-text.js'];
 const SECRETS = ['NOSE_DB_URL', 'NETLIFY_SITE_ID', 'NETLIFY_AUTH_TOKEN'];
-const MIN_TEXT = 200;          // coa.js refuses a PDF with less text than this, before parsing
 const PAGE_SIZE = 100;
 const MOVE = 0.001;            // a terpene that moves more than this is printed
 const VERSION_KEYS = ['parserVersion', 'extractorVersion'];   // nose.output_hash ignores these
@@ -249,7 +248,13 @@ function describe(sha, before, after) {
 }
 
 module.exports = {
-  ROOT, LIB, STAMPED_FILES, SECRETS, MIN_TEXT, PAGE_SIZE, MOVE, OUTCOMES,
+  ROOT, LIB, STAMPED_FILES, SECRETS, PAGE_SIZE, MOVE, OUTCOMES,
+  /* The scanner's own floor (lib/read-report.js, which coa.js reads through):
+     a PDF with less text than this is refused before parsing, so a re-run
+     stores nothing for it either. One constant, not a copy (2026-11-17);
+     read when asked for, so a tool that never reads a report (the pilot
+     report) does not load the reader. */
+  get MIN_TEXT() { return require(path.join(LIB, 'read-report.js')).MIN_TEXT; },
   missingSecrets, stampsOrRefusal, openDb, connectAsWriter, openBlobs, explain,
   readRows, readRow, asStored, asStoredText, textSha,
   canonical, reading, sameReading, classify, describe, short, labStrain

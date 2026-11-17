@@ -5115,3 +5115,26 @@ the race noted that morning.
   (Chromium, with the fake camera): left at 0, 15 and 40ms, the camera starts
   again on coming back each time, with no uncaught error.
 - Watched in Chromium; then the owner, on an iPhone in Safari the same day, reported the picture fills the box.
+
+### A message left over nothing, and one text floor, 2026-11-17
+
+Two open items, taken up once Scan QR became the first way in.
+
+- **A card taken by a read in another tab takes its message with it.** Read a
+  link, leave its card open, then scan a code: the card moved to Scan QR with
+  the new report, and the COA link tab still said "<lab> read. Check the
+  values below, then add the jar." over nothing (seen 2026-09-23).
+  `fetchCoaReport()` now hides the message of the read whose card it takes,
+  when that read was in another tab, before it starts; the same holds the
+  other way. No new words. `input-paths-test` checks the COA link tab's
+  message is gone after the scan; without the fix that check fails with the
+  very sentence, in Chromium and Firefox.
+- **The re-run tools' text floor is the scanner's constant.**
+  `scripts/lib/rerun.js` had its own `MIN_TEXT = 200`; it now takes
+  `MIN_TEXT` from `lib/read-report.js`, as `b2b-coverage.js` already did -
+  through a getter, read when asked for, since requiring the reader when
+  `rerun.js` loads broke `b2b-pilot-test`, whose copied tree holds `rerun.js`
+  for the pilot report but not the reader the report never uses - so
+  `reparse.js`, `backfill-from-blobs.js` and `seed-from-fixtures.js` refuse
+  below the very number the scanner does. `rerun-test` checks the two are
+  one and that `rerun.js` writes no number of its own.

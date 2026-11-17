@@ -56,6 +56,12 @@ async function run(db, log = console.log) {
   const count = async table => (await one(`select count(*)::int as n from nose.${table}`)).n;
   const rejects = async fn => { try { await fn(); return null; } catch (e) { return e; } };
   const has = (lines, re) => lines.some(l => re.test(l));
+
+  /* the re-run tools' text floor is the scanner's own constant, not a copy
+     of its number (since 2026-11-17) */
+  check("rerun.MIN_TEXT is lib/read-report.js's MIN_TEXT, and rerun.js writes no number of its own",
+    rerun.MIN_TEXT === require(path.join(ROOT, 'netlify/functions/lib/read-report.js')).MIN_TEXT
+      && !/MIN_TEXT\s*=\s*\d/.test(fs.readFileSync(path.join(ROOT, 'scripts/lib/rerun.js'), 'utf8')), true);
   const lastRun = async () => (await one(`
     select mode, parser_version, extractor_version, documents, last_document_id::text as last, unchanged,
            values_changed, accepted_to_rejected as a2r, rejected_to_accepted as r2a, failed, new_texts, no_pdf

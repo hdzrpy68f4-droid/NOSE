@@ -474,6 +474,11 @@
     }
 
     async function fetchCoaReport(href,messageId){
+      /* A card still open from a read in another tab is taken by this one:
+         that tab's message ("<lab> read. Check the values below...") would be
+         left over nothing, so it goes with the card (2026-11-17). */
+      const before=coaPending&&coaPending.messageId;
+      if(before&&before!==messageId&&$id(before)) $id(before).hidden=true;
       hideCoaConfirm();
       showMessage(messageId,'Reading the lab report\u2026','neutral');
       let res,data;

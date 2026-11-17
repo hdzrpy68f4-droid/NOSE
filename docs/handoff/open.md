@@ -42,13 +42,6 @@ promise that NOSE keeps nothing.
   repo, §13 above). `match-test.js` cannot see it; a preview built after
   today should load `js/match-math.<hash>.js` rather than carry a copy. Its
   copy predates `shownScore()`, so until it is rebuilt that way it rounds.
-- **A COA link card taken by a scan leaves its message behind.** Read a link,
-leave its card open, then scan a code on Scan QR. The card moves to Scan QR with
-the new report, and the COA link tab still says "<lab> read. Check the values
-below, then add the jar." with nothing below it. Seen in Chromium, 2026-09-23.
-The reverse cannot happen: opening Scan QR restarts the camera, which replaces
-that tab's message. A fix would change what `fetchCoaReport()` says in the
-panel it takes the card from, on both paths, so it waits for its own prompt.
 - **The card's word joiner after the en dash** (above, "Water activity against
   ASTM D8197") was watched in Chromium only, not Safari or Firefox. UAX #14
   says how WJ and an en dash behave, but the page read gave its class
@@ -163,12 +156,6 @@ schema comment if wanted.
   workflow file, so the promote item above applies to it. Whether Dependabot
   alerts are switched on is a repository setting nobody has confirmed:
   Settings, then Code security.
-- **The archive's re-run tools keep their own text floor**: `scripts/lib/rerun.js`
-  has `MIN_TEXT = 200`, its comment saying `coa.js` refuses below it, and
-  `reparse.js`, `backfill-from-blobs.js` and `seed-from-fixtures.js` read it
-  (above, "One way to read a report"). The same number as
-  `lib/read-report.js`'s, not the same constant; M1 named only `coa.js` and
-  the coverage report, so it waits for its own prompt.
 - **The fixed 500 has not been seen live.** Offline, two forced throws give
   it (above, "coa.js in the current format"); live, nothing is known to
   throw, and making one would mean shipping a fault. The `null` curl shows
