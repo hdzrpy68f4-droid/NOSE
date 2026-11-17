@@ -111,7 +111,7 @@ Square and fine. Controls have a 3px radius and a 1px border. Meter segments are
 - **Readouts.** A figure in Fraunces with its unit small beside it and a plain label on the left, on a hairline.
 - **Buttons.** Primary: ink fill, field text. Secondary: 1px ink border. Both 48px high, 3px radius, sentence case, named for what happens ("Match a jar"). No arrows in link or button text.
 - **The jar picker.** Two 44px bordered arrow buttons either side of the jar's name in Fraunces (1.625rem on a phone, 2.5rem on desktop) with its one-line description under it.
-- **Header.** The six-bar mark, the wordmark in Fraunces, plain links in soft that turn ink, and a bordered menu button on a phone. Footer: the same links on rules.
+- **Header.** The six-bar mark, whose bars move like a level meter (the owner's call, 2026-11-17; still for reduced motion), the wordmark in Fraunces, plain links in soft that turn ink, and a bordered menu button on a phone. Footer: the same links on rules.
 - **Focus.** A 3px solid ink outline, offset 3px, on every interactive element.
 
 ## Do's and Don'ts
@@ -120,6 +120,6 @@ Square and fine. Controls have a 3px radius and a 1px border. Meter segments are
 - Do say what a figure is and that a sample is a sample.
 - Don't use a family colour for anything but its family. Don't add an accent colour.
 - Don't box content in cards, put a label above a heading, join meta with middle dots, or append arrows to links.
-- Don't add a second ambient animation, a scroll reveal on every section, or hover motion on every element.
+- Don't add another ambient animation beyond the desk and the wordmark's meter, a scroll reveal on every section, or hover motion on every element.
 - Don't invent proof: no statistics, logos, ratings or testimonials (`PRODUCT.md`, Evidence on Hand).
 - Don't write a word about effects (`CLAUDE.md`, the scope rule).

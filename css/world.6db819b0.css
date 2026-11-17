@@ -149,7 +149,7 @@ input,select,textarea,table,.data-table,.result-stat,.position-row{border-radius
 /* the same, for what the old sheets set by name or by a literal colour */
 .nav-links .nav-cta:hover,.nav-links .nav-cta[aria-current="page"]{background:var(--ink);color:var(--field) !important}
 .footer-links h3{text-transform:none;letter-spacing:0}
-.brand-bars i{animation:none;border-radius:0;transform:none}
+.brand-bars i{border-radius:0}
 .prose :where(p,li){color:var(--soft)}
 .prose :where(strong,b){color:var(--ink)}
 .coa-sheet,.modal{background:var(--raised);box-shadow:none}
@@ -194,3 +194,15 @@ input,select,textarea,table,.data-table,.result-stat,.position-row{border-radius
   .footer-links a{min-height:40px;font-size:.875rem}
   .footer-bottom{margin-top:20px;padding-top:16px}
 }
+
+/* the wordmark's six bars move like a level meter, on every page (the
+   motion the site had before the redesign, restored 2026-11-17) */
+.brand-bars i{transform-origin:bottom;animation:nose-eq 2.4s ease-in-out infinite}
+@keyframes nose-eq{0%,100%{transform:scaleY(.52)}22%{transform:scaleY(1)}44%{transform:scaleY(.68)}66%{transform:scaleY(.94)}84%{transform:scaleY(.60)}}
+.brand-bars i.bg-citrus{animation-duration:2.3s;animation-delay:-.20s}
+.brand-bars i.bg-earthy{animation-duration:2.7s;animation-delay:-1.10s}
+.brand-bars i.bg-spice{animation-duration:2.1s;animation-delay:-.60s}
+.brand-bars i.bg-pine{animation-duration:2.9s;animation-delay:-1.60s}
+.brand-bars i.bg-floral{animation-duration:2.5s;animation-delay:-.90s}
+.brand-bars i.bg-herbal{animation-duration:2.6s;animation-delay:-1.35s}
+@media (prefers-reduced-motion:reduce){.brand-bars i{animation:none}}
