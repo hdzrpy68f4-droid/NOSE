@@ -1858,6 +1858,7 @@ under the cap.
 - [The keyed fingerprint switched on, 2026-11-17](docs/handoff/13-records.md#the-keyed-fingerprint-switched-on-2026-11-17)
 - [The new look went live, 2026-11-17](docs/handoff/13-records.md#the-new-look-went-live-2026-11-17)
 - [The account pages, 404 and the demo rebuilt, 2026-11-17](docs/handoff/13-records.md#the-account-pages-404-and-the-demo-rebuilt-2026-11-17)
+- [Two small open items closed, 2026-11-17](docs/handoff/13-records.md#two-small-open-items-closed-2026-11-17)
 
 ## 14. Dispensary integration
 

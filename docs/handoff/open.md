@@ -115,8 +115,6 @@ schema comment if wanted.
   it would add words to the row (or an `aria-label` a screen reader reads),
   and R8 kept the row's text exactly as it was. The link was watched in
   Chromium only, at 1280 and 390 px.
-- **`/app` and `/` keep their sitemap `lastmod`** (2026-07-20) although the
-  bundle they load has changed again (R3, R4, R7 and R8 all left it).
 - **The bundle in strict mode was run in Chromium only** (above, "Strict
   mode in the app bundle"), and its camera path only on Playwright's fake
   camera. Strict mode is part of the language, but Safari and Firefox have
@@ -174,14 +172,6 @@ schema comment if wanted.
   (above, "One way to read a report"). The same number as
   `lib/read-report.js`'s, not the same constant; M1 named only `coa.js` and
   the coverage report, so it waits for its own prompt.
-- **`lib/fetch-report.js`'s header still names its callers as `coa.js` and
-  `scripts/b2b-coverage.js`**; since 2026-10-16 `fetchPdf` is called from
-  `lib/read-report.js` alone, `validateUrl` from it and from the two
-  dispensary scripts, and the resolver from `test/resolver-test.js`,
-  `test/duplicates-test.js` and `scripts/download-twice.js`. M1 kept that
-  file unchanged, comment and all; M2 made its `coa.js` line true (through
-  read-report, no `_resolvePdfFromPage`) and left the list for its own
-  prompt.
 - **The fixed 500 has not been seen live.** Offline, two forced throws give
   it (above, "coa.js in the current format"); live, nothing is known to
   throw, and making one would mean shipping a fault. The `null` curl shows

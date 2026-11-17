@@ -2953,5 +2953,9 @@ The last step of "The vote asks before it tells", run in the Codespace
   (`77f96a8`), 2 (`c96b15a`) and 3 (`a429e24`) each "git ok store ok site ok".
 - A store on release 1 or 2 still shows the label before the vote is answered
   until its page carries release 3's tag, given in `docs/B2B-RELEASES.md`.
-  No compliance kit was made for release 3 this time
-  (`node scripts/b2b-compliance-kit.js --release 3`, in the Codespace).
+  The compliance kit for release 3 was made the same day in the Codespace
+  (`node scripts/b2b-compliance-kit.js --release 3`, after installing
+  Playwright's Chromium; the lock file put back): 10 screens, 37 PNGs,
+  README.md, strings.md and data.md under `b2b-out/test-store/compliance-kit/`
+  (gitignored), in place of release 2's. The rail at 201 strings and the
+  sold-out panel at 188, as release 2's; screen 08, the answered vote, at 5.

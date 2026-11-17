@@ -5035,3 +5035,17 @@ The three pages "The new look went live" left re-skinned, rebuilt to
 - Checked in Chromium at 390 and 1280 (signed out, signed in, reset,
   confirmed, 404, the demo), before and after; all gates green. Safari not
   looked at.
+
+### Two small open items closed, 2026-11-17
+
+- **The sitemap's dates**: each page's `lastmod` in `sitemap.xml` is now the
+  day its file last changed in git (`git log -1 --format=%cs -- <file>`).
+  All 21 read 2026-11-17, since the redesign changed every page that day;
+  `/` and `/app` had kept 2026-07-20 through R3 to R8, and `/privacy/` read
+  2026-11-14 though its throttle sentence changed on 2026-11-17. Nothing
+  keeps the dates true by itself: a page whose words change should have its
+  line changed in the same commit.
+- **`lib/fetch-report.js`'s header** names its real callers: `lib/read-report.js`
+  (validateUrl and fetchPdf, for `coa.js`), the two dispensary scripts that
+  check catalog links with validateUrl, `scripts/download-twice.js`
+  (resolvePdfFromPage), and the three tests. A comment only; no code changed.

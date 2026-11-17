@@ -7,14 +7,19 @@
  *
  * Moved here unchanged from netlify/functions/coa.js on 2026-10-05, so that
  * something other than the scanner can fetch a report through the same
- * guards without loading coa.js, and the archive wiring with it. Two callers
+ * guards without loading coa.js, and the archive wiring with it. Its callers
  * (PARSER-HANDOFF s12 says why the guards are what they are, s14 why the
- * second one exists):
+ * dispensary scripts use them):
  *
- *   coa.js                   the scanner's endpoint: validateUrl and fetchPdf,
- *                            through lib/read-report.js since 2026-10-16
- *   scripts/b2b-coverage.js  the dispensary coverage report, run from a
- *                            Codespace
+ *   lib/read-report.js          validateUrl and fetchPdf - the one route to a
+ *                               report's bytes, for coa.js (the scanner's
+ *                               endpoint) since 2026-10-16
+ *   scripts/b2b-coverage.js,    validateUrl alone: a catalog's report links,
+ *   scripts/b2b-read-catalog.js checked before they are read, from a Codespace
+ *   scripts/download-twice.js   resolvePdfFromPage, by hand
+ *
+ * test/fetch-guard-test.js tests the guards; test/resolver-test.js and
+ * test/duplicates-test.js call resolvePdfFromPage.
  *
  * The guard does not depend on recognising anyone (coa.js's header says why):
  * https only; no private, loopback or link-local destination, re-checked after
