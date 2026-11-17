@@ -173,3 +173,24 @@ input,select,textarea,table,.data-table,.result-stat,.position-row{border-radius
 .desk-channels{display:grid;grid-template-columns:repeat(6,1fr);margin:8px 0 0;padding:6px 0 0;list-style:none;border-top:1px solid var(--rule)}
 .desk-channels li{text-align:center;font-size:.8125rem;color:var(--soft)}
 @media (max-width:560px){.result-eq{height:104px}.desk-channels li{font-size:.75rem}}
+
+/* the matcher's camera preview fills its box on a phone. Safari left the
+   video at the size the scanner set when it started, at the foot of the box
+   (2026-11-17). Pinned to the box, it covers it; the frames the scanner reads
+   are the camera's own, whatever size the preview is drawn. */
+@media (max-width:720px){
+  [data-page="app"] .scanner-reader{position:relative;display:block}
+  [data-page="app"] .scanner-reader video{position:absolute;inset:0;width:100% !important;height:100% !important;object-fit:cover}
+}
+
+/* a compact footer on a phone: the three link groups side by side */
+@media (max-width:720px){
+  .footer-main{padding:36px 0 24px}
+  .footer-grid{gap:24px}
+  .u-footer-note{max-width:none;margin-top:10px;font-size:.9375rem}
+  .footer-links{grid-template-columns:repeat(3,auto);justify-content:space-between;gap:0 12px}
+  .footer-links a{white-space:nowrap}
+  .footer-links h3{margin-bottom:2px;font-size:.875rem}
+  .footer-links a{min-height:40px;font-size:.875rem}
+  .footer-bottom{margin-top:20px;padding-top:16px}
+}
