@@ -1,0 +1,51 @@
+/* NOSE reading pages (DESIGN.md): /learn/, the guides and /methodology/.
+   Linked after family.css and css/world, it lays their existing markup out
+   in the new look without changing it - the guides' lab-report sheet,
+   tables and figures stay family.css's - so the boxed card grid becomes
+   sections on rules: the heading on the left, the words on the right.
+   build.sh fingerprints it: css/read.<hash>.css. */
+
+.page-head{padding:clamp(32px,6vw,72px) 0 clamp(40px,6vw,64px)}
+.page-head h1{max-width:14em;font-size:clamp(2.6rem,6.6vw,5.5rem);line-height:1;letter-spacing:-.03em}
+.page-head p{max-width:33em;font-size:1.125rem}
+.guide-head h1{letter-spacing:-.03em}
+
+/* the card grid, as sections on rules */
+.section-tight{padding:0 0 var(--section)}
+.page-grid{display:block}
+.page-grid > .article-card{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);grid-auto-flow:row dense;column-gap:56px;align-items:start;margin:0;padding:36px 0;border:0;border-top:1px solid var(--rule);border-radius:0;background:none}
+.page-grid > .article-card > *{grid-column:2;margin-top:0}
+.page-grid > .article-card > h2,.page-grid > .article-card > .eyebrow{grid-column:1}
+.page-grid > .article-card > h2{font-size:clamp(1.6rem,3vw,2.25rem);line-height:1.1;margin-bottom:12px}
+.page-grid > .article-card > p,.page-grid > .article-card li{color:var(--soft)}
+.page-grid > .article-card strong{color:var(--ink)}
+.page-grid > .article-card > :last-child{margin-bottom:0}
+
+/* /learn/: a guide is a row; its title is the link and covers the row */
+.guide-card{position:relative}
+.guide-card h2 a{text-decoration:none}
+.guide-card h2 a::after{border-radius:0}
+.guide-card:hover h2 a{text-decoration:underline;text-underline-offset:5px;text-decoration-thickness:1px}
+.guide-card .read-more{display:none}
+.page-grid > .guide-card > p:not(.eyebrow){grid-row:1 / span 2}
+.page-grid > .guide-card > h2{margin-top:8px}
+.guide-card:hover{border-color:var(--rule)}
+
+/* formulas and the method note: a quiet raised panel, not a black slab */
+.formula{padding:16px 18px;background:var(--raised);border:1px solid var(--rule);color:var(--ink);font-family:var(--display);font-size:1.125rem}
+.method-box{border-left:4px solid var(--ink);border-radius:0;background:var(--raised)}
+
+/* the closing invitation: centred, no box */
+.callout{padding:0;border:0;background:none;text-align:center}
+.section-tight .callout,.section .callout{padding-top:var(--section);border-top:1px solid var(--rule)}
+.callout h2{font-size:clamp(2rem,4.6vw,3.25rem);line-height:1.05;letter-spacing:-.02em}
+.callout p{margin-inline:auto;max-width:33em;color:var(--soft)}
+.callout .buttons{justify-content:center}
+.section.surface{background:none;border:0}
+
+@media (max-width:899px){
+  .page-grid > .article-card{grid-template-columns:1fr}
+  .page-grid > .article-card > *,.page-grid > .article-card > h2,.page-grid > .article-card > .eyebrow{grid-column:1}
+  .page-grid > .guide-card > p:not(.eyebrow){grid-row:auto}
+  .page-grid > .guide-card > p:not(.eyebrow){order:3}
+}

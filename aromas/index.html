@@ -12,12 +12,12 @@
 <meta property="og:description" content="A working vocabulary for cannabis aroma, anchored on the terpenes a lab actually measures.">
 <meta property="og:url" content="https://nose-app.com/aromas/">
 <link rel="stylesheet" href="/css/tokens.8fb6b363.css">
-<link rel="stylesheet" href="/family.b560c575.css">
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://nose-app.com/"}, {"@type": "ListItem", "position": 2, "name": "Aroma families", "item": "https://nose-app.com/aromas/"}]}</script>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "ItemList", "name": "The six NOSE aroma families", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Citrus", "url": "https://nose-app.com/aromas/citrus/"}, {"@type": "ListItem", "position": 2, "name": "Earthy", "url": "https://nose-app.com/aromas/earthy/"}, {"@type": "ListItem", "position": 3, "name": "Spice", "url": "https://nose-app.com/aromas/spice/"}, {"@type": "ListItem", "position": 4, "name": "Pine", "url": "https://nose-app.com/aromas/pine/"}, {"@type": "ListItem", "position": 5, "name": "Floral", "url": "https://nose-app.com/aromas/floral/"}, {"@type": "ListItem", "position": 6, "name": "Herbal", "url": "https://nose-app.com/aromas/herbal/"}]}</script>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/agegate.d7cfbf28.css">
   <link rel="stylesheet" href="/css/world.c28e7c7a.css">
+  <link rel="stylesheet" href="/css/aroma.0d81f95e.css">
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to content</a>
@@ -37,73 +37,34 @@
   </header>
 <!-- /nose:header -->
 <main id="main">
-  <section class="hero">
-    <div class="wrap">
-      <nav class="breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span aria-hidden="true">/</span><span>Aroma families</span></nav>
-      <p class="eyebrow">The six families</p>
-      <h1>Six useful signals, not six absolute truths.</h1>
-      <p class="hero-lead">Large aroma datasets sort cannabis into roughly six groups. Each one is anchored on a terpene the lab already measures, so you can read a panel without memorising chemistry.</p>
-    </div>
-  </section>
-  <div class="spectrum" aria-hidden="true"><span class="bg-citrus"></span><span class="bg-earthy"></span><span class="bg-spice"></span><span class="bg-pine"></span><span class="bg-floral"></span><span class="bg-herbal"></span></div>
-  <section class="section">
-    <div class="wrap">
-      <div class="grid">
-        <a class="card famcard famcard-citrus" href="/aromas/citrus/">
-          <span class="sw sw-citrus"></span>
-          <h2 class="u-fs-26">Citrus</h2>
-          <p class="mono fam-anchor ink-citrus">Limonene</p>
-          <p>Sharp lemon peel and orange zest with a clean bitter edge.</p>
-          <span class="note u-mt-18">Read the citrus page</span>
-        </a>
-        <a class="card famcard famcard-earthy" href="/aromas/earthy/">
-          <span class="sw sw-earthy"></span>
-          <h2 class="u-fs-26">Earthy</h2>
-          <p class="mono fam-anchor ink-earthy">Myrcene</p>
-          <p>Damp soil and clove with a sweet, overripe-fruit edge.</p>
-          <span class="note u-mt-18">Read the earthy page</span>
-        </a>
-        <a class="card famcard famcard-spice" href="/aromas/spice/">
-          <span class="sw sw-spice"></span>
-          <h2 class="u-fs-26">Spice</h2>
-          <p class="mono fam-anchor ink-spice">β-Caryophyllene</p>
-          <p>Cracked black pepper and clove over warm wood.</p>
-          <span class="note u-mt-18">Read the spice page</span>
-        </a>
-        <a class="card famcard famcard-pine" href="/aromas/pine/">
-          <span class="sw sw-pine"></span>
-          <h2 class="u-fs-26">Pine</h2>
-          <p class="mono fam-anchor ink-pine">α-Pinene</p>
-          <p>Pine needle and rosemary, resinous and cool.</p>
-          <span class="note u-mt-18">Read the pine page</span>
-        </a>
-        <a class="card famcard famcard-floral" href="/aromas/floral/">
-          <span class="sw sw-floral"></span>
-          <h2 class="u-fs-26">Floral</h2>
-          <p class="mono fam-anchor ink-floral">Linalool</p>
-          <p>Lavender and chamomile with a faint sweet spice.</p>
-          <span class="note u-mt-18">Read the floral page</span>
-        </a>
-        <a class="card famcard famcard-herbal" href="/aromas/herbal/">
-          <span class="sw sw-herbal"></span>
-          <h2 class="u-fs-26">Herbal</h2>
-          <p class="mono fam-anchor ink-herbal">Terpinolene</p>
-          <p>Fresh-cut herbs and apple skin with a whisper of citrus.</p>
-          <span class="note u-mt-18">Read the herbal page</span>
-        </a>
+    <nav class="wrap breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span aria-hidden="true">/</span><span>Aroma families</span></nav>
+
+    <section class="wrap a-hero a-hero-index" aria-labelledby="a-title">
+      <div class="a-hero-copy">
+        <h1 id="a-title">Six useful signals, not six absolute truths.</h1>
+        <p class="a-lede">Large aroma datasets sort cannabis into roughly six groups. Each one is anchored on a terpene the lab already measures, so you can read a panel without memorising chemistry.</p>
       </div>
-    </div>
-  </section>
-  <section class="section surface">
-    <div class="wrap">
-      <div class="callout">
-        <h2>We won't predict your high.</h2>
+    </section>
+
+    <section class="wrap a-index" aria-label="The six families">
+      <ul class="a-families">
+        <li class="a-family a-citrus"><a href="/aromas/citrus/"><figure class="a-family-photo"><picture><source type="image/avif" srcset="/images/families/citrus.avif"><source type="image/webp" srcset="/images/families/citrus.webp"><img src="/images/families/citrus.jpg" alt="" width="620" height="465" loading="lazy" decoding="async"></picture></figure><span class="a-swatch" aria-hidden="true"></span><h2>Citrus</h2><p class="a-anchor">Limonene</p><p>Sharp lemon peel and orange zest with a clean bitter edge.</p></a></li>
+        <li class="a-family a-earthy"><a href="/aromas/earthy/"><figure class="a-family-photo"><picture><source type="image/avif" srcset="/images/families/earthy.avif"><source type="image/webp" srcset="/images/families/earthy.webp"><img src="/images/families/earthy.jpg" alt="" width="620" height="465" loading="lazy" decoding="async"></picture></figure><span class="a-swatch" aria-hidden="true"></span><h2>Earthy</h2><p class="a-anchor">Myrcene</p><p>Damp soil and clove with a sweet, overripe-fruit edge.</p></a></li>
+        <li class="a-family a-spice"><a href="/aromas/spice/"><figure class="a-family-photo"><picture><source type="image/avif" srcset="/images/families/spice.avif"><source type="image/webp" srcset="/images/families/spice.webp"><img src="/images/families/spice.jpg" alt="" width="620" height="465" loading="lazy" decoding="async"></picture></figure><span class="a-swatch" aria-hidden="true"></span><h2>Spice</h2><p class="a-anchor">β-Caryophyllene</p><p>Cracked black pepper and clove over warm wood.</p></a></li>
+        <li class="a-family a-pine"><a href="/aromas/pine/"><figure class="a-family-photo"><picture><source type="image/avif" srcset="/images/families/pine.avif"><source type="image/webp" srcset="/images/families/pine.webp"><img src="/images/families/pine.jpg" alt="" width="620" height="465" loading="lazy" decoding="async"></picture></figure><span class="a-swatch" aria-hidden="true"></span><h2>Pine</h2><p class="a-anchor">α-Pinene</p><p>Pine needle and rosemary, resinous and cool.</p></a></li>
+        <li class="a-family a-floral"><a href="/aromas/floral/"><figure class="a-family-photo"><picture><source type="image/avif" srcset="/images/families/floral.avif"><source type="image/webp" srcset="/images/families/floral.webp"><img src="/images/families/floral.jpg" alt="" width="620" height="465" loading="lazy" decoding="async"></picture></figure><span class="a-swatch" aria-hidden="true"></span><h2>Floral</h2><p class="a-anchor">Linalool</p><p>Lavender and chamomile with a faint sweet spice.</p></a></li>
+        <li class="a-family a-herbal"><a href="/aromas/herbal/"><figure class="a-family-photo"><picture><source type="image/avif" srcset="/images/families/herbal.avif"><source type="image/webp" srcset="/images/families/herbal.webp"><img src="/images/families/herbal.jpg" alt="" width="620" height="465" loading="lazy" decoding="async"></picture></figure><span class="a-swatch" aria-hidden="true"></span><h2>Herbal</h2><p class="a-anchor">Terpinolene</p><p>Fresh-cut herbs and apple skin with a whisper of citrus.</p></a></li>
+      </ul>
+    </section>
+
+    <section class="a-band a-final" aria-labelledby="a-more">
+      <div class="wrap">
+        <h2 id="a-more">We won't predict your high.</h2>
         <p>These families describe what a jar smells like. The evidence linking terpenes to effects is not settled, so NOSE stops where the evidence stops.</p>
-        <div class="buttons"><a class="button button-primary" href="/app">Start matching</a><a class="button button-secondary" href="/methodology/">Read the method</a></div>
+        <div class="button-row"><a class="button button-primary" href="/app">Match a jar</a><a class="button button-secondary" href="/methodology/">Read the method</a></div>
       </div>
-    </div>
-  </section>
-</main>
+    </section>
+  </main>
 <!-- nose:footer -->
 <footer class="footer">
     <div class="spectrum" aria-hidden="true"><span class="bg-citrus"></span><span class="bg-earthy"></span><span class="bg-spice"></span><span class="bg-pine"></span><span class="bg-floral"></span><span class="bg-herbal"></span></div>
