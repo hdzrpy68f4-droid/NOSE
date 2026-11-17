@@ -5114,4 +5114,4 @@ the race noted that morning.
   The same 20 tries twice: no problem. `input-paths-test` gained a check
   (Chromium, with the fake camera): left at 0, 15 and 40ms, the camera starts
   again on coming back each time, with no uncaught error.
-- Watched in Chromium only; Safari is the owner's to see (`open.md`).
+- Watched in Chromium; then the owner, on an iPhone in Safari the same day, reported the picture fills the box.
