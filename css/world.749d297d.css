@@ -177,9 +177,13 @@ input,select,textarea,table,.data-table,.result-stat,.position-row{border-radius
 /* the matcher's camera preview fills its box on a phone. Safari left the
    video at the size the scanner set when it started, at the foot of the box
    (2026-11-17). Pinned to the box, it covers it; the frames the scanner reads
-   are the camera's own, whatever size the preview is drawn. */
+   are the camera's own, whatever size the preview is drawn.
+   The box is square: iOS Safari draws the live camera on a layer it turns to
+   portrait, the layer's size turned with it, so in a 4:3 box the picture
+   came out a narrow upright strip, centred (measured on the owner's iPhone
+   with ?camdebug=1, 2026-11-17). A square turned is the same square. */
 @media (max-width:720px){
-  [data-page="app"] .scanner-reader{position:relative;display:block}
+  [data-page="app"] .scanner-reader{position:relative;display:block;aspect-ratio:1 / 1;max-height:none}
   [data-page="app"] .scanner-reader video{position:absolute;inset:0;width:100% !important;height:100% !important;object-fit:cover}
 }
 

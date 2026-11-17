@@ -5235,3 +5235,30 @@ The owner, scanning again on an iPhone: the box now had the picture's shape
   version had the same fault (no readout appeared). A search of every tracked
   source file for control characters finds none left but the vendored
   `html5-qrcode`'s own.
+
+### The camera box is square: what the iPhone's readout showed, 2026-11-17
+
+The owner opened `/app?camdebug=1` on an iPhone (viewport 430x815, dpr 3,
+Private browsing) and started the camera. The readout: box 356x267 (4:3),
+video 354x265 filling it, object-fit cover, no transform - and stream 0x0,
+with nothing drawn.
+
+- **The element was right; the picture was turned.** In every earlier iPhone
+  screenshot the picture measured about 265x354 css px: the video element's
+  354x265, on its side, centred. iOS Safari draws a live camera on a layer
+  it rotates to portrait, and the layer's size turns with it. In the 4:3 box
+  the 265x354 strip was clipped to the box's 265 height and showed as a
+  265x265 square ("doesn't fit the square"); in the portrait box of
+  "The preview takes the camera's shape" it showed whole, small and centred.
+  The cover sizing of "The camera fills its box" changed the element, not
+  the turned layer, so it looked widened.
+- **Stream 0x0 was the morning's re-layout step** ("The iPhone's camera layer
+  laid out again"): hiding and showing a playing camera video on iOS left it
+  with no frames. Removed.
+- **The fix: a square box on a phone** (`css/world`, `[data-page="app"]
+  .scanner-reader`, `aspect-ratio: 1 / 1`, no height cap), from the start, so
+  nothing resizes once the camera runs. A square turned is the same square,
+  and the picture covers it. `coverPreview`, which reshaped the box from the
+  stream's size, is gone. In Chromium: a 316x316 box, the video 314x314.
+- `?camdebug=1` stays until the owner's iPhone shows the picture filling the
+  square.

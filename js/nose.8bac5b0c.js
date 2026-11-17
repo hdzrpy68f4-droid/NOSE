@@ -800,16 +800,9 @@
         video.addEventListener('playing',resolve,{once:true}); setTimeout(resolve,2000);
       });
       qrStarting=started.then(playing,()=>{});
-      return started.then(()=>{ coverPreview(); return true; });
+      return started.then(()=>true);
     }
 
-    /* On a phone the preview box takes the camera's own shape, so the whole
-       picture shows, neither cropped nor stretched. A 4:3 box left an
-       iPhone's squarer picture letterboxed; sizing the video to cover the box
-       then zoomed and cropped it, and drawn with object-fit:fill it could be
-       stretched, which made the code harder to aim (the owner, 2026-11-17).
-       The box's aspect-ratio is set from the stream's size whenever it is
-       known or changes; wider screens are left as they were. */
     const PHONE=matchMedia('(max-width:720px)');
     /* TEMPORARY (2026-11-17): ?camdebug=1 prints what Safari actually laid
        out, to find why an iPhone draws the camera smaller than its box.
@@ -831,26 +824,6 @@
       out.textContent=lines.join(String.fromCharCode(10));
     }
     if(CAMDEBUG) setInterval(camDebug,1000);
-    function coverPreview(){
-      const reader=$id('qrReader'), video=reader&&reader.querySelector('video');
-      if(!reader) return;
-      if(video&&!video.dataset.cover){ video.dataset.cover='1'; video.addEventListener('loadedmetadata',coverPreview); video.addEventListener('resize',coverPreview); }
-      if(!PHONE.matches||!video||!video.videoWidth||!video.videoHeight){ reader.style.removeProperty('aspect-ratio'); reader.style.removeProperty('max-height'); return; }
-      const shape=`${video.videoWidth} / ${video.videoHeight}`;
-      if(reader.style.getPropertyValue('aspect-ratio')===shape) return;
-      reader.style.setProperty('aspect-ratio',shape,'important');
-      reader.style.setProperty('max-height','none','important');   // a portrait picture is taller than the 4:3 box's cap
-      /* iOS Safari draws a live camera on a layer of its own, which kept the
-         size the video had when the camera started: the box took the
-         picture's shape and the picture stayed small in it (the owner's
-         iPhone, 2026-11-17). Laying the video out again, and playing it on,
-         makes it take the box's new size. */
-      requestAnimationFrame(()=>{
-        video.style.display='none'; void video.offsetHeight; video.style.display='block';
-        const played=video.play(); if(played&&played.catch) played.catch(()=>{});
-      });
-    }
-    window.addEventListener('resize',()=>coverPreview());
 
     async function startQrScanner(cameraId=''){
       if(!scannerAvailable()) return false;
