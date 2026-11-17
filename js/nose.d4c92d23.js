@@ -72,6 +72,10 @@
       {id:'pepper-grove',name:'Pepper Grove',subtitle:'Spice-forward with earthy depth',terps:{caryophyllene:.53,humulene:.22,myrcene:.41,limonene:.18,pinene_a:.10,linalool:.06}}
     ];
 
+    /* The home page's desk (js/hero) shows these same jars; it reads them here
+       so that there is one list of samples. */
+    window.NoseSamples = PROFILES;
+
     const state = {
       heroPalate:'lemon-tart', heroCandidate:'cold-creek',
       palateIds:['lemon-tart'], appCandidate:'cold-creek',

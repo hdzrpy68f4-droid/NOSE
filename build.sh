@@ -175,7 +175,8 @@ fingerprint js  b2b-demo js
 fingerprint css b2b-demo css
 fingerprint css tokens  css
 fingerprint css shell   css
-fingerprint css hero    css
+fingerprint css world   css
+fingerprint css home    css
 fingerprint js  hero    js
 fingerprint css agegate css
 fingerprint js  agegate js

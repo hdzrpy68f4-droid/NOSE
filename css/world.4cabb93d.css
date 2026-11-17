@@ -1,0 +1,102 @@
+/* NOSE - the world every redesigned page stands in (DESIGN.md, 2026-11-16).
+ *
+ * A page that has moved to the new look links css/tokens, then this file, then
+ * its own stylesheet, and no longer links css/shell. It holds the typefaces,
+ * the colours that are not a family's (those stay in css/tokens and nowhere
+ * else), the base, the shared header and footer, and the two buttons.
+ * build.sh fingerprints it: css/world.<hash>.css.
+ *
+ * The two typefaces are SIL OFL 1.1, self-hosted beside their licences in
+ * css/fonts/, and named by content hash because /css/* is cached as immutable.
+ */
+@font-face{font-family:"Fraunces";src:url(/css/fonts/fraunces.7234ed86.woff2) format("woff2");font-weight:100 900;font-display:swap}
+@font-face{font-family:"Hanken Grotesk";src:url(/css/fonts/hanken-grotesk.e9201edd.woff2) format("woff2");font-weight:100 900;font-display:swap}
+
+:root{
+  color-scheme:dark;
+  --field:#0E1410;
+  --raised:#141B16;
+  --rule:#2E3A31;
+  --ink:#F4F1EA;
+  --soft:#B1AEA6;
+  --r:3px;
+  --display:"Fraunces",Georgia,serif;
+  --body:"Hanken Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --section:clamp(64px,10vw,120px);
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;overflow-x:clip}
+html{background:var(--field);scroll-behavior:smooth}
+body{min-width:320px;background:var(--field);color:var(--ink);font-family:var(--body);font-weight:450;font-size:1.0625rem;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit}
+button,a{-webkit-tap-highlight-color:transparent}
+a{color:inherit}
+img{max-width:100%}
+h1,h2,h3,p{margin-top:0}
+h1,h2,h3{font-family:var(--display);font-weight:400;text-wrap:balance}
+p{text-wrap:pretty}
+[hidden]{display:none !important}
+:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+.wrap{width:min(1240px,100% - 40px);margin-inline:auto}
+.skip-link{position:fixed;left:16px;top:12px;z-index:1000;padding:10px 14px;background:var(--ink);color:var(--field);border-radius:var(--r);transform:translateY(-200%)}
+.skip-link:focus{transform:none}
+
+.bg-citrus{background:var(--citrus)}
+.bg-earthy{background:var(--earthy)}
+.bg-spice{background:var(--spice)}
+.bg-pine{background:var(--pine)}
+.bg-floral{background:var(--floral)}
+.bg-herbal{background:var(--herbal)}
+
+/* ---- header (partials/header*.html) ---- */
+.site-header{position:sticky;top:0;z-index:50;background:var(--field);border-bottom:1px solid var(--rule)}
+.nav{min-height:64px;display:flex;align-items:center;justify-content:space-between;gap:30px}
+.brand{display:inline-flex;align-items:center;gap:10px;min-height:44px;text-decoration:none;font-family:var(--display);font-weight:600;font-size:1.375rem;letter-spacing:.04em;color:var(--ink)}
+.brand-bars{display:flex;align-items:flex-end;gap:2px;height:20px}
+.brand-bars i{display:block;width:4px}
+.brand-bars i.bg-citrus{height:11px}
+.brand-bars i.bg-earthy{height:16px}
+.brand-bars i.bg-spice{height:20px}
+.brand-bars i.bg-pine{height:9px}
+.brand-bars i.bg-floral{height:14px}
+.brand-bars i.bg-herbal{height:7px}
+.nav-links{display:flex;align-items:center;gap:30px}
+.nav-links a{display:inline-flex;align-items:center;min-height:44px;text-decoration:none;font-size:.9375rem;color:var(--soft)}
+.nav-links a:hover,.nav-links a[aria-current="page"]{color:var(--ink)}
+.nav-links .nav-cta{padding:0 16px;border:1px solid var(--ink);border-radius:var(--r);color:var(--ink);font-weight:600}
+.nav-links .nav-cta:hover{background:var(--ink);color:var(--field)}
+.menu-button{display:none;width:44px;height:44px;place-items:center;background:none;color:var(--ink);border:1px solid var(--rule);border-radius:var(--r);cursor:pointer}
+.mobile-menu{display:none;padding:4px 20px 16px;border-top:1px solid var(--rule)}
+.mobile-menu a{display:flex;align-items:center;min-height:48px;border-bottom:1px solid var(--rule);text-decoration:none}
+@media (max-width:899px){
+  .nav-links{display:none}
+  .menu-button{display:grid}
+  .mobile-menu[data-open="true"]{display:block}
+}
+
+/* ---- buttons ---- */
+.button{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 22px;border:1px solid var(--ink);border-radius:var(--r);background:none;color:var(--ink);text-decoration:none;font-weight:600;font-size:1rem;cursor:pointer}
+.button-primary{background:var(--ink);color:var(--field)}
+.button-primary:hover{background:#fff}
+.button-secondary:hover{background:var(--raised)}
+.button-row{display:flex;flex-wrap:wrap;gap:10px}
+
+/* ---- footer (partials/footer.html) ---- */
+.footer{border-top:1px solid var(--rule)}
+.spectrum{display:grid;grid-template-columns:repeat(6,1fr);height:4px}
+.footer-main{padding:56px 0 28px}
+.footer-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:56px}
+.u-brand-light{color:var(--ink)}
+.u-footer-note{max-width:30ch;margin:14px 0 0;color:var(--soft)}
+.footer-links{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.footer-links h3{margin:0 0 6px;font-family:var(--body);font-weight:650;font-size:.9375rem;color:var(--ink)}
+.footer-links a{display:flex;align-items:center;min-height:44px;color:var(--soft);text-decoration:none;font-size:.9375rem}
+.footer-links a:hover{color:var(--ink)}
+.footer-bottom{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px 18px;margin-top:40px;padding-top:20px;border-top:1px solid var(--rule);color:var(--soft);font-size:.8125rem}
+@media (max-width:720px){
+  .footer-grid{grid-template-columns:1fr;gap:36px}
+  .footer-links{grid-template-columns:repeat(2,1fr)}
+}

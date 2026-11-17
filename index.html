@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light">
-  <meta name="theme-color" content="#F3F3EE">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0E1410">
   <title>NOSE — Match Cannabis Flower by Aroma and Terpene Profile</title>
   <link rel="canonical" href="https://nose-app.com/">
 <meta name="robots" content="index,follow">
@@ -14,12 +14,14 @@
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="stylesheet" href="/css/tokens.8fb6b363.css">
-  <link rel="stylesheet" href="/css/shell.99ebd527.css">
+  <link rel="stylesheet" href="/css/world.4cabb93d.css">
+  <link rel="preload" href="/css/fonts/fraunces.7234ed86.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/css/fonts/hanken-grotesk.e9201edd.woff2" as="font" type="font/woff2" crossorigin>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "Organization", "name": "NOSE", "url": "https://nose-app.com/", "description": "Aroma matching for cannabis flower using third-party terpene lab data. No effect claims."}</script>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebSite", "name": "NOSE", "url": "https://nose-app.com/"}</script>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/agegate.67a4ad39.css">
-  <link rel="stylesheet" href="/css/hero.4b528b94.css">
+  <link rel="stylesheet" href="/css/home.4a20e28c.css">
   <meta property="og:image" content="https://nose-app.com/images/og-card.jpg">
   <meta name="twitter:image" content="https://nose-app.com/images/og-card.jpg">
   <meta property="og:url" content="https://nose-app.com/">
@@ -62,29 +64,44 @@
 
   <main id="main-content" tabindex="-1">
     <div data-page="home">
-      <section class="hero" aria-labelledby="hero-title">
-        <canvas class="hero-eq" id="hero-eq" aria-hidden="true"></canvas>
-        <div class="hero-scrim"></div>
-        <div class="wrap hero-grid">
-          <div>
-            <p class="eyebrow">Aroma and flavor, by volume</p>
-            <h1 id="hero-title">How loud is it?</h1>
-            <p class="hero-copy">Paste a terpene panel and NOSE turns it into a flavor fingerprint. Compare a new jar with strains you already love—without guessing how it will make you feel.</p>
-            <div class="button-row u-mt-30">
-              <a class="button button-primary route-link" href="/app">Try a sample match</a>
-              <a class="button button-secondary" href="#how-it-works">See how it works</a>
-            </div>
-            <p class="hero-note mono">No account · sample match in under a minute · aroma only</p>
+      <section class="wrap hero" aria-labelledby="hero-title">
+        <h1 id="hero-title"><span>How loud </span><span>is it?</span></h1>
+        <p class="lede">NOSE reads a jar's lab report and plays its aroma like a mixing desk: how loud it is, and which notes carry it.</p>
+        <div class="button-row">
+          <a class="button button-primary route-link" href="/app">Match a jar</a>
+          <a class="button button-secondary" href="#how-it-works">How it works</a>
+        </div>
+        <div class="desk" role="group" aria-label="A sample jar on the equalizer">
+          <div class="vol-row" aria-live="polite"><span class="vol-label">Total terpenes, by weight</span><span class="vol"><span id="vol">2.25</span><small>%</small></span></div>
+          <div class="eq-box"><canvas id="hero-eq" aria-hidden="true"></canvas></div>
+          <ol class="channels">
+            <li>Citrus<b class="ch-val">0.72%</b></li><li>Earthy<b class="ch-val">0.42%</b></li><li>Spice<b class="ch-val">0.47%</b></li><li>Pine<b class="ch-val">0.32%</b></li><li>Floral<b class="ch-val">0.25%</b></li><li>Herbal<b class="ch-val">0.07%</b></li>
+          </ol>
+          <div class="picker">
+            <button id="jarPrev" type="button" aria-label="Previous sample jar">&#8249;</button>
+            <div class="jar" aria-live="polite"><strong id="jarName">Cold Creek Kush</strong><span id="jarSub">Citrus-forward, earthy and spice</span></div>
+            <button id="jarNext" type="button" aria-label="Next sample jar">&#8250;</button>
           </div>
-          <div class="card demo-card" aria-labelledby="demo-title">
-            <div class="card-head">
-              <div>
-                <div class="card-kicker mono">Interactive sample</div>
-                <h2 id="demo-title" class="u-fs-24">See the match, not the marketing.</h2>
-              </div>
-              <span class="badge">Live demo</span>
-            </div>
-            <div class="demo-controls">
+          <p class="desk-note">Sample jars. Each bar is one aroma family's share of the jar, in percent by weight.</p>
+        </div>
+      </section>
+
+      <div class="wrap">
+        <ul class="principles" aria-label="Product principles">
+          <li><strong>COA-based</strong><span>Uses the batch's terpene panel when available.</span></li>
+          <li><strong>No account required</strong><span>Try a match before saving anything.</span></li>
+          <li><strong>No effect predictions</strong><span>NOSE compares aroma, not your high.</span></li>
+        </ul>
+      </div>
+
+      <section class="section" aria-labelledby="demo-title">
+        <div class="wrap compare-grid">
+          <div>
+            <h2 id="demo-title">See the match, not the marketing.</h2>
+            <p class="section-lead">Loudness is one thing; the mix is another. Pick a jar you liked and a new one, and NOSE compares the shape of the two mixes.</p>
+          </div>
+          <div class="compare-panel">
+            <div class="compare-controls">
               <label>Your palate
                 <select id="heroPalate"></select>
               </label>
@@ -92,9 +109,9 @@
                 <select id="heroCandidate"></select>
               </label>
             </div>
-            <p class="profile-label mono">Your palate</p>
+            <p class="profile-label">Your palate</p>
             <div id="heroPalateBar"></div>
-            <p class="profile-label mono">New jar</p>
+            <p class="profile-label">New jar</p>
             <div id="heroCandidateBar"></div>
             <div class="score-row" aria-live="polite">
               <div class="score"><span id="heroScore">0</span><small>%</small></div>
@@ -103,78 +120,54 @@
                 <p class="score-copy" id="heroScoreCopy">Choose two profiles to compare their aroma shape.</p>
               </div>
             </div>
-            <div class="legend" aria-label="Aroma family legend">
-              <span><i class="bg-citrus"></i>Citrus</span><span><i class="bg-earthy"></i>Earthy</span><span><i class="bg-spice"></i>Spice</span><span><i class="bg-pine"></i>Pine</span><span><i class="bg-floral"></i>Floral</span><span><i class="bg-herbal"></i>Herbal</span>
-            </div>
+            <p class="compare-note">Sample jars. The score is a hypothesis: it has not been validated at scale.</p>
           </div>
         </div>
       </section>
 
-      <div class="trust-strip" aria-label="Product principles">
-        <div class="wrap trust-grid">
-          <div class="trust-item"><div class="trust-icon" aria-hidden="true">⌁</div><div><strong>COA-based</strong><span>Uses the batch's terpene panel when available.</span></div></div>
-          <div class="trust-item"><div class="trust-icon" aria-hidden="true">◌</div><div><strong>No account required</strong><span>Try a match before saving anything.</span></div></div>
-          <div class="trust-item"><div class="trust-icon" aria-hidden="true">≠</div><div><strong>No effect predictions</strong><span>NOSE compares aroma, not your high.</span></div></div>
-        </div>
-      </div>
-
-      <section class="section surface" id="how-it-works" aria-labelledby="how-title">
+      <section class="section" id="how-it-works" aria-labelledby="how-title">
         <div class="wrap">
-          <p class="eyebrow">How it works</p>
-          <h2 class="section-title" id="how-title">Three steps from lab numbers to a useful decision.</h2>
-          <div class="steps">
-            <article class="step"><div class="step-number">01</div><h3>Add a jar you liked</h3><p>Use a sample, paste a COA link, upload a report, or enter terpene values manually.</p></article>
-            <article class="step"><div class="step-number">02</div><h3>Build your aroma fingerprint</h3><p>NOSE normalizes each report so the mix matters more than total loudness.</p></article>
-            <article class="step"><div class="step-number">03</div><h3>Compare a new jar</h3><p>See what is shared, what changes, and how confident the comparison is.</p></article>
-          </div>
+          <h2 id="how-title">Three steps from lab numbers to a useful decision.</h2>
+          <ol class="steps">
+            <li><h3>Add a jar you liked</h3><p>Use a sample, paste a COA link, upload a report, or enter terpene values manually.</p></li>
+            <li><h3>Build your aroma fingerprint</h3><p>NOSE normalizes each report so the mix matters more than total loudness.</p></li>
+            <li><h3>Compare a new jar</h3><p>See what is shared, what changes, and how confident the comparison is.</p></li>
+          </ol>
         </div>
       </section>
 
       <section class="section" aria-labelledby="families-title">
         <div class="wrap">
-          <p class="eyebrow">Six-family explorer</p>
-          <h2 class="section-title" id="families-title">A faster way to read a terpene panel.</h2>
-          <p class="section-lead">The six-family system groups related aroma signals into a visual spectrum. It is a practical interpretation layer—not a claim that these six buckets explain every molecule in the jar.</p>
+          <h2 id="families-title">A faster way to read a terpene panel.</h2>
+          <p class="section-lead">The six-family system groups related aroma signals into a visual spectrum. It is a practical interpretation layer, not a claim that these six buckets explain every molecule in the jar.</p>
           <div class="families" id="homeFamilyCards"></div>
         </div>
       </section>
 
-      <section class="section dark" aria-labelledby="position-title">
+      <section class="section" aria-labelledby="position-title">
         <div class="wrap position-grid">
           <div>
-            <p class="eyebrow u-accent">Our position</p>
-            <h2 class="section-title" id="position-title">We won’t predict your high.</h2>
-            <p class="section-lead u-dim">The relationship between aroma compounds and subjective effects is not settled enough for NOSE to promise outcomes. We compare the part the report can support: aroma profile.</p>
-            <a class="button button-dark route-link" href="/methodology/">Read the methodology</a>
+            <h2 id="position-title">We won’t predict your high.</h2>
+            <p class="section-lead">The relationship between aroma compounds and subjective effects is not settled enough for NOSE to promise outcomes. We compare the part the report can support: aroma profile.</p>
+            <a class="button button-secondary route-link" href="/methodology/">Read the methodology</a>
           </div>
           <dl class="position-list">
             <div class="position-row"><dt>Transparent</dt><dd>The comparison method, assumptions, and limitations are written in plain English.</dd></div>
             <div class="position-row"><dt>Batch-aware</dt><dd>A strain name can persist while its measured profile changes. NOSE compares reports, not labels.</dd></div>
             <div class="position-row"><dt>Private by default</dt><dd>The matcher works without an account, and saved palate data stays in your browser unless you choose to export it or save it to your account. Lab reports read from a scan or a link are kept so batches can be compared over time. Nothing about you is kept with them: no account, no record of who scanned what, no location. <a href="/privacy/#lab-reports">What we keep</a>.</dd></div>
-
           </dl>
         </div>
       </section>
 
-      <section class="final-cta dark" aria-labelledby="final-title">
+      <section class="section final" aria-labelledby="final-title">
         <div class="wrap">
           <h2 id="final-title">Stop buying by name. Start matching by aroma.</h2>
           <p>Try the sample profiles, then build a palate from your own lab reports.</p>
-          <div class="button-row"><a class="button button-dark route-link" href="/app">Start matching for free</a></div>
-          <p class="small u-mt-30">Run a dispensary? <a href="/dispensaries/">See NOSE for dispensaries</a>.</p>
+          <div class="button-row"><a class="button button-primary route-link" href="/app">Start matching for free</a></div>
+          <p class="small">Run a dispensary? <a href="/dispensaries/">See NOSE for dispensaries</a>.</p>
         </div>
       </section>
     </div>
-
-    <!-- The matcher lives at /app (app.html). -->
-
-    <!-- aromas: now a static page at /aromas/ (router forwards legacy #/aromas) -->
-
-    <!-- methodology: now a static page at /methodology/ (router forwards legacy #/methodology) -->
-
-    <!-- learn: now a static page at /learn/ (router forwards legacy #/learn) -->
-
-    <!-- about: now a static page at /about/ (router forwards legacy #/about) -->
   </main>
 
   <!-- nose:footer -->
@@ -198,8 +191,8 @@
 
   <script src="/js/match-math.65bb9941.js" defer></script>
   <script src="/js/aroma-bar.4c8dc6b3.js" defer></script>
-  <script src="/js/nose.6c69ddb8.js" defer></script>
+  <script src="/js/nose.d4c92d23.js" defer></script>
   <script src="/js/agegate.86760e1d.js" defer></script>
-  <script src="/js/hero.a66458b5.js" defer></script>
+  <script src="/js/hero.32ad9b44.js" defer></script>
 </body>
 </html>
