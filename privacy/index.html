@@ -75,7 +75,7 @@
         <li>A hashed version of your password, held by the company that handles our logins (named below). Your password passes through our server on its way to them and is never stored or logged by us. We cannot recover it &mdash; only reset it.</li>
         <li>The date the account was created.</li>
         <li>Your subscription status.</li>
-        <li>To slow down password guessing, a count of recent attempts for each email address that tries to sign in, sign up or reset a password, whether or not it has an account. It is kept under a fingerprint of the address (a SHA-256 hash) rather than the address itself; anyone who already knows an address could compute the same fingerprint. An earlier version of this page did not mention these counts.</li>
+        <li>To slow down password guessing, a count of recent attempts for each email address that tries to sign in, sign up or reset a password, whether or not it has an account. It is kept under a fingerprint of the address rather than the address itself. Since <strong>November 17, 2026</strong>, the fingerprint is made with a secret key that only our server holds, so knowing an address is not enough to compute it. Before that date it was a plain SHA-256 hash, which anyone who knew an address could compute. An earlier version of this page did not mention these counts.</li>
         <li>The date and time you confirmed you are 21 or over. This is your own attestation, recorded as you gave it. It is not verification, and we do not describe it as verification anywhere.</li>
       </ul>
       <p>We do not ask for your name, address, phone number, date of birth, or anything about what you buy or consume.</p>

@@ -4944,3 +4944,26 @@ No archived report reads differently, and none is newly refused. A first run
 the same hour printed `parser d8c19b7`: the Codespace had not pulled, so it
 compared the old parser with itself and showed nothing; the line naming the
 parser is what to read first.
+
+### The keyed fingerprint switched on, 2026-11-17
+
+Security audit item 14's last part, finished. The owner made a random value
+in the Codespace (`openssl rand -hex 32`) and saved it in Netlify as
+`NOSE_THROTTLE_SECRET`: a secret value, Production context only, scoped to
+Builds, Functions and Runtime as the other secrets are, on 2026-11-16. A
+saved variable reaches the functions only at the next deploy: this commit's,
+on 2026-11-17, so that is the date the page gives.
+
+- A throttle record's key is now an HMAC-SHA-256 of the address with that
+  secret (`netlify/lib/auth.js`, `throttleDigest`). Every window started
+  again once; a record written before is under the plain SHA-256 until its
+  window ends, an hour at most, and the daily purge removes it.
+- **The privacy page**, the sentence the owner approved on 2026-11-16, with
+  the deploy's date in it: "It is kept under a fingerprint of the address
+  rather than the address itself. Since November 17, 2026, the fingerprint is made with a secret key that
+  only our server holds, so knowing an address is not enough to compute it.
+  Before that date it was a plain SHA-256 hash, which anyone who knew an
+  address could compute." No entry was added to the page's list of changes:
+  its wording has not been shown to the owner.
+- **Losing the secret, or changing it, starts every window again** and
+  nothing else: no account, session or palate depends on it.

@@ -242,19 +242,6 @@ schema comment if wanted.
   security audit item 6). A name server that answers two lookups
   differently still gets through; https and its certificate check are the
   guard. Pinning needs the `undici` package.
-- **One security switch waits for the owner** (13-records, "Security items
-  8, 9, 10 and the keyed fingerprint", 2026-11-16): `NOSE_THROTTLE_SECRET`
-  in Netlify keys the throttle records with an HMAC. The code is live and
-  does nothing until it is set - together with the privacy page's sentence
-  about those counts, which says SHA-256 until then. (The other,
-  `SUPABASE_PUBLISHABLE_KEY`, was set the same day: "The publishable key
-  switched on".)
-  The owner approved that sentence's new wording on 2026-11-16, to publish
-  the day the secret is set: "It is kept under a fingerprint of the address
-  rather than the address itself. Since [that date], the fingerprint is made
-  with a secret key that only our server holds, so knowing an address is not
-  enough to compute it. Before that date it was a plain SHA-256 hash, which
-  anyone who knew an address could compute."
 - **`auth-reset`, `auth-reset-finish` and `auth-confirm` have no edge rate
   limit** (security audit item 9, the part left): Pro's five rules are in
   use.
