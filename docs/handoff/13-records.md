@@ -5197,3 +5197,22 @@ be the equalizer.
   ResizeObserver), so it is drawn at the card's width.
 - Watched in Chromium, `input-paths-test` clean (its card pictures show the
   desk). How the preview looks on the iPhone is the owner's to see.
+
+### The iPhone's camera layer laid out again, and the card's buttons apart, 2026-11-17
+
+The owner, scanning again on an iPhone: the box now had the picture's shape
+(portrait) but the picture was drawn smaller, centred inside it; and
+"Discard" touched "Use this jar" and the row above.
+
+- **Every iPhone screenshot showed the picture at the same size**, whatever
+  the box or the CSS did - letterboxed in the 4:3 box, unmoved by the cover
+  sizing, small in the portrait box. In WebKit on Windows (no live camera
+  there: no `canvas.captureStream`), a video in the box measured 314x419,
+  filling it, as in Chromium: the element is sized right, and the picture
+  is not. iOS Safari draws a live camera on a layer of its own, which keeps
+  the size the video had when the camera started. `coverPreview` now, once
+  the box takes a new shape, lays the video out again (hidden, a reflow,
+  shown) and plays it on, in the next frame. Not seen on an iPhone yet.
+- **The card's buttons**: `.buttons` is `family.css`'s, which `/app` does not
+  load, so the two sat flush; `css/shell` now gives the card's row a 10px gap
+  and 24px above it.

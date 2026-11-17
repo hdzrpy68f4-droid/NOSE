@@ -742,6 +742,10 @@
   background:var(--surface);
 }
 .coa-confirm > h3{ margin:0 0 6px; }
+/* "Use this jar" and "Discard": .buttons is family.css's, which this page
+   does not load, so the two sat against each other and the last row
+   (the owner, on an iPhone, 2026-11-17) */
+.coa-confirm .buttons{ display:flex; flex-wrap:wrap; gap:10px; margin-top:24px; }
 .coa-confirm > .small{ margin:0 0 16px; color:var(--muted); }
 .coa-label{
   margin:18px 0 8px; font-size:0.75rem; letter-spacing:0;

@@ -816,8 +816,19 @@
       if(!reader) return;
       if(video&&!video.dataset.cover){ video.dataset.cover='1'; video.addEventListener('loadedmetadata',coverPreview); video.addEventListener('resize',coverPreview); }
       if(!PHONE.matches||!video||!video.videoWidth||!video.videoHeight){ reader.style.removeProperty('aspect-ratio'); reader.style.removeProperty('max-height'); return; }
-      reader.style.setProperty('aspect-ratio',`${video.videoWidth} / ${video.videoHeight}`,'important');
+      const shape=`${video.videoWidth} / ${video.videoHeight}`;
+      if(reader.style.getPropertyValue('aspect-ratio')===shape) return;
+      reader.style.setProperty('aspect-ratio',shape,'important');
       reader.style.setProperty('max-height','none','important');   // a portrait picture is taller than the 4:3 box's cap
+      /* iOS Safari draws a live camera on a layer of its own, which kept the
+         size the video had when the camera started: the box took the
+         picture's shape and the picture stayed small in it (the owner's
+         iPhone, 2026-11-17). Laying the video out again, and playing it on,
+         makes it take the box's new size. */
+      requestAnimationFrame(()=>{
+        video.style.display='none'; void video.offsetHeight; video.style.display='block';
+        const played=video.play(); if(played&&played.catch) played.catch(()=>{});
+      });
     }
     window.addEventListener('resize',()=>coverPreview());
 
