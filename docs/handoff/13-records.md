@@ -4967,3 +4967,38 @@ on 2026-11-17, so that is the date the page gives.
   its wording has not been shown to the owner.
 - **Losing the secret, or changing it, starts every window again** and
   nothing else: no account, session or palate depends on it.
+
+### The new look went live, 2026-11-17
+
+The site's redesign, built on the branch `redesign` from 2026-11-16 and
+merged to `main` as `5dbf3f1` on 2026-11-17, without a Netlify preview
+(deploy previews are off). The direction and its rules are in `DESIGN.md`;
+who the site is for, and that no proof may be invented, in `PRODUCT.md`;
+the site before it, in `docs/design/baseline.md` and its screenshots.
+
+- **What changed for everyone**: a forest field (`#0E1410`), Fraunces and
+  Hanken Grotesk (self-hosted under `css/fonts`, since the CSP allows only
+  `'self'`), and the equalizer - six channels lit to a profile's families -
+  on the home page, in "See the match" and in the matcher's result
+  (`js/hero`, which is `window.NoseDesk`; it loads before `js/nose` on both
+  pages). The header says "Match a jar". The widget and the matcher's
+  report-confirmation card keep their bars.
+- **Rebuilt**: home (`css/home`), dispensaries (`css/dispensaries`, the
+  widget's views on their own white ground), the seven aroma pages
+  (`css/aroma`, no `family.css`). **Laid out anew on their old markup**:
+  `/learn/` and its guides, `/methodology/`, `/about/`, `/privacy/` and
+  `/terms/` (`css/read`); no word or test-read element changed.
+  **Re-skinned only**: account, 404 and the b2b demo (`open.md`).
+- **After the merge, the same day**: `d724a0a` (closing the age gate no
+  longer scrolls the page in Safari), `2e8f299` (a compact phone footer; the
+  matcher's camera preview pinned to the scanner box, which Safari had left
+  at its starting size), `43699d6` (the match label centred; guide titles on
+  `/learn/` underlined) and `8889038` (the header's six bars move like a level
+  meter again, still for reduced motion). CI's gates, promote and live-check
+  passed on `8889038`, and the privacy page's November 17 sentence
+  (`a429e24`) is still on the live page.
+- **The scoring did not change**: `js/match-math` is untouched, and
+  `js/nose` changed only in what it draws - the desk in place of the bar
+  (it falls back to the bar without `NoseDesk`), the family cards' text no
+  longer in each family's colour, and "Learn more →" without its arrow.
+- **To undo it**: `git revert -m 1 5dbf3f1`, then the four commits after it.

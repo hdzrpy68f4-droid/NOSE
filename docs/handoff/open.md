@@ -121,16 +121,16 @@ schema comment if wanted.
   mode in the app bundle"), and its camera path only on Playwright's fake
   camera. Strict mode is part of the language, but Safari and Firefox have
   not been looked at.
-- **The `/aromas/` cards' anchor-terpene line is grey, not its family's
-  ink** (above, "One home for the family colours"). `.ink-<family>` sets the
-  colour, but `.card p` in `family.css` is more specific, so "Limonene" and
-  the rest show `--muted`. Letting the ink win changes how six lines look, so
-  it needs its own prompt.
-- **Three translucent tints of the fills do not read the tokens**:
-  `account.css`'s error message (spice at .1) and danger zone border (spice
-  at .4), and `shell.css`'s `.hero:before` glow (all six at .10 to .16), each written as
+- **Two translucent tints do not read the tokens**: `account.css`'s error
+  message (spice at .1) and danger zone border (spice at .4), each written as
   `rgba()`. Pointing them at the tokens means `color-mix()`, and the gate
-  does not count a tint as the colour.
+  does not count a tint as the colour. (`shell.css`'s `.hero:before` glow is
+  still in the file but drawn nowhere since the redesign: neither page that
+  links `shell.css`, `/app` and `/b2b/demo/`, has a `.hero`.)
+- **Three pages are re-skinned, not rebuilt** (13-records, "The new look went
+  live", 2026-11-17): `/account/` (and its two sub-pages), `404.html` and
+  `/b2b/demo/` keep their old layouts under `css/world`. Fifteen pages still
+  link `family.css` before their new stylesheet; a page rebuilt drops it.
 - **The Codespace's Netlify token expires about 2027-02-12** (made
   2026-11-14, 90 days). `archive-health` and `reparse --reextract` then fail
   with a 401: make a new personal access token in Netlify (User settings,

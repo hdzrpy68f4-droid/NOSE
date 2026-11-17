@@ -1856,6 +1856,7 @@ under the cap.
 - [The publishable key switched on, 2026-11-16](docs/handoff/13-records.md#the-publishable-key-switched-on-2026-11-16)
 - [The real archive after the parser review, 2026-11-16](docs/handoff/13-records.md#the-real-archive-after-the-parser-review-2026-11-16)
 - [The keyed fingerprint switched on, 2026-11-17](docs/handoff/13-records.md#the-keyed-fingerprint-switched-on-2026-11-17)
+- [The new look went live, 2026-11-17](docs/handoff/13-records.md#the-new-look-went-live-2026-11-17)
 
 ## 14. Dispensary integration
 
