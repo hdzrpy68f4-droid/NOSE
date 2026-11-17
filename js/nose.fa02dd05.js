@@ -116,7 +116,7 @@
       return `The measured profile points in a different direction, led by ${candidateTop}.`;
     }
 
-    /* The match result shows each profile on the desk (js/hero's NoseDesk): a
+    /* The match result, and the home page's comparison, show each profile on the desk (js/hero's NoseDesk): a
        column per family, lit to the family's share of the profile. Without
        NoseDesk it falls back to the bar. DESIGN.md, "The desk". */
     const DESK_ORDER=['citrus','earthy','spice','pine','floral','herbal'];
@@ -139,7 +139,7 @@
     function updateHero(){
       const a=profileById(state.heroPalate), b=profileById(state.heroCandidate);
       const score=cosine(normalize(a.terps),normalize(b.terps));
-      renderBar('heroPalateBar',a.terps); renderBar('heroCandidateBar',b.terps);
+      renderDesk('heroPalateBar',a.terps); renderDesk('heroCandidateBar',b.terps);
       document.getElementById('heroScore').textContent=shownScore(score);
       document.getElementById('heroScoreLabel').textContent=matchBand(score)[0];
       document.getElementById('heroScoreCopy').textContent=describeMatch(a,b,score);

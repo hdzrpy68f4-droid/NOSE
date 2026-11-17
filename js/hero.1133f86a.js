@@ -157,8 +157,10 @@
     byId('jarNext').addEventListener('click', function () { turn(1); });
     show();
   }
-  /* js/nose sets window.NoseSamples when it runs; deferred scripts have all
-     run by DOMContentLoaded, whichever order the page lists them in. */
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', home);
-  else home();
+  /* js/nose sets window.NoseSamples when it runs, and the pages list this file
+     before it (js/nose draws its own desks with NoseDesk). Deferred scripts run
+     while readyState is already 'interactive' and have all run by
+     DOMContentLoaded, so the home page waits for that. */
+  if (document.readyState === 'complete') home();
+  else document.addEventListener('DOMContentLoaded', home);
 })();
