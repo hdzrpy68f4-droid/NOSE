@@ -65,7 +65,7 @@ check('some pages it decides by hand: /aromas/earthy/ marks Aroma families "true
     .map(h => [...h.matchAll(/href="([^"]+)" aria-current="([^"]+)"/g)].map(m => `${m[1]}=${m[2]}`)),
   [['/aromas/=true'], ['/account/=page'], ['/learn/=true']]);
 const navOrder = h => [...h.matchAll(/<a (?:class="nav-cta" )?href="([^"]+)">/g)].map(m => m[1]).filter(h => h !== '/');
-check('one nav order, in both headers and in the app\'s mobile menu: Aroma families, Learn, Methodology, About, Account, Start matching',
+check('one nav order, in both headers and in the app\'s mobile menu: Aroma families, Learn, Methodology, About, Account, Match a jar',
   [navOrder(P.header), navOrder(P.headerApp.split('mobile-menu')[0]), navOrder(P.headerApp.split('mobile-menu')[1])],
   Array(3).fill(['/aromas/', '/learn/', '/methodology/', '/about/', '/account/', '/app']));
 check('the footer lists Account once and holds no route-link class', [(P.footer.match(/href="\/account\/"/g) || []).length, /route-link/.test(P.footer + P.header + P.headerApp)], [1, false]);

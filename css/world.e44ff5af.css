@@ -40,7 +40,10 @@ p{text-wrap:pretty}
 :focus-visible{outline:3px solid var(--ink);outline-offset:3px}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 
-.wrap{width:min(1240px,100% - 40px);margin-inline:auto}
+/* --max is an old stylesheet's own width (1160px in css/shell, 1080px in family.css). A page still
+   on one keeps it: the matcher's camera preview is sized by it, and the QR reader stopped reading
+   the test code when the preview grew (test/input-paths-test.mjs, 2026-11-16). */
+.wrap{width:min(var(--max,1240px),100% - 40px);margin-inline:auto}
 .skip-link{position:fixed;left:16px;top:12px;z-index:1000;padding:10px 14px;background:var(--ink);color:var(--field);border-radius:var(--r);transform:translateY(-200%)}
 .skip-link:focus{transform:none}
 
@@ -72,9 +75,14 @@ p{text-wrap:pretty}
 .mobile-menu{display:none;padding:4px 20px 16px;border-top:1px solid var(--rule)}
 .mobile-menu a{display:flex;align-items:center;min-height:48px;border-bottom:1px solid var(--rule);text-decoration:none}
 @media (max-width:899px){
-  .nav-links{display:none}
+  .has-menu .nav-links{display:none}
   .menu-button{display:grid}
   .mobile-menu[data-open="true"]{display:block}
+  /* the static header has no script: its links become one row that scrolls sideways */
+  .site-header:not(.has-menu) .nav{flex-wrap:wrap;gap:0 24px;padding-block:0}
+  .site-header:not(.has-menu) .nav-links{order:3;width:calc(100% + 40px);margin-inline:-20px;padding-inline:20px;gap:22px;flex-wrap:nowrap;overflow-x:auto;white-space:nowrap;border-top:1px solid var(--rule);scrollbar-width:none}
+  .site-header:not(.has-menu) .nav-links a{min-height:44px;font-size:.9375rem}
+  .site-header:not(.has-menu) .nav-links .nav-cta{border:0;padding:0;text-decoration:underline;text-underline-offset:4px}
 }
 
 /* ---- buttons ---- */
@@ -100,3 +108,62 @@ p{text-wrap:pretty}
   .footer-grid{grid-template-columns:1fr;gap:36px}
   .footer-links{grid-template-columns:repeat(2,1fr)}
 }
+
+/* ==== pages not yet rebuilt ================================================
+ * Every page but the home page still carries its old stylesheet (family.css,
+ * css/shell or css/account) and links this file after it. The old names are
+ * pointed at the new colours here, and the old shapes and labels are brought
+ * to DESIGN.md's. A page that is rebuilt drops its old stylesheet; when the
+ * last one has, this section goes.
+ */
+:root{
+  --paper:var(--field);--surface:var(--raised);--surface-2:#1B241E;
+  --muted:var(--soft);--quiet:var(--soft);
+  --line:var(--rule);--line-strong:#46554A;
+  --green:var(--ink);--green-dark:var(--ink);--dark:var(--raised);
+  --shadow:none;--radius:var(--r);
+  --family-text:var(--ink);
+}
+body.theme-citrus,body.theme-earthy,body.theme-spice,body.theme-pine,body.theme-floral,body.theme-herbal,
+.famcard-citrus,.famcard-earthy,.famcard-spice,.famcard-pine,.famcard-floral,.famcard-herbal{--family-text:var(--ink)}
+.ink-citrus,.ink-earthy,.ink-spice,.ink-pine,.ink-floral,.ink-herbal{color:var(--ink)}
+
+.site-header{backdrop-filter:none;-webkit-backdrop-filter:none}
+.nav-links .nav-cta{background:none;color:var(--ink) !important}
+.nav-links .nav-cta:hover{color:var(--field) !important}
+.footer{padding:0;background:none;color:var(--soft)}
+.footer :focus-visible{outline-color:var(--ink)}
+
+/* labels: the body face, sentence case, untracked */
+.eyebrow,.mono,.card-kicker,.profile-label,.badge{font-family:var(--body);font-weight:450;font-size:.9375rem;letter-spacing:0;text-transform:none;color:var(--soft)}
+
+/* shapes: square and flat */
+.hero{background:none}
+.card,.callout,.hero-photo,.note,.sw,.badge,.step,.family-figure,.family-swatch,.profile-bar,.panel,.tab,.chip,
+input,select,textarea,table,.data-table,.result-stat,.position-row{border-radius:var(--r)}
+.card,.hero-photo,.family-mark,.demo-card{box-shadow:none}
+.hero-photo{background:var(--raised)}
+.note{background:none;color:var(--ink)}
+.callout{border:1px solid var(--rule)}
+
+/* the same, for what the old sheets set by name or by a literal colour */
+.nav-links .nav-cta:hover,.nav-links .nav-cta[aria-current="page"]{background:var(--ink);color:var(--field) !important}
+.footer-links h3{text-transform:none;letter-spacing:0}
+.brand-bars i{animation:none;border-radius:0;transform:none}
+.prose :where(p,li){color:var(--soft)}
+.prose :where(strong,b){color:var(--ink)}
+.coa-sheet,.modal{background:var(--raised);box-shadow:none}
+.modal{border:1px solid var(--rule)}
+.guide-card:hover,.family-card:hover{box-shadow:none;transform:none}
+.coa-pin,.feedback-btn[aria-pressed="true"],.step-number{color:var(--field)}
+.step-number{background:var(--ink)}
+.tab-button[aria-selected="true"]{background:var(--ink);color:var(--field);border-color:var(--ink)}
+.badge{min-height:0;padding:2px 8px;background:none;border:1px solid var(--rule);color:var(--ink)}
+.error-message{background:var(--raised);color:var(--ink);border:1px solid var(--spice)}
+.success-message{background:var(--raised);color:var(--ink);border:1px solid var(--pine)}
+.icon-button{color:var(--ink)}
+.data-table .num,.coa-table td,.coa-meta dd,.score,.fp-total{font-variant-numeric:tabular-nums}
+.score{font-family:var(--display);font-weight:400;letter-spacing:-.02em}
+/* a store's own page is light, and so are the pictures of the widget on one */
+.demo-shop{background:#fff;color:#18211B}
+.shot img{padding:16px;background:#fff}

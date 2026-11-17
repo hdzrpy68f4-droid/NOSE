@@ -162,13 +162,13 @@
         if(detail){
           const notes=document.createElement('p');
           notes.className='mono';
-          notes.style.color=family.text;
+         
           notes.style.margin='14px 0 0';
           notes.textContent=family.alt.replace(/\.$/,'');
-          const compounds=document.createElement('p'); compounds.className='mono'; compounds.style.color=family.text; compounds.style.marginTop='18px'; compounds.textContent=`Common panel signals: ${family.compounds.join(' · ')}`;
+          const compounds=document.createElement('p'); compounds.className='mono'; compounds.style.marginTop='18px'; compounds.textContent=`Common panel signals: ${family.compounds.join(' · ')}`;
           article.append(notes, compounds);
         } else {
-          const link=document.createElement('span'); link.className='family-link'; link.style.color=family.text; link.textContent='Learn more →'; article.append(link);
+          const link=document.createElement('span'); link.className='family-link'; link.textContent='Learn more'; article.append(link);
         }
         return article;
       };

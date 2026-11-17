@@ -1,10 +1,8 @@
 /* Account page only. Loaded after family.css, which supplies the shell:
    header, footer, .card, .button, .wrap, .note, .mono.
 
-   Colour literals rather than variables on purpose — family.css owns the
-   custom-property names and this file must not assume any of them still
-   exist. Values are the project palette:
-     ink #1A241E · paper #F2F4F1 · brand #2F6144 · muted #6E655C */
+   Since the redesign (DESIGN.md, 2026-11-16) its colours are css/world's
+   variables (ink, field, soft, rule, raised): the page links css/world last. */
 
 .acct-wrap {
   max-width: 34rem;
@@ -13,8 +11,8 @@
 
 .acct-loading {
   text-align: center;
-  color: #6E655C;
-  font-family: "Space Mono", ui-monospace, monospace;
+  color: var(--soft);
+  font-family: var(--body);
   font-size: 0.85rem;
   padding: 2rem 0;
 }
@@ -42,23 +40,23 @@
 .acct-tab {
   flex: 1;
   padding: 0.7rem 0.5rem;
-  font-family: "Space Grotesk", system-ui, sans-serif;
+  font-family: var(--body);
   font-size: 0.95rem;
-  color: #6E655C;
+  color: var(--soft);
   background: transparent;
-  border: 1px solid rgba(26, 36, 30, 0.18);
-  border-radius: 0.4rem;
+  border: 1px solid var(--rule);
+  border-radius:var(--radius);
   cursor: pointer;
 }
 
 .acct-tab[aria-selected="true"] {
-  color: #F2F4F1;
-  background: #2F6144;
-  border-color: #2F6144;
+  color: var(--field);
+  background: var(--ink);
+  border-color: var(--ink);
 }
 
 .acct-tab:focus-visible {
-  outline: 2px solid #2F6144;
+  outline: 2px solid var(--ink);
   outline-offset: 2px;
 }
 
@@ -71,11 +69,11 @@
 .acct-field label {
   display: block;
   margin-bottom: 0.35rem;
-  font-family: "Space Mono", ui-monospace, monospace;
+  font-family: var(--body);
   font-size: 0.75rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #6E655C;
+  letter-spacing:0;
+  text-transform:none;
+  color: var(--soft);
 }
 
 .acct-field input {
@@ -84,17 +82,17 @@
   /* 16px minimum: anything smaller makes iOS Safari zoom on focus. */
   font-size: 1rem;
   font-family: inherit;
-  color: #1A241E;
-  background: #F2F4F1;
+  color: var(--ink);
+  background: var(--field);
   padding: 0.7rem 0.75rem;
-  border: 1px solid rgba(26, 36, 30, 0.22);
-  border-radius: 0.4rem;
+  border: 1px solid var(--rule);
+  border-radius:var(--radius);
 }
 
 .acct-field input:focus {
   outline: none;
-  border-color: #2F6144;
-  box-shadow: 0 0 0 3px rgba(47, 97, 68, 0.18);
+  border-color: var(--ink);
+  box-shadow: none;
 }
 
 .acct-field input:disabled {
@@ -115,7 +113,7 @@
   width: 1.15rem;
   height: 1.15rem;
   margin: 0.15rem 0 0;
-  accent-color: #2F6144;
+  accent-color: var(--ink);
   flex: none;
 }
 
@@ -128,7 +126,7 @@
 .acct-fine {
   font-size: 0.82rem;
   line-height: 1.5;
-  color: #6E655C;
+  color: var(--soft);
   margin: 0.4rem 0 0;
 }
 
@@ -141,17 +139,17 @@
 .acct-message {
   margin: 1rem 0 0;
   padding: 0.7rem 0.85rem;
-  border-radius: 0.4rem;
+  border-radius:var(--radius);
   font-size: 0.9rem;
   line-height: 1.5;
-  border-left: 3px solid #8A8377;
-  background: rgba(138, 131, 119, 0.1);
-  color: #1A241E;
+  border-left: 3px solid var(--soft);
+  background: var(--raised);
+  color: var(--ink);
 }
 
 .acct-message[data-tone="ok"] {
-  border-left-color: #2F6144;
-  background: rgba(47, 97, 68, 0.1);
+  border-left-color: var(--ink);
+  background: var(--raised);
 }
 
 .acct-message[data-tone="error"] {
@@ -169,11 +167,11 @@
 }
 
 .acct-details dt {
-  font-family: "Space Mono", ui-monospace, monospace;
+  font-family: var(--body);
   font-size: 0.72rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #6E655C;
+  letter-spacing:0;
+  text-transform:none;
+  color: var(--soft);
   align-self: center;
 }
 
@@ -191,7 +189,7 @@
 }
 
 .acct-danger h2 {
-  color: #93401F;
+  color: #E0896A;
 }
 
 .acct-danger ul {
@@ -201,14 +199,14 @@
 }
 
 .button-danger {
-  color: #F2F4F1;
-  background: #93401F;
-  border-color: #93401F;
+  color: var(--field);
+  background: #E0896A;
+  border-color: #E0896A;
 }
 
 .button-danger:hover:not(:disabled) {
-  background: #7A3419;
-  border-color: #7A3419;
+  background: #EBA389;
+  border-color: #EBA389;
 }
 
 .button-danger:disabled {
