@@ -1,0 +1,74 @@
+/* NOSE - the account pages' forms (DESIGN.md): /account/, /account/reset/
+ * and /account/confirmed/. Linked after css/world and css/page, with no
+ * family.css. The forms stand on the field, not in boxes: each part of the
+ * page is a section under a hairline. No family colour marks a state - an
+ * error or a danger is said in words and drawn in ink.
+ * build.sh fingerprints it: css/account.<hash>.css.
+ */
+.acct-wrap > *{max-width:34rem}
+.acct-loading{padding:24px 0;color:var(--soft)}
+
+/* each part of the page under a hairline */
+.acct-card{padding:32px 0 0;border-top:1px solid var(--rule)}
+.acct-state > .acct-card + .acct-card{margin-top:56px}
+.acct-card h2{margin:0 0 20px;font-size:clamp(1.6rem,3vw,2.25rem);line-height:1.1}
+.acct-card p{color:var(--soft)}
+.acct-card a{text-underline-offset:3px}
+.acct-card .buttons{margin-top:24px}
+
+/* sign in / create an account: two tabs on a hairline */
+.acct-tabs{display:flex;gap:28px;margin-bottom:32px;border-bottom:1px solid var(--rule)}
+.acct-tab{min-height:48px;margin-bottom:-1px;padding:0;background:none;border:0;border-bottom:2px solid transparent;color:var(--soft);font-weight:600;cursor:pointer}
+.acct-tab:hover{color:var(--ink)}
+.acct-tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ink)}
+.acct-tabs + .acct-card{padding-top:0;border-top:0}
+
+/* fields */
+.acct-field{margin-bottom:20px}
+p + .acct-field{margin-top:24px}
+.acct-field label{display:block;margin-bottom:8px;font-size:.9375rem;color:var(--ink)}
+.acct-field input{width:100%;min-height:48px;padding:0 14px;font-size:1rem; /* 16px or more: smaller makes iOS Safari zoom on focus */
+  color:var(--ink);background:var(--raised);border:1px solid var(--rule);border-radius:var(--r)}
+.acct-field input:hover{border-color:var(--soft)}
+.acct-field input:focus{outline:none;border-color:var(--ink)}
+.acct-field input:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
+.acct-field input:disabled{opacity:.55;cursor:not-allowed}
+
+.acct-check{display:flex;align-items:flex-start;gap:12px;margin:4px 0 8px}
+/* bigger than default: this box is a legal attestation, not a preference,
+   and must not be easy to tick by accident */
+.acct-check input{flex:none;width:22px;height:22px;margin:1px 0 0;accent-color:var(--ink)}
+.acct-check label{color:var(--ink)}
+
+.acct-hint,.acct-fine{margin:8px 0 0;font-size:.9375rem;color:var(--soft)}
+.acct-fine{margin-top:24px}
+
+/* messages: a line of ink beside the words; an error is said in its words */
+.acct-message{margin:20px 0 0;padding:12px 16px;border-left:3px solid var(--soft);background:var(--raised);color:var(--ink)}
+.acct-message[data-tone="ok"]{border-left-color:var(--ink)}
+.acct-message[data-tone="error"]{border-left-color:var(--ink);font-weight:600}
+
+/* the account's details: readouts on hairlines */
+.acct-details{margin:0 0 24px;border-bottom:1px solid var(--rule)}
+.acct-details dt,.acct-details dd{margin:0}
+.acct-details{display:grid;grid-template-columns:minmax(9em,auto) 1fr}
+.acct-details dt{padding:14px 16px 14px 0;border-top:1px solid var(--rule);color:var(--soft)}
+.acct-details dd{padding:14px 0;border-top:1px solid var(--rule);color:var(--ink);font-weight:650;overflow-wrap:anywhere}
+.acct-card .note{margin:0;padding:0;color:var(--soft)}
+
+/* deleting the account */
+.acct-danger ul{margin:0 0 20px;padding-left:1.2rem;color:var(--ink)}
+.acct-danger li + li{margin-top:4px}
+.button-danger{background:none;color:var(--ink);border:1px solid var(--ink)}
+.button-danger:hover:not(:disabled){background:var(--ink);color:var(--field)}
+.button-danger:disabled{opacity:.45;cursor:not-allowed}
+
+/* a button waiting on a request: without it a slow network reads as a dead
+   button and people press twice */
+.button[aria-busy="true"]{opacity:.6;cursor:progress}
+
+@media (max-width:480px){
+  .acct-details{grid-template-columns:1fr}
+  .acct-details dd{padding-top:0;border-top:0}
+  .acct-card .buttons{flex-direction:column;align-items:stretch}
+}

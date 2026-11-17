@@ -5002,3 +5002,36 @@ the site before it, in `docs/design/baseline.md` and its screenshots.
   (it falls back to the bar without `NoseDesk`), the family cards' text no
   longer in each family's colour, and "Learn more →" without its arrow.
 - **To undo it**: `git revert -m 1 5dbf3f1`, then the four commits after it.
+
+### The account pages, 404 and the demo rebuilt, 2026-11-17
+
+The three pages "The new look went live" left re-skinned, rebuilt to
+`DESIGN.md`. No sentence changed; three labels did, below.
+
+- **A new stylesheet, `css/page`** (fingerprinted in `build.sh` after
+  `css/read`): the breadcrumb, the page head, a row of buttons and a list set
+  on rules, for pages that have no stylesheet of their own. `404.html` and
+  the three account pages link `css/tokens`, `css/world`, `css/page` (and the
+  account pages `css/account`), and no longer `family.css`.
+- **`404.html`**: its three boxed cards are rows on rules, the heading on the
+  left, as on `/learn/`. Its "404" label above the heading is gone (no label
+  above a heading), and its first button says "Match a jar", as the header
+  does, in place of "Start matching".
+- **The account pages**: `css/account` rewritten. The forms stand on the
+  field, each part of the page under a hairline, aligned with the heading
+  rather than centred in a box; sign-in and sign-up are two tabs on a
+  hairline; the account's details are readouts on rules; field labels and
+  hints are 15px, from 11 and 13. **No family colour marks a state any
+  more**: the delete heading was spice-coloured and its button a salmon
+  fill, and an error message had a spice border and tint - each is now ink,
+  and an error is set in 600 weight. The "Account" label above each heading
+  is gone. Every id the account script reads is unchanged; it reads no class.
+- **`/b2b/demo/`**: `css/b2b-demo` rewritten so the page no longer links
+  `css/shell`: the controls a raised panel (the page's tool), the batch table
+  on rules, nothing under 14px. Its label "For dispensaries · demo" became a
+  breadcrumb, "For dispensaries / Demo", the first part a link to
+  `/dispensaries/`. The widget and its white ground are untouched, and the
+  compliance kit's pictures are of the widget, not the page.
+- Checked in Chromium at 390 and 1280 (signed out, signed in, reset,
+  confirmed, 404, the demo), before and after; all gates green. Safari not
+  looked at.

@@ -1,0 +1,53 @@
+/* NOSE - the dispensary widget's demo page, b2b/demo/ (DESIGN.md). Linked
+ * after css/tokens and css/world, with no css/shell. The widget styles
+ * itself, inside its shadow root (css/b2b-widget.<hash>.css), and stands on
+ * a white ground as it would on a store's page. PARSER-HANDOFF s14,
+ * "The widget".
+ */
+.demo{padding:24px 0 var(--section)}
+.demo:focus{outline:none}
+.demo-crumb{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 clamp(20px,4vw,40px);font-size:.875rem;color:var(--soft)}
+.demo-crumb a{display:inline-flex;align-items:center;min-height:44px;color:var(--soft);text-decoration:none}
+.demo-crumb a:hover{color:var(--ink);text-decoration:underline;text-underline-offset:4px}
+.demo-head{max-width:40em;margin-bottom:clamp(32px,5vw,48px)}
+.demo-head h1{margin-bottom:16px;font-size:clamp(2.2rem,5vw,3.5rem);line-height:1.05;letter-spacing:-.02em}
+.demo-lead{margin:0;color:var(--soft)}
+.demo-h2{margin-bottom:16px;font-size:1.625rem;line-height:1.15}
+.demo-h3{margin:28px 0 8px;font-family:var(--body);font-weight:650;font-size:1rem}
+.demo-note{margin:8px 0 0;font-size:.875rem;color:var(--soft)}
+.demo-head .demo-note,#demoPitchControls{margin-top:16px}
+
+.demo-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:40px;align-items:start}
+@media (min-width:980px){.demo-grid{grid-template-columns:minmax(300px,380px) minmax(0,1fr);gap:48px}}
+/* ?view=pitch: the widget alone, full width, until the controls are shown */
+.demo-pitch .demo-grid{grid-template-columns:minmax(0,1fr)}
+
+/* the controls: a raised panel, since they are the page's tool, not its content */
+.demo-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start;padding:24px;background:var(--raised);border:1px solid var(--rule);border-radius:var(--r)}
+.demo-form .demo-wide,.demo-form .demo-h2{grid-column:1 / -1}
+.demo-form .demo-h2{margin-bottom:0;font-size:1.375rem}
+.demo-field{display:grid;gap:6px;min-width:0;margin:0;font-size:.875rem;color:var(--soft)}
+.demo-field select,.demo-field textarea{width:100%;color:var(--ink);background:var(--field);border:1px solid var(--rule);border-radius:var(--r)}
+.demo-field select{min-height:44px;padding:0 10px}
+.demo-field textarea{min-height:180px;padding:10px;font-size:.875rem;font-variant-numeric:tabular-nums}
+.demo-field select:hover,.demo-field textarea:hover{border-color:var(--soft)}
+.demo-routes{display:flex;flex-wrap:wrap;gap:4px 20px;align-content:start;padding:0;border:0}
+.demo-routes legend{margin-bottom:4px;padding:0}
+.demo-routes label{display:inline-flex;align-items:center;gap:8px;min-height:44px;color:var(--ink)}
+.demo-routes input{width:18px;height:18px;margin:0;accent-color:var(--ink)}
+
+.demo-stage{min-width:0}
+.demo-stage > .demo-h2{margin-bottom:12px}
+.demo-shop{padding:24px;border-radius:var(--r)}
+.demo-events{display:grid;gap:6px;margin:0;padding:0;list-style:none;font-size:.875rem}
+.demo-events:empty{display:none}
+
+/* the test store's batches */
+.demo-menu{margin-top:var(--section);padding-top:40px;border-top:1px solid var(--rule)}
+.data-table-wrap{margin-top:24px;overflow-x:auto}
+.data-table{width:100%;min-width:560px;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.data-table th,.data-table td{padding:12px 12px 12px 0;border-bottom:1px solid var(--rule);text-align:left;font-size:.875rem}
+.data-table th{font-weight:650;color:var(--soft)}
+.data-table td:first-child{white-space:nowrap}
+
+@media (max-width:520px){.demo-form{grid-template-columns:minmax(0,1fr);padding:20px}}

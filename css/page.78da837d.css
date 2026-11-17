@@ -1,0 +1,39 @@
+/* NOSE - plain pages in the new look (DESIGN.md): 404.html and the three
+ * account pages. Linked after css/tokens and css/world, with no family.css:
+ * the breadcrumb, the page head, a row of buttons, and a list set on rules
+ * (a heading on the left, its words on the right), as css/read lays out the
+ * reading pages. The account pages add css/account for their forms.
+ * build.sh fingerprints it: css/page.<hash>.css.
+ */
+.breadcrumb{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:0;font-size:.875rem;color:var(--soft)}
+.breadcrumb a{display:inline-flex;align-items:center;min-height:44px;color:var(--soft);text-decoration:none}
+.breadcrumb a:hover{color:var(--ink);text-decoration:underline;text-underline-offset:4px}
+.u-pt-20{padding-top:12px}
+
+.page-head{padding:clamp(24px,5vw,56px) 0 clamp(40px,6vw,64px)}
+.page-head h1{max-width:14em;margin-bottom:20px;font-size:clamp(2.6rem,6.6vw,5.5rem);line-height:1;letter-spacing:-.03em}
+.page-head p{max-width:33em;margin-bottom:0;font-size:1.125rem;color:var(--soft)}
+.page-head .buttons{margin-top:32px}
+
+.buttons{display:flex;flex-wrap:wrap;gap:10px}
+.section-tight{padding:0 0 var(--section)}
+
+/* a list on rules: each row's heading on the left, its words on the right */
+.page-grid{margin-block:0;padding:0;list-style:none;border-bottom:1px solid var(--rule)}
+.page-grid > *{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);grid-auto-flow:row dense;column-gap:56px;align-items:start;padding:32px 0;border-top:1px solid var(--rule)}
+.page-grid > * > *{grid-column:2;margin:0}
+.page-grid > * > h2{grid-column:1;grid-row:1 / span 3;font-size:clamp(1.5rem,2.6vw,2rem);line-height:1.1}
+.page-grid > * > p{color:var(--soft)}
+.page-grid > * > * + *{margin-top:16px}
+.page-grid > * > h2 + *{margin-top:0}
+.page-grid .button{justify-self:start}
+
+@media (max-width:899px){
+  .page-grid > *{grid-template-columns:1fr}
+  .page-grid > * > *{grid-column:1}
+  .page-grid > * > h2{grid-column:1;grid-row:auto;margin-bottom:10px}
+  .page-grid > * > h2 + *{margin-top:0}
+}
+@media (max-width:480px){
+  .page-head .buttons{flex-direction:column;align-items:stretch}
+}

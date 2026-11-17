@@ -180,6 +180,7 @@ fingerprint css home    css
 fingerprint css dispensaries css
 fingerprint css aroma   css
 fingerprint css read    css
+fingerprint css page    css
 fingerprint js  hero    js
 fingerprint css agegate css
 fingerprint js  agegate js
