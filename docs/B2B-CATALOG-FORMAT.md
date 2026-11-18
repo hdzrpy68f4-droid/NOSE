@@ -96,8 +96,10 @@ The upload keeps each row in NOSE's dispensary database, which holds only
 what it can check. So a row the coverage report reads is refused on upload,
 with its row number and every reason, when:
 
-- its `coa_url` is not an `https` link, is not a link at all, or carries a
-  user name or password;
+- its `coa_url` is not an `https` link, is not a link at all, carries a
+  user name or password, or is a signed link that expires (a query with
+  `X-Amz-Signature`, `X-Amz-Credential`, `X-Goog-Signature`, `Signature`,
+  `sig` and the like): send a link to the report that lasts;
 - its `product_url` has a space or a line break in it;
 - its `batch_id` or `product_id` is longer than 200 characters, its `name` or
   `brand` longer than 300, or a link longer than 2048;

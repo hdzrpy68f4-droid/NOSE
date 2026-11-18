@@ -503,6 +503,14 @@ async function run(db, log = console.log) {
      errText(await rejects(async () => b2b.coaLink('not a link'))),
      errText(await rejects(async () => b2b.coaLink('https://jane:hunter2@coa.example/x.pdf')))],
     [null, null, 'coa_url is not an https link', 'coa_url is not a link', 'coa_url carries a user name or password']);
+  const SIGNED = 'coa_url is a signed link that expires - send a link to the report that lasts';
+  check('...a signed link is refused (S3 v4 and v2, Google, CloudFront, Azure), naming no value; a plain query is kept',
+    [...await Promise.all(['https://b.s3.amazonaws.com/x.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA%2F&X-Amz-Signature=ab12',
+      'https://b.s3.amazonaws.com/x.pdf?AWSAccessKeyId=AKIA&Expires=1&Signature=ab',
+      'https://storage.googleapis.com/b/x.pdf?x-goog-signature=ab', 'https://d1.cloudfront.net/x.pdf?Expires=1&Signature=ab&Key-Pair-Id=K',
+      'https://a.blob.core.windows.net/c/x.pdf?sv=2022&sig=ab'].map(async u => errText(await rejects(async () => b2b.coaLink(u))))),
+     b2b.coaLink('https://coa.example/view?search=ABC123&expires=never')],
+    [SIGNED, SIGNED, SIGNED, SIGNED, SIGNED, 'https://coa.example/view?search=ABC123&expires=never']);
   const catalog = readCatalog(fs.readFileSync(path.join(ROOT, 'test/fixtures/b2b/catalog.csv')));
   const pct = v => (v === '' || v == null ? null : Number(String(v).replace('%', '')));
   const usableRows = catalog.rows.filter(r => r.outcome === null && /^https:/.test(r.coa_url || ''))

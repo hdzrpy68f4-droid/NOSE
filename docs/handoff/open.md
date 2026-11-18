@@ -234,10 +234,6 @@ schema comment if wanted.
   migration (2026-10-08) added the link a reading came from, not the parser;
   instead the reader refuses to write while the parser's files have
   uncommitted changes. A column for the version is a new migration.
-- `coa_url` keeps its query, so a presigned link in a catalog (`X-Amz-*`,
-  `Signature`, `Expires`) would be kept with its temporary credential to the
-  store's own storage. Prompt 3 neither refuses nor flags one: it waits for
-  its own prompt.
 - **A row refused on upload is kept nowhere**: the reply is its only record,
   and `--store` says so rather than listing it.
 - **Batch IDs are matched exactly from one upload to the next**, while a

@@ -2959,3 +2959,24 @@ The last step of "The vote asks before it tells", run in the Codespace
   README.md, strings.md and data.md under `b2b-out/test-store/compliance-kit/`
   (gitignored), in place of release 2's. The rail at 201 strings and the
   sold-out panel at 188, as release 2's; screen 08, the answered vote, at 5.
+
+### A signed coa_url is refused on upload, 2026-11-18
+
+`open.md` had it waiting for its own prompt: `coa_url` keeps its query, so
+a presigned link in a catalog would be stored with its temporary credential
+to the store's own storage. The owner chose to refuse one.
+
+- **`coaLink()`** (`lib/b2b-store.js`) refuses a link whose query has a
+  parameter named `X-Amz-Signature`, `X-Amz-Credential`,
+  `X-Amz-Security-Token`, `X-Goog-Signature`, `X-Goog-Credential`,
+  `Signature`, `sig`, `AWSAccessKeyId` or `Key-Pair-Id`, in any case, beside
+  the user name or password it already refused. The row is refused on upload
+  with "coa_url is a signed link that expires - send a link to the report
+  that lasts", naming no value. `Expires` alone is kept: it is not a key.
+- **The catalog's other queries are kept** as before (Kaycha's `?sample=`,
+  Method's `?search=`); no fixture link has one of those names.
+- **`b2b-store-test`** refuses S3 (v4 and v2), Google, CloudFront and Azure
+  links, and keeps a plain query with `expires=`.
+  `docs/B2B-CATALOG-FORMAT.md` lists the refusal.
+- The coverage report still fetches such a link as the scanner would; only
+  the upload, which stores it, refuses it.

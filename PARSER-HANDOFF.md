@@ -2066,3 +2066,4 @@ test/b2b-compliance-kit-test.mjs     one count: four other mentions of dispensar
 - [The dispensary code read against the privacy page, 2026-11-16](docs/handoff/14-records.md#the-dispensary-code-read-against-the-privacy-page-2026-11-16)
 - [The vote asks before it tells, 2026-11-16](docs/handoff/14-records.md#the-vote-asks-before-it-tells-2026-11-16)
 - [Release 3 published, 2026-11-17](docs/handoff/14-records.md#release-3-published-2026-11-17)
+- [A signed coa_url is refused on upload, 2026-11-18](docs/handoff/14-records.md#a-signed-coa_url-is-refused-on-upload-2026-11-18)

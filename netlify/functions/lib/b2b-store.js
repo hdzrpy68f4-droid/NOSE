@@ -131,7 +131,11 @@ const READ_FIELDS = Object.freeze(['lab', 'productClass', 'usable', 'rejectReaso
 /* A batch's lab report link as stored: https, the whole link without its "#"
    part - a fragment is never sent to a server, and the query names the report
    on real portals (Kaycha's viewer ?sample=, Method's ?search=). A link that
-   carries a user name or password is refused: that is a credential. */
+   carries a user name or password is refused: that is a credential. So,
+   since 2026-11-18, is a signed link (S3's X-Amz-*, Google's X-Goog-*,
+   CloudFront's Signature, Azure's sig): its query is a temporary key to the
+   store's own storage, and the store is asked for a lasting link instead. */
+const SIGNED_LINK = /^(x-amz-(signature|credential|security-token)|x-goog-(signature|credential)|signature|sig|awsaccesskeyid|key-pair-id)$/i;
 function coaLink(raw) {
   if (raw == null || raw === '') return null;
   let u;
@@ -139,6 +143,7 @@ function coaLink(raw) {
   catch { throw new TypeError('coa_url is not a link'); }
   if (u.protocol !== 'https:') throw new TypeError('coa_url is not an https link');
   if (u.username || u.password) throw new TypeError('coa_url carries a user name or password');
+  if ([...u.searchParams.keys()].some(k => SIGNED_LINK.test(k))) throw new TypeError('coa_url is a signed link that expires - send a link to the report that lasts');
   u.hash = '';
   return u.href;
 }
