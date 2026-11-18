@@ -3033,6 +3033,8 @@ light by default; NOSE's fonts loaded by the widget.
   files, the header rule, three `fetch()` calls, and the release asking for
   its two files, the feed and the two fonts alone. Clean in Chromium and
   Firefox on Windows; WebKit runs in CI.
+- **The consent sentence sits 16px under its button** (was 8px): on the
+  cream panel the owner saw the two touching.
 - **The compliance kit** serves the two fonts as `_headers` does and lists
   each in `data.md`'s requests ("one of NOSE's two fonts, checked by the hash
   the script names"); `b2b-release-test` reads the guide's longer
