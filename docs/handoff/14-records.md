@@ -3061,3 +3061,31 @@ light by default; NOSE's fonts loaded by the widget.
   the card's 236px: `.nm-channels li` is now .5625em (was .625em), which
   leaves a space between each. Seen in those pictures. Release 5 has the
   larger size; a release cut after this carries the fix.
+
+### The privacy page describes the end-of-pilot export, 2026-11-18
+
+`open.md` had it: before NOSE receives a first pilot export, the privacy
+page's dispensary section says what it holds, where it is read and when it
+is deleted, and the sentence that NOSE is never told a shopper's test group
+is reconciled with it. Drafted for the owner from `docs/B2B-PILOT-EXPORT.md`
+and `scripts/b2b-pilot-report.js`.
+
+- **"At the end of a pilot"**, a new paragraph after the catalog read once
+  before signing up: one file when the test ends, a row for each shopper in
+  either group, those who never ordered included; the group and the nine
+  columns in plain words (orders, inhalable orders and what they came to;
+  sold-out visits and those that ended in an order; pressed the button,
+  bought a product reached from it, bought it again within 60 days); no
+  name, contact, account or card number, address, date or product, and a
+  personal-looking column refuses the whole file; read in the maintenance
+  workspace by a program that writes nothing and prints totals and rates
+  for each group, never a row; deleted there once the report is published.
+- **The group sentence** now says NOSE is not told a shopper's group "while
+  a test runs", and that the end-of-pilot file gives each row's group but
+  never whose row it is.
+- **"What changed, and when"** gains a twelfth change - the widget's two
+  fonts, since today, nothing new kept - and a thirteenth, the export,
+  described before one is received.
+- **The deletion is a promise kept by hand**: no script deletes the export,
+  and `docs/B2B-PILOT-EXPORT.md` says so. The pilot plan template's
+  checklist item for this paragraph stays, for each pilot to tick.

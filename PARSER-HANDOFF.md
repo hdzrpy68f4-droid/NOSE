@@ -1874,6 +1874,7 @@ under the cap.
 - [Three small open items closed, 2026-11-18](docs/handoff/13-records.md#three-small-open-items-closed-2026-11-18)
 - [The intensity guide's three jars are on the desk, 2026-11-18](docs/handoff/13-records.md#the-intensity-guides-three-jars-are-on-the-desk-2026-11-18)
 - [The guides' last numbers under a gate, and the app's dead hero rules gone, 2026-11-18](docs/handoff/13-records.md#the-guides-last-numbers-under-a-gate-and-the-apps-dead-hero-rules-gone-2026-11-18)
+- [family.css goes: the reading pages keep only what they use, 2026-11-18](docs/handoff/13-records.md#familycss-goes-the-reading-pages-keep-only-what-they-use-2026-11-18)
 
 ## 14. Dispensary integration
 
@@ -2071,3 +2072,4 @@ test/b2b-compliance-kit-test.mjs     one count: four other mentions of dispensar
 - [A signed coa_url is refused on upload, 2026-11-18](docs/handoff/14-records.md#a-signed-coa_url-is-refused-on-upload-2026-11-18)
 - [The widget in NOSE's look: two grounds, NOSE's type and the desk, 2026-11-18](docs/handoff/14-records.md#the-widget-in-noses-look-two-grounds-noses-type-and-the-desk-2026-11-18)
 - [The dispensaries page's pictures retaken, and the desk's names apart, 2026-11-18](docs/handoff/14-records.md#the-dispensaries-pages-pictures-retaken-and-the-desks-names-apart-2026-11-18)
+- [The privacy page describes the end-of-pilot export, 2026-11-18](docs/handoff/14-records.md#the-privacy-page-describes-the-end-of-pilot-export-2026-11-18)

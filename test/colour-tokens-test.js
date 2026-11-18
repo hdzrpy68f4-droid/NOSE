@@ -27,8 +27,8 @@
  *      order; the desk's fills too, since 2026-11-18), favicon.svg's six bars, and each aroma
  *      page's <meta name="theme-color">
  *   5. every ink reaches 4.5:1 - WCAG 2.2 AA for text, SC 1.4.3 - on white,
- *      on #F3F3EE (--paper), on its fill at 10% over white (family.css's
- *      .note) and at 11% over #F3F3EE (family.css's .hero), using WCAG 2.2's
+ *      on #F3F3EE (--paper), on its fill at 10% over white (the old family.css's
+ *      .note) and at 11% over #F3F3EE (its .hero), using WCAG 2.2's
  *      relative luminance and contrast ratio. A mixed background is scored
  *      both as computed and with its channels rounded to whole numbers, as a
  *      screen paints it, and the lower ratio counts.

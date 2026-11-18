@@ -5443,3 +5443,31 @@ Each is now a desk, as on the match result.
   the copy, the note, and their lines in the two media queries): `/app`,
   the one page that links `css/shell`, has no `.hero`, and no script sets
   one.
+
+### family.css goes: the reading pages keep only what they use, 2026-11-18
+
+The eleven reading pages (`/about/`, `/privacy/`, `/terms/`, `/methodology/`,
+`/learn/` and the six guides) were the last to link `family.css`. With it
+switched off, about 7,700 element-and-property pairs changed across them:
+it still laid most of them out, under `css/read`'s thin layer.
+
+- **`css/legacy`** holds the 187 of its 287 rules that reach an element on
+  one of those pages (any selector, pseudo-classes and pseudo-elements set
+  aside, in any media query), as written, with the old colour names written
+  as the new ones; its `:root` keeps only `--max` and `--family`. The pages
+  link it where they linked `family.css`, so the cascade is unchanged.
+  `family.css` is deleted; `build.sh` fingerprints `css/legacy` in its place,
+  and `_headers`, `verify-manifest.sh` and `live-check.sh` follow.
+- **Checked by computed style**: every element of the eleven pages, with its
+  `::before`, `::after` and `::marker`, at 1280, 760 and 390px in headless
+  Chromium - every property and each element's box - before and after: 0
+  differences.
+- **Tried first, and dropped**: folding the rules into `css/read`, which loads
+  after `css/world`. In a cascade layer, rules that had beaten `css/world` by
+  specificity lost (41,107 differences); unlayered, ties flipped (90,540);
+  dropping the declarations `css/world` sets for the same selector still left
+  47,924, and hover states cannot be measured that way. A file of its own in
+  `family.css`'s place keeps the cascade exactly.
+- **Still open**: `css/world`'s old-names section stays, since `/app` links
+  `css/shell`, which uses those names too. A redesign of the reading pages
+  in the new look would drop `css/legacy`.

@@ -38,7 +38,7 @@ fail() { echo "FAIL  $1"; exit 1; }
 ok() { echo "ok    $1"; }
 status() { curl -s -o /dev/null --max-time 30 -w '%{http_code}' "$@"; }
 # The fingerprinted files a page links: /js/x.<8 hex>.js, /css/x.<8 hex>.css.
-assets() { grep -oE '/(js|css)/[a-z0-9-]+\.[0-9a-f]{8}\.(js|css)|/family\.[0-9a-f]{8}\.css' | sort -u | tr '\n' ' '; }
+assets() { grep -oE '/(js|css)/[a-z0-9-]+\.[0-9a-f]{8}\.(js|css)' | sort -u | tr '\n' ' '; }
 
 if [ -n "$commit" ]; then
   short=$(git rev-parse --short "$commit" 2>/dev/null) || fail "this folder has no commit $commit to compare the site with"

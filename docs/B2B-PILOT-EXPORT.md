@@ -11,9 +11,12 @@ report") with the store's plan, `docs/pilots/<slug>.md` (made from
 change, this file changes in the same commit, and `test/b2b-pilot-test.js`
 checks them.
 
-**Not received yet.** Before NOSE receives a first export, its privacy page
-(`/privacy/#dispensaries`) says what the export holds, where it is read and
-when it is deleted (PARSER-HANDOFF.md §14, "Still open").
+**Not received yet.** Since 2026-11-18 NOSE's privacy page
+(`/privacy/#dispensaries`, "At the end of a pilot") says what the export
+holds, that it is read in the maintenance workspace, and that it is deleted
+there once the report is published - so that step is the owner's promise,
+done by hand: no script deletes the file. When a column or a rule below
+changes, that paragraph changes with it.
 
 ## The file
 

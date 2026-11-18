@@ -96,10 +96,12 @@ schema comment if wanted.
 - **The word buttons were watched in Chromium only**, at 1280 and 390 px:
   their wrapping, the tick and the status line. Safari and Firefox have not
   been looked at, nor a screen reader's reading of the note.
-- **Eleven pages still link `family.css`** - `/about/`, `/privacy/`,
-  `/terms/`, `/methodology/`, `/learn/` and its six guides - under `css/read`.
-  A page rebuilt drops it; when none links it, it and the old-names section
-  of `css/world` can go.
+- **Eleven pages still link `css/legacy`** - `/about/`, `/privacy/`,
+  `/terms/`, `/methodology/`, `/learn/` and its six guides: the 187 rules they
+  kept of `family.css`, which went on 2026-11-18 (13-records, "family.css
+  goes: the reading pages keep only what they use"). A page redesigned in the
+  new look drops it. `css/world`'s old-names section stays while `/app`
+  links `css/shell`.
 - **The Codespace's Netlify token expires about 2027-02-12** (made
   2026-11-14, 90 days). `archive-health` and `reparse --reextract` then fail
   with a 401: make a new personal access token in Netlify (User settings,
@@ -382,18 +384,6 @@ schema comment if wanted.
   days, so a deleted row can remain that long. What is still open: nobody has
   restored one. A restore replaces the whole project, so a first trial
   belongs before a licensee depends on NOSE, not after.
-- **The privacy page does not describe the end-of-pilot export yet.** Its
-  dispensary section lists what a dispensary sends NOSE - the catalog, and a
-  catalog read once before signing up - and the integration guide says
-  everything NOSE receives is set out there. A pilot export is one more
-  thing a dispensary sends: one row per assigned shopper, a group label and
-  counts, no identity. Before NOSE receives a first one, the section needs a
-  paragraph - what the export holds, that it is read once in the maintenance
-  workspace and deleted there once the report is published - and the
-  sentence "Nor are we told ... which group of a test the dispensary has put
-  them in" needs reconciling: an export tells NOSE the group of each row,
-  never who the row is. Its own prompt; the plan template's checklist names
-  it.
 - **Settled 2026-10-13: the count decides** (above, "Pilot plan and
   report"), inhalable orders per assigned shopper, as the plan wrote it.
 - **The plan's spread is a past period's.** If the pilot's counts spread

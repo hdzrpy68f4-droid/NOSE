@@ -1,7 +1,7 @@
 /* NOSE reading pages (DESIGN.md): /learn/, the guides and /methodology/.
-   Linked after family.css and css/world, it lays their existing markup out
+   Linked after css/legacy (family.css until 2026-11-18) and css/world, it lays their existing markup out
    in the new look without changing it - the guides' lab-report sheet,
-   tables and figures stay family.css's - so the boxed card grid becomes
+   tables and figures stay css/legacy's - so the boxed card grid becomes
    sections on rules: the heading on the left, the words on the right.
    build.sh fingerprints it: css/read.<hash>.css. */
 
