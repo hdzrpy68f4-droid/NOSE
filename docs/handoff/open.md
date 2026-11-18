@@ -96,12 +96,13 @@ schema comment if wanted.
 - **The word buttons were watched in Chromium only**, at 1280 and 390 px:
   their wrapping, the tick and the status line. Safari and Firefox have not
   been looked at, nor a screen reader's reading of the note.
-- **Eleven pages still link `css/legacy`** - `/about/`, `/privacy/`,
-  `/terms/`, `/methodology/`, `/learn/` and its six guides: the 187 rules they
-  kept of `family.css`, which went on 2026-11-18 (13-records, "family.css
-  goes: the reading pages keep only what they use"). A page redesigned in the
-  new look drops it. `css/world`'s old-names section stays while `/app`
-  links `css/shell`.
+- **`css/world`'s old-names section stays while `/app` links `css/shell`.**
+  Since 2026-11-18 no other page uses it: the eleven reading pages were
+  rebuilt on `css/reading` (13-records, "The reading pages rebuilt"). The
+  account pages, 404 and the B2B demo are on `css/page` and their own sheets.
+- **The rebuilt reading pages were looked at in Chromium only**, at 390 and
+  1280px. Safari, Firefox, keyboard focus and a screen reader have not been
+  checked on them.
 - **The Codespace's Netlify token expires about 2027-02-12** (made
   2026-11-14, 90 days). `archive-health` and `reparse --reextract` then fail
   with a 401: make a new personal access token in Netlify (User settings,

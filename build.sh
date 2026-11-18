@@ -179,12 +179,11 @@ fingerprint css world   css
 fingerprint css home    css
 fingerprint css dispensaries css
 fingerprint css aroma   css
-fingerprint css read    css
 fingerprint css page    css
 fingerprint js  hero    js
 fingerprint css agegate css
 fingerprint js  agegate js
-fingerprint css legacy  css
+fingerprint css reading css
 fingerprint css account css
 fingerprint js  account js
 

@@ -15,9 +15,8 @@
 <meta property="og:url" content="https://nose-app.com/privacy/">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/css/tokens.8fb6b363.css">
-<link rel="stylesheet" href="/css/legacy.e8ca3380.css">
 <link rel="stylesheet" href="/css/world.4a01911d.css">
-<link rel="stylesheet" href="/css/read.f625b5a6.css">
+<link rel="stylesheet" href="/css/reading.bcb532dd.css">
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebPage", "name": "Privacy — NOSE", "description": "Accounts are optional. Without one, nothing you build leaves your browser. Everything NOSE collects, listed.", "url": "https://nose-app.com/privacy/"}</script>
 </head>
 <body>
@@ -38,15 +37,15 @@
   </header>
 <!-- /nose:header -->
 <main id="main">
-  <nav class="wrap breadcrumb u-pt-20" aria-label="Breadcrumb"><a href="/">Home</a><span aria-hidden="true">/</span><span>Privacy</span></nav>
-  <section class="page-head"><div class="wrap">
-    <p class="eyebrow">Privacy</p>
+  <nav class="wrap breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span aria-hidden="true">/</span><span>Privacy</span></nav>
+  <header class="wrap r-page-head">
     <h1>What we collect, in full.</h1>
-    <p>NOSE has no advertising and no third-party trackers. Accounts are optional, and the matcher works without one. This page lists everything that leaves your device, because a site that promises honesty about terpenes should be equally exact about data.</p>
-  </div></section>
+    <p class="r-lede">NOSE has no advertising and no third-party trackers. Accounts are optional, and the matcher works without one. This page lists everything that leaves your device, because a site that promises honesty about terpenes should be equally exact about data.</p>
+    <ul class="r-meta"><li>Privacy</li></ul>
+  </header>
 
-  <section class="section-tight"><div class="wrap page-grid">
-    <article class="card article-card">
+  <section class="wrap r-rows">
+    <article class="r-row">
       <h2>What changed, and when</h2>
       <p>Until recently this page said NOSE had no accounts and collected no email addresses. That was true, and it is no longer true: NOSE now offers optional accounts. We said we would tell you plainly rather than quietly widening the wording, so here is the change in one paragraph.</p>
       <p><strong>If you never create an account, this change does not touch you.</strong> The matcher is free, unlimited, and still runs entirely in your browser. Your palate is still stored only on your device, and we still never receive it.</p>
@@ -65,13 +64,13 @@
       <p><strong>A thirteenth change:</strong> this page now says what a dispensary sends us at the end of a pilot &mdash; one file of counts, a row for each shopper in the test, saying which group they were in and what they did, never who they are &mdash; and when that file is deleted. The section on dispensaries below describes it. We have not received one yet; this page describes it first, as it promised to.</p>
     </article>
 
-    <article class="card article-card">
+    <article class="r-row">
       <h2>Without an account</h2>
       <p>Jars you save are written to your browser's local storage. The terpene values, the names you give jars, and the profiles themselves are never uploaded. Clearing your browser data deletes them permanently &mdash; we hold no copy and cannot restore them.</p>
       <p>You can export your palate to a JSON file, import one back, or delete everything from the matcher at any time. No email address, no cookie, and nothing that links one visit to another.</p>
     </article>
 
-    <article class="card article-card">
+    <article class="r-row">
       <h2>What an account stores</h2>
       <p>Named specifically rather than summarised:</p>
       <ul>
@@ -86,14 +85,14 @@
       <p>Nor does a dispensary that uses NOSE send us what its shoppers buy: a shopper&rsquo;s list of purchases goes from the dispensary to the shopper&rsquo;s own browser, and never to us. See <a href="#dispensaries">Dispensaries that use NOSE</a>.</p>
     </article>
 
-    <article class="card article-card">
+    <article class="r-row">
       <h2>Palate sync, if you use it</h2>
       <p>Your saved jars live in this browser. Two buttons in the matcher let you save a copy to your account and load it back on another device. Nothing moves unless you press one: there is no automatic syncing, and a copy exists on our side only if you put it there. Loading replaces what is in the browser you are using, so it will ask before it does that.</p>
       <p>This is a real reversal of the promise we made before accounts existed, and it deserves stating flatly: a synced palate is a record, held by us, of cannabis products associated with your email address. Consider whether you want that before you use it. The matcher works exactly the same without sync, and the export button still moves a palate between devices by hand.</p>
       <p>Synced palates are kept in file storage run by Netlify, the company that hosts this site, separately from your account credentials, and the company that handles our logins never receives them.</p>
     </article>
 
-    <article class="card article-card">
+    <article class="r-row">
       <h2>Who else receives your data</h2>
       <p>Logins are handled by <a href="https://supabase.com">Supabase</a>, the same company that hosts the lab-report store described below. When you sign up or log in, our server passes them your email address and your password over an encrypted connection, because checking a password is their job. They keep your email address and a hashed form of the password, never the password itself. They do not receive your palate, your jars, or your match results.</p>
       <p>Your browser never talks to them while you use this site; our server does. That includes the emails sent for us to confirm a new account or to reset a password. Since <strong>November 16, 2026</strong>, the link in them points at this site. It carries a one-time code; when you press the button on the page it opens, the page hands the code to our server, and our server passes it to Supabase to check. Until that date the link pointed at Supabase&rsquo;s own site, so clicking it took your browser there first, and Supabase saw your IP address and browser, as any website you visit does, and may have kept them in its logs, before it sent you on to NOSE. A link in an email sent before that date still works that way. An earlier version of this page left that out.</p>
@@ -102,14 +101,14 @@
       <p>Nobody else. No advertisers, no analytics vendors, no data brokers.</p>
     </article>
 
-    <article class="card article-card">
+    <article class="r-row">
       <h2>Cookies and sessions</h2>
       <p>Before accounts, NOSE set no cookies at all. It now sets exactly one, and only after you log in.</p>
       <p>The cookie is named <code>nose_session</code>. It contains a random string and nothing else &mdash; no email address, no name, no readable information of any kind. That random string points at a session record on our side holding your user id, your email address, when the session began and when it expires. An earlier version of this sentence left out the email address and the start time. The cookie cannot be read by JavaScript and is only sent over HTTPS. It is sent when you follow a link to NOSE, so you arrive signed in, and it is not sent with requests another site makes in the background. An earlier version of this sentence said it was not sent when another site links to us.</p>
       <p>It lasts fourteen days, and expires sooner if you log out. Logging out destroys the session on our side as well, so the cookie cannot be reused. There is no tracking cookie, no advertising cookie, and no cookie at all until you sign in.</p>
     </article>
 
-    <article class="card article-card">
+    <article class="r-row">
       <h2>Match feedback stays anonymous &mdash; including after accounts</h2>
       <p>When you press &ldquo;Matched&rdquo; or &ldquo;Didn't match&rdquo; on a result, we receive: the similarity score, its match band, how many jars were in your palate, which built-in sample jars were involved, the day (not the time), and up to three smell words you picked from a fixed list.</p>
       <p>Jars you created yourself are reported as the single word <code>custom</code>. Names you typed never leave your browser.</p>
@@ -118,13 +117,13 @@
       <p>Because these votes carry no name and no account, they may inform aggregate research or published findings about how well the matching method works. Nothing in a vote names you or links it to your account. An earlier version of this sentence said nothing in them could be traced back to you, which claimed more than is true: see the paragraph above.</p>
     </article>
 
-    <article class="card article-card">
+    <article class="r-row">
       <h2>Error reports &mdash; automatic</h2>
       <p>If the site's JavaScript fails, your browser sends us the error message, the script and line it came from, which page you were on, your browser's user-agent string, and the day (not the time). Like a vote, a report is filed under its day and a random code, never a time. It is capped at three reports per page load.</p>
       <p>This contains no palate data and nothing you typed. Like match feedback, it carries no account identifier &mdash; an error report from a signed-in user looks the same as one from anybody else. Error reports are deleted after 90 days.</p>
     </article>
 
-    <article class="card article-card">
+    <article class="r-row">
       <h2>Camera, files, and lab links</h2>
       <p>QR scanning runs entirely in your browser. The camera stream is never transmitted or recorded, and the camera stops when you leave the tab. Permission is only requested when you choose to scan.</p>
       <p>Report files you upload are checked for type and size locally, and are still not sent anywhere.</p>
@@ -132,7 +131,7 @@
       <p>We do not check the address against a list of approved laboratory domains. This page previously said we did, and that was wrong &mdash; the check was removed some time ago and the sentence describing it was left behind. It was removed deliberately: real reports reach people through whoever sold the jar rather than from the laboratory&rsquo;s own website, so a list of lab hostnames turned away genuine reports while doing nothing about a convincing fake hosted on an approved one. What stands in its place is that the file must be a real PDF, and the figures inside it must add up to the total the report itself prints. That catches a report we misread. It does not prove a report is genuine: a made-up document whose numbers add up would pass. An earlier version of this paragraph said a fabricated report fails that test.</p>
     </article>
 
-    <article class="card article-card" id="lab-reports">
+    <article class="r-row" id="lab-reports">
       <h2>Lab reports, and what we keep from them</h2>
       <p><strong>Switched on September 22, 2026.</strong> Nothing was kept before that day. The PDF copies and the rest of the third change noted at the top of this page began on September 23, 2026, and the fourth change &mdash; the stricter rule below, and removals &mdash; in October 2026.</p>
       <p>When a report is fetched from a scan or a link, we keep a copy of the PDF file itself and of what we read from it: the text pulled out of the PDF, the address it first came from (with everything after a &ldquo;?&rdquo; removed, because one-off links can carry codes there that point back at whoever received them), its size, a fingerprint of the file, and everything our parser found in it &mdash; laboratory, strain, batch, batch identifier, product class, the date the laboratory reported, the business it tested the product for, the terpene values, a note of anything in it our parser did not recognise, and, where we refused to trust a reading, the reasons we refused. We record the <strong>day</strong> a report was first fetched and the day it was read, never the time of day. That is not enough to keep our records from being lined up against the server logs our host keeps: each record is numbered in the order it arrives, so the order of a day&rsquo;s reports survives, and an order can narrow down which request brought which report. An earlier version of this sentence said our records could not be lined up at all. The PDF copy is filed under its fingerprint and labelled with nothing but that address and that day. One thing is outside our control: the file storage our host provides may note on its own when each copy was saved, as file storage generally does. We never read that time or copy it anywhere.</p>
@@ -144,12 +143,10 @@
       <p><strong>Why we keep it, both reasons.</strong> The first is that our parser is occasionally wrong in ways that only become visible across many reports read side by side, and keeping them is how those faults get found and fixed. The second is commercial: we intend to study this collection &mdash; how terpene profiles differ between batches, between growers, and between laboratories reading the same material &mdash; and we may sell that analysis to growers. Nothing is for sale today and no such product exists yet. We are saying it now rather than once it has happened.</p>
       <p>Our reasoning is that a lab report is a published document about a jar, not a document about the person holding it. If you would rather not take part, the matcher works without scanning anything at all &mdash; terpene values can be typed in by hand, and a jar entered that way never touches our server.</p>
     </article>
-  </div>
 
-  <div class="wrap u-pt-20">
-    <article class="card article-card" id="dispensaries">
+    <article class="r-row" id="dispensaries">
       <h2>Dispensaries that use NOSE</h2>
-      <div class="page-grid">
+      <div class="r-cols">
         <div>
           <p><strong>Switched on October 9, 2026.</strong> Nothing in this section was collected before that day. This page described it in full first, as it did for the lab-report store.</p>
           <p>A licensed dispensary can place NOSE&rsquo;s flavor match on its own website. For a shopper who agrees, it lists the dispensary&rsquo;s in-stock products whose terpene panel is closest to what that shopper has bought there before, and shows which purchases it used. After an order, it can ask whether a product&rsquo;s flavor was close. It asks first, with one button, and the dispensary records the answer, not us.</p>
@@ -170,10 +167,8 @@
         </div>
       </div>
     </article>
-  </div>
 
-  <div class="wrap page-grid u-pt-20">
-    <article class="card article-card">
+    <article class="r-row">
       <h2>Deleting your account</h2>
       <p>There is a delete button in your account settings. It is not a request queue and not a deactivation flag. Pressing it, in this order:</p>
       <ul>
@@ -187,7 +182,7 @@
       <p>Deleting your account does not touch the palate stored in your own browser. That is yours, and it stays until you clear it.</p>
     </article>
 
-    <article class="card article-card">
+    <article class="r-row">
       <h2>How long we keep things</h2>
       <ul>
         <li><strong>Account and synced palate:</strong> until you delete the account. Deletion is immediate, not scheduled.</li>
@@ -201,13 +196,13 @@
       </ul>
     </article>
 
-    <article class="card article-card">
+    <article class="r-row">
       <h2>If there is a breach</h2>
       <p>If your email address or account information is exposed in a security incident, we will notify you and the relevant authorities as required by law. Florida law sets specific obligations here and we intend to meet them.</p>
       <p>We will say what happened and what was exposed, rather than issuing something vague.</p>
     </article>
 
-    <article class="card article-card">
+    <article class="r-row">
       <h2>What we still do not do</h2>
       <p>This list is shorter than it used to be. It used to begin with &ldquo;no cookies&rdquo; and end with &ldquo;no accounts.&rdquo; Both of those lines are gone, and pretending otherwise would be worse than losing them.</p>
       <ul>
@@ -218,16 +213,16 @@
         <li>No claims about effects &mdash; and so no health data collected or inferred.</li>
       </ul>
     </article>
-  </div></section>
+  </section>
 
-  <section class="section surface"><div class="wrap"><div class="method-box">
+  <section class="wrap r-end"><div class="r-aside">
     <h2>Honest status of this document</h2>
     <ul>
       <li>This describes the current build. If we later collect something we do not collect today, this page changes before that ships, not after, and the &ldquo;what changed&rdquo; note at the top gets rewritten rather than removed.</li>
       <li>NOSE is for adults 21+ and is an educational aroma tool. It is not medical advice.</li>
       <li>Questions, a deletion request, or something to take out of the lab-report store: <a href="mailto:contact@nose-app.com">contact@nose-app.com</a>.</li>
     </ul>
-  </div></div></section>
+  </div></section>
 </main>
 <!-- nose:footer -->
 <footer class="footer">

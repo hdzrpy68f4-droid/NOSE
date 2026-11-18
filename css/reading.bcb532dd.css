@@ -1,0 +1,221 @@
+/* NOSE reading pages (DESIGN.md): /learn/, its six guides, /methodology/,
+   /about/, /privacy/ and /terms/. Linked after css/world, with no older
+   stylesheet: the pages are rebuilt in the new look, so they use none of
+   css/world's old names. Read mode: one column at the measure, figures and
+   tables allowed wider, sections parted by space and a hairline, not boxes.
+   build.sh fingerprints it: css/reading.<hash>.css. */
+
+::selection{background:var(--ink);color:var(--field)}
+
+.breadcrumb{display:flex;flex-wrap:wrap;align-items:center;gap:0 8px;padding-top:12px;font-size:.875rem;color:var(--soft)}
+.breadcrumb a{display:inline-flex;align-items:center;min-height:44px;text-decoration:none}
+.breadcrumb a:hover{color:var(--ink);text-decoration:underline;text-underline-offset:4px}
+
+/* ---- a guide's opening ---- */
+/* the article is one centred column: text holds 33em, a figure or table runs to its 46em */
+.r-head,.r-body,.r-pager{max-width:46em;margin-inline:auto}
+.r-head{padding:clamp(20px,4vw,48px) 0 clamp(36px,5vw,56px);border-bottom:1px solid var(--rule)}
+.r-head h1{max-width:13em;margin:0;font-size:clamp(2.6rem,6.6vw,5.5rem);line-height:1;letter-spacing:-.03em}
+.r-lede{max-width:33em;margin:24px 0 0;color:var(--soft);font-size:clamp(1.125rem,1.6vw,1.25rem)}
+.r-meta{display:flex;flex-wrap:wrap;gap:4px 24px;margin:28px 0 0;padding:0;list-style:none;color:var(--soft);font-size:.875rem}
+
+/* ---- the body: text holds the measure, a figure or table may run to 46em ---- */
+.r-body{padding:clamp(40px,6vw,72px) 0 0}
+.r-body > *{max-width:33em}
+.r-body > :is(.r-figure,.r-table-wrap,.r-short,.r-aside){max-width:46em}
+.r-body > h2{margin:clamp(56px,8vw,88px) 0 18px;font-size:clamp(1.75rem,3.4vw,2.5rem);line-height:1.08;letter-spacing:-.02em;scroll-margin-top:88px}
+.r-body > h2:first-child{margin-top:0}
+.r-body > p,.r-body > ul,.r-body > ol{margin:0 0 20px;color:var(--soft)}
+.r-body :is(p,li) strong{color:var(--ink);font-weight:650}
+.r-body > :is(ul,ol){padding-left:1.25em}
+.r-body > :is(ul,ol) > li + li{margin-top:10px}
+.r-body > :is(ul,ol) > li::marker{color:var(--soft)}
+.r-body a{text-decoration-thickness:1px;text-underline-offset:3px}
+.r-body a:hover{text-decoration-thickness:2px}
+.r-body p > a,.r-body li > a{color:var(--ink)}
+
+/* the short version, before the long one: a raised panel, its points on rules (boxed: the owner's call, 2026-11-18) */
+.r-short{margin:0 0 8px;padding:24px 26px;background:var(--raised);border:1px solid var(--rule)}
+.r-short h2{margin:0 0 14px;font-size:1.625rem;line-height:1.15}
+.r-short :is(ul,ol){margin:0;padding:0;list-style:none}
+.r-short li{margin:0;padding:14px 0;border-bottom:1px solid var(--rule);color:var(--ink)}
+.r-short li + li{margin-top:0}
+.r-short li:last-child{padding-bottom:0;border-bottom:0}
+
+/* notes under a table or figure, and figure captions */
+.r-note,.r-figure figcaption{color:var(--soft);font-size:.875rem;line-height:1.55}
+.r-body > .r-note{margin-top:-4px}
+.r-figure{margin:36px 0}
+.r-figure figcaption{max-width:46em;margin-top:14px}
+
+/* ---- worked jars: a row per jar, on rules - its name, its desk, its loudness ---- */
+.r-jars{border-top:1px solid var(--rule)}
+.r-jars-head,.r-jar{display:grid;grid-template-columns:8.5em minmax(0,1fr) minmax(0,.6fr);gap:10px 28px;align-items:center}
+.r-jars-head{padding:12px 0;border-bottom:1px solid var(--rule);color:var(--soft);font-size:.8125rem}
+.r-jar{padding:22px 0;border-bottom:1px solid var(--rule)}
+.r-jar-name{font-family:var(--display);font-size:1.5rem;line-height:1.1}
+.r-jar-name small{display:block;margin-top:4px;font-family:var(--body);font-size:.8125rem;color:var(--soft)}
+.r-jar-label{display:none}
+.r-jar .result-eq{height:96px}
+.r-meter{height:8px;background:var(--rule)}
+.r-meter i{display:block;height:100%;background:var(--ink)}
+.r-meter .r-m30{width:30%}
+.r-meter .r-m90{width:90%}
+.r-total{display:block;margin-top:10px;color:var(--soft);font-size:.875rem;font-variant-numeric:tabular-nums}
+
+/* ---- tables: hairlines, no box; figures in tabular numerals ---- */
+.r-table-wrap{margin:36px 0 24px;overflow-x:auto}
+.r-table{width:100%;border-collapse:collapse;font-size:.9375rem}
+.r-table caption{padding:0 0 12px;caption-side:top;text-align:left;color:var(--ink);font-family:var(--display);font-size:1.25rem;line-height:1.2}
+.r-table th,.r-table td{padding:12px 16px 12px 0;text-align:left;vertical-align:top;border-bottom:1px solid var(--rule)}
+.r-table :is(th,td):last-child{padding-right:0}
+.r-table thead th{padding-top:0;color:var(--soft);font-weight:450;font-size:.8125rem;border-bottom-color:var(--soft)}
+.r-table tbody th{font-weight:450;color:var(--ink)}
+.r-table td{color:var(--soft)}
+.r-table .num{color:var(--ink);font-weight:650;font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* a note set apart from the text: raised, on a hairline */
+.r-aside{margin:36px 0;padding:24px;background:var(--raised);border:1px solid var(--rule)}
+.r-aside h2{margin:0 0 12px;font-size:1.375rem}
+.r-aside > :last-child{margin-bottom:0}
+
+/* ---- the example lab report (how-to-read-a-coa): a sheet in the site's tones ---- */
+.r-coa-sheet{background:var(--raised);border:1px solid var(--rule)}
+.r-coa-banner{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 16px;padding:12px 18px;border-bottom:1px solid var(--rule);font-size:.8125rem;font-weight:650}
+.r-coa-banner span + span{color:var(--soft);font-weight:450}
+.r-coa-block{padding:16px 18px 18px}
+.r-coa-block + .r-coa-block{border-top:1px solid var(--rule)}
+.r-coa-h{display:flex;align-items:center;gap:8px;margin:0 0 10px;font-family:var(--display);font-size:1.125rem}
+.r-coa-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 28px;margin:0}
+.r-coa-meta div{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--rule)}
+.r-coa-meta dt{color:var(--soft);font-size:.8125rem}
+.r-coa-meta dd{display:flex;align-items:center;gap:8px;margin:0;font-size:.8125rem;font-weight:650;font-variant-numeric:tabular-nums;text-align:right}
+.r-coa-scroll{overflow-x:auto}
+.r-coa-table{width:100%;border-collapse:collapse;font-size:.8125rem;font-variant-numeric:tabular-nums}
+.r-coa-table th,.r-coa-table td{padding:8px;border-bottom:1px solid var(--rule);text-align:right;white-space:nowrap}
+.r-coa-table :is(th,td):first-child{padding-left:0;text-align:left}
+.r-coa-table :is(th,td):last-child{padding-right:0}
+.r-coa-table thead th{color:var(--soft);font-weight:450;vertical-align:bottom}
+.r-coa-table .r-coa-quiet td,.r-coa-table .r-coa-limit{color:var(--soft)}
+.r-coa-table .r-coa-total td{border-top:1px solid var(--ink);border-bottom:0;font-weight:650}
+/* the numbered markers: square, as everything is (DESIGN.md, Shapes) */
+.r-coa-pin{display:inline-grid;place-items:center;flex:none;width:20px;height:20px;border-radius:var(--r);background:var(--ink);color:var(--field);font:650 .6875rem/1 var(--body);font-variant-numeric:tabular-nums;vertical-align:middle}
+.r-body > h2:has(> .r-coa-pin){display:flex;align-items:center;gap:14px}
+.r-body > h2 > .r-coa-pin{width:32px;height:32px;font-size:1rem}
+
+/* ---- sources ---- */
+.r-body > .r-sources{max-width:46em;margin-top:clamp(64px,9vw,96px);padding-top:28px;border-top:1px solid var(--rule)}
+.r-sources h2{margin:0 0 6px;font-size:1.625rem}
+.r-sources > p{margin:0 0 16px;color:var(--soft);font-size:.9375rem}
+.r-sources ol{margin:0;padding-left:1.5em}
+.r-sources li{color:var(--soft);font-size:.9375rem;line-height:1.6;overflow-wrap:anywhere;scroll-margin-top:88px}
+.r-sources li:target{color:var(--ink)}
+.r-sources a{color:var(--soft)}
+.r-sources a:hover{color:var(--ink)}
+
+/* ---- the loop through the guides ---- */
+.r-pager{display:grid;grid-template-columns:1fr auto 1fr;gap:16px;align-items:center;margin-top:clamp(56px,8vw,96px);padding:24px 0 clamp(48px,7vw,80px);border-top:1px solid var(--rule)}
+.r-pager a{display:flex;align-items:center;min-height:44px;text-decoration:none;font-family:var(--display);font-size:1.25rem;line-height:1.2}
+.r-pager a[rel="next"]{justify-content:flex-end;text-align:right}
+.r-pager a:not([rel]){font-family:var(--body);font-size:.9375rem;color:var(--soft);text-decoration:underline;text-underline-offset:4px}
+.r-pager a:hover{text-decoration:underline;text-underline-offset:5px;text-decoration-thickness:1px}
+.r-pager a:not([rel]):hover{color:var(--ink)}
+
+/* ---- the closing invitation: centred, no box ---- */
+.r-final{padding:var(--section) 0;border-top:1px solid var(--rule);text-align:center}
+.r-final h2{margin:0;font-size:clamp(2rem,4.6vw,3.25rem);line-height:1.05;letter-spacing:-.02em}
+.r-final p{max-width:33em;margin:18px auto 0;color:var(--soft)}
+.r-final .button-row{justify-content:center;margin-top:28px}
+
+/* ==== the plain pages: /learn/, /methodology/, /about/, /privacy/, /terms/ ==== */
+.r-page-head{padding:clamp(20px,4vw,48px) 0 clamp(40px,6vw,64px)}
+.r-page-head h1{max-width:14em;margin:0;font-size:clamp(2.6rem,6.6vw,5.5rem);line-height:1;letter-spacing:-.03em}
+
+/* a list on rules: each row's heading on the left, its words on the right (as css/page) */
+.r-rows{padding-bottom:var(--section)}
+.r-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);grid-auto-flow:row dense;column-gap:56px;align-items:start;padding:36px 0;border-top:1px solid var(--rule)}
+.r-row:last-child{border-bottom:1px solid var(--rule)}
+.r-row > *{grid-column:2;max-width:33em;margin:0;color:var(--soft)}
+.r-row > h2{grid-column:1;grid-row:1 / span 20;color:var(--ink);font-size:clamp(1.5rem,2.6vw,2rem);line-height:1.1}
+.r-row > * + *{margin-top:16px}
+.r-row > h2 + *{margin-top:0}
+.r-row :is(strong,em){color:var(--ink)}
+.r-row strong{font-weight:650}
+.r-row a{color:var(--ink);text-decoration-thickness:1px;text-underline-offset:3px}
+.r-row a:hover{text-decoration-thickness:2px}
+.r-row ul{padding-left:1.25em}
+.r-row li + li{margin-top:8px}
+.r-row li::marker{color:var(--soft)}
+.r-row > .r-table-wrap{margin:20px 0 4px}
+/* privacy's dispensary section: two columns of its own inside the row */
+.r-row:has(> .r-cols){display:block}
+.r-row:has(> .r-cols) > h2{margin-bottom:24px}
+.r-cols{display:grid;grid-template-columns:1fr 1fr;gap:0 56px;max-width:none !important}
+.r-cols > div > p{max-width:33em}
+.r-cols > div > p{margin:0 0 16px}
+.r-cols > div > p:last-child{margin-bottom:0}
+.r-formula{padding:16px 18px;background:var(--raised);border:1px solid var(--rule);color:var(--ink) !important;font-family:var(--display);font-size:1.125rem;overflow-x:auto}
+.r-end{padding-bottom:var(--section)}
+.r-end .r-aside{max-width:46em;margin:0}
+.r-aside ul{margin:0;padding-left:1.25em;color:var(--soft)}
+.r-aside li + li{margin-top:10px}
+.r-aside a{color:var(--ink)}
+
+/* /learn/: a guide is a row; its title is the link and covers the row */
+.r-guides{padding-bottom:var(--section)}
+.r-guide-row{position:relative;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);column-gap:56px;align-items:start;padding:32px 0;border-top:1px solid var(--rule)}
+.r-guide-row:last-child{border-bottom:1px solid var(--rule)}
+.r-guide-row h2{grid-column:1;margin:0;font-size:clamp(1.5rem,2.6vw,2rem);line-height:1.1}
+.r-guide-row h2 a{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:6px;text-decoration-color:var(--rule)}
+.r-guide-row h2 a::after{content:"";position:absolute;inset:0}
+.r-guide-row:hover h2 a{text-decoration-color:var(--ink)}
+.r-guide-meta{grid-column:1;margin:10px 0 0;color:var(--soft);font-size:.875rem}
+.r-guide-row > p:not(.r-guide-meta){grid-column:2;grid-row:1 / span 2;max-width:33em;margin:0;color:var(--soft)}
+.r-more{display:none}
+
+/* /about/: a section's statement, its label under it, then its rows */
+.r-band{padding:var(--section) 0 0;border-top:1px solid var(--rule)}
+.r-page-head + .r-band{border-top:0;padding-top:0}
+.r-band > h2{max-width:16em;margin:0;font-size:clamp(2rem,4.6vw,3.25rem);line-height:1.05;letter-spacing:-.02em}
+.r-band-label{margin:14px 0 0;color:var(--soft);font-size:.9375rem}
+.r-band > .r-rows{margin-top:clamp(32px,5vw,48px);padding-bottom:0}
+.r-after{max-width:33em;margin:28px 0 0;color:var(--soft)}
+.r-band:last-of-type{padding-bottom:var(--section)}
+.r-band + .r-final{border-top:1px solid var(--rule)}
+.r-final .r-band-label{margin-top:14px;font-size:.9375rem}
+.r-tags{display:flex;flex-wrap:wrap;gap:8px;max-width:none}
+.r-tag{padding:6px 10px;border:1px solid var(--rule);border-radius:var(--r);color:var(--ink);font-size:.875rem}
+.r-contact{padding-bottom:var(--section)}
+
+@media (max-width:899px){
+  .r-row,.r-guide-row{grid-template-columns:1fr}
+  .r-row > *,.r-row > h2,.r-guide-row h2,.r-guide-meta,.r-guide-row > p:not(.r-guide-meta){grid-column:1;grid-row:auto}
+  .r-row > h2{margin-bottom:14px}
+  .r-guide-row > p:not(.r-guide-meta){margin-top:12px}
+  .r-cols{grid-template-columns:1fr}
+  .r-cols > div + div{margin-top:16px}
+  .r-pager{grid-template-columns:1fr 1fr}
+  .r-pager a:not([rel]){grid-column:1 / -1;grid-row:2;justify-self:center}
+  .r-pager a{font-size:1.0625rem}
+}
+@media (max-width:700px){
+  .r-short{padding:20px}
+  .r-coa-meta{grid-template-columns:1fr}
+  .r-coa-block{padding:14px 14px 16px}
+  .r-coa-banner{padding:12px 14px}
+  .r-coa-table{font-size:.75rem}
+  .r-coa-table th,.r-coa-table td{padding:7px 5px}
+  .r-coa-table thead th{white-space:normal}
+  .r-coa-table thead .r-coa-pin{display:grid;margin:0 0 4px auto}
+  .r-jars-head{display:none}
+  .r-jar{grid-template-columns:1fr;gap:14px}
+  .r-jar-label{display:block;margin-bottom:8px;color:var(--soft);font-size:.8125rem}
+  .r-jar .result-eq{height:84px}
+  .r-table{font-size:.875rem}
+  .r-table th,.r-table td{padding-right:12px}
+}
+@media (max-width:480px){
+  .r-final .button-row{flex-direction:column;align-items:stretch}
+}
+/* rows close on their own hairline: the invitation after them needs no second one */
+:is(.r-guides,.r-rows) + .r-final{border-top:0;padding-top:0}

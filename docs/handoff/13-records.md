@@ -5471,3 +5471,47 @@ it still laid most of them out, under `css/read`'s thin layer.
 - **Still open**: `css/world`'s old-names section stays, since `/app` links
   `css/shell`, which uses those names too. A redesign of the reading pages
   in the new look would drop `css/legacy`.
+
+### The reading pages rebuilt: css/legacy and css/read go, 2026-11-18
+
+The eleven reading pages (`/about/`, `/privacy/`, `/terms/`, `/methodology/`,
+`/learn/` and the six guides) were the old layout dressed in the new look:
+`css/legacy` (what they kept of `family.css`), `css/world`'s old-names
+section, then `css/read` rearranging the card grids. They are rebuilt the way
+the aroma pages and `/dispensaries/` were.
+
+- **One stylesheet, `css/reading`**, linked after `css/world` (and
+  `css/agegate` where a page had it), with no older sheet. The markup uses its
+  own `r-` class names, so none of `css/world`'s old names reach these pages
+  any more. `css/legacy` and `css/read` are deleted; `build.sh` fingerprints
+  `css/reading` in their place and `verify-manifest.sh` checks for it.
+  `css/world`'s old-names section stays: `/app` still links `css/shell`.
+- **A guide** (intensity-versus-character was the template, approved by the
+  owner at 390 and 1280px): one centred column, text at the 33em measure,
+  figures, tables and sources to 46em. The worked jars are rows on rules with
+  the desk; tables are hairlines without a box, figures in tabular numerals;
+  the pager loops through the guides; the closing invitation is centred,
+  unboxed. The "In short" points stay boxed, a raised panel on a hairline
+  (the owner's call). The example lab report on how-to-read-a-coa is a sheet
+  in the site's tones with square numbered markers.
+- **The plain pages** (`/learn/`, `/methodology/`, `/about/`, `/privacy/`,
+  `/terms/`) are rows on rules, heading left and words right, as `css/page`
+  lays out 404 and the account pages. `/learn/` is a list of guides whose
+  titles link the whole row. Privacy's dispensary section takes the full
+  width, its two columns side by side. The old 4px-striped note boxes are a
+  raised panel on a hairline.
+- **Every word kept**: each page was rewritten by a script that compared the
+  sorted list of words in the file before and after and refused any change.
+  The tables' inner markup, which `match-test` reads, is byte for byte as it
+  was. Labels that sat above a heading (DESIGN.md bans them) moved without a
+  word changing: "Guide 04" leads a guide's meta line, a page head's label
+  sits under its lede, and `/about/`'s section labels sit under their
+  statements. The "Read the guide →" lines on `/learn/` stay in the markup and
+  stay hidden, as they were.
+- **Checked**: every page at 390 and 1280px in headless Chromium, rendered
+  from its own HTML on a local server with the age-gate script stubbed out
+  (the real page was not touched), no sideways overflow at either width;
+  `bash build.sh`; `bash scripts/gates.sh`. Safari and Firefox not looked at,
+  nor keyboard focus or a screen reader's reading of the new structure.
+- **Noticed, not changed**: `/learn/` gives intensity-versus-character as
+  "5 min read" and the guide itself says "6 min read".

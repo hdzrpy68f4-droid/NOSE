@@ -36,7 +36,7 @@ js=$(ls js/nose.*.js 2>/dev/null | head -1)
 mm=$(ls js/match-math.js js/match-math.*.js 2>/dev/null | head -1)   # the maths the app reads (window.NoseMatch)
 tok=$(ls css/tokens.*.css 2>/dev/null | head -1)   # the family colours, linked first by every page
 css=$(ls css/shell.*.css 2>/dev/null | head -1)
-fam=$(ls css/legacy.css css/legacy.*.css 2>/dev/null | head -1)   # what the reading pages keep of family.css (2026-11-18)
+fam=$(ls css/reading.css css/reading.*.css 2>/dev/null | head -1)   # the reading pages, rebuilt in the new look (2026-11-18)
 [ -n "$js" ]  && { echo "  ok    $js"; have=$((have+1)); } \
               || { echo "  MISS  js/nose.<hash>.js      fingerprint() exits 1"; missing=$((missing+1)); }
 [ -n "$mm" ]  && { echo "  ok    $mm"; have=$((have+1)); } \
@@ -46,7 +46,7 @@ fam=$(ls css/legacy.css css/legacy.*.css 2>/dev/null | head -1)   # what the rea
 [ -n "$css" ] && { echo "  ok    $css"; have=$((have+1)); } \
               || { echo "  MISS  css/shell.<hash>.css   fingerprint() exits 1"; missing=$((missing+1)); }
 [ -n "$fam" ] && { echo "  ok    $fam"; have=$((have+1)); } \
-              || { echo "  MISS  css/legacy.<hash>.css  fingerprint() exits 1"; missing=$((missing+1)); }
+              || { echo "  MISS  css/reading.<hash>.css fingerprint() exits 1"; missing=$((missing+1)); }
 
 section "Static pages (16)"
 for p in aromas aromas/citrus aromas/earthy aromas/spice aromas/pine \

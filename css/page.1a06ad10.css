@@ -1,7 +1,7 @@
 /* NOSE - plain pages in the new look (DESIGN.md): 404.html and the three
  * account pages. Linked after css/tokens and css/world, with no family.css:
  * the breadcrumb, the page head, a row of buttons, and a list set on rules
- * (a heading on the left, its words on the right), as css/read lays out the
+ * (a heading on the left, its words on the right), as css/reading lays out the
  * reading pages. The account pages add css/account for their forms.
  * build.sh fingerprints it: css/page.<hash>.css.
  */
