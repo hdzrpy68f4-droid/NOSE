@@ -5286,3 +5286,21 @@ the whole portrait frame fitted inside the square with bands either side.
 - **Private browsing gave no frames at all** on the owner's iPhone (stream
   0x0, the camera light on) - before and after the day's changes. Not looked
   into further (`open.md`).
+
+### The camera goes dark at times: the readout widened, 2026-11-17
+
+The owner's next readout, in a normal tab: the square box, the video scaled
+1.3333 - so the stream's size had been known - and then stream 0x0 and a
+black box. Over the day the picture showed at 5:18 and 7:51 and was black at
+5:50, 6:53, 7:38 and 8:38, in normal and Private tabs alike: something cuts
+the camera off after it starts, at times. The Private-browsing reading in
+"iOS draws the camera fitted whole" is not supported by this.
+
+- `?camdebug=1` now also shows the video's readyState, paused and whether
+  its stream is active; the track's readyState, muted, enabled, size, zoom
+  and focus mode; and the last 14 events, timed from page load: the
+  library's start, the track's label and state, the video's
+  loadedmetadata, playing, pause, emptied, stalled, suspend, waiting, ended
+  and error, the track's ended, mute and unmute, `improveCameraFocus`'s
+  `applyConstraints` (focus continuous, zoom 1.5) and its outcome, and each
+  stop. Still TEMPORARY.

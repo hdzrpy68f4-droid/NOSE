@@ -779,8 +779,8 @@
         const advanced=[];
         if(caps?.focusMode?.includes?.('continuous')) advanced.push({focusMode:'continuous'});
         if(caps?.zoom && caps.zoom.min<=1.5 && caps.zoom.max>=1.5) advanced.push({zoom:1.5});
-        if(advanced.length) await track.applyConstraints({advanced});
-      } catch {}
+        if(advanced.length){ camNote(`applyConstraints ${JSON.stringify(advanced)}`); await track.applyConstraints({advanced}); camNote('applyConstraints done'); }
+      } catch(err) { camNote(`applyConstraints failed ${err&&err.name}`); }
     }
 
     /* Resolves true once the camera is live (or already was), false if it
@@ -800,7 +800,7 @@
         video.addEventListener('playing',resolve,{once:true}); setTimeout(resolve,2000);
       });
       qrStarting=started.then(playing,()=>{});
-      return started.then(()=>{ fillPreview(); return true; });
+      return started.then(()=>{ camNote('library start resolved'); camWatch(); fillPreview(); return true; });
     }
 
     const PHONE=matchMedia('(max-width:720px)');
@@ -808,6 +808,16 @@
        out, to find why an iPhone draws the camera smaller than its box.
        Shown only with that parameter; to be removed once found. */
     const CAMDEBUG=new URLSearchParams(location.search).get('camdebug')==='1';
+    const camLog=[]; const t0=Date.now();
+    function camNote(what){ if(!CAMDEBUG) return; camLog.push(`${((Date.now()-t0)/1000).toFixed(1)}s ${what}`); if(camLog.length>14) camLog.shift(); }
+    function camWatch(){
+      if(!CAMDEBUG) return;
+      const video=document.querySelector('#qrReader video'); if(!video||video.dataset.camwatch) return;
+      video.dataset.camwatch='1';
+      ['loadedmetadata','playing','pause','emptied','stalled','suspend','waiting','ended','error'].forEach(e=>video.addEventListener(e,()=>camNote(`video ${e}`)));
+      const track=video.srcObject&&video.srcObject.getVideoTracks&&video.srcObject.getVideoTracks()[0];
+      if(track){ camNote(`track ${track.label} ${track.readyState}`); ['ended','mute','unmute'].forEach(e=>track.addEventListener(e,()=>camNote(`track ${e}`))); }
+    }
     function camDebug(){
       if(!CAMDEBUG) return;
       const reader=$id('qrReader'); if(!reader) return;
@@ -821,6 +831,11 @@
         lines.push(`${el.tagName.toLowerCase()} ${b.width.toFixed(1)}x${b.height.toFixed(1)} at ${(b.left-r.left).toFixed(1)},${(b.top-r.top).toFixed(1)} display ${c.display} pos ${c.position} w ${c.width} h ${c.height} fit ${c.objectFit} transform ${c.transform}`);
         if(el.tagName==='VIDEO') lines.push(`  stream ${el.videoWidth}x${el.videoHeight} inline "${el.getAttribute('style')}" attrs w=${el.getAttribute('width')} h=${el.getAttribute('height')}`);
       });
+      const video=reader.querySelector('video'), stream=video&&video.srcObject;
+      const track=stream&&stream.getVideoTracks&&stream.getVideoTracks()[0];
+      if(video) lines.push(`video readyState ${video.readyState} paused ${video.paused} srcObject ${stream?(stream.active?'active':'inactive'):'none'}`);
+      if(track){ let set={}; try{ set=track.getSettings(); }catch{} lines.push(`track ${track.readyState} muted ${track.muted} enabled ${track.enabled} ${set.width||'?'}x${set.height||'?'} zoom ${set.zoom??'-'} focus ${set.focusMode??'-'}`); }
+      lines.push('events:'); camLog.forEach(l=>lines.push('  '+l));
       out.textContent=lines.join(String.fromCharCode(10));
     }
     if(CAMDEBUG) setInterval(camDebug,1000);
@@ -924,6 +939,7 @@
 
     async function stopQrScanner(){
       if(!qrScanner) return;
+      camNote('stop asked');
       scanAttempt++;   // a start still in progress sees it was superseded
       await qrStarting;
       if(!qrScanner) return;   // another stop, meanwhile, let the scanner go
