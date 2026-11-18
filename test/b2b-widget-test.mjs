@@ -643,7 +643,8 @@ try {
       const el = document.querySelector('nose-matches'), r = el.shadowRoot;
       const loaded = async fam => { for (let i = 0; i < 50 && !document.fonts.check(`16px "${fam}"`, 'a'); i++) await new Promise(f => setTimeout(f, 100)); return [...document.fonts].some(f => f.family.replace(/"/g, '') === fam && f.status === 'loaded'); };
       const out = [await loaded('NOSE Fraunces'), await loaded('NOSE Hanken Grotesk'),
-        getComputedStyle(r.querySelector('.nm-title') || r.querySelector('.nm')).fontFamily.startsWith('"NOSE '),
+        /* WebKit writes the family unquoted, Chromium and Firefox quoted (CI run 100, 2026-11-18) */
+        getComputedStyle(r.querySelector('.nm-title') || r.querySelector('.nm')).fontFamily.replace(/^["']/, '').startsWith('NOSE '),
         getComputedStyle(r.querySelector('.nm')).backgroundColor];
       el.setAttribute('theme', 'dark');
       out.push(getComputedStyle(r.querySelector('.nm')).backgroundColor, getComputedStyle(r.querySelector('.nm')).color);
