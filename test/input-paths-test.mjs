@@ -44,7 +44,8 @@
  *     /learn/why-your-jar-is-drier-than-its-report/ - the range phrase with a
  *     number, "no number on this report" without - in a new tab with
  *     rel="noopener", the row's text unchanged, no other link on the card,
- *     and the guide served (PARSER-HANDOFF s13, "Two guides from the research")
+ *     and the guide served (PARSER-HANDOFF s13, "Two guides from the research");
+ *     since 2026-11-18 the link is named "<its words>, opens in a new tab"
  *   - the row after Batch: "Harvested" and the harvest day with how long ago
  *     (KAY-FLW-001), else "Tested" and the day the lab finished (MTL-FLW-002,
  *     MCL-FLW-001), else "Report dated" (TerpLife_GrpeBblGm_flower), else no
@@ -693,7 +694,7 @@ try {
   const rowLinks = label => page.evaluate(label => {
     const dts = [...document.querySelectorAll('#coaConfirmMeta dt')].filter(d => d.textContent === label);
     const dd = dts.length === 1 ? dts[0].nextElementSibling : null;
-    return dd ? [...dd.querySelectorAll('a')].map(a => ({ href: a.getAttribute('href'), target: a.target, rel: a.rel, text: a.textContent }))
+    return dd ? [...dd.querySelectorAll('a')].map(a => ({ href: a.getAttribute('href'), target: a.target, rel: a.rel, text: a.textContent, label: a.getAttribute('aria-label') }))
       : `${dts.length} rows`;
   }, label);
   const guide = await fetch(BASE + DRIER);
@@ -710,8 +711,8 @@ try {
     check(`COA link, ${c.name}: Water activity reads "${c.water}"`, shown && water === c.water, `it reads ${JSON.stringify(water)}`);
     const words = c.water === NO_NUMBER ? NO_NUMBER : RANGE;
     const links = await rowLinks('Water activity');
-    check(`COA link, ${c.name}: Water activity's "${words}" links to ${DRIER}, in a new tab, rel="noopener"`,
-      shown && JSON.stringify(links) === JSON.stringify([{ href: DRIER, target: '_blank', rel: 'noopener', text: words }]),
+    check(`COA link, ${c.name}: Water activity's "${words}" links to ${DRIER}, in a new tab, rel="noopener", named "${words}, opens in a new tab"`,
+      shown && JSON.stringify(links) === JSON.stringify([{ href: DRIER, target: '_blank', rel: 'noopener', text: words, label: `${words}, opens in a new tab` }]),
       `links ${JSON.stringify(links)}`);
     check(`COA link, ${c.name}: that is the card's only link - Moisture and every other row have none`,
       shown && JSON.stringify(await rowLinks('Moisture')) === '[]'

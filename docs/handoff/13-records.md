@@ -5376,3 +5376,32 @@ camera" hold on the phone.
 - Private browsing on the owner's iPhone: the black pictures there came at
   the same times as in normal tabs, before the button was fixed; not
   retried since.
+
+### Three small open items closed, 2026-11-18
+
+Three entries of `open.md`'s §13 list, taken in turn at the owner's word.
+
+- **The card's guide link says it opens a new tab.** The Water activity
+  row's link (R8) keeps its words and the row's visible text; its
+  `aria-label` is now those words plus ", opens in a new tab", so a screen
+  reader announces it (WAI's advisory technique G201,
+  https://www.w3.org/WAI/WCAG22/Techniques/general/G201). The name begins
+  with the words shown, so speaking the visible words still reaches the link
+  (WCAG 2.5.3, Label in Name). `input-paths-test` checks the label with the
+  href, target and rel. Seen in Chromium and Firefox on Windows; WebKit runs
+  in CI.
+- **The methodology page's figures are under a gate.** `match-props-test`
+  recomputes them as the 2026-11-16 record did: every pair among the
+  accepted flower fixtures (25 jars, 300 pairs), `cosine()` on
+  `normalize()`d readings, banded by `matchBand()`. Today 78 pairs (26%)
+  are "Close match" and 202 (67%) at least "Related profile". The check
+  fails if either share moves more than 5 points from what the page says
+  (1/4, 2/3), or if the page stops saying it, so that the sentence and the
+  test change together. Moving "one time in four" to "one time in five" on a
+  scratch copy failed it.
+- **"Strict mode was run in Chromium only" is no longer true, and comes off
+  the list.** Since 2026-11-14 `input-paths-test` loads the app, strict
+  bundle and all, in WebKit and Firefox as well as Chromium, and fails on
+  any page error; and on 2026-11-17 the camera path ran on the owner's
+  iPhone in Safari ("The camera works on the owner's iPhone, and the
+  readout comes out").

@@ -103,17 +103,6 @@ schema comment if wanted.
   `learn/what-a-lab-report-cant-smell/`, were computed through
   `scripts/lib/match.js` once, on 2026-10-14. Adding them to `match-test.js`
   needs its own prompt.
-- **The card's guide link opens a new tab without saying so.** WAI's
-  advisory technique G201 ("Giving users advanced warning when opening a new
-  window", https://www.w3.org/WAI/WCAG22/Techniques/general/G201, read
-  2026-10-14) suggests a warning; doing
-  it would add words to the row (or an `aria-label` a screen reader reads),
-  and R8 kept the row's text exactly as it was. The link was watched in
-  Chromium only, at 1280 and 390 px.
-- **The bundle in strict mode was run in Chromium only** (above, "Strict
-  mode in the app bundle"), and its camera path only on Playwright's fake
-  camera. Strict mode is part of the language, but Safari and Firefox have
-  not been looked at.
 - **`shell.css`'s `.hero:before` glow does not read the tokens** (all six
   fills at .10 to .16, written as `rgba()`), but it is drawn nowhere: the one
   page that still links `shell.css`, `/app`, has no `.hero`. The account
@@ -200,12 +189,6 @@ schema comment if wanted.
   template" in the dashboard, or a new template (invite, magic link, email
   change - none is used), puts Supabase's own link back, and the privacy
   page would then be wrong.
-- **The methodology page's "one time in four" and "two times in three" are
-  not under a gate** (13-records, "The methodology page says how often
-  unrelated jars earn a label", 2026-11-16): 26% and 67% of the flower pairs
-  among the accepted fixtures. A new fixture, or a change to the maths, can
-  move them; recompute before trusting the sentence. The page gives no count
-  of reports, on purpose.
 
 ---
 

@@ -17,6 +17,13 @@
  * spelling the parser accepts reaches the same key here, no compound is
  * folded into another, and coerce() reads only a plain number.
  *
+ * Since 2026-11-18 it also holds the methodology page's two figures (13-records,
+ * "The methodology page's figures under a gate"): among the accepted flower
+ * fixtures, how often two jars score "Close match", and at least "Related
+ * profile". The page says "about one time in four" and "about two times in
+ * three"; each stays true while the measured share is within 5 points of it.
+ * Needs test/fixtures/extracted (node test/extract-dump.js), as the gates do.
+ *
  * Offline. Nothing is written.
  */
 const path = require('path');
@@ -139,6 +146,31 @@ const COERCE = [['0.51', 0.51], [' 3 ', 3], ['12.5%', 12.5], ['.5', 0.5], ['1.5e
   ['<0.2', 0], ['ND', 0], ['', 0], ['-1', 0], [0.25, 0.25], [-0.1, 0]];
 property('coerce() reads a plain number, with an exponent or a trailing %, and anything else as 0',
   COERCE.filter(([v, want]) => M.coerce(v) !== want).map(([v, want]) => ({ v, want, got: M.coerce(v) })));
+
+/* The methodology page's "how often unrelated jars earn each label". */
+{
+  const fs = require('fs');
+  const ROOT = path.join(__dirname, '..');
+  const EXTRACTED = path.join(ROOT, 'test/fixtures/extracted');
+  const { parseCoa } = require(path.join(ROOT, 'netlify/functions/lib/parse-coa.js'));
+  const jars = fs.readdirSync(EXTRACTED).filter(f => f.endsWith('.txt')).sort()
+    .map(f => parseCoa(fs.readFileSync(path.join(EXTRACTED, f), 'utf8')))
+    .filter(o => o.usable && o.productClass === 'flower').map(o => M.normalize(o.terps));
+  let pairs = 0, close = 0, related = 0;
+  for (let a = 0; a < jars.length; a++) for (let b = a + 1; b < jars.length; b++) {
+    const band = M.matchBand(M.cosine(jars[a], jars[b]))[1];
+    pairs++; if (band === 'Strong') close++; if (band === 'Strong' || band === 'Good') related++;
+  }
+  const page = fs.readFileSync(path.join(ROOT, 'methodology/index.html'), 'utf8');
+  const said = [['&ldquo;Close match&rdquo; about one time in four', close, 1 / 4],
+    ['at least &ldquo;Related profile&rdquo; about two times in three', related, 2 / 3]];
+  for (const [words, count, share] of said) {
+    const got = pairs ? count / pairs : NaN;
+    property(`the methodology page says ${words.replace(/&[lr]dquo;/g, '"')}: ${count} of ${pairs} flower pairs (${Math.round(got * 100)}%), within 5 points of ${Math.round(share * 100)}%`,
+      [!page.includes(words) && { missing: 'the page no longer says this - update the test with the page' },
+       !(Math.abs(got - share) <= 0.05) && { got, share, fix: 'recompute and rewrite the page sentence (#labelBaseline)' }].filter(Boolean));
+  }
+}
 
 if (failures) { console.log(`\nmatch-props: ${failures} failure${failures === 1 ? '' : 's'}`); process.exit(1); }
 console.log('\nmatch-props clean');

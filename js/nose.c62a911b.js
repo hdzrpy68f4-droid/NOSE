@@ -528,7 +528,11 @@
        tab, so a card not yet added is not lost; rel="noopener" leaves the new
        page no window.opener (MDN, "rel=noopener",
        https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Attributes/rel/noopener,
-       read 2026-10-14). PARSER-HANDOFF s13, "Two guides from the research". */
+       read 2026-10-14). A screen reader hears that it opens a new tab: the
+       link's name is its words plus ", opens in a new tab" (WAI technique
+       G201), so the row's visible text is unchanged and the name still
+       begins with the words shown. PARSER-HANDOFF s13, "Two guides from the
+       research". */
     const DRIER_GUIDE='/learn/why-your-jar-is-drier-than-its-report/';
     function waterActivityLink(aw){ return {text:aw==null?NO_NUMBER:AW_RANGE,href:DRIER_GUIDE}; }
 
@@ -593,6 +597,7 @@
         else{
           const a=document.createElement('a');
           a.href=link.href; a.target='_blank'; a.rel='noopener'; a.textContent=link.text;
+          a.setAttribute('aria-label',`${link.text}, opens in a new tab`);
           dd.append(...[value.slice(0,at),a,value.slice(at+link.text.length)].filter(part=>part!==''));
         }
         /* The note sits under its row, in the row's own cell, in the card's
