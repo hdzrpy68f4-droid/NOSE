@@ -243,6 +243,36 @@ check('...and so do its sentences',
    `That palate would score ${worked[5]} against the loud jar and only ${worked[4]} against the quiet one`]
     .map(s => article.includes(s)), [true, true, true, true]);
 
+/* Since 2026-11-18 the rest of the two guides' numbers, computed once on 2026-10-14 (open.md). */
+const pct = v => `${Math.round(v * 100)}%`;
+const shareA = M.normalize(jarA);
+const cutoffRows = [['Myrcene', 'myrcene'], ['Limonene', 'limonene'], ['β-Caryophyllene', 'caryophyllene'], ['Linalool', 'linalool']]
+  .map(([name, k]) => `<tr><th scope="row">${name}</th><td class="num">${jarA[k].toFixed(2)}%</td>`
+    + (jarB[k] > 0.5 ? `<td><span class="num">${jarB[k].toFixed(2)}%</span> over</td>` : `<td class="num">${jarB[k].toFixed(2)}%</td>`)
+    + `<td class="num">${pct(shareA[k])}</td></tr>`);
+const over = jar => Object.values(jar).filter(v => v > 0.5).length;
+const WORDS = ['none', 'one', 'two', 'three', 'four'];
+check('...its 0.5% cutoff table: each value, which are over, the shares, and how many are over, as the matcher and arithmetic give them',
+  [...cutoffRows, `<tr><th scope="row">Over 0.5%</th><td>${WORDS[over(jarA)]}</td><td>${WORDS[over(jarB)]}</td><td>—</td></tr>`]
+    .filter(row => !article.includes(row)), []);
+check('...and its sentences on the cutoff',
+  [`Jar A has no terpene above 0.5%. Jar B, the same jar three times louder, has ${WORDS[over(jarB)]}.`, `NOSE scores the pair ${worked[0]}.`]
+    .map(s => over(jarA) === 0 && article.includes(s)), [true, true]);
+
+const smell = fs.readFileSync(path.join(ROOT, 'learn/what-a-lab-report-cant-smell/index.html'), 'utf8');
+const jarD = { myrcene: 0.50, limonene: 0.30, caryophyllene: 0.25, linalool: 0.10, humulene: 0.08 };
+const jarE = { myrcene: 0.48, limonene: 0.32, caryophyllene: 0.24, linalool: 0.11, humulene: 0.08 };
+const jarF = { caryophyllene: 0.40, limonene: 0.30, myrcene: 0.15, humulene: 0.12, linalool: 0.05 };
+const jarG = { myrcene: 0.50, pinene_a: 0.25, terpinolene: 0.15, limonene: 0.12, caryophyllene: 0.10 };
+const smellPairs = [[jarD, jarE], [jarF, jarG]].map(([a, b]) => M.cosine(M.normalize(a), M.normalize(b)));
+check('learn/what-a-lab-report-cant-smell/ describes jars D to G',
+  smell.includes('Jar D: myrcene 0.50, limonene 0.30, β-caryophyllene 0.25, linalool 0.10, α-humulene 0.08. Jar E: myrcene 0.48, limonene 0.32, β-caryophyllene 0.24, linalool 0.11, α-humulene 0.08. Jar F: β-caryophyllene 0.40, limonene 0.30, myrcene 0.15, α-humulene 0.12, linalool 0.05. Jar G: myrcene 0.50, α-pinene 0.25, terpinolene 0.15, limonene 0.12, β-caryophyllene 0.10.'), true);
+check('...and its table and sentences print the scores and labels the app shows for them',
+  [`<tr><th scope="row">D and E</th><td>Nearly the same terpene mix</td><td><span class="num">${M.shownScore(smellPairs[0])}</span> · ${M.matchBand(smellPairs[0])[0]}</td></tr>`,
+   `<tr><th scope="row">F and G</th><td>Different terpene mixes</td><td><span class="num">${M.shownScore(smellPairs[1])}</span> · ${M.matchBand(smellPairs[1])[0]}</td></tr>`,
+   `the score would still be ${M.shownScore(smellPairs[0])}.`, `more alike than ${M.shownScore(smellPairs[1])} suggests.`]
+    .filter(s => !smell.includes(s)), []);
+
 /* The anchors, in words. */
 const heroScore = M.cosine(M.normalize(lemon), M.normalize(golden.profiles.find(p => p.name === 'demo:cold-creek').terps));
 check('the home page hero, lemon-tart against cold-creek: 0.7452..., shown as 74, banded "Partial overlap"',

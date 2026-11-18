@@ -5428,3 +5428,18 @@ Each is now a desk, as on the match result.
 - **Gone from `family.css`**: `.fp-bar`, `.fp-mix-a`, `.fp-mix-c` and
   `.fp-legend`, which no page uses now.
 - Not seen in a browser in this session; the owner looks at the live page.
+
+### The guides' last numbers under a gate, and the app's dead hero rules gone, 2026-11-18
+
+- **`match-test` now holds every number on the two research guides**: on
+  `learn/intensity-versus-character/`, the 0.5% cutoff table (each value,
+  which are over, each share, "none" and "three") and its two sentences
+  ("has three", "scores the pair 100"); on
+  `learn/what-a-lab-report-cant-smell/`, jars D to G as the page gives them,
+  and the table's and sentences' 99 (Close match) and 46 (Different
+  profile), from `cosine()`, `shownScore()` and `matchBand()`. Changing the
+  99 to 98 on a scratch copy failed it.
+- **`css/shell`'s `.hero` rules are gone** (the glow, the grid, the heading,
+  the copy, the note, and their lines in the two media queries): `/app`,
+  the one page that links `css/shell`, has no `.hero`, and no script sets
+  one.

@@ -1873,6 +1873,7 @@ under the cap.
 - [The camera works on the owner's iPhone, and the readout comes out, 2026-11-17](docs/handoff/13-records.md#the-camera-works-on-the-owners-iphone-and-the-readout-comes-out-2026-11-17)
 - [Three small open items closed, 2026-11-18](docs/handoff/13-records.md#three-small-open-items-closed-2026-11-18)
 - [The intensity guide's three jars are on the desk, 2026-11-18](docs/handoff/13-records.md#the-intensity-guides-three-jars-are-on-the-desk-2026-11-18)
+- [The guides' last numbers under a gate, and the app's dead hero rules gone, 2026-11-18](docs/handoff/13-records.md#the-guides-last-numbers-under-a-gate-and-the-apps-dead-hero-rules-gone-2026-11-18)
 
 ## 14. Dispensary integration
 

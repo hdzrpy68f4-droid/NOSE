@@ -176,39 +176,6 @@
     .button:disabled { opacity:.45; cursor:not-allowed; transform:none; }
     .button-row { display:flex; gap:12px; flex-wrap:wrap; }
 
-    .hero {
-      position:relative;
-      overflow:hidden;
-      padding:72px 0 78px;
-    }
-    .hero:before {
-      content:"";
-      position:absolute;
-      width:660px;
-      height:660px;
-      right:-280px;
-      top:-270px;
-      border-radius:50%;
-      background:conic-gradient(from 40deg, rgba(209,148,18,.16), rgba(156,107,63,.10), rgba(194,91,46,.12), rgba(62,122,84,.13), rgba(138,107,190,.13), rgba(78,141,153,.13), rgba(209,148,18,.16));
-      filter:blur(12px);
-      pointer-events:none;
-    }
-    .hero-grid {
-      position:relative;
-      display:grid;
-      grid-template-columns:minmax(0,1.03fr) minmax(390px,.97fr);
-      gap:58px;
-      align-items:center;
-    }
-    .hero h1 {
-      margin-bottom:24px;
-      font-size:clamp(3rem,7.4vw,5.25rem);
-      line-height:.94;
-      letter-spacing:-.065em;
-    }
-    .hero-copy { max-width:620px; color:var(--muted); font-size:1.1875rem; line-height:1.65; }
-    .hero-note { margin:18px 0 0; color:var(--quiet); font-size:0.8125rem; }
-
     .card {
       background:var(--surface);
       border:1px solid var(--line);
@@ -408,10 +375,7 @@
     .modal-head { display:flex; align-items:center; justify-content:space-between; gap:16px; }
 
     @media (max-width:900px) {
-      .hero-grid,.position-grid,.app-grid,.footer-grid { grid-template-columns:1fr; }
-      .hero { padding-top:52px; }
-      .hero-grid { gap:34px; }
-      .hero-copy { font-size:1.0625rem; }
+      .position-grid,.app-grid,.footer-grid { grid-template-columns:1fr; }
       .trust-grid { grid-template-columns:1fr; }
       .trust-item { border-right:0; border-bottom:1px solid var(--line); }
       .trust-item:last-child { border-bottom:0; }
@@ -428,12 +392,6 @@
       .nav-links { display:none; }
       .menu-button { display:grid; place-items:center; }
       .mobile-menu[data-open="true"] { display:grid; }
-      .hero { padding:44px 0 54px; }
-      .hero-grid { grid-template-columns:1fr; }
-      .hero h1 { font-size:clamp(2.9375rem,14vw,4.25rem); }
-      .hero-copy { font-size:1rem; line-height:1.58; }
-      .hero .button-row { display:grid; }
-      .hero .button { width:100%; }
       .demo-card { padding:18px; }
       .demo-controls { grid-template-columns:1fr; }
       .score-row { grid-template-columns:1fr; }

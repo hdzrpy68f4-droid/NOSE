@@ -96,18 +96,6 @@ schema comment if wanted.
 - **The word buttons were watched in Chromium only**, at 1280 and 390 px:
   their wrapping, the tick and the status line. Safari and Firefox have not
   been looked at, nor a screen reader's reading of the note.
-- **The new guides' numbers are not under a gate** (§13, "Two guides from
-  the research"). `match-test.js` checks the worked examples at the top of
-  `learn/intensity-versus-character/` against the matcher; the cutoff
-  section's 100 and shares on that page, and the 99 and 46 on
-  `learn/what-a-lab-report-cant-smell/`, were computed through
-  `scripts/lib/match.js` once, on 2026-10-14. Adding them to `match-test.js`
-  needs its own prompt.
-- **`shell.css`'s `.hero:before` glow does not read the tokens** (all six
-  fills at .10 to .16, written as `rgba()`), but it is drawn nowhere: the one
-  page that still links `shell.css`, `/app`, has no `.hero`. The account
-  page's two spice tints went with its rebuild (13-records, "The account
-  pages, 404 and the demo rebuilt", 2026-11-17).
 - **Eleven pages still link `family.css`** - `/about/`, `/privacy/`,
   `/terms/`, `/methodology/`, `/learn/` and its six guides - under `css/read`.
   A page rebuilt drops it; when none links it, it and the old-names section
