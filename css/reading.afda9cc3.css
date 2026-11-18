@@ -166,7 +166,7 @@
 .r-guide-row{position:relative;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);column-gap:56px;align-items:start;padding:32px 0;border-top:1px solid var(--rule)}
 .r-guide-row:last-child{border-bottom:1px solid var(--rule)}
 .r-guide-row h2{grid-column:1;margin:0;font-size:clamp(1.5rem,2.6vw,2rem);line-height:1.1}
-.r-guide-row h2 a{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:6px;text-decoration-color:var(--rule)}
+.r-guide-row h2 a{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:6px;text-decoration-color:var(--soft)}
 .r-guide-row h2 a::after{content:"";position:absolute;inset:0}
 .r-guide-row:hover h2 a{text-decoration-color:var(--ink)}
 .r-guide-meta{grid-column:1;margin:10px 0 0;color:var(--soft);font-size:.875rem}
