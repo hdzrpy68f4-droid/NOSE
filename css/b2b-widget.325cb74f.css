@@ -152,7 +152,7 @@
   list-style: none;
   border-top: 1px solid var(--nm-line);
 }
-.nm-channels li { text-align: center; font-size: .625em; color: var(--nm-muted); overflow: hidden; text-overflow: clip; white-space: nowrap; }
+.nm-channels li { text-align: center; font-size: .5625em; letter-spacing: 0; color: var(--nm-muted); overflow: hidden; text-overflow: clip; white-space: nowrap; }
 
 /* --- the bar, js/aroma-bar's: the desk's fallback ---------------------- */
 .profile-bar {

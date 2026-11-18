@@ -2069,3 +2069,4 @@ test/b2b-compliance-kit-test.mjs     one count: four other mentions of dispensar
 - [Release 3 published, 2026-11-17](docs/handoff/14-records.md#release-3-published-2026-11-17)
 - [A signed coa_url is refused on upload, 2026-11-18](docs/handoff/14-records.md#a-signed-coa_url-is-refused-on-upload-2026-11-18)
 - [The widget in NOSE's look: two grounds, NOSE's type and the desk, 2026-11-18](docs/handoff/14-records.md#the-widget-in-noses-look-two-grounds-noses-type-and-the-desk-2026-11-18)
+- [The dispensaries page's pictures retaken, and the desk's names apart, 2026-11-18](docs/handoff/14-records.md#the-dispensaries-pages-pictures-retaken-and-the-desks-names-apart-2026-11-18)

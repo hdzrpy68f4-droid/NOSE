@@ -3044,3 +3044,20 @@ light by default; NOSE's fonts loaded by the widget.
   store keeps release 3's look. The pictures on `/dispensaries/`
   (`images/dispensaries/*.png`) still show the bar. Not looked at by eye in
   this session.
+
+### The dispensaries page's pictures retaken, and the desk's names apart, 2026-11-18
+
+- **`/dispensaries/`'s three pictures show the widget as it is now** - cream
+  panel, NOSE's type, each card's desk: `images/dispensaries/rail-2.png`
+  (700 x 453), `sold-out-2.png` (700 x 450) and `vote-ask-2.png` (700 x 99),
+  new names since `/images/*` is cached for a year; the old three are gone.
+  Taken in headless Chromium from this checkout's built widget on a plain
+  page: the demo's test store (`b2b/demo/test-store.json`), its eleven
+  example purchases, default words, 700px wide, both fonts loaded; the vote
+  is product D-106 before an answer. The rail's alt text says "an equalizer
+  of six aroma families" where it said "a bar". The sitemap's `lastmod`
+  moves to 2026-11-18.
+- **The family names under a card's desk ran together** ("CitrusEarthy") at
+  the card's 236px: `.nm-channels li` is now .5625em (was .625em), which
+  leaves a space between each. Seen in those pictures. Release 5 has the
+  larger size; a release cut after this carries the fix.

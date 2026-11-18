@@ -77,7 +77,7 @@
      and the stylesheet are. Read once, while the script runs. */
   const SCRIPT = document.currentScript && document.currentScript.src;
   const ORIGIN = SCRIPT ? new URL(SCRIPT).origin : null;
-  const STYLESHEET = '/css/b2b-widget.eccde7ac.css';
+  const STYLESHEET = '/css/b2b-widget.325cb74f.css';
   /* null on NOSE's own site; a pinned release names its stylesheet's sha384 here. */
   const STYLESHEET_INTEGRITY = null;
   const FEED_PATH = '/.netlify/functions/b2b-feed';
