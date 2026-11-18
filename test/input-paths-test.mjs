@@ -1048,6 +1048,31 @@ try {
         await p.waitForTimeout(300);
       }
       check('Scan QR left while its camera starts: the camera starts again on coming back, each of three times', back.every(Boolean), JSON.stringify(back));
+
+      /* "Start camera" passes no click event as a camera id (since
+         2026-11-17): wired straight to startQrScanner, the button handed it
+         the event, the request asked for that "device", and an iPhone gave a
+         stream with no picture. In Chromium the library refused that id and
+         the page fell back to asking for any rear camera, so the check is
+         that a request names the chosen camera by its id (the first one,
+         the camera list's, names none). */
+      await p.evaluate(() => {
+        const md = navigator.mediaDevices, real = md.getUserMedia.bind(md);
+        window.__asked = [];
+        md.getUserMedia = c => { const v = c && c.video; const d = v && v.deviceId; window.__asked.push(d === undefined ? 'none' : typeof (d && d.exact !== undefined ? d.exact : d)); return real(c); };
+      });
+      await p.click('#scanTab');
+      await settled();
+      await p.click('#stopScannerButton').catch(() => {});
+      await p.waitForTimeout(300);
+      await p.evaluate(() => { window.__asked = []; });
+      await p.click('#startScannerButton');
+      await p.waitForFunction(() => !document.getElementById('stopScannerButton').disabled, null, { timeout: 8000 }).catch(() => {});
+      const asked = await p.evaluate(() => window.__asked);
+      check('"Start camera" asks for the chosen camera by its id, as the tab does - not the click event, refused and fallen back from',
+        asked.includes('string'), JSON.stringify(asked));
+      await p.click('#urlTab');
+      await p.waitForTimeout(300);
     }
 
     /* A failed link read is said in a status region. */

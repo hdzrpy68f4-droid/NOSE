@@ -839,21 +839,27 @@
       out.textContent=lines.join(String.fromCharCode(10));
     }
     if(CAMDEBUG) setInterval(camDebug,1000);
-    /* iOS Safari draws a live camera fitted whole inside the video, whatever
-       object-fit asks: the owner's iPhone drew a 480x640 picture 265x354 in a
-       354x354 box (?camdebug=1, 2026-11-17). So every browser is asked for
-       that (css/world, object-fit: contain) and the video is scaled up from
-       its centre until the fitted picture covers the box; the box clips the
-       rest. Only the drawing changes: the scanner reads the camera's frames. */
+    /* iOS Safari draws a live camera fitted whole (contain) inside a square
+       as wide as the video, whatever object-fit, height or a transform say:
+       the owner's iPhone drew a 480x640 picture 265x354 in a 354px-wide video
+       every time - in a 4:3, a portrait and a square box, scaled or not
+       (?camdebug=1, 2026-11-17). So on a phone the video is made a square
+       wide enough that the picture fitted in it covers the box, centred;
+       the box clips the rest. Every browser is asked for contain (css/world),
+       so all draw the same. The scanner reads the camera's frames. */
     function fillPreview(){
       const reader=$id('qrReader'), video=reader&&reader.querySelector('video');
       if(!video) return;
       if(!video.dataset.fill){ video.dataset.fill='1'; video.addEventListener('loadedmetadata',fillPreview); video.addEventListener('resize',fillPreview); }
-      const w=video.clientWidth, h=video.clientHeight, vw=video.videoWidth, vh=video.videoHeight;
-      if(!PHONE.matches||!w||!h||!vw||!vh){ video.style.removeProperty('transform'); return; }
-      const fit=Math.min(w/vw,h/vh);   // the picture as contain draws it
-      const scale=Math.max(w/(vw*fit),h/(vh*fit));
-      video.style.setProperty('transform',`scale(${scale.toFixed(4)})`);
+      const bw=reader.clientWidth, bh=reader.clientHeight, vw=video.videoWidth, vh=video.videoHeight;
+      const props=['width','height','left','top','right','bottom','max-width','transform'];
+      if(!PHONE.matches||!bw||!bh||!vw||!vh){ props.forEach(x=>video.style.removeProperty(x)); return; }
+      const long=Math.max(vw,vh);
+      const side=Math.ceil(Math.max(bw*long/vw,bh*long/vh));   // the square whose fitted picture covers the box
+      const set=(k,v)=>video.style.setProperty(k,v,'important');
+      set('width',`${side}px`); set('height',`${side}px`); set('max-width','none');
+      set('left',`${Math.round((bw-side)/2)}px`); set('top',`${Math.round((bh-side)/2)}px`);
+      set('right','auto'); set('bottom','auto'); video.style.removeProperty('transform');
     }
     window.addEventListener('resize',()=>fillPreview());
 
@@ -1230,8 +1236,12 @@
       });
       window.addEventListener('hashchange',route);
       each('[role="tab"]',tab=>{ tab.tabIndex=tab.getAttribute('aria-selected')==='true'?0:-1; tab.addEventListener('click',()=>chooseTab(tab)); tab.addEventListener('keydown',tabKey); });
-      on('startScannerButton','click',startQrScanner);
-      on('stopScannerButton','click',stopQrScanner);
+      /* Not passed straight in: a click handler gets the click event, and
+         startQrScanner read it as the camera's id, so "Start camera" asked
+         for a camera that does not exist - on an iPhone a stream with no
+         picture (the owner, 2026-11-17). The tab called it with nothing. */
+      on('startScannerButton','click',()=>startQrScanner());
+      on('stopScannerButton','click',()=>stopQrScanner());
       on('cameraSelect','change',event=>switchCamera(event.target.value));
       on('chooseQrImageButton','click',()=>{ const f=$id('qrImageFile'); if(f) f.click(); });
       on('qrImageFile','change',event=>{ const file=event.target.files[0]; if(file) scanQrImage(file); event.target.value=''; });

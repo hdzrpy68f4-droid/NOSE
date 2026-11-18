@@ -5304,3 +5304,36 @@ the camera off after it starts, at times. The Private-browsing reading in
   and error, the track's ended, mute and unmute, `improveCameraFocus`'s
   `applyConstraints` (focus continuous, zoom 1.5) and its outcome, and each
   stop. Still TEMPORARY.
+
+### "Start camera" asked for the click as a camera, and the video made a covering square, 2026-11-17
+
+The owner noticed the pattern: the picture went dark after pressing
+"Restart camera" (or "Start camera"), and showed when the camera was started
+from the Scan QR tab.
+
+- **The button handed `startQrScanner` its click event as the camera id.**
+  It was wired as `on('startScannerButton','click',startQrScanner)`, so the
+  event arrived as `cameraId` and the page asked for `{deviceId: {exact:
+  <the event>}}`. In Chromium the library refused it and the page fell back
+  to any rear camera (the OverconstrainedError in the race trace of the
+  same day); on the owner's iPhone it left a stream with no picture. The
+  tab calls `startQrScanner()` with nothing. Old, but rarely met while the
+  camera started from the tab; once the matcher opened on Scan QR with
+  "Start camera" under the box, it was the way most starts went. Now
+  `()=>startQrScanner()`, and the stop button likewise. `input-paths-test`
+  checks that pressing "Start camera" asks for the chosen camera by its id;
+  with the old wiring that check fails, its requests reading
+  `["none","object","none","none"]`.
+- **The scaled video did not change the iPhone's picture**: the readout of
+  the same start (from the tab) showed the video at 472x472 under its
+  `scale(1.3333)` and the picture still 265x354. Across every readout and
+  screenshot of the day the picture was a 480x640 frame fitted whole in a
+  square as wide as the video's own width - the 4:3 box clipping it to
+  265x265, the portrait box showing it whole, the square box with bands.
+  `fillPreview` now makes the video itself a square wide enough that the
+  picture fitted in it covers the box (`side = max(box width x long / stream
+  width, box height x long / stream height)`), centred, clipped by the box;
+  no transform. In Chromium, a 360x480 camera in the 316px box: a 419px
+  square at -52,-52, filling it.
+- The readout stays until the owner's iPhone shows the picture filling the
+  square from "Start camera".

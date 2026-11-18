@@ -64,11 +64,11 @@ promise that NOSE keeps nothing.
   Its normal weight comes from the element's `style` property, which MDN
   says `style-src` does not block; Safari and Firefox have not been looked
   at.
-- **On the owner's iPhone the camera sometimes gives no picture** (13-records,
-  "The camera goes dark at times", 2026-11-17): the camera light on, the
-  scanner running, the video with no frames (`?camdebug=1`: stream 0x0), in
-  normal and Private tabs; other times the picture shows. Cause not found
-  yet; the widened readout is to show it.
+- **The camera on the owner's iPhone, pending their check** (13-records,
+  '"Start camera" asked for the click as a camera', 2026-11-17): the dark
+  picture is traced to the button's handler, fixed; the picture filling the
+  square, and the `?camdebug=1` readout's removal, wait for the owner's
+  screenshot.
 - **How `novelty` was verified, 2026-09-23.** No npm here: the gates ran on
 pdfjs-dist 5.7.284 standing in for unpdf (56/3, 56/0, clean, 4.124/0.944 on the
 untouched branch first), PGlite's API over a throwaway Postgres 16 cluster, and
