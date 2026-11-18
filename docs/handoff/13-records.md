@@ -5405,3 +5405,26 @@ Three entries of `open.md`'s §13 list, taken in turn at the owner's word.
   any page error; and on 2026-11-17 the camera path ran on the owner's
   iPhone in Safari ("The camera works on the owner's iPhone, and the
   readout comes out").
+
+### The intensity guide's three jars are on the desk, 2026-11-18
+
+The owner found a fingerprint bar left on
+`/learn/intensity-versus-character/`: the worked example's Jars A, B and C.
+Each is now a desk, as on the match result.
+
+- **`js/hero` draws a page's worked examples**: every `canvas.result-eq`
+  with `data-shares` (six whole percents in family order) gets a desk, lit
+  as the matcher's result is, full at 60%. The guide loads `js/hero`; it
+  needs neither `js/nose` nor `js/match-math`, since its shares are written
+  in the page.
+- **The guide's markup**: each bar and its legend became a `.fp-desk`
+  (`role="img"`, the same `aria-label` as the bar had) holding the canvas,
+  with the six family names and each share under it (`.desk-channels`). The
+  intensity meter beside it is unchanged. "How NOSE shows both" now calls
+  character the equalizer, each channel lit to its family's share.
+- **Under a gate**: `match-test` checks the three `data-shares` equal the
+  family shares of the jars the caption describes (30,40,20,0,10,0 twice;
+  20,10,0,40,0,30).
+- **Gone from `family.css`**: `.fp-bar`, `.fp-mix-a`, `.fp-mix-c` and
+  `.fp-legend`, which no page uses now.
+- Not seen in a browser in this session; the owner looks at the live page.

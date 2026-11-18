@@ -215,6 +215,15 @@ check('the article describes those jars',
   ['Jar A: myrcene 0.48, limonene 0.36, β-caryophyllene 0.24, linalool 0.12 (% of sample). Jar B: every value three times higher. Jar C: α-pinene 0.48, terpinolene 0.36, limonene 0.24, myrcene 0.12.',
    'Quiet jar: limonene 0.40, myrcene 0.20, β-caryophyllene 0.20. Loud jar: myrcene 1.60, α-pinene 0.96, β-caryophyllene 0.64.']
     .map(s => article.includes(s)), [true, true]);
+/* Its desks (since 2026-11-18) are lit to data-shares: each jar's family shares, whole percents in the desk's order. */
+const DESK = ['citrus', 'earthy', 'spice', 'pine', 'floral', 'herbal'];
+const deskShares = jar => {
+  const fam = Object.fromEntries(DESK.map(f => [f, 0])), sum = Object.values(jar).reduce((a, b) => a + b, 0);
+  for (const [k, v] of Object.entries(jar)) fam[M.TERPENES[k].family] += v;
+  return DESK.map(f => Math.round(fam[f] / sum * 100)).join(',');
+};
+check("...and its three desks are lit to those jars' family shares",
+  [...article.matchAll(/data-shares="([^"]*)"/g)].map(m => m[1]), [jarA, jarB, jarC].map(deskShares));
 const bySharesPalate = M.averageProfiles([{ terps: quiet }, { terps: loud }]);          // what NOSE does
 const byRawPalate = {};                                                                  // the page's counterfactual
 for (const jar of [quiet, loud]) for (const [k, v] of Object.entries(jar)) byRawPalate[k] = (byRawPalate[k] || 0) + v / 2;

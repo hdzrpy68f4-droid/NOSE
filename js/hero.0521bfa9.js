@@ -13,6 +13,9 @@
  *     terpene-to-family map is js/match-math's; this file copies neither.
  *   - the matcher's result (js/nose calls NoseDesk), each family's share of a
  *     profile.
+ *   - a reading page's worked examples: a canvas.result-eq with data-shares,
+ *     six whole percents in family order, lit as the matcher's result is
+ *     (full at 60%). learn/intensity-versus-character since 2026-11-18.
  * The printed figures beside a desk are exact; the motion is a meter's shimmer
  * around them.
  *
@@ -161,6 +164,13 @@
      before it (js/nose draws its own desks with NoseDesk). Deferred scripts run
      while readyState is already 'interactive' and have all run by
      DOMContentLoaded, so the home page waits for that. */
-  if (document.readyState === 'complete') home();
-  else document.addEventListener('DOMContentLoaded', home);
+  function examples() {
+    [].forEach.call(document.querySelectorAll('canvas.result-eq[data-shares]'), function (c) {
+      var desk = create(c);
+      if (desk) desk.set(c.getAttribute('data-shares').split(',').map(function (v) { return v / 100; }), 0.6);
+    });
+  }
+  function start() { home(); examples(); }
+  if (document.readyState === 'complete') start();
+  else document.addEventListener('DOMContentLoaded', start);
 })();
