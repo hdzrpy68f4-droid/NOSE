@@ -1073,6 +1073,39 @@ try {
         asked.includes('string'), JSON.stringify(asked));
       await p.click('#urlTab');
       await p.waitForTimeout(300);
+
+      /* On a phone (since 2026-11-17): the box is square, the video a larger
+         square whose fitted picture covers it (iOS draws
+         a live camera fitted whole inside a square as wide as the video),
+         and "Start camera" reads the code - the scanner sizing its decode
+         canvas from that square, so the frame it reads is squashed to it. */
+      const phone = await browser.newContext({ viewport: { width: 390, height: 844 } });
+      /* The code is read in about 0.2 s and the scanner then takes the video
+         away, so the sizes are written down in the page when the video
+         starts playing - the moment the scanner measures it. */
+      await phone.addInitScript(() => {
+        try { localStorage.setItem('nose-age-ok', '1'); } catch (e) {}
+        new MutationObserver(() => {
+          const v = document.querySelector('#qrReader video');
+          if (!v || v.dataset.geoWatch) return;
+          v.dataset.geoWatch = '1';
+          v.addEventListener('playing', () => { const r = document.getElementById('qrReader');
+            window.__geo = [r.clientWidth, r.clientHeight, v.clientWidth, v.clientHeight]; });
+        }).observe(document, { childList: true, subtree: true });
+      });
+      const q = await phone.newPage();
+      q.on('pageerror', e => pageErrors.push(e.message));
+      let readAt = null;
+      await q.route('**/api/coa', route => { readAt ??= Date.now(); return route.fulfill({ status: 422, contentType: 'application/json', body: JSON.stringify({ error: 'stand-in' }) }); });
+      await q.goto(`${BASE}/app`);
+      const pressed = Date.now();
+      await q.click('#startScannerButton');
+      for (let k = 0; k < 100 && readAt === null; k++) await q.waitForTimeout(100);
+      const geo = await q.evaluate(() => window.__geo || null);
+      check('phone, 390 wide: the box is square, the video a larger square (the 640x480 picture fitted in it covers the box), and "Start camera" reads the code',
+        !!geo && geo[0] === geo[1] && geo[2] === geo[3] && geo[2] > geo[0] && readAt !== null,
+        `box and video ${JSON.stringify(geo)}, read ${readAt === null ? 'never' : `${readAt - pressed} ms after the press`}`);
+      await phone.close();
     }
 
     /* A failed link read is said in a status region. */

@@ -5337,3 +5337,42 @@ from the Scan QR tab.
   square at -52,-52, filling it.
 - The readout stays until the owner's iPhone shows the picture filling the
   square from "Start camera".
+
+### The camera works on the owner's iPhone, and the readout comes out, 2026-11-17
+
+The owner's readout after the last two fixes, from "Start camera" in a
+normal tab: box 356x356, video a 472x472 square at -58,-58, stream 480x640,
+track live and playing, the 1.5 zoom applied - and the picture filling the
+square edge to edge. Both fixes of "'Start camera' asked for the click as a
+camera" hold on the phone.
+
+- **The `?camdebug=1` readout is removed** (`camDebug`, its event log and
+  the notes in `libStart`, `improveCameraFocus` and `stopQrScanner`);
+  `improveCameraFocus` is back to its plain form. `fillPreview`'s comment
+  names the measurements without pointing at the readout, and `css/world`'s
+  says "makes it a square" where it said "scales".
+- **What the scanner decodes follows the video's size on the page.** The
+  library sizes its decode canvas from the video's clientWidth and
+  clientHeight when the video starts playing (`onRenderSurfaceReady`), and
+  copies the whole frame into it each scan (`foreverScan`). `fillPreview`
+  runs on `loadedmetadata`, which comes before `playing`, so the square is
+  set first and the whole frame is read, squashed to the square. Resizing
+  the video after it plays would leave the scanner reading only part of the
+  frame; the comment says so.
+- **Measured in Chromium at 390 wide** (a fake camera playing the test's QR
+  code, three or four tries each): with `fillPreview`, a 640x480 and a
+  480x640 camera were each read in about 0.2 s, as at 1280 wide; with it
+  switched off (the video at the box's 314px), the 640x480 camera's code
+  was never read in 15 s, while the 480x640 one still was. So the larger
+  square also gives the scanner a sharper copy.
+- **`input-paths-test`, at 390 wide** (Chromium, the fake 640x480 camera):
+  the box square, the video a larger square, and "Start camera" reading the
+  code; the sizes are written down in the page at `playing`, since the code
+  is read in about 0.2 s and the scanner then takes the video away. With
+  `fillPreview` switched off the check fails ("box and video
+  [314,314,314,314], read never"). The gates had no camera scan at phone
+  width before; the "passes at 390 wide" of the morning's `2e8f299` was
+  checked by hand.
+- Private browsing on the owner's iPhone: the black pictures there came at
+  the same times as in normal tabs, before the button was fixed; not
+  retried since.

@@ -174,20 +174,21 @@ input,select,textarea,table,.data-table,.result-stat,.position-row{border-radius
 .desk-channels li{text-align:center;font-size:.8125rem;color:var(--soft)}
 @media (max-width:560px){.result-eq{height:104px}.desk-channels li{font-size:.75rem}}
 
-/* the matcher's camera preview fills its box on a phone. Safari left the
-   video at the size the scanner set when it started, at the foot of the box
-   (2026-11-17). Pinned to the box, it covers it; the frames the scanner reads
-   are the camera's own, whatever size the preview is drawn.
-   The box is square: iOS Safari draws the live camera on a layer it turns to
-   portrait, the layer's size turned with it, so in a 4:3 box the picture
-   came out a narrow upright strip, centred (measured on the owner's iPhone
-   with ?camdebug=1, 2026-11-17). A square turned is the same square.
-   iOS also draws the camera fitted whole whatever object-fit says, so the
-   video asks every browser for contain and js/nose (fillPreview) scales it
-   until the picture covers the square. */
+/* the matcher's camera preview fills its box on a phone (2026-11-17). The
+   box is square, and the video is pinned in it, asked for object-fit:
+   contain. iOS Safari draws a live camera fitted whole inside a square as
+   wide as the video, whatever object-fit, height or a transform say (the
+   owner's iPhone drew a 480x640 picture 265x354 in a 354px-wide video, in a
+   4:3, a portrait and a square box alike), so js/nose (fillPreview) makes
+   the video a larger square, wide enough that the fitted picture covers the
+   box, which clips the rest; every browser draws it the same way.
+   The scanner decodes a copy of each frame sized from the video's size on
+   the page, measured when the video starts playing - so the larger square
+   also gives it a sharper copy (13-records, "The camera works on the
+   owner's iPhone"). */
 @media (max-width:720px){
   [data-page="app"] .scanner-reader{position:relative;display:block;aspect-ratio:1 / 1;max-height:none}
-  [data-page="app"] .scanner-reader video{position:absolute;inset:0;width:100% !important;height:100% !important;object-fit:contain;transform-origin:50% 50%}
+  [data-page="app"] .scanner-reader video{position:absolute;inset:0;width:100% !important;height:100% !important;object-fit:contain}
 }
 
 /* a compact footer on a phone: the three link groups side by side */

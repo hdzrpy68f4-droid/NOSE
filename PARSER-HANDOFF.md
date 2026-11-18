@@ -1870,6 +1870,7 @@ under the cap.
 - [iOS draws the camera fitted whole: the picture scaled to fill, 2026-11-17](docs/handoff/13-records.md#ios-draws-the-camera-fitted-whole-the-picture-scaled-to-fill-2026-11-17)
 - [The camera goes dark at times: the readout widened, 2026-11-17](docs/handoff/13-records.md#the-camera-goes-dark-at-times-the-readout-widened-2026-11-17)
 - ["Start camera" asked for the click as a camera, and the video made a covering square, 2026-11-17](docs/handoff/13-records.md#start-camera-asked-for-the-click-as-a-camera-and-the-video-made-a-covering-square-2026-11-17)
+- [The camera works on the owner's iPhone, and the readout comes out, 2026-11-17](docs/handoff/13-records.md#the-camera-works-on-the-owners-iphone-and-the-readout-comes-out-2026-11-17)
 
 ## 14. Dispensary integration
 
