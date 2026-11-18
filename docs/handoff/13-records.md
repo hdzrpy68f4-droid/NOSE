@@ -5262,3 +5262,27 @@ with nothing drawn.
   stream's size, is gone. In Chromium: a 316x316 box, the video 314x314.
 - `?camdebug=1` stays until the owner's iPhone shows the picture filling the
   square.
+
+### iOS draws the camera fitted whole: the picture scaled to fill, 2026-11-17
+
+The owner's readout from a normal tab (the three black ones had all been in
+Private browsing, where the stream stayed 0x0): box 356x356, video 354x354,
+stream 480x640, object-fit computed as cover - and the picture drawn 265x354,
+the whole portrait frame fitted inside the square with bands either side.
+
+- **iOS Safari ignores object-fit for a live camera and fits it whole**
+  (contain). So `css/world` now asks every browser for `contain`, and
+  `fillPreview` in `js/nose` scales the video from its centre by
+  max(box / fitted picture) - 1.3333 for a 3:4 or 4:3 camera in the square -
+  so the fitted picture covers the box, which clips the rest. Chromium,
+  which honoured cover, now draws the same way. It runs when the camera
+  starts, when the stream's size changes and when the window does; wider
+  screens are left alone. The scanner reads the camera's frames, not the
+  drawing. In Chromium, a 360x480 camera: the video drawn 418.7x418.7 from
+  -51.3,-51.3 in the 316x316 box, filled, nothing stretched.
+- **The rotated-layer reading of the same day was half right**: the square box
+  stays (it is what made the iPhone's picture whole and upright), but what
+  left bands was the fitting, not a turned layer.
+- **Private browsing gave no frames at all** on the owner's iPhone (stream
+  0x0, the camera light on) - before and after the day's changes. Not looked
+  into further (`open.md`).

@@ -800,7 +800,7 @@
         video.addEventListener('playing',resolve,{once:true}); setTimeout(resolve,2000);
       });
       qrStarting=started.then(playing,()=>{});
-      return started.then(()=>true);
+      return started.then(()=>{ fillPreview(); return true; });
     }
 
     const PHONE=matchMedia('(max-width:720px)');
@@ -824,6 +824,23 @@
       out.textContent=lines.join(String.fromCharCode(10));
     }
     if(CAMDEBUG) setInterval(camDebug,1000);
+    /* iOS Safari draws a live camera fitted whole inside the video, whatever
+       object-fit asks: the owner's iPhone drew a 480x640 picture 265x354 in a
+       354x354 box (?camdebug=1, 2026-11-17). So every browser is asked for
+       that (css/world, object-fit: contain) and the video is scaled up from
+       its centre until the fitted picture covers the box; the box clips the
+       rest. Only the drawing changes: the scanner reads the camera's frames. */
+    function fillPreview(){
+      const reader=$id('qrReader'), video=reader&&reader.querySelector('video');
+      if(!video) return;
+      if(!video.dataset.fill){ video.dataset.fill='1'; video.addEventListener('loadedmetadata',fillPreview); video.addEventListener('resize',fillPreview); }
+      const w=video.clientWidth, h=video.clientHeight, vw=video.videoWidth, vh=video.videoHeight;
+      if(!PHONE.matches||!w||!h||!vw||!vh){ video.style.removeProperty('transform'); return; }
+      const fit=Math.min(w/vw,h/vh);   // the picture as contain draws it
+      const scale=Math.max(w/(vw*fit),h/(vh*fit));
+      video.style.setProperty('transform',`scale(${scale.toFixed(4)})`);
+    }
+    window.addEventListener('resize',()=>fillPreview());
 
     async function startQrScanner(cameraId=''){
       if(!scannerAvailable()) return false;

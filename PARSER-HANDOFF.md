@@ -1867,6 +1867,7 @@ under the cap.
 - [The iPhone's camera layer laid out again, and the card's buttons apart, 2026-11-17](docs/handoff/13-records.md#the-iphones-camera-layer-laid-out-again-and-the-cards-buttons-apart-2026-11-17)
 - [A readout of the camera on the iPhone, and a test that tested nothing, 2026-11-17](docs/handoff/13-records.md#a-readout-of-the-camera-on-the-iphone-and-a-test-that-tested-nothing-2026-11-17)
 - [The camera box is square: what the iPhone's readout showed, 2026-11-17](docs/handoff/13-records.md#the-camera-box-is-square-what-the-iphones-readout-showed-2026-11-17)
+- [iOS draws the camera fitted whole: the picture scaled to fill, 2026-11-17](docs/handoff/13-records.md#ios-draws-the-camera-fitted-whole-the-picture-scaled-to-fill-2026-11-17)
 
 ## 14. Dispensary integration
 
