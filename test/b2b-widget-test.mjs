@@ -253,7 +253,7 @@ function siteHeaders() {
 const HEADERS = siteHeaders();
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
   '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.avif': 'image/avif',
-  '.json': 'application/json', '.txt': 'text/plain; charset=utf-8' };
+  '.json': 'application/json', '.txt': 'text/plain; charset=utf-8', '.woff2': 'font/woff2' };
 const SOURCE_ONLY = /^\/(netlify|node_modules|docs|test|scripts|supabase|wip)\//;
 const FEED_PATH = '/.netlify/functions/b2b-feed';
 const VOTE_PATH = '/.netlify/functions/b2b-vote';
@@ -310,7 +310,8 @@ const noseServer = await listen(function nose(req, res, r) {
   const ok = (req.method === 'GET' || req.method === 'HEAD') && file.startsWith(ROOT + path.sep) && !SOURCE_ONLY.test(p)
     && fs.existsSync(file) && fs.statSync(file).isFile();
   if (!ok) { res.writeHead(404, HEADERS); res.end(); return; }
-  res.writeHead(200, { ...HEADERS, 'Content-Type': TYPES[path.extname(file)] || 'application/octet-stream' });
+  res.writeHead(200, { ...HEADERS, ...(p.startsWith('/css/fonts/') ? { 'Access-Control-Allow-Origin': '*' } : {}),
+                       'Content-Type': TYPES[path.extname(file)] || 'application/octet-stream' });
   res.end(req.method === 'HEAD' ? undefined : fs.readFileSync(file));
 });
 NOSE = `http://127.0.0.1:${noseServer.address().port}`;
@@ -413,12 +414,15 @@ async function open(name, attrs, { origin = 'store', path: at, page: pg } = {}) 
   return c;
 }
 const since = c => received.slice(c.mark);
+/* The widget's two typefaces (its FONTS), since 2026-11-18. */
+const FONT_PATHS = ['/css/fonts/fraunces.7234ed86.woff2', '/css/fonts/hanken-grotesk.e9201edd.woff2'];
 const SCRIPTS = new Set([F.math, F.bar, F.rank, F.strings, F.widget].map(f => `/js/${f}`));
 function kind(r) {
   const u = new URL(r.url, 'http://x');
   if (r.origin === 'store') return ['/shop.js', '/favicon.ico'].includes(u.pathname) || u.pathname === '/shop.html' ? 'store page' : 'other';
   if (r.method === 'GET' && SCRIPTS.has(u.pathname) && !u.search) return 'script';
   if (r.method === 'GET' && u.pathname === `/css/${F.css}` && !u.search) return 'stylesheet';
+  if (r.method === 'GET' && FONT_PATHS.includes(u.pathname) && !u.search) return 'font';
   const rp = releases.parsePath(u.pathname);
   if (r.method === 'GET' && rp && !u.search) return rp.file === releases.JS ? 'script' : 'stylesheet';
   if (r.method === 'GET' && u.pathname === FEED_PATH && /^\?key=npk_[0-9a-f]{64}$/.test(u.search)) return 'feed';
@@ -455,16 +459,18 @@ const readCards = page => page.evaluate(() => [...document.querySelector('nose-m
   return { name: t('.nm-name'), href: q('.nm-name a') ? q('.nm-name a').getAttribute('href') : null, brand: t('.nm-brand'),
            match: t('.nm-match [aria-hidden="true"]'), sr: t('.nm-match .nm-sr'), band: q('.nm-match') ? q('.nm-match').dataset.band : null,
            nopanel: t('.nm-nopanel'), facts: [...card.querySelectorAll('.nm-facts span')].map(s => s.textContent),
-           bar: q('.nm-bar') ? q('.nm-bar').innerHTML : null };
+           bar: q('.nm-bar') ? [q('.nm-bar').getAttribute('aria-label'), !!q('.nm-bar canvas.nm-eq'),
+                                [...card.querySelectorAll('.nm-channels li')].map(li => li.textContent).join(' ')] : null };
 }));
-/* renderBar()'s own drawing of each batch, made in the same page from window.NoseBar. */
+/* Each batch's desk as the card should hold it, since 2026-11-18: the words renderBar()'s
+   own bar says aloud, made in the same page from window.NoseBar, a canvas, and the six names. */
 const drawBars = (page, list) => page.evaluate(list => list.map(terps => {
   if (!terps) return null;
   const d = document.createElement('div');
   window.NoseBar.renderBar(d, terps);
-  return d.innerHTML;
+  return [d.firstChild.getAttribute('aria-label'), true, 'Citrus Earthy Spice Pine Floral Herbal'];
 }), list);
-const barsOk = page => page.evaluate(prefix => [...document.querySelector('nose-matches').shadowRoot.querySelectorAll('.profile-bar')]
+const barsOk = page => page.evaluate(prefix => [...document.querySelector('nose-matches').shadowRoot.querySelectorAll('.nm-bar')]
   .map(b => b.getAttribute('role') === 'img' && b.getAttribute('aria-label').startsWith(prefix) && b.getAttribute('aria-label').length > prefix.length),
   S.SHOWN_FROM_OTHER_FILES.barPrefix);
 /* The focused element, through shadow roots, named as stops() names it - or
@@ -620,18 +626,40 @@ try {
       same(cards.map(({ bar, ...k }) => k), want.ranked.map(e => expectCard(S.default, e))), differs(cards.map(({ bar, ...k }) => k), want.ranked.map(e => expectCard(S.default, e))));
     check('rail: at most twelve cards, the palate built from this category\'s purchases only - suggestions across forms stay off',
       cards.length === 12 && want.palate.basis.used.every(u => u.batch.category === 'flower') && want.palate.basis.used.length === 3);
-    check('rail: every bar is js/aroma-bar\'s renderBar() for that batch, byte for byte', same(cards.map(k => k.bar), bars),
+    check('rail: every profile is js/aroma-bar\'s desk, a canvas with the six names under it, saying aloud what renderBar() says for that batch', same(cards.map(k => k.bar), bars),
       differs(cards.map(k => k.bar), bars));
-    check('rail: each bar is role="img" with the profile in its aria-label', (await barsOk(page)).every(Boolean) && (await barsOk(page)).length === 12);
+    check('rail: each profile is role="img" with the profile in its aria-label', (await barsOk(page)).every(Boolean) && (await barsOk(page)).length === 12);
     const styled = await page.evaluate(() => {
       const r = document.querySelector('nose-matches').shadowRoot;
       const link = r.querySelector('link[rel="stylesheet"]');
       return [link && link.getAttribute('href'), getComputedStyle(r.querySelector('.nm-card')).borderTopLeftRadius,
-              getComputedStyle(r.querySelector('.profile-bar')).height, r.querySelector('.nm').hidden,
-              getComputedStyle(r.querySelector('.profile-segment')).width !== 'auto'];
+              getComputedStyle(r.querySelector('.nm-eq')).height, r.querySelector('.nm').hidden,
+              r.querySelector('.nm-eq').width > 0];
     });
-    check('rail: styled by its own stylesheet, linked in its shadow root from NOSE under the store\'s style-src; the bar\'s widths are set as the app sets them',
-      same(styled, [`${NOSE}/css/${F.css}`, '12px', '22px', false, true]), JSON.stringify(styled));
+    check('rail: styled by its own stylesheet, linked in its shadow root from NOSE under the store\'s style-src; each desk drawn, 56px tall',
+      same(styled, [`${NOSE}/css/${F.css}`, '12px', '56px', false, true]), JSON.stringify(styled));
+    /* Since 2026-11-18: NOSE's two typefaces, under the widget's own names, and the two grounds. */
+    const looks = await page.evaluate(async () => {
+      const el = document.querySelector('nose-matches'), r = el.shadowRoot;
+      const loaded = async fam => { for (let i = 0; i < 50 && !document.fonts.check(`16px "${fam}"`, 'a'); i++) await new Promise(f => setTimeout(f, 100)); return [...document.fonts].some(f => f.family.replace(/"/g, '') === fam && f.status === 'loaded'); };
+      const out = [await loaded('NOSE Fraunces'), await loaded('NOSE Hanken Grotesk'),
+        getComputedStyle(r.querySelector('.nm-title') || r.querySelector('.nm')).fontFamily.startsWith('"NOSE '),
+        getComputedStyle(r.querySelector('.nm')).backgroundColor];
+      el.setAttribute('theme', 'dark');
+      out.push(getComputedStyle(r.querySelector('.nm')).backgroundColor, getComputedStyle(r.querySelector('.nm')).color);
+      el.removeAttribute('theme');
+      return out;
+    });
+    check('rail: in NOSE\'s two typefaces, fetched under the widget\'s own names; cream by default, the forest field with cream text under theme="dark"',
+      same(looks, [true, true, true, 'rgb(244, 241, 234)', 'rgb(14, 20, 16)', 'rgb(244, 241, 234)']), JSON.stringify(looks));
+    /* The owner's word, 2026-11-18: the cards' desks hold still, though this page does not ask for reduced motion. */
+    const still = await page.evaluate(async () => {
+      const c = document.querySelector('nose-matches').shadowRoot.querySelector('canvas.nm-eq');
+      const at = () => c.toDataURL();
+      const a = at(); await new Promise(f => setTimeout(f, 700));
+      return [window.matchMedia('(prefers-reduced-motion: reduce)').matches, a.length > 100, a === at()];
+    });
+    check('rail: each card\'s desk is drawn and holds still, with no reduced motion asked for', same(still, [false, true, true]), JSON.stringify(still));
     check('rail: each card links to the store\'s product page, and nothing in it adds to a cart',
       cards.every(k => k.href && k.href.startsWith('https://shop.example/p/'))
         && (await page.evaluate(() => document.querySelector('nose-matches').shadowRoot.querySelectorAll('.nm-card button, form, input').length)) === 0);
@@ -866,9 +894,9 @@ try {
   }
 
   /* ===================================================== a pinned release */
-  check('the integration guide gives three CSP lines - script-src and style-src under /b2b/releases/, connect-src the feed and the vote alone',
+  check('the integration guide gives three CSP lines - script-src and style-src under /b2b/releases/, connect-src the feed, the vote and the fonts alone',
     same(GUIDE_CSP_LINES, [['script-src', ['https://nose-app.com/b2b/releases/']], ['style-src', ['https://nose-app.com/b2b/releases/']],
-      ['connect-src', [`https://nose-app.com${FEED_PATH}`, `https://nose-app.com${VOTE_PATH}`]]]), JSON.stringify(GUIDE_CSP_LINES));
+      ['connect-src', [`https://nose-app.com${FEED_PATH}`, `https://nose-app.com${VOTE_PATH}`, 'https://nose-app.com/css/fonts/']]]), JSON.stringify(GUIDE_CSP_LINES));
   {
     const c = await open('release, rail', { key: KEY, mode: 'rail', category: 'flower', routes: JSON.stringify(ROUTES), purchases: PURCHASES_JSON, consent: 'granted' },
       { page: { release: 1, policy: 'unsafe-url' } });
@@ -878,20 +906,20 @@ try {
     const cards = await readCards(page);
     check('release, rail: one tag, its integrity and crossorigin, under the guide\'s CSP - the same cards as the five files give, js/b2b-rank\'s',
       same(cards.map(({ bar, ...k }) => k), want.ranked.map(e => expectCard(S.default, e))), differs(cards.map(({ bar, ...k }) => k), want.ranked.map(e => expectCard(S.default, e))));
-    check('release, rail: every bar renderBar()\'s - the release\'s own copy, from js/aroma-bar verbatim',
+    check('release, rail: every profile the desk, saying what renderBar() says - the release\'s own copy of js/aroma-bar',
       same(cards.map(k => k.bar), await drawBars(page, want.ranked.map(e => (e.unscored ? null : e.batch.terps)))));
     const styled = await page.evaluate(() => {
       const r = document.querySelector('nose-matches').shadowRoot;
       const link = r.querySelector('link[rel="stylesheet"]');
       return [link.getAttribute('href'), link.integrity, link.crossOrigin, link.referrerPolicy,
-              getComputedStyle(r.querySelector('.nm-card')).borderTopLeftRadius, getComputedStyle(r.querySelector('.profile-bar')).height];
+              getComputedStyle(r.querySelector('.nm-card')).borderTopLeftRadius, getComputedStyle(r.querySelector('.nm-eq')).height];
     });
     check('release, rail: its stylesheet is the release\'s own, checked by the sha384 the release names, with no referrer - and applied',
-      same(styled, [`${NOSE}${releases.releasePath(1, releases.CSS)}`, RELEASE.sri.css, 'anonymous', 'no-referrer', '12px', '22px']), JSON.stringify(styled));
+      same(styled, [`${NOSE}${releases.releasePath(1, releases.CSS)}`, RELEASE.sri.css, 'anonymous', 'no-referrer', '12px', '56px']), JSON.stringify(styled));
     const toNose = since(c).filter(r => r.origin === 'nose');
-    check('release, rail: NOSE is asked for the release\'s two files and the feed alone - nothing from /js/ or /css/',
+    check('release, rail: NOSE is asked for the release\'s two files, the feed and the two fonts alone - nothing else from /js/ or /css/',
       same(toNose.map(r => new URL(r.url, 'http://x').pathname).sort(),
-        [FEED_PATH, releases.releasePath(1, releases.CSS), releases.releasePath(1, releases.JS)].sort()), JSON.stringify(toNose.map(r => r.url)));
+        [FEED_PATH, releases.releasePath(1, releases.CSS), releases.releasePath(1, releases.JS), ...FONT_PATHS].sort()), JSON.stringify(toNose.map(r => r.url)));
     check('release, rail: none of them carries a cookie or any referrer, though the page\'s policy is unsafe-url; each carries the store\'s Origin',
       toNose.every(r => !r.headers.cookie && !r.headers.referer && r.headers.origin === STORE), JSON.stringify(toNose.map(r => [r.url, r.headers.origin, r.headers.referer, r.headers.cookie])));
     await close(c);
@@ -1096,8 +1124,9 @@ check('one copy of the bar: only js/aroma-bar defines FAMILIES, FAMILY_ORDER, fa
   check('...moved there verbatim on 2026-10-08, five inks changed to css/tokens\' on 2026-10-15: its 31 lines are, byte for byte, the ones js/nose.593b2c1b.js held but for FAMILIES\' earthy, spice, pine, floral and herbal text (SHA-256 3efc9c39..., 9b31dc3b... before)',
     from >= 0 && crypto.createHash('sha256').update(moved).digest('hex') === '3efc9c39d77fbbe4f8b0d42074f25a25a523ca084728287883cad0b827627f05');
 }
-check('...js/nose reads all four from window.NoseBar, and the widget draws with NoseBar.renderBar',
-  /const \{ FAMILIES, FAMILY_ORDER, familyShares, renderBar \} = window\.NoseBar;/.test(SRC.nose) && /BAR\.renderBar\(bar, b\.terps\)/.test(SRC.widget)
+check('...js/nose reads all four from window.NoseBar, and the widget draws with NoseBar.createDesk, NoseBar.renderBar where it cannot',
+  /const \{ FAMILIES, FAMILY_ORDER, familyShares, renderBar \} = window\.NoseBar;/.test(SRC.nose)
+    && /const desk = BAR\.createDesk\(canvas, true\);\n {4}if \(!desk\) \{ BAR\.renderBar\(box, terps\); return box; \}/.test(SRC.widget)
     && /const BAR = window\.NoseBar/.test(SRC.widget));
 for (const p of ['app.html', 'index.html']) {
   const s = fs.readFileSync(path.join(ROOT, p), 'utf8');
@@ -1110,13 +1139,18 @@ for (const p of ['app.html', 'index.html']) {
 check('the widget holds no maths, no rounding, no band and no label of its own',
   !/\bfunction\s+(cosine|normalize|matchBand|shownScore|averageProfiles)\s*\(|Math\.(round|floor|ceil)|\*\s*100\b|'(Strong|Good|Moderate|Low)'/.test(SRC.widget)
     && !S.SHOWN_FROM_OTHER_FILES.matchLabels.some(l => SRC.widget.includes(l)));
-check('...asks for nothing but the feed and the vote: two fetch() - the feed\'s and the vote\'s - no sendBeacon(), no other way out',
-  (SRC.widget.match(/\bfetch\(/g) || []).length === 2 && !/\bsendBeacon\b/.test(SRC.widget)
+check('...asks for nothing but the feed, the vote and its two fonts: three fetch() - the feed\'s, the vote\'s and the fonts\' - no sendBeacon(), no other way out',
+  (SRC.widget.match(/\bfetch\(/g) || []).length === 3 && !/\bsendBeacon\b/.test(SRC.widget)
     && !/XMLHttpRequest|WebSocket|EventSource|new Image|import\(|\beval\(|new Function|innerHTML|document\.cookie|\.style\.|setAttribute\('style'/.test(SRC.widget),
   JSON.stringify([(SRC.widget.match(/\bfetch\(/g) || []).length, (SRC.widget.match(/\bsendBeacon\b/g) || []).length]));
 check('...each in cors mode, with no cookie and no referrer; the vote kept alive',
   /fetch\(url, \{ method: 'GET', mode: 'cors', credentials: 'omit', referrerPolicy: 'no-referrer', signal: ctl\.signal \}\)/.test(SRC.widget)
     && /fetch\(ORIGIN \+ VOTE_PATH, \{ method: 'POST', mode: 'cors', credentials: 'omit', referrerPolicy: 'no-referrer', keepalive: true, body \}\)/.test(SRC.widget));
+check('...the fonts each checked by the sha384 of the file in css/fonts, in cors mode, with no cookie and no referrer',
+  /fetch\(new URL\(file, ORIGIN\)\.href, \{ integrity, referrerPolicy: 'no-referrer', credentials: 'omit', mode: 'cors' \}\)/.test(SRC.widget)
+    && FONT_PATHS.every(f => SRC.widget.includes(`'${f}', 'sha384-${crypto.createHash('sha384').update(fs.readFileSync(path.join(ROOT, f))).digest('base64')}'`)));
+check('..._headers lets a store\'s page read the fonts (Access-Control-Allow-Origin on /css/fonts/*)',
+  /^\/css\/fonts\/\*\n {2}Access-Control-Allow-Origin: \*$/m.test(fs.readFileSync(path.join(ROOT, '_headers'), 'utf8')));
 check('...its stylesheet asked for with no referrer, and by its hash only when a release names one - null as built, so the site\'s own stylesheet needs no CORS',
   /link\.referrerPolicy = 'no-referrer';/.test(SRC.widget) && /^ {2}const STYLESHEET_INTEGRITY = null;$/m.test(SRC.widget)
     && /if \(STYLESHEET_INTEGRITY\) \{ link\.integrity = STYLESHEET_INTEGRITY; link\.crossOrigin = 'anonymous'; \}/.test(SRC.widget)
@@ -1127,7 +1161,7 @@ check('no effect wording in the widget\'s comments and text, nor anywhere in the
   !effectWords(prose(SRC.widget)).length && ![SRC.strings, SRC.bar].some(s => effectWords(s).length) && !/content:\s*"[^"]*[A-Za-z]/.test(SRC.css),
   JSON.stringify([effectWords(prose(SRC.widget)), effectWords(SRC.strings), effectWords(SRC.bar)]));
 check('the stylesheet colours the four bands by matchBand()\'s own names, and no others',
-  same([...SRC.css.matchAll(/data-band="(\w+)"/g)].map(m => m[1]), [1, 0.8, 0.6, 0].map(s => M.matchBand(s)[1])));
+  same([...SRC.css.matchAll(/data-band="(\w+)"/g)].map(m => m[1]), [1, 0.8, 0.6, 0, 1, 0.8, 0.6, 0].map(s => M.matchBand(s)[1])));
 
 /* ============================================================== build.sh */
 

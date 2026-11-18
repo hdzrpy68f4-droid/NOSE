@@ -32,6 +32,8 @@
  *   strings    default | florida - which words js/b2b-strings shows
  *   feed       a file on NOSE's own origin to read the feed from in place of
  *              b2b-feed - the demo's test store; never another origin
+ *   theme      light (the default: cream) | dark (NOSE's forest field), for a
+ *              store page that is itself dark; the stylesheet alone reads it
  *
  * Events, each bubbling out of the element: nose:consent { consent },
  * nose:palate-removed and nose:palate-restored { batchId, removed } - the
@@ -40,8 +42,9 @@
  *
  * It holds no maths and shows no words of its own: every number comes from
  * js/b2b-rank (and through it js/match-math), shown with shownScore() and
- * labelled with matchBand()'s own names; every bar is js/aroma-bar's
- * renderBar(), the app's bar; every word on the page is js/b2b-strings' or
+ * labelled with matchBand()'s own names; every profile is js/aroma-bar's
+ * desk (createDesk(), the matcher's equalizer, since 2026-11-18; its bar,
+ * renderBar(), where a canvas cannot be drawn); every word on the page is js/b2b-strings' or
  * the store's catalog's. A batch without a terpene panel NOSE can read is
  * never scored, guessed or looked up by name: its card says so. Cards link
  * to the store's product page; nothing here adds to a cart. One console line,
@@ -57,14 +60,15 @@
  * pinned release (scripts/b2b-release.js) writes its own stylesheet's name
  * and that file's sha384 into STYLESHEET and STYLESHEET_INTEGRITY, so the
  * browser checks the stylesheet as the store's page checks this script.
- * Nothing it asks for carries the page's address, and the feed, the vote
- * and a release's stylesheet carry no cookie either.
+ * Since 2026-11-18 it also fetches NOSE's two typefaces, each checked by its
+ * sha384 (FONTS). Nothing it asks for carries the page's address, and the
+ * feed, the vote, the fonts and a release's stylesheet carry no cookie either.
  * Aroma and flavour only.
  */
 (function () {
   'use strict';
   const BAR = window.NoseBar, RANK = window.NoseRank, STRINGS = window.NoseStrings;
-  if (!BAR || typeof BAR.renderBar !== 'function' || !RANK || typeof RANK.rank !== 'function'
+  if (!BAR || typeof BAR.renderBar !== 'function' || typeof BAR.createDesk !== 'function' || !RANK || typeof RANK.rank !== 'function'
       || !STRINGS || !STRINGS.default || !STRINGS.florida) {
     throw new Error('<nose-matches> needs js/match-math, js/aroma-bar, js/b2b-rank and js/b2b-strings loaded before it');
   }
@@ -73,7 +77,7 @@
      and the stylesheet are. Read once, while the script runs. */
   const SCRIPT = document.currentScript && document.currentScript.src;
   const ORIGIN = SCRIPT ? new URL(SCRIPT).origin : null;
-  const STYLESHEET = '/css/b2b-widget.17731ef4.css';
+  const STYLESHEET = '/css/b2b-widget.0e38de35.css';
   /* null on NOSE's own site; a pinned release names its stylesheet's sha384 here. */
   const STYLESHEET_INTEGRITY = null;
   const FEED_PATH = '/.netlify/functions/b2b-feed';
@@ -93,6 +97,51 @@
     if (text !== undefined && text !== null) n.textContent = text;
     return n;
   }
+  /* A batch's profile on the desk, held still so it reads at a glance: each
+     family's share, full at 60%, the six names under it. The bar where a
+     canvas cannot be drawn. */
+  function profile(terps) {
+    const box = node('div', 'nm-bar');
+    const canvas = node('canvas', 'nm-eq');
+    canvas.setAttribute('aria-hidden', 'true');
+    box.append(canvas);
+    const desk = BAR.createDesk(canvas, true);
+    if (!desk) { BAR.renderBar(box, terps); return box; }
+    const shares = BAR.familyShares(terps);
+    box.setAttribute('role', 'img');
+    box.setAttribute('aria-label', BAR.profileLabel(shares));
+    const names = node('ol', 'nm-channels');
+    names.setAttribute('aria-hidden', 'true');
+    for (const k of BAR.FAMILY_ORDER) names.append(node('li', null, BAR.FAMILIES[k].label));
+    box.append(names);
+    desk.set(BAR.FAMILY_ORDER.map(k => shares[k]), 0.6);
+    return box;
+  }
+
+  /* NOSE's two typefaces, fetched by the widget itself so that each is checked
+     by its sha384, sent with no referrer and no cookie, and named for the
+     widget alone: the store's own text never takes them. Asked for once, with
+     the first thing shown. A page whose connect-src leaves them out keeps the
+     stylesheet's fallbacks. The files are named by their hash, so a release
+     keeps finding them; a renamed file only leaves an older release on the
+     fallbacks. */
+  const FONTS = Object.freeze([
+    ['NOSE Fraunces', '/css/fonts/fraunces.7234ed86.woff2', 'sha384-rd5cxsB6g16LQFKAzR0EuYfuNNZ1iLtzK5wHf1cLGG/fNWZrv1rQetp2EJOPuRd7'],
+    ['NOSE Hanken Grotesk', '/css/fonts/hanken-grotesk.e9201edd.woff2', 'sha384-tngDj7Lr+r8DK9l7kfx97wxuPIN73KLe8tkthwr7yrLYgQhOoNWvqYcRdIxb+goH']
+  ]);
+  let fontsAsked = false;
+  function askFonts() {
+    if (fontsAsked || !document.fonts || typeof FontFace !== 'function') return;
+    fontsAsked = true;
+    for (const [family, file, integrity] of FONTS) {
+      fetch(new URL(file, ORIGIN).href, { integrity, referrerPolicy: 'no-referrer', credentials: 'omit', mode: 'cors' })
+        .then(r => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(String(r.status)))))
+        .then(data => new FontFace(family, data, { weight: '100 900' }).load())
+        .then(face => document.fonts.add(face))
+        .catch(() => {});
+    }
+  }
+
   function json(text) {
     if (typeof text !== 'string') return undefined;
     try { return JSON.parse(text); } catch (e) { return undefined; }
@@ -203,9 +252,7 @@
       const seen = node('span', null, fill(S.matchLine, { label: entry.label, shown: entry.shown, place }));
       seen.setAttribute('aria-hidden', 'true');
       match.append(seen, node('span', 'nm-sr', fill(S.matchAria, { label: entry.label, shown: entry.shown, place })));
-      const bar = node('div', 'nm-bar');
-      BAR.renderBar(bar, b.terps);
-      li.append(match, bar);
+      li.append(match, profile(b.terps));
     }
     /* THC and CBD as the store's catalog gives them: plain facts, never
        rounded, and said to be missing when it gives none. */
@@ -435,6 +482,7 @@
         link.addEventListener('error', ready, { once: true });
         this._shadow.insertBefore(link, this._view);
         this._style = link;
+        askFonts();
       }
       this._view.replaceChildren(content);
     }

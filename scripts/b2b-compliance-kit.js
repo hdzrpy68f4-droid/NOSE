@@ -784,6 +784,13 @@ async function main(argv = process.argv.slice(2), { root = ROOT, out = console.l
         res.end(req.method === 'HEAD' ? undefined : file.file === releases.JS ? release.built.js : release.built.css);
         return;
       }
+      /* the two fonts a release since 2026-11-18 fetches, as _headers serves them */
+      const font = /^\/css\/fonts\/[a-z-]+\.[0-9a-f]{8}\.woff2$/.test(u.pathname) && path.join(root, u.pathname);
+      if (font && req.method === 'GET' && !u.search && fs.existsSync(font)) {
+        res.writeHead(200, { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'font/woff2', 'Cache-Control': 'public, max-age=31536000, immutable' });
+        res.end(fs.readFileSync(font));
+        return;
+      }
       if (u.pathname === FEED_PATH && req.method === 'GET' && u.search === `?key=${key}` && origin === STORE) {
         res.writeHead(200, { 'Access-Control-Allow-Origin': origin, Vary: 'Origin', 'Cache-Control': 'public, max-age=60',
           'Content-Type': 'application/json; charset=utf-8', 'X-Content-Type-Options': 'nosniff' });
@@ -953,6 +960,8 @@ async function main(argv = process.argv.slice(2), { root = ROOT, out = console.l
           tally(`GET ${FEED_PATH}?key=${key.slice(0, 8)}...`, 'the store\'s public key alone - no cookie, no referrer; the reply is the same list for every visitor');
         } else if (file && r.method === 'GET' && !u.search && !body) {
           tally(`GET ${u.pathname}`, file.file === releases.JS ? 'nothing - the release\'s script, checked by its integrity hash' : 'nothing - the release\'s stylesheet, checked by the hash the script names');
+        } else if (/^\/css\/fonts\/[a-z-]+\.[0-9a-f]{8}\.woff2$/.test(u.pathname) && r.method === 'GET' && !u.search && !body) {
+          tally(`GET ${u.pathname}`, 'nothing - one of NOSE\'s two fonts, checked by the hash the script names; no cookie, no referrer');
         } else {
           refuse(`the widget asked NOSE for something the kit does not know: ${r.method} ${u.pathname}`);
         }

@@ -308,8 +308,9 @@ if (fs.existsSync(AK)) {
     JSON.stringify(purchaseRows.slice(0, 3)));
   const reqRows = section(readme, 'What left the page').filter(l => /^\| (GET|POST) /.test(l)).map(rowCells);
   const reqOf = what => reqRows.find(c => c[0].startsWith(what));
-  check('...what left the page: the release\'s two files, the feed by the key alone, and the two votes of screen 08 - nothing else',
-    reqRows.length === 4 && reqOf('GET /b2b/releases/1/nose-matches.js') && reqOf('GET /b2b/releases/1/nose-matches.css')
+  check('...what left the page: the release\'s two files, its two fonts (since 2026-11-18), the feed by the key alone, and the two votes of screen 08 - nothing else',
+    reqRows.length === 6 && reqOf('GET /b2b/releases/1/nose-matches.js') && reqOf('GET /b2b/releases/1/nose-matches.css')
+      && reqOf('GET /css/fonts/fraunces.7234ed86.woff2') && reqOf('GET /css/fonts/hanken-grotesk.e9201edd.woff2')
       && reqOf('GET /.netlify/functions/b2b-feed?key=npk_0000...') && reqOf('POST /.netlify/functions/b2b-vote')
       && reqOf('POST /.netlify/functions/b2b-vote')[1] === '2' && Number(reqOf('GET /.netlify/functions/b2b-feed')[1]) === 18
       && /^text\/plain, no cookie, no referrer: key npk_0000\.\.\., candidate "D-[0-9]+", score [0-9]+, band "(Strong|Good|Moderate|Low)", palateSize [0-9]+, vote "up"/.test(reqOf('POST')[2]),

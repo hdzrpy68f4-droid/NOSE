@@ -75,17 +75,20 @@ have:
 ```
 script-src   https://nose-app.com/b2b/releases/
 style-src    https://nose-app.com/b2b/releases/
-connect-src  https://nose-app.com/.netlify/functions/b2b-feed https://nose-app.com/.netlify/functions/b2b-vote
+connect-src  https://nose-app.com/.netlify/functions/b2b-feed https://nose-app.com/.netlify/functions/b2b-vote https://nose-app.com/css/fonts/
 ```
 
 A source ending in `/` allows only the paths under it, and one without allows
-that one path: the widget can load its code and stylesheet, and reach the feed
-and the vote, and nothing else of NOSE's. A directive your policy does not
+that one path: the widget can load its code and stylesheet, reach the feed
+and the vote, and fetch NOSE's two fonts, and nothing else of NOSE's. A directive your policy does not
 have falls back to `default-src`: add it with your `default-src` sources as
 well as NOSE's - `style-src 'self' https://nose-app.com/b2b/releases/`, say -
-or your own stylesheets stop loading. The widget loads no image, font or
-frame. The bar in each card is drawn by setting style properties from script,
-which `style-src` does not govern.
+or your own stylesheets stop loading. The widget loads no image or frame. Its
+two fonts (Fraunces and Hanken Grotesk) it fetches itself, each checked by its
+hash and sent with no cookie and no referrer, so they come under `connect-src`,
+not `font-src`; leave that path out and the widget shows Georgia and your
+visitor's system sans-serif instead. Their names are the widget's own, so your
+page's text never takes them. The profile in each card is drawn on a canvas.
 
 ## 3. Place the element
 
@@ -106,6 +109,7 @@ which `style-src` does not govern.
 | `group` | `test` or `control`, for an A/B test — step 6. |
 | `product` | `vote`: the `product_id` the vote is about. |
 | `strings` | `default`, or `florida` for the Florida wording (aroma, orders, dispensary). Have your compliance counsel read it before you use it. |
+| `theme` | `light` (the default): a cream panel with dark text. `dark`: NOSE's forest green with cream text, for a page that is dark itself. |
 | `feed` | For NOSE's demo only: a file on NOSE's own origin read in place of the feed. A file on any other origin and the widget shows nothing. Leave it out. |
 
 - **Purchases**: one entry per purchase. `batchId` is the batch's ID exactly

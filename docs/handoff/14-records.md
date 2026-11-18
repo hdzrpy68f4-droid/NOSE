@@ -2980,3 +2980,65 @@ to the store's own storage. The owner chose to refuse one.
   `docs/B2B-CATALOG-FORMAT.md` lists the refusal.
 - The coverage report still fetches such a link as the scanner would; only
   the upload, which stores it, refuses it.
+
+### The widget in NOSE's look: two grounds, NOSE's type and the desk, 2026-11-18
+
+The owner asked for the widget to take the redesign: its background, its
+type, and the equalizer in place of the bar - with a dark ground and a
+light one, since dark on a dark store page would not read. Their choices:
+light by default; NOSE's fonts loaded by the widget.
+
+- **The desk moved into `js/aroma-bar`** (`createDesk()`), verbatim from
+  `js/hero` but for its fills, which are now `FAMILIES`' colours (so
+  `js/hero`'s copy, and its check in `colour-tokens-test`, are gone).
+  `js/hero` sets `window.NoseDesk` from it for `js/nose`, and now needs
+  `js/match-math` and `js/aroma-bar` before it; the intensity guide loads
+  both. The widget already carried `js/aroma-bar`, so a release is still the
+  same five files in the same order, and releases 1 to 3 build as before.
+  `renderBar()` stays byte for byte as moved on 2026-10-08; a desk's spoken
+  words come from `profileLabel()`, which the widget test holds equal to
+  the bar's `aria-label` for every card.
+- **Each card's profile is the desk**: a 56px canvas lit to the batch's
+  family shares, full at 60% as on the match result, with the six family
+  names under it; `role="img"` and the bar's words on the box. Where a
+  canvas cannot be drawn, the bar, as before.
+- **The cards' desks hold still** (the owner's word: easier to read when not
+  in motion). `createDesk(canvas, true)` draws a desk at its levels and
+  never moves it, as prefers-reduced-motion already did; the app and the
+  home page still move. The widget test checks a card's canvas is the same
+  700 ms later, with no reduced motion asked for.
+- **Two grounds**: the panel is cream (`#F4F1EA`) with the widget's dark
+  ink by default; `theme="dark"` gives NOSE's field (`#0E1410`), raised
+  cards (`#141B16`), cream ink, the site's rule and soft colours, a cream
+  primary button, and the four band dots lighter. The stylesheet alone reads
+  the attribute (`:host([theme="dark"])`). The widget now sets its own text
+  colour, where it used to take the page's.
+- **NOSE's type**: Fraunces for the title, Hanken Grotesk for the rest. The
+  widget fetches the two files itself, once, with the first thing it shows -
+  each checked by its sha384 (`FONTS`), with no cookie and no referrer - and
+  adds them to the page as "NOSE Fraunces" and "NOSE Hanken Grotesk", names
+  the store's own text never uses. Fetching them, rather than naming them in
+  `@font-face`, keeps them pinned and keeps the page's address off the
+  request (Chromium also ignores `@font-face` inside a shadow root). So they
+  come under the store's `connect-src`: the integration guide's line gains
+  `https://nose-app.com/css/fonts/`, and without it the widget shows Georgia
+  and the system sans-serif. `_headers` gives `/css/fonts/*`
+  `Access-Control-Allow-Origin: *`. The files keep their hashed names; a
+  renamed font would leave an older release on the fallbacks, nothing worse.
+- **The privacy page** says the widget asks for its two fonts before a
+  shopper says yes, with no cookie and without the page's address; its
+  sitemap `lastmod` moves to 2026-11-18.
+- **`b2b-widget-test`** checks the desk in every card, the fonts loaded
+  under the widget's names, both grounds, the fonts' hashes against the
+  files, the header rule, three `fetch()` calls, and the release asking for
+  its two files, the feed and the two fonts alone. Clean in Chromium and
+  Firefox on Windows; WebKit runs in CI.
+- **The compliance kit** serves the two fonts as `_headers` does and lists
+  each in `data.md`'s requests ("one of NOSE's two fonts, checked by the hash
+  the script names"); `b2b-release-test` reads the guide's longer
+  `connect-src` line.
+- **Not done here**: a release with the new look (release 4) is published
+  from the Codespace (`scripts/b2b-release.js`); until then every pinned
+  store keeps release 3's look. The pictures on `/dispensaries/`
+  (`images/dispensaries/*.png`) still show the bar. Not looked at by eye in
+  this session.

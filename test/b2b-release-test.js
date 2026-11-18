@@ -681,7 +681,7 @@ async function main() {
     [COLUMNS.filter(c => !guide.includes(`\`${c}\``)), /curl -sS -X POST https:\/\/nose-app\.com\/\.netlify\/functions\/b2b-catalog/.test(guide),
      guide.includes('-H "Authorization: Bearer $NOSE_SECRET_KEY"'), /^script-src +https:\/\/nose-app\.com\/b2b\/releases\/$/m.test(guide),
      /^style-src +https:\/\/nose-app\.com\/b2b\/releases\/$/m.test(guide),
-     /^connect-src +https:\/\/nose-app\.com\/\.netlify\/functions\/b2b-feed https:\/\/nose-app\.com\/\.netlify\/functions\/b2b-vote$/m.test(guide)],
+     /^connect-src +https:\/\/nose-app\.com\/\.netlify\/functions\/b2b-feed https:\/\/nose-app\.com\/\.netlify\/functions\/b2b-vote https:\/\/nose-app\.com\/css\/fonts\/$/m.test(guide)],
     [[], true, true, true, true, true]);
   check('...purchase days in UTC, purchases only after consent, the A/B group, routes - and no key written out',
     [/\*\*in UTC\*\*/.test(guide), /render `purchases` into the page \*\*only for a shopper who has said\s+yes\*\*/.test(guide), guide.includes('`group="control"`'),

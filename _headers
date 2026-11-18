@@ -22,3 +22,7 @@
 
 /css/*
   Cache-Control: public, max-age=31536000, immutable
+
+# the dispensary widget fetches NOSE's two typefaces from a store's page (js/b2b-widget's FONTS)
+/css/fonts/*
+  Access-Control-Allow-Origin: *

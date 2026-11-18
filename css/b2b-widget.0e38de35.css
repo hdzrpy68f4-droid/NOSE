@@ -1,13 +1,18 @@
 /* NOSE - the dispensary widget's stylesheet. Linked inside <nose-matches>'s
  * shadow root, so nothing here reaches the store's page and nothing of the
- * page's reaches in, but its font and text colour, which the widget inherits.
- * Cards keep their own light surface, so they read on any page.
+ * page's reaches in but its font size.
  *
- * The bar (.profile-bar, .profile-segment) is js/aroma-bar's: its widths,
- * family colours and label colours come from that file, set on each element
- * as the app's bar sets them; only its frame is drawn here, smaller than the
- * app's. Status colours mark the match band and are never an aroma colour.
- * PARSER-HANDOFF s14, "The widget".
+ * Since 2026-11-18 the widget is a panel of its own, in NOSE's type
+ * (Fraunces for the title, Hanken Grotesk for the rest, fetched by the
+ * widget as "NOSE ..."; Georgia and the system sans-serif when a page
+ * refuses them) on one of two grounds: cream by default, and NOSE's forest
+ * field with theme="dark", for a store page that is dark itself. DESIGN.md's
+ * colours.
+ *
+ * Each card's profile is js/aroma-bar's desk, drawn on .nm-eq with the six
+ * family names under it; the bar (.profile-bar, .profile-segment) is its
+ * fallback, its widths and colours set by that file. Status colours mark the
+ * match band and are never an aroma colour. PARSER-HANDOFF s14, "The widget".
  */
 :host { display: block; }
 :host([hidden]) { display: none; }
@@ -15,17 +20,39 @@
 * { box-sizing: border-box; }
 
 .nm {
+  --nm-ground: #F4F1EA;
   --nm-ink: #1A241E;
   --nm-muted: #53605A;
   --nm-surface: #FFFFFF;
   --nm-sunk: #E9ECE6;
   --nm-line: rgba(26, 36, 30, .14);
   --nm-green: #2F6144;
+  --nm-on-green: #FFFFFF;
+  --nm-green-hover: #214A33;
   --nm-focus: rgba(47, 97, 68, .55);
+  padding: 16px;
+  border-radius: 14px;
+  background: var(--nm-ground);
+  color: var(--nm-ink);
+  font-family: "NOSE Hanken Grotesk", "Hanken Grotesk", system-ui, sans-serif;
+  font-weight: 450;
   line-height: 1.4;
 }
+/* NOSE's forest field: the site's field, raised, rule, ink and soft. */
+:host([theme="dark"]) .nm {
+  --nm-ground: #0E1410;
+  --nm-ink: #F4F1EA;
+  --nm-muted: #B1AEA6;
+  --nm-surface: #141B16;
+  --nm-sunk: #1C251E;
+  --nm-line: #2E3A31;
+  --nm-green: #F4F1EA;
+  --nm-on-green: #0E1410;
+  --nm-green-hover: #FFFFFF;
+  --nm-focus: rgba(244, 241, 234, .6);
+}
 
-.nm-title { margin: 0 0 10px; font-size: 1.125em; font-weight: 700; letter-spacing: -.01em; }
+.nm-title { margin: 0 0 10px; font-family: "NOSE Fraunces", Fraunces, Georgia, serif; font-size: 1.375em; font-weight: 400; line-height: 1.2; letter-spacing: -.01em; }
 .nm-lead, .nm-empty, .nm-note, .nm-method { margin: 0 0 10px; }
 .nm-method { margin-top: 10px; font-size: .8125em; opacity: .8; max-width: 60ch; }
 .nm-attribution { margin: 4px 0 0; font-size: .75em; opacity: .7; }
@@ -47,8 +74,8 @@
 .nm-button:hover { border-color: var(--nm-green); }
 .nm-button:disabled { cursor: default; opacity: .7; }
 .nm-button[aria-pressed="true"] { border-color: var(--nm-green); box-shadow: inset 0 0 0 1px var(--nm-green); }
-.nm-primary { background: var(--nm-green); border-color: var(--nm-green); color: #FFFFFF; }
-.nm-primary:hover { background: #214A33; }
+.nm-primary { background: var(--nm-green); border-color: var(--nm-green); color: var(--nm-on-green); }
+.nm-primary:hover { background: var(--nm-green-hover); }
 .nm-quiet { min-height: 32px; padding: 4px 12px; font-size: .8125em; font-weight: 500; }
 :focus-visible { outline: 3px solid var(--nm-focus); outline-offset: 2px; }
 
@@ -98,6 +125,11 @@
 .nm-match[data-band="Good"]::before { background: #587F6B; }
 .nm-match[data-band="Moderate"]::before { background: #8A8377; }
 .nm-match[data-band="Low"]::before { background: #6E655C; }
+/* The same four, lighter, so each dot reads on the forest field. */
+:host([theme="dark"]) .nm-match[data-band="Strong"]::before { background: #7FC29A; }
+:host([theme="dark"]) .nm-match[data-band="Good"]::before { background: #A3BDAE; }
+:host([theme="dark"]) .nm-match[data-band="Moderate"]::before { background: #A8A193; }
+:host([theme="dark"]) .nm-match[data-band="Low"]::before { background: #8C847A; }
 .nm-nopanel { margin: 2px 0 0; font-size: .8125em; color: var(--nm-muted); }
 .nm-facts {
   margin: auto 0 0;
@@ -108,7 +140,19 @@
 }
 .nm-facts span { display: block; }
 
-/* --- the bar, js/aroma-bar's ------------------------------------------- */
+/* --- the desk, js/aroma-bar's, and the names under it ------------------- */
+.nm-eq { display: block; width: 100%; height: 56px; }
+.nm-channels {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  margin: 4px 0 0;
+  padding: 4px 0 0;
+  list-style: none;
+  border-top: 1px solid var(--nm-line);
+}
+.nm-channels li { text-align: center; font-size: .625em; color: var(--nm-muted); overflow: hidden; text-overflow: clip; white-space: nowrap; }
+
+/* --- the bar, js/aroma-bar's: the desk's fallback ---------------------- */
 .profile-bar {
   display: flex;
   height: 22px;

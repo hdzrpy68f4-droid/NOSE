@@ -24,7 +24,7 @@
  *      stylesheet
  *   4. the copies that cannot read it equal it: js/aroma-bar's FAMILIES,
  *      loaded as Node loads it (color is the fill, text the ink, in family
- *      order), js/hero's FILLS, favicon.svg's six bars, and each aroma
+ *      order; the desk's fills too, since 2026-11-18), favicon.svg's six bars, and each aroma
  *      page's <meta name="theme-color">
  *   5. every ink reaches 4.5:1 - WCAG 2.2 AA for text, SC 1.4.3 - on white,
  *      on #F3F3EE (--paper), on its fill at 10% over white (family.css's
@@ -164,11 +164,9 @@ if (haveTokens) {
   }
 
   const heroes = fs.readdirSync(path.join(ROOT, 'js')).filter(f => /^hero(\.[0-9a-f]{8})?\.js$/.test(f));
-  if (check(`one js/hero: ${heroes.join(', ') || 'none'}`, heroes.length === 1)) {
-    const m = /\bvar FILLS\s*=\s*(\[[^\]]*\])\s*;/.exec(read(`js/${heroes[0]}`));
-    const got = m ? vm.runInNewContext(m[1]) : [];
-    check(`js/${heroes[0]}'s FILLS are the six fills, in family order`, same(got, fills), `found ${JSON.stringify(got)}`);
-  }
+  /* js/hero's FILLS went on 2026-11-18: the desk moved into js/aroma-bar and takes FAMILIES' colours. */
+  check(`js/hero holds no copy of the fills: ${heroes.join(', ') || 'none'}`,
+    heroes.length === 1 && !/#[0-9A-Fa-f]{6}/.test(read(`js/${heroes[0]}`)));
 
   const g = /<g\b[^>]*>([\s\S]*?)<\/g>/.exec(read('favicon.svg'));
   const icon = g ? [...g[1].matchAll(/\bfill="([^"]*)"/g)].map(m => m[1]) : [];
