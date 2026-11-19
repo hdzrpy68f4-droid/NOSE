@@ -5668,4 +5668,16 @@ the palate, they chose two buttons on the card.
     Manual's buttons.
 - **On the owner's phone**: OG KUSH STORY was saved by the old button, so from
   the deploy it is in the palate; Remove in Saved palate takes it out.
+- **CI's first run failed** on 629fad2, so nothing was deployed. Windows skips
+  WebKit, and CI's WebKit failed "after Remove, a vote names only the jars on
+  screen" with the vote before, the new after-Delete one on Violet Hour.
+  WebKit gives a beacon's request no body, so `bodyOf` reads the page's copy,
+  and it took the newest, which was the vote before whenever this one's copy
+  was not yet kept. The old checks hid this, because their two votes in a row
+  had the same jars. adca6aa takes the oldest copy and removes it. WebKit was
+  then clean three times on Windows (`NOSE_ENGINES=webkit node
+  test/input-paths-test.mjs`, which runs WebKit there), CI was green, and the
+  change was deployed on 2026-11-19. On Windows, b2b-widget fails 25 checks in
+  WebKit (request headers, Tab order) whatever the change: that is why it
+  skips WebKit there.
 - **Not checked**: a real phone before the deploy.
