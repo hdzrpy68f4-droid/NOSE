@@ -5827,3 +5827,33 @@ The owner asked for items 1 to 5 of the list kept when `/app` left
     bordered in pine and spice, which DESIGN.md keeps for families, and the
     form fields on the account page and the dispensary demo still have rule
     borders.
+
+### The labels above /app's headings go, and the result's three boxes become readouts, 2026-11-19
+
+The owner took items 6 to 8 of that list as suggested, except the vote emoji,
+which stay.
+
+- **The labels above headings**: "Palate matcher" over "Compare the profile,
+  not the name." and "Match result" over "Aroma similarity" are gone, and so
+  are their `.eyebrow` rules. DESIGN.md says "no eyebrow above a heading", and
+  no other page had one. Each heading already says what its section is.
+- **The three stat boxes** (Shared backbone, Biggest difference, Confidence)
+  are now readouts, as DESIGN.md describes them: a plain label and its value,
+  on a hairline, with no fill.
+  - The label is soft at 13px (it was 11px, under DESIGN.md's floor) and the
+    value is at 650.
+  - Label and value sit side by side, the label in a 10.5rem column. At 520px
+    wide and under, the label sits over the value, as on the card's readouts.
+  - The ids are unchanged, so the tests that read them still pass.
+- **The vote emoji** stay, the owner's call. DESIGN.md now says so, as the
+  one colour outside the six families.
+- **The boxed panels** are not changed. A 390px mock shows them unboxed: the
+  left column, each tab's panel and the result as sections on the field,
+  opened by a hairline, with the saved jars still boxed as jars. The owner is
+  to choose.
+- **Found**: text under DESIGN.md's 13px, listed in open.md: the tabs, the two
+  tables' headings, the card's labels, the chips' second lines, Remove and the
+  scanner note.
+- **Checked**: colour-tokens, page-chrome and input-paths are clean. Before
+  and after were rendered at 390px (the top of the page, and the result) and
+  at 1280px (the readouts side by side).

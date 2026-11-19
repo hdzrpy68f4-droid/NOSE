@@ -1883,6 +1883,7 @@ under the cap.
 - [On a phone, COA link goes to its panel, the link box stays above the keyboard, and the family table fits, 2026-11-19](docs/handoff/13-records.md#on-a-phone-coa-link-goes-to-its-panel-the-link-box-stays-above-the-keyboard-and-the-family-table-fits-2026-11-19)
 - [After Compare, the result offers "Add to my palate", 2026-11-19](docs/handoff/13-records.md#after-compare-the-result-offers-add-to-my-palate-2026-11-19)
 - [/app's focus rings, colours, faces and header follow DESIGN.md, 2026-11-19](docs/handoff/13-records.md#apps-focus-rings-colours-faces-and-header-follow-designmd-2026-11-19)
+- [The labels above /app's headings go, and the result's three boxes become readouts, 2026-11-19](docs/handoff/13-records.md#the-labels-above-apps-headings-go-and-the-results-three-boxes-become-readouts-2026-11-19)
 
 ## 14. Dispensary integration
 

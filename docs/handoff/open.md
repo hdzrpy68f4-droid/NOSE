@@ -97,23 +97,26 @@ schema comment if wanted.
   their wrapping, the tick and the status line. Safari and Firefox have not
   been looked at, nor a screen reader's reading of the note.
 - **`/app`'s departures from DESIGN.md, left for design work**:
-  - the labels above "Compare the profile..." and "Aroma similarity";
-  - the boxed panels and the three stat boxes;
-  - the vote emoji.
-
-  Found on 2026-11-19 while the rest went (13-records, "/app's focus rings,
-  colours, faces and header follow DESIGN.md"):
+  - the boxed panels: the left column, each tab's panel and the result. The
+    owner has a 390px mock of them unboxed, as sections opened by a hairline,
+    and is to choose (13-records, "The labels above /app's headings go").
   - success and error messages are bordered in pine and spice, which DESIGN.md
     keeps for families;
   - the account page's and the dispensary demo's form fields still have rule
     borders, where DESIGN.md now says soft;
+  - text under DESIGN.md's 13px:
+    - the tabs at 12px, under 900px wide;
+    - the family table's and the Manual table's headings at 11px;
+    - the card's labels, the sample chips' second lines, Remove and the
+      scanner note at 12px;
   - the family table's Difference column gives a rise without a "+";
   - its column heading still says "New jar", while the bars above it carry
     the jar's name.
 
-  (Gone on 2026-11-19: the green focus rings, the rust hover, Inter, the
-  off-palette colours, the bolder header and the table's sideways scroll on a
-  phone.)
+  Gone on 2026-11-19: the green focus rings, the rust hover, Inter, the
+  off-palette colours, the bolder header, the table's sideways scroll on a
+  phone, the labels above two headings and the three stat boxes. The vote
+  emoji stay, the owner's call, and DESIGN.md says so.
 - **The rebuilt reading pages have not been seen in real desktop Safari, nor
   read by a screen reader.** Chromium, Firefox, Playwright's WebKit, the
   owner's iPhone and a keyboard pass have been (13-records, "The reading pages
