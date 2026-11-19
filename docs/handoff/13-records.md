@@ -5770,4 +5770,8 @@ compared.
 
   Clean in Chromium, Firefox and WebKit. Rendered at 390px before and after
   the press.
-- **Not checked**: a real phone before the deploy.
+- **Not checked before the deploy**: a real phone. After it (0ca36b0,
+  deployed 2026-11-19, CI's live-check green), the owner tried their iPhone
+  and reported that everything works as intended. That covers both
+  "Compare" and "Add" buttons, the result's "Add to my palate", and the
+  fixes recorded above it.
