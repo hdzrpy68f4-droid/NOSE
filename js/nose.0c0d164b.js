@@ -361,7 +361,7 @@
       const biggest=differences[0];
       document.getElementById('fullResult').hidden=false;
       document.getElementById('resultNames').textContent=`${a.name} compared with ${b.name}`;
-      document.getElementById('resultCandidateLabel').textContent=b.name||'New jar';   // the jar's own name over its bars (the owner, 2026-11-19)
+      document.getElementById('resultCandidateLabel').textContent=b.name||'New jar';   // the name of the jar over its bars (the owner, 2026-11-19); no apostrophe here: pieceOf in match-feedback-test reads one as a quote
       document.getElementById('resultBadge').textContent=matchBand(score)[0];
       document.getElementById('resultScore').textContent=shownScore(score);
       document.getElementById('resultSummary').textContent=`${shownScore(score)}% aroma similarity`;
