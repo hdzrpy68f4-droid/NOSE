@@ -16,13 +16,13 @@
 <link rel="stylesheet" href="/css/tokens.a99f0132.css">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/agegate.1249e052.css">
-  <link rel="stylesheet" href="/css/world.34999a13.css">
+  <link rel="stylesheet" href="/css/world.2185f07a.css">
   <link rel="stylesheet" href="/css/dispensaries.fd1c5158.css">
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to content</a>
 <!-- nose:header static -->
-<header class="site-header">
+<header class="site-header has-menu">
     <div class="wrap nav">
       <a class="brand" href="/" aria-label="NOSE home"><span class="brand-bars" aria-hidden="true"><i class="bg-citrus"></i><i class="bg-earthy"></i><i class="bg-spice"></i><i class="bg-pine"></i><i class="bg-floral"></i><i class="bg-herbal"></i></span>NOSE</a>
       <nav class="nav-links" aria-label="Primary navigation">
@@ -33,7 +33,18 @@
         <a href="/account/">Account</a>
         <a class="nav-cta" href="/app">Match a jar</a>
       </nav>
+      <button class="menu-button" id="menuButton" type="button" aria-expanded="false" aria-controls="mobileMenu" aria-label="Open navigation menu">
+        <span aria-hidden="true">☰</span>
+      </button>
     </div>
+    <nav class="mobile-menu" id="mobileMenu" aria-label="Mobile navigation" data-open="false">
+      <a href="/aromas/">Aroma families</a>
+      <a href="/learn/">Learn</a>
+      <a href="/methodology/">Methodology</a>
+      <a href="/about/">About</a>
+      <a href="/account/">Account</a>
+      <a href="/app">Match a jar</a>
+    </nav>
   </header>
 <!-- /nose:header -->
 <main id="main">
@@ -141,5 +152,6 @@
   </footer>
 <!-- /nose:footer -->
   <script src="/js/agegate.47a7d3ff.js" defer></script>
+<script src="/js/menu.6e9f8bdc.js" defer></script>
 </body>
 </html>

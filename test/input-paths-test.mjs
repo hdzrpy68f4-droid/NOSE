@@ -1104,6 +1104,25 @@ try {
       check('phone: the result\'s family table fits at 390 and at 320, with no sideways scroll',
         at390[1] > 200 && at320[1] > 150 && at390[0] <= at390[1] && at320[0] <= at320[1],   // shown, and no wider than its box
         `scroll and client widths: 390 ${JSON.stringify(at390)}, 320 ${JSON.stringify(at320)}`);
+
+      /* The shared header's phone menu on a page without js/nose (since
+         2026-11-19, "Every page gets the phone menu"): the links row is
+         hidden, the button opens the menu with focus on its first link, and
+         Escape closes it and gives focus back to the button. */
+      await q.setViewportSize({ width: 390, height: 844 });
+      await q.goto(`${BASE}/learn/`);
+      const menuState = () => q.evaluate(() => [getComputedStyle(document.querySelector('.nav-links')).display,
+        document.getElementById('menuButton').getAttribute('aria-expanded'), getComputedStyle(document.getElementById('mobileMenu')).display,
+        document.activeElement && (document.activeElement.id || document.activeElement.textContent.trim())]);
+      const closed = await menuState();
+      await q.click('#menuButton');
+      const opened = await menuState();
+      await q.keyboard.press('Escape');
+      const shut = await menuState();
+      check('phone: /learn/ has the menu button; it opens the menu on its first link, and Escape closes it back to the button',
+        JSON.stringify([closed.slice(0, 3), opened, shut])
+          === JSON.stringify([['none', 'false', 'none'], ['none', 'true', 'block', 'Aroma families'], ['none', 'false', 'none', 'menuButton']]),
+        JSON.stringify([closed, opened, shut]));
       await ph.close();
     }
 

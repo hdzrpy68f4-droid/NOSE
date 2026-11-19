@@ -145,7 +145,7 @@ fingerprint() {
   fi
   echo "==> $new"
 }
-for f in js/nose*.js js/match-math*.js js/aroma-bar*.js js/b2b-rank*.js js/b2b-strings*.js js/b2b-widget*.js js/b2b-demo*.js js/hero*.js js/agegate*.js js/account*.js; do
+for f in js/nose*.js js/match-math*.js js/aroma-bar*.js js/b2b-rank*.js js/b2b-strings*.js js/b2b-widget*.js js/b2b-demo*.js js/hero*.js js/agegate*.js js/account*.js js/menu*.js; do
   [ -f "$f" ] || continue
   node --check "$f" || { echo "FAIL: $f has a syntax error"; exit 1; }
 done
@@ -183,6 +183,7 @@ fingerprint css page    css
 fingerprint js  hero    js
 fingerprint css agegate css
 fingerprint js  agegate js
+fingerprint js  menu    js   # the phone menu in the shared header, on every page with one (2026-11-19)
 fingerprint css reading css
 fingerprint css account css
 fingerprint js  account js

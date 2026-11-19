@@ -1225,25 +1225,13 @@
         if(href===here) link.setAttribute('aria-current','page'); else link.removeAttribute('aria-current');
       });
 
-      closeMenu();
       window.scrollTo({top:0,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
       { const mc=$id('main-content'); if(mc) mc.focus({preventScroll:true}); }
       if(next==='app') step('result',updateFullResult); else step('scanner stop',stopQrScanner);
     }
 
-    function trapOpenFocus(event){
-      const menu=$id('mobileMenu');
-      const scope=(menu&&menu.dataset.open==='true')?menu:null;
-      if(!scope) return;
-      const focusable=[...scope.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')].filter(node=>!node.hidden);
-      if(!focusable.length) return;
-      const first=focusable[0],last=focusable[focusable.length-1];
-      if(event.shiftKey&&document.activeElement===first){ event.preventDefault(); last.focus(); }
-      else if(!event.shiftKey&&document.activeElement===last){ event.preventDefault(); first.focus(); }
-    }
-
-    function closeMenu(){ const button=$id('menuButton'), menu=$id('mobileMenu'); if(!button||!menu) return; button.setAttribute('aria-expanded','false'); button.setAttribute('aria-label','Open navigation menu'); menu.dataset.open='false'; }
-    function toggleMenu(){ const button=$id('menuButton'), menu=$id('mobileMenu'); if(!button||!menu) return; const open=button.getAttribute('aria-expanded')==='true'; button.setAttribute('aria-expanded',String(!open)); button.setAttribute('aria-label',open?'Open navigation menu':'Close navigation menu'); menu.dataset.open=String(!open); if(!open){ const first=menu.querySelector('a'); if(first) first.focus(); } }
+    /* The phone menu (open, close, Escape, Tab, closing on a route change) is
+       js/menu, on every page with the header, since 2026-11-19. */
 
     function init(){
       /* Each shell renders only the markup it owns, so every phase is
@@ -1256,11 +1244,6 @@
       if($id('matchFeedback')) step('feedback',wireFeedback);
       on('heroPalate','change',event=>{ state.heroPalate=event.target.value; updateHero(); });
       on('heroCandidate','change',event=>{ state.heroCandidate=event.target.value; updateHero(); });
-      on('menuButton','click',toggleMenu);
-      document.addEventListener('keydown',event=>{
-        if(event.key==='Escape'){ closeMenu(); return; }
-        if(event.key==='Tab') trapOpenFocus(event);
-      });
       window.addEventListener('hashchange',route);
       each('[role="tab"]',tab=>{ tab.tabIndex=tab.getAttribute('aria-selected')==='true'?0:-1; tab.addEventListener('click',()=>chooseTab(tab)); tab.addEventListener('keydown',tabKey); });
       /* Not passed straight in: a click handler gets the click event, and

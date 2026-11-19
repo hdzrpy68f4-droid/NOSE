@@ -50,8 +50,9 @@ for (const p of marked) {
   if (noCurrent(header) !== want.trim() || footer !== P.footer.trim()) wrongBody.push(p);
   const at = S.addressOf(p);
   const cur = [...header.matchAll(/href="([^"]+)" aria-current="([^"]+)"/g)].map(m => `${m[1]}=${m[2]}`);
-  const expect = kind === 'app' || !at ? [] : ['/aromas/', '/learn/', '/methodology/', '/about/', '/account/', '/app']
+  const once = !at ? [] : ['/aromas/', '/learn/', '/methodology/', '/about/', '/account/', '/app']
     .map(h => (h === at ? `${h}=page` : h.endsWith('/') && at.startsWith(h) ? `${h}=true` : null)).filter(Boolean);
+  const expect = kind === 'app' || !at ? [] : [...once, ...once];   // the links row, then the phone menu (since 2026-11-19)
   if (JSON.stringify(cur) !== JSON.stringify(expect)) wrongCurrent.push([p, cur, expect]);
   if (!/href="\/privacy\/">Privacy</.test(footer) || !/href="\/terms\/">Terms</.test(footer)) noLegal.push(p);
 }
@@ -63,13 +64,19 @@ check('the home page and /app take the app header, every other page the static o
 check('some pages it decides by hand: /aromas/earthy/ marks Aroma families "true", /account/ marks Account "page", a guide marks Learn "true"',
   [S.withCurrent(P.header, '/aromas/earthy/'), S.withCurrent(P.header, '/account/'), S.withCurrent(P.header, '/learn/how-to-read-a-coa/')]
     .map(h => [...h.matchAll(/href="([^"]+)" aria-current="([^"]+)"/g)].map(m => `${m[1]}=${m[2]}`)),
-  [['/aromas/=true'], ['/account/=page'], ['/learn/=true']]);
+  [['/aromas/=true', '/aromas/=true'], ['/account/=page', '/account/=page'], ['/learn/=true', '/learn/=true']]);
 const navOrder = h => [...h.matchAll(/<a (?:class="nav-cta" )?href="([^"]+)">/g)].map(m => m[1]).filter(h => h !== '/');
-check('one nav order, in both headers and in the app\'s mobile menu: Aroma families, Learn, Methodology, About, Account, Match a jar',
-  [navOrder(P.header), navOrder(P.headerApp.split('mobile-menu')[0]), navOrder(P.headerApp.split('mobile-menu')[1])],
-  Array(3).fill(['/aromas/', '/learn/', '/methodology/', '/about/', '/account/', '/app']));
+check('one nav order, in both headers and in both phone menus: Aroma families, Learn, Methodology, About, Account, Match a jar',
+  [P.header, P.headerApp].flatMap(h => [navOrder(h.split('mobile-menu')[0]), navOrder(h.split('mobile-menu')[1])]),
+  Array(4).fill(['/aromas/', '/learn/', '/methodology/', '/about/', '/account/', '/app']));
 check('the footer lists Account once and holds no route-link class', [(P.footer.match(/href="\/account\/"/g) || []).length, /route-link/.test(P.footer + P.header + P.headerApp)], [1, false]);
-check('the app header keeps what js/nose drives: menuButton, mobileMenu', [/id="menuButton"/.test(P.headerApp), /id="mobileMenu"/.test(P.headerApp)], [true, true]);
+/* Every page has the phone menu since 2026-11-19 ("Every page gets the phone
+   menu"): both headers carry what js/menu drives, and every page with the
+   header loads js/menu. Until then only the app header had a menu. */
+check('both headers carry what js/menu drives: the has-menu header, menuButton and mobileMenu',
+  [P.header, P.headerApp].map(h => [/class="site-header has-menu"/.test(h), /id="menuButton"/.test(h), /id="mobileMenu"/.test(h)]), [[true, true, true], [true, true, true]]);
+check('every page with the header loads js/menu',
+  marked.filter(p => !/<script src="\/js\/menu\.[0-9a-f]{8}\.js" defer><\/script>/.test(fs.readFileSync(path.join(ROOT, p), 'utf8'))), []);
 check('the tree is as stamped (scripts/stamp-chrome.js --check)', S.main(['--check']), []);
 
 /* Broken copies, in a scratch tree. */

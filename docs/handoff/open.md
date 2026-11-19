@@ -96,14 +96,6 @@ schema comment if wanted.
 - **The word buttons were watched in Chromium only**, at 1280 and 390 px:
   their wrapping, the tick and the status line. Safari and Firefox have not
   been looked at, nor a screen reader's reading of the note.
-- **The phone header differs between pages**: only the home page and `/app`
-  have DESIGN.md's bordered menu button on a phone. The other pages (from
-  `partials/header.html`: the account, aroma, learn, about, legal and 404
-  pages) show their links in a row that runs off the screen. Seen on
-  2026-11-19 in a 390px render of `/account/`; nothing was changed there.
-  (`/app`'s list of departures from DESIGN.md was cleared on 2026-11-19,
-  13-records, "/app's last departures from DESIGN.md go"; the vote emoji
-  stay, the owner's call, and DESIGN.md says so.)
 - **The rebuilt reading pages have not been seen in real desktop Safari, nor
   read by a screen reader.** Chromium, Firefox, Playwright's WebKit, the
   owner's iPhone and a keyboard pass have been (13-records, "The reading pages

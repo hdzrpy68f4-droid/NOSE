@@ -5915,3 +5915,38 @@ The owner said to continue with the rest of the list in open.md.
   at 390 and 320px). Rendered before and after at 390px: the top (four tabs on
   one row), the result's table, the COA link message and card, and the
   account page's fields. Also rendered at 1280px.
+
+### Every page gets the phone menu, 2026-11-19
+
+Only the home page and `/app` had DESIGN.md's bordered menu button on a
+phone. The other 23 pages, stamped from `partials/header.html`, showed their
+links as a second row under the logo that scrolled sideways. At 430px it cut
+off at Account, and "Match a jar" sat beyond the edge until swiped. Shown
+pictures of both, the owner chose the menu button everywhere.
+
+- **`partials/header.html`** now carries `has-menu`, the menu button and
+  `#mobileMenu`, the same markup as `partials/header-app.html`.
+  `scripts/stamp-chrome.js` marks `aria-current` on both sets of links, the
+  row and the menu, so a page's own link is marked in the menu too. The two
+  partials stay separate because `/app`'s links are still marked by js/nose,
+  by path.
+- **js/menu** (new, fingerprinted by build.sh and syntax-checked with the
+  rest) opens and closes the menu on every page with the header. Focus goes
+  to the first link, Tab stays in the menu while it is open, Escape closes it
+  and gives focus back to the button (new: focus used to stay on a hidden
+  link), and a route change in `/app` closes it.
+- The same code left js/nose (`toggleMenu`, `closeMenu`, `trapOpenFocus`, its
+  keydown listener), so the menu has one home. Every page with the header
+  loads js/menu, deferred, just before `</body>`. b2b/demo has no header and
+  no js/menu.
+- **css/world** drops the swipe row's rules (`.site-header:not(.has-menu)`).
+  No page has that header now.
+- **Tests**: `page-chrome-test` expects both headers to carry the menu, each
+  page's `aria-current` twice (the row and the menu), one nav order in both
+  phone menus, and js/menu on every page with the header. `input-paths-test`'s
+  phone block opens `/learn/`: the links row is hidden, the button opens the
+  menu with focus on Aroma families, and Escape closes it back to the button.
+  Clean in Chromium, Firefox and WebKit.
+- **Rendered** at 430px: `/account/`, `/learn/` and `/aromas/citrus/`, closed
+  and open, with no page errors.
+- **Not checked**: a real phone.

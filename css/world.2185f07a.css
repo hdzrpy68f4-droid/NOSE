@@ -89,12 +89,7 @@ p{text-wrap:pretty}
 @media (max-width:899px){
   .has-menu .nav-links{display:none}
   .menu-button{display:grid}
-  .mobile-menu[data-open="true"]{display:block}
-  /* the static header has no script: its links become one row that scrolls sideways */
-  .site-header:not(.has-menu) .nav{flex-wrap:wrap;gap:0 24px;padding-block:0}
-  .site-header:not(.has-menu) .nav-links{order:3;width:calc(100% + 40px);margin-inline:-20px;padding-inline:20px;gap:22px;flex-wrap:nowrap;overflow-x:auto;white-space:nowrap;border-top:1px solid var(--rule);scrollbar-width:none}
-  .site-header:not(.has-menu) .nav-links a{min-height:44px;font-size:.9375rem}
-  .site-header:not(.has-menu) .nav-links .nav-cta{border:0;padding:0;text-decoration:underline;text-underline-offset:4px}
+  .mobile-menu[data-open="true"]{display:block}   /* every header has the menu since 2026-11-19 (js/menu) */
 }
 
 /* ---- buttons ---- */

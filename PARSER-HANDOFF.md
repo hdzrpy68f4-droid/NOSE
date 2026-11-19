@@ -1886,6 +1886,7 @@ under the cap.
 - [The labels above /app's headings go, and the result's three boxes become readouts, 2026-11-19](docs/handoff/13-records.md#the-labels-above-apps-headings-go-and-the-results-three-boxes-become-readouts-2026-11-19)
 - [/app's panels lose their boxes, 2026-11-19](docs/handoff/13-records.md#apps-panels-lose-their-boxes-2026-11-19)
 - [/app's last departures from DESIGN.md go, 2026-11-19](docs/handoff/13-records.md#apps-last-departures-from-designmd-go-2026-11-19)
+- [Every page gets the phone menu, 2026-11-19](docs/handoff/13-records.md#every-page-gets-the-phone-menu-2026-11-19)
 
 ## 14. Dispensary integration
 
