@@ -582,9 +582,19 @@ try {
     check(`${where}: "Add to my palate" saves the jar and closes the card`, said && saved.includes(name) && !(await visible('#coaConfirm')),
       `message "${await text(`#${messageId}`)}", saved ${JSON.stringify(saved)}`);
     check(`${where}: then the result reads "${result}"`, (await text('#resultNames')) === result, `it reads "${await text('#resultNames')}"`);
+    check(`${where}: the message is in view once the card closes, under the header`, await messageInView(messageId), await whereIs(`#${messageId}`));
   }
 
-  /* "Compare with my palate": the jar is the new jar, and nothing is saved. */
+  /* After the card closes the page is shorter; until 2026-11-19 the view was
+     left near the footer. 65px is the sticky header. */
+  const messageInView = id => page.waitForFunction(id => {
+    const r = document.getElementById(id).getBoundingClientRect(); return r.top >= 65 && r.bottom <= innerHeight;
+  }, id, { timeout: 3000 }).then(() => true, () => false);
+  const whereIs = sel => page.evaluate(sel => { const r = document.querySelector(sel).getBoundingClientRect();
+    return `${sel} at ${Math.round(r.top)}-${Math.round(r.bottom)} of ${innerHeight}, focus on ${document.activeElement && (document.activeElement.id || document.activeElement.tagName)}`; }, sel);
+
+  /* "Compare with my palate": the jar is the new jar, and nothing is saved;
+     the page goes to the result, its heading focused, its bars under the jar's name. */
   async function compareJar(where, messageId, name, result) {
     if (!await visible('#coaConfirmCompare')) {
       check(`${where}: "Compare with my palate" compares the jar`, false, 'the button is not visible');
@@ -598,6 +608,12 @@ try {
     check(`${where}: "Compare with my palate" makes it the new jar, saves nothing and closes the card`,
       said && JSON.stringify(saved) === JSON.stringify(before) && !(await visible('#coaConfirm')) && (await text('#resultNames')) === result,
       `message "${await text(`#${messageId}`)}", saved ${JSON.stringify(saved)}, result "${await text('#resultNames')}"`);
+    const landed = await page.waitForFunction(() => {
+      const head = document.getElementById('resultTitle'), top = head.getBoundingClientRect().top;
+      return document.activeElement === head && top >= 65 && top < innerHeight * 0.75;
+    }, null, { timeout: 3000 }).then(() => true, () => false);
+    check(`${where}: then the page is at the result - "Aroma similarity" under the header and focused - and the jar's name is over its bars`,
+      landed && (await text('#resultCandidateLabel')) === name, `${await whereIs('#resultTitle')}, label "${await text('#resultCandidateLabel')}"`);
   }
 
   async function discard(where, messageId) {
@@ -608,6 +624,7 @@ try {
     await page.click('#coaConfirmCancel');
     const said = await messageMatches(messageId, /^Discarded\. Nothing was added to your palate\.$/);
     check(`${where}: "Discard" closes the card and adds nothing`, said && !(await visible('#coaConfirm')));
+    check(`${where}: the message is in view once the card closes, under the header`, await messageInView(messageId), await whereIs(`#${messageId}`));
   }
 
   await page.goto(`${BASE}/app`);
@@ -951,7 +968,8 @@ try {
     await p.click('#compareManualButton');
     check('Manual: "Compare with my palate" makes the jar the new jar against the sample, and saves nothing',
       (await t('#manualMessage')) === 'Compared jar is the new jar, compared with your palate below.'
-        && (await t('#resultNames')) === `${LEMON} compared with Compared jar` && (await savedNames()).length === 0,
+        && (await t('#resultNames')) === `${LEMON} compared with Compared jar` && (await t('#resultCandidateLabel')) === 'Compared jar'
+        && (await savedNames()).length === 0,
       `message "${await t('#manualMessage')}", result "${await t('#resultNames')}", saved ${JSON.stringify(await savedNames())}`);
 
     /* Delete: an added jar is the palate alone, the sample not mixed in; then every saved jar goes. */

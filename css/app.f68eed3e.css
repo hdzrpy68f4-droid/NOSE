@@ -128,6 +128,8 @@ select,input,textarea{width:100%;margin-top:7px;min-height:46px;padding:10px 12p
 
 /* ---- the result (each profile on the desk, css/world's .result-eq) ---- */
 .result-panel{margin-top:24px;padding:24px}
+/* scrolled to when the report card closes (js/nose's useJar): 16px under the 65px sticky header */
+#fullResult,.inline-message{scroll-margin-top:81px}
 .result-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
 .badge{display:inline-flex;align-items:center;justify-content:center;min-height:0;padding:6px 10px;border:1px solid var(--rule);border-radius:var(--r);font-size:.9375rem;line-height:1.25;text-align:center}
 .profile-label{margin:16px 0 7px;color:var(--soft);font-size:.9375rem}

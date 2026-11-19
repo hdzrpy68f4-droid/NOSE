@@ -5681,3 +5681,34 @@ the palate, they chose two buttons on the card.
   WebKit (request headers, Tab order) whatever the change: that is why it
   skips WebKit there.
 - **Not checked**: a real phone before the deploy.
+
+### After Compare the page goes to the result, and the new jar's bars carry its name, 2026-11-19
+
+The owner tried "Compare with my palate" on their iPhone once it was live.
+The page landed far down, and the second set of bars was labelled "New jar"
+rather than with the jar's name. They also asked why Herbal showed nothing for
+their new jar.
+
+- **Why the page landed low**: the card is long, and closing it shortened the
+  page. The browser kept the scroll offset, which then fell near the footer.
+  "Add to my palate" and "Discard" did the same.
+- **Now**: Compare focuses "Aroma similarity" (`tabindex="-1"`, focused
+  without scrolling, so a screen reader hears where the result is). It then
+  scrolls the result to 16px under the 65px sticky header, using `css/app`'s
+  `scroll-margin-top:81px` on `#fullResult` and `.inline-message`. Add and
+  Discard scroll their message into view the same way.
+- **The bars' label** (`#resultCandidateLabel`) is the compared jar's name.
+  The markup keeps "New jar" as the default. The family table's column still
+  says "New jar", to keep the table narrow.
+- **Herbal** is terpinolene, ocimene and farnesene. The result's desk lights
+  a whole column at a 60% share (`DESK_FULL`). On a phone a column is 17
+  blocks (104px), so a block is about 3.5% of a jar's terpenes, and a family
+  under about 1.8% lights none. The table under the result gives the shares
+  rounded to 1%. Nothing was changed there.
+- **Tests**: after Compare, `input-paths-test` checks that the heading is
+  focused and under the header and that the label is the jar's name. After
+  every Add or Discard, it checks that the message is in view under the
+  header. Clean in Chromium, Firefox and, on Windows with
+  `NOSE_ENGINES=webkit`, WebKit. The 390px render after Compare shows the
+  result's top under the header.
+- **Not checked**: a real phone before the deploy.

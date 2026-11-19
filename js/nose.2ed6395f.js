@@ -361,6 +361,7 @@
       const biggest=differences[0];
       document.getElementById('fullResult').hidden=false;
       document.getElementById('resultNames').textContent=`${a.name} compared with ${b.name}`;
+      document.getElementById('resultCandidateLabel').textContent=b.name||'New jar';   // the jar's own name over its bars (the owner, 2026-11-19)
       document.getElementById('resultBadge').textContent=matchBand(score)[0];
       document.getElementById('resultScore').textContent=shownScore(score);
       document.getElementById('resultSummary').textContent=`${shownScore(score)}% aroma similarity`;
@@ -756,6 +757,10 @@
         state.compared=[profile]; state.appCandidate=profile.id;
         renderSampleButtons(); updateFullResult();
         showMessage(messageId,`${profile.name} is the new jar, compared with your palate below.`,'success');
+        /* The card closing shortens the page, which left the view near the
+           footer: go to the result, its heading focused for a screen reader. */
+        $id('resultTitle').focus({preventScroll:true});
+        $id('fullResult').scrollIntoView({block:'start'});
         return;
       }
       state.saved.push(profile);
@@ -763,6 +768,7 @@
       state.palateIds=savedPalate();
       updateSavedSummary(); renderSampleButtons(); updateFullResult();
       showMessage(messageId,`${profile.name} was added to your palate ${persisted?'and saved in this browser':'for this session'}.`,'success');
+      $id(messageId).scrollIntoView({block:'nearest'});
     }
 
     (function bindCoaConfirm(){
@@ -772,7 +778,7 @@
       if(cancel) cancel.onclick=function(){
         const id=coaPending&&coaPending.messageId;
         hideCoaConfirm();
-        if(id) showMessage(id,'Discarded. Nothing was added to your palate.','neutral');
+        if(id){ showMessage(id,'Discarded. Nothing was added to your palate.','neutral'); $id(id).scrollIntoView({block:'nearest'}); }
       };
     })();
 
