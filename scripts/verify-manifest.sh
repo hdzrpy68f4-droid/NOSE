@@ -35,7 +35,7 @@ section "Fingerprinted bundles — build.sh globs js/ and css/, not root"
 js=$(ls js/nose.*.js 2>/dev/null | head -1)
 mm=$(ls js/match-math.js js/match-math.*.js 2>/dev/null | head -1)   # the maths the app reads (window.NoseMatch)
 tok=$(ls css/tokens.*.css 2>/dev/null | head -1)   # the family colours, linked first by every page
-css=$(ls css/shell.*.css 2>/dev/null | head -1)
+css=$(ls css/app.css css/app.*.css 2>/dev/null | head -1)   # the matcher, /app (css/shell until 2026-11-18)
 fam=$(ls css/reading.css css/reading.*.css 2>/dev/null | head -1)   # the reading pages, rebuilt in the new look (2026-11-18)
 [ -n "$js" ]  && { echo "  ok    $js"; have=$((have+1)); } \
               || { echo "  MISS  js/nose.<hash>.js      fingerprint() exits 1"; missing=$((missing+1)); }
@@ -44,7 +44,7 @@ fam=$(ls css/reading.css css/reading.*.css 2>/dev/null | head -1)   # the readin
 [ -n "$tok" ] && { echo "  ok    $tok"; have=$((have+1)); } \
               || { echo "  MISS  css/tokens.<hash>.css  every page's family colours are unset"; missing=$((missing+1)); }
 [ -n "$css" ] && { echo "  ok    $css"; have=$((have+1)); } \
-              || { echo "  MISS  css/shell.<hash>.css   fingerprint() exits 1"; missing=$((missing+1)); }
+              || { echo "  MISS  css/app.<hash>.css     fingerprint() exits 1"; missing=$((missing+1)); }
 [ -n "$fam" ] && { echo "  ok    $fam"; have=$((have+1)); } \
               || { echo "  MISS  css/reading.<hash>.css fingerprint() exits 1"; missing=$((missing+1)); }
 

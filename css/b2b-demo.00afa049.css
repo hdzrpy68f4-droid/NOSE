@@ -38,7 +38,7 @@
 
 .demo-stage{min-width:0}
 .demo-stage > .demo-h2{margin-bottom:12px}
-.demo-shop{padding:24px;border-radius:var(--r)}
+.demo-shop{padding:24px;border-radius:var(--r);background:#fff;color:#18211B}   /* a store's own page is light */
 .demo-events{display:grid;gap:6px;margin:0;padding:0;list-style:none;font-size:.875rem}
 .demo-events:empty{display:none}
 

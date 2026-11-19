@@ -54,7 +54,8 @@ p + .acct-field{margin-top:24px}
 .acct-details{display:grid;grid-template-columns:minmax(9em,auto) 1fr}
 .acct-details dt{padding:14px 16px 14px 0;border-top:1px solid var(--rule);color:var(--soft)}
 .acct-details dd{padding:14px 0;border-top:1px solid var(--rule);color:var(--ink);font-weight:650;overflow-wrap:anywhere}
-.acct-card .note{margin:0;padding:0;color:var(--soft)}
+.acct-details .mono{font-size:.9375rem}
+.acct-card .note{margin:0;padding:0;border-radius:var(--r);color:var(--soft)}
 
 /* deleting the account */
 .acct-danger ul{margin:0 0 20px;padding-left:1.2rem;color:var(--ink)}

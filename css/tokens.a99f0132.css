@@ -2,8 +2,8 @@
  *
  * --<family> is the family's fill, --<family>-text its ink: the colour its
  * words take on a light background. Every page links this file before any
- * other stylesheet, so css/shell, family.css, css/agegate and css/account all
- * read these variables. build.sh fingerprints it: css/tokens.<hash>.css.
+ * other stylesheet, so css/world, css/agegate and each page's own sheet read
+ * these variables. build.sh fingerprints it: css/tokens.<hash>.css.
  *
  * Four copies cannot read this file, and test/colour-tokens-test.js (the
  * 'colour tokens' gate) fails unless each equals it:

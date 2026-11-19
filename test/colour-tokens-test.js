@@ -211,8 +211,13 @@ if (haveTokens) {
    was rgba(47,97,68,.38), 1.81:1 over the page; WCAG 2.2 SC 1.4.11 asks 3:1
    of a focus indicator. No stylesheet of the site draws an outline in a
    translucent colour now (the dispensary widget's own sheet is a pinned
-   release and is not read here), and the two ring colours reach 3:1 on the
-   surfaces they are drawn on. Same formulas as check 5. */
+   release and is not read here), and css/world's ring, which every page
+   draws, reaches 3:1 on the field and on a raised panel (the footer stands on
+   the field). Until 2026-11-18 this read css/shell's ring, which css/world
+   had drawn over since the redesign; css/app keeps css/shell's green rings
+   on the matcher's card inputs and saved-jar buttons as they were, 2.43:1 on
+   a raised panel, for design work (docs/handoff/open.md). Same formulas as
+   check 5. */
 {
   const channel = c => { const s = c / 255; return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; };
   const luminance = ([r, g, b]) => 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
@@ -222,15 +227,16 @@ if (haveTokens) {
     ...fs.readdirSync(ROOT).filter(f => /^family(\.[0-9a-f]{8})?\.css$/.test(f))];
   const faint = sheets.filter(f => /outline(-color)?\s*:[^;}]*rgba\(/.test(stripCss(read(f))));
   check('no stylesheet of the site draws an outline in a translucent colour', !faint.length, faint.join(', '));
-  const shell = sheets.find(f => /^css\/shell(\.[0-9a-f]{8})?\.css$/.test(f));
-  const css = shell ? stripCss(read(shell)) : '';
-  const ring = (/:focus-visible\s*\{\s*outline:3px solid (#[0-9A-Fa-f]{6});/.exec(css) || [])[1];
-  const footerRing = (/\.footer :focus-visible\s*\{\s*outline-color:(#[0-9A-Fa-f]{6});/.exec(css) || [])[1];
-  const footer = (/\.footer\s*\{\s*background:(#[0-9A-Fa-f]{6});/.exec(css) || [])[1];
-  const pairs = ring && footerRing && footer
-    ? [[ring, '#F3F3EE'], [ring, '#FFFFFF'], [footerRing, footer]].map(([a, b]) => [a, b, ratio(rgb(a), rgb(b))]) : [];
-  check(`the focus ring reaches 3:1 on the page, on white and on the footer (${pairs.map(p => `${p[0]} on ${p[1]} ${p[2].toFixed(2)}:1`).join(', ')})`,
-    pairs.length === 3 && pairs.every(p => p[2] >= 3), `ring ${ring}, footer ring ${footerRing}, footer ${footer}`);
+  const world = sheets.find(f => /^css\/world(\.[0-9a-f]{8})?\.css$/.test(f));
+  const css = world ? stripCss(read(world)) : '';
+  const root = (/:root\s*\{([^}]*)\}/.exec(css) || [])[1] || '';
+  const token = name => (new RegExp(`--${name}:(#[0-9A-Fa-f]{6})`).exec(root) || [])[1];
+  const ringName = (/:focus-visible\s*\{\s*outline:3px solid var\(--([a-z-]+)\)/.exec(css) || [])[1];
+  const ring = ringName && token(ringName), field = token('field'), raised = token('raised');
+  const pairs = ring && field && raised
+    ? [[ring, field], [ring, raised]].map(([a, b]) => [a, b, ratio(rgb(a), rgb(b))]) : [];
+  check(`the focus ring reaches 3:1 on the field and on a raised panel (${pairs.map(p => `${p[0]} on ${p[1]} ${p[2].toFixed(2)}:1`).join(', ')})`,
+    pairs.length === 2 && pairs.every(p => p[2] >= 3), `ring --${ringName} ${ring}, field ${field}, raised ${raised}`);
 }
 
 if (failures) process.exit(1);

@@ -1877,6 +1877,7 @@ under the cap.
 - [family.css goes: the reading pages keep only what they use, 2026-11-18](docs/handoff/13-records.md#familycss-goes-the-reading-pages-keep-only-what-they-use-2026-11-18)
 - [The reading pages rebuilt: css/legacy and css/read go, 2026-11-18](docs/handoff/13-records.md#the-reading-pages-rebuilt-csslegacy-and-cssread-go-2026-11-18)
 - [The reading pages after the rebuild: underline, other browsers, keyboard, 2026-11-18](docs/handoff/13-records.md#the-reading-pages-after-the-rebuild-underline-other-browsers-keyboard-2026-11-18)
+- [/app leaves css/shell, and css/world's section for pages not yet rebuilt goes, 2026-11-18](docs/handoff/13-records.md#app-leaves-cssshell-and-cssworlds-section-for-pages-not-yet-rebuilt-goes-2026-11-18)
 
 ## 14. Dispensary integration
 

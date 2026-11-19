@@ -5549,3 +5549,84 @@ Follow-ups to "The reading pages rebuilt" above, the same day.
 - **Checked**: the tab script again after the pager change, both engines and
   widths, no stop moving backwards; `bash build.sh`; `bash scripts/gates.sh`.
   Not checked: real desktop Safari, a screen reader.
+
+### /app leaves css/shell, and css/world's section for pages not yet rebuilt goes, 2026-11-18
+
+`/app` was the last page on `css/shell`, the old light stylesheet, repainted
+by `css/world`'s section for pages not yet rebuilt. It now links a sheet of
+its own, `css/app`, after `css/world`, as every other page does; `css/shell`
+and that section are gone. The owner asked for no visible change first, with
+design changes after as steps of their own, and for every push, a revert
+included, to wait for their OK.
+
+- **`css/app`** holds every value `/app` showed, written in `css/world`'s
+  names. Much of `css/shell` styled things `/app` no longer has (the old home
+  page's trust strip, steps, family cards and positions, the reading pages'
+  cards and boxes, modals, the old profile bar), and most of the rest lost to
+  `css/world` - its colours, header, footer, buttons and links - and goes.
+  Found dead by reading the cascade: `.button-secondary` and `.button-quiet`
+  lost every property to `css/world`'s `.button`; the 720px "QR scan region"
+  fix lost to the `[data-page="app"]` rules above it, as did the 520px
+  minimum height; `css/shell`'s `.wrap`, footer and menu button rules. What
+  `/app` had that other pages do not is kept, and named in `css/app`: header
+  and menu links at 650, the call to action 42px tall, the footer headings at
+  a 1.2 line height, a skip link that slides in, the 1160px measure.
+- **The camera** is one block: the dashed 280px box on wider screens, and
+  under 720px the square box with the video pinned in it, which js/nose's
+  `fillPreview` sizes with inline `!important` values. Its comment now says
+  720px is js/nose's `PHONE`, to be changed together.
+- **`css/world`** keeps, in its main body, what every page took from the
+  section: the desk (`.result-eq`, `.desk-channels`), the compact phone
+  footer, the wordmark's meter, the footer's secondary-text colour, and 3px
+  corners on inputs, selects, textareas and tables. Three pages had leaned on
+  the section for rules of their own, now in their own sheets: the home
+  page's family pictures, swatches and position rows (3px corners) and its
+  hero score (weight 400); the B2B demo's light store; the account page's
+  detail values (.9375rem) and note corners. `css/agegate`'s "No" hover took
+  the section's `--surface-2`: it says `#1B241E`. `css/tokens`' comment no
+  longer names `css/shell` and family.css.
+- **Checked by computed style**: a script served the commit before (9b53378,
+  from a git worktree) and this tree side by side and compared every
+  element's computed style, with `::before`, `::after`, `::marker` and
+  `::placeholder`, and its box. `/app` in 15 states - the four tabs, a link
+  refused as not HTTPS, three cards from the real handler's replies
+  (KAY-FLW-002; KAY-CAR-001, a partial panel; MCL-FLW-002, a warning), a
+  refused report, a card from "Choose QR image", a saved jar, manual rows
+  with an error, smell words and a vote, the word limit, the phone menu, the
+  saved block closed, the account message - at 11 widths, either side of
+  every breakpoint; the camera running on Chromium's fake camera at 7 widths,
+  each from a fresh start, and once resized while running (the box 316px
+  square at 390, the video a 419px square at -51,-51, before and after);
+  2,454 hover targets and 1,099 keyboard stops; reduced motion; the other 25
+  pages at 6 widths; the age gate shown on four pages. In Chromium, Firefox
+  and Playwright's WebKit: 4,541 comparisons, no difference in Chromium or
+  Firefox. WebKit's three were a sample chip's box when Tab reached it, its
+  sideways row scrolled differently; two copies of the commit before do the
+  same, at different chips from run to run, so that is WebKit's focus
+  scrolling. Set aside and read: the "Add a report" intro line, hidden under
+  720px, whose margin there went from 13px to 14px; and the tab row's and
+  sample rows' grid columns under 720px, where they are flex rows. Two
+  copies of the same commit compared as identical first. Then `bash
+  build.sh`; `bash scripts/gates.sh`.
+- **A gate follows**: `colour-tokens-test`'s focus-ring check (since
+  2026-11-14, "Focus you can see") read `css/shell`'s ring, `#2F6144` on
+  `#F3F3EE`, white and the old footer - a ring `css/world` had drawn over
+  since the redesign. It reads `css/world`'s now: `--ink` `#F4F1EA`, 16.53:1
+  on the field and 15.54:1 on a raised panel. It does not read `css/app`'s
+  two green rings, which stay under 3:1 until the design work below.
+- **Smaller**: `/app` loads 24.9 KB of CSS where it loaded 49.1 KB (7.8 KB
+  compressed, from 12.7); every page loads `css/world` at 8.2 KB, from 12.8
+  (2.9 KB compressed, from 4.4).
+- **Kept as they were, for design work after** (open.md): the focus rings on
+  the card's two inputs and the saved jars' Remove button are `css/shell`'s
+  green `#2F6144`, 2.43:1 on the raised panel, under the 3:1 a focus
+  indicator needs; that button's hover text is `css/shell`'s rust `#93401F`,
+  2.50:1; the vote buttons, the smell words and "Saved palate" name Inter,
+  which is not loaded, so they draw in the system face; `#1B241E` and
+  `#46554A` are not DESIGN.md's; the labels above two headings ("Palate
+  matcher", "Match result"), the boxed panels and three stat boxes, the vote
+  emoji, and the result table's sideways scroll on a phone.
+- **Not checked**: the camera on a real phone before the deploy -
+  Playwright's WebKit on Windows is not Safari, a camera needs HTTPS, and
+  there is no preview site - so the owner tries it on their iPhone after it;
+  real desktop Safari.

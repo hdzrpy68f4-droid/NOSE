@@ -174,7 +174,7 @@ fingerprint js  b2b-widget js
 fingerprint js  b2b-demo js
 fingerprint css b2b-demo css
 fingerprint css tokens  css
-fingerprint css shell   css
+fingerprint css app     css
 fingerprint css world   css
 fingerprint css home    css
 fingerprint css dispensaries css

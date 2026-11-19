@@ -96,10 +96,21 @@ schema comment if wanted.
 - **The word buttons were watched in Chromium only**, at 1280 and 390 px:
   their wrapping, the tick and the status line. Safari and Firefox have not
   been looked at, nor a screen reader's reading of the note.
-- **`css/world`'s old-names section stays while `/app` links `css/shell`.**
-  Since 2026-11-18 no other page uses it: the eleven reading pages were
-  rebuilt on `css/reading` (13-records, "The reading pages rebuilt"). The
-  account pages, 404 and the B2B demo are on `css/page` and their own sheets.
+- **`/app`'s camera has not been tried on a real phone since `css/shell`
+  went** (13-records, "/app leaves css/shell"). Every computed style matched
+  in Chromium, Firefox and Playwright's WebKit, the camera running on
+  Chromium's fake one; the owner tries their iPhone after the deploy: "Start
+  camera" fills the square, and a real COA's QR code reads.
+- **Kept as they were when `/app` left `css/shell`, for design work**: focus
+  rings in `css/shell`'s green `#2F6144` on the card's two inputs and the
+  saved jars' Remove button, 2.43:1 on the raised panel (a focus indicator
+  needs 3:1); that button's rust hover text `#93401F`, 2.50:1; Inter, not
+  loaded, named on the vote buttons, the smell words and "Saved palate", so
+  they draw in the system face; `#1B241E` and `#46554A`, which are not
+  DESIGN.md's; header and menu links at 650 and a 42px call to action, where
+  other pages have 450 and 44px; the labels above "Compare the profile..."
+  and "Aroma similarity"; the boxed panels and three stat boxes; the vote
+  emoji; the result table's sideways scroll on a phone.
 - **The rebuilt reading pages have not been seen in real desktop Safari, nor
   read by a screen reader.** Chromium, Firefox, Playwright's WebKit, the
   owner's iPhone and a keyboard pass have been (13-records, "The reading pages
