@@ -128,8 +128,9 @@ select,input,textarea{width:100%;margin-top:7px;min-height:46px;padding:10px 12p
 
 /* ---- the result (each profile on the desk, css/world's .result-eq) ---- */
 .result-panel{margin-top:24px;padding:24px}
-/* scrolled to when the report card closes (js/nose's useJar): 16px under the 65px sticky header */
-#fullResult,.inline-message{scroll-margin-top:81px}
+/* scrolled to when the report card closes (js/nose's useJar) and, on a phone, when a tab or the
+   link box is chosen (revealPanel): 16px under the 65px sticky header */
+#fullResult,.inline-message,.input-panel{scroll-margin-top:81px}
 .result-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
 .badge{display:inline-flex;align-items:center;justify-content:center;min-height:0;padding:6px 10px;border:1px solid var(--rule);border-radius:var(--r);font-size:.9375rem;line-height:1.25;text-align:center}
 .profile-label{margin:16px 0 7px;color:var(--soft);font-size:.9375rem}
@@ -142,7 +143,7 @@ select,input,textarea{width:100%;margin-top:7px;min-height:46px;padding:10px 12p
 .result-detail{padding:15px;border-radius:var(--r);background:#1B241E}
 .result-detail span{display:block;color:var(--soft);font-size:.6875rem}
 .result-detail strong{display:block;margin-top:7px;line-height:1.35}
-.data-table{width:100%;min-width:560px;border-collapse:collapse}
+.data-table{width:100%;border-collapse:collapse}
 .data-table th,.data-table td{padding:11px 10px;border-bottom:1px solid var(--rule);font-size:.8125rem;text-align:left}
 .data-table th{color:var(--soft);font-size:.6875rem}
 
@@ -225,6 +226,7 @@ select,input,textarea{width:100%;margin-top:7px;min-height:46px;padding:10px 12p
   #chooseQrImageButton{grid-column:1 / -1}
   .scanner-note{margin:9px 0 0;font-size:.75rem;line-height:1.45}
   .result-panel{margin-top:10px;padding:16px}
+  .data-table th,.data-table td{padding:10px 8px}
   .result-head{gap:10px}
   .result-head h2{font-size:1.375rem}
   .result-details{gap:8px;margin-top:14px}

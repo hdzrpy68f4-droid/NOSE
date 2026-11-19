@@ -96,10 +96,12 @@ schema comment if wanted.
 - **The word buttons were watched in Chromium only**, at 1280 and 390 px:
   their wrapping, the tick and the status line. Safari and Firefox have not
   been looked at, nor a screen reader's reading of the note.
-- **Not yet seen on a real phone: "Add to my palate", and the scroll to the
-  result and the jar's name over its bars** (13-records, "After Compare the
-  page goes to the result"). The owner used "Compare with my palate" on their
-  iPhone on 2026-11-19. Chromium, Firefox and WebKit run all of it.
+- **Not yet seen on a real phone: "Add to my palate", COA link going to its
+  panel, and the link box above the keyboard** (13-records, "On a phone, COA
+  link goes to its panel"). The keyboard cannot be shown in a test browser.
+  On 2026-11-19 the owner's iPhone showed Compare, the scroll to the result
+  and the jar's name over its bars working. Chromium, Firefox and WebKit run
+  all of it.
 - **Kept as they were when `/app` left `css/shell`, for design work**: focus
   rings in `css/shell`'s green `#2F6144` on the card's two inputs and the
   saved jars' Remove button, 2.43:1 on the raised panel (a focus indicator
@@ -109,7 +111,7 @@ schema comment if wanted.
   DESIGN.md's; header and menu links at 650 and a 42px call to action, where
   other pages have 450 and 44px; the labels above "Compare the profile..."
   and "Aroma similarity"; the boxed panels and three stat boxes; the vote
-  emoji; the result table's sideways scroll on a phone.
+  emoji. (The result table's sideways scroll on a phone went on 2026-11-19.)
 - **The rebuilt reading pages have not been seen in real desktop Safari, nor
   read by a screen reader.** Chromium, Firefox, Playwright's WebKit, the
   owner's iPhone and a keyboard pass have been (13-records, "The reading pages

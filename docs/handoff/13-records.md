@@ -5712,3 +5712,32 @@ their new jar.
   `NOSE_ENGINES=webkit`, WebKit. The 390px render after Compare shows the
   result's top under the header.
 - **Not checked**: a real phone before the deploy.
+
+### On a phone, COA link goes to its panel, the link box stays above the keyboard, and the family table fits, 2026-11-19
+
+The owner confirmed the scroll to the result and the jar's name work on their
+iPhone. Then they used a COA link instead of a scan, and found three problems.
+Choosing COA link changed nothing they could see, because the panels sit below
+the tab list and Saved palate, which on their phone holds 16 jars. When they
+tapped the link box, the keyboard covered it, so pasting was hard. And the
+family table under the result needed a sideways scroll.
+
+- **A chosen tab's panel comes up** (js/nose's `revealPanel`, on phones only,
+  720px wide or less, as `PHONE`). COA link, Samples and Manual scroll their
+  panel to 16px under the sticky header, using `css/app`'s
+  `scroll-margin-top`, which now covers `.input-panel` too. Scan QR keeps
+  `revealScanner`, which waits for the camera.
+- **The link box**: when it is focused on a phone, its panel goes up at once
+  (`behavior:'instant'`, so it does not race the keyboard's own scroll). The
+  box then sits at about 270px down a 932px screen, above where the keyboard
+  opens. This has not been seen on an iPhone, because a test browser cannot
+  show the keyboard.
+- **The family table** had `min-width:560px`, from `css/shell`. That is gone,
+  and on a phone its cells have 8px sides. It now fits at 320, 390 and 430px
+  with no sideways scroll. Its column still says "New jar".
+- **Tests**: `input-paths-test`'s phone block saves 16 jars. It checks that
+  the panel lands under the header after COA link is chosen and after the box
+  is focused. It also checks that the table is no wider than its box at 390
+  and 320px. Clean in Chromium, Firefox and WebKit. Rendered at 430px: the
+  panel under the header, and the table whole.
+- **Not checked**: a real iPhone, its keyboard above all.

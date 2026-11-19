@@ -1069,6 +1069,44 @@ try {
       await q.close();
     }
 
+    /* On a phone (since 2026-11-19, the owner): with Saved palate long, as on
+       the owner's phone, choosing COA link brings its panel to just under the
+       sticky header, and so does tapping the link box after scrolling away,
+       so the keyboard leaves the box in view. The result's family table fits
+       the width at 390 and at 320, with no sideways scroll. */
+    {
+      const ph = await browser.newContext({ viewport: { width: 390, height: 844 } });
+      await ph.addInitScript(() => {
+        try {
+          localStorage.setItem('nose-age-ok', '1');
+          if (!localStorage.getItem('nose-palate-v1')) localStorage.setItem('nose-palate-v1', JSON.stringify(Array.from({ length: 16 }, (_, i) =>
+            ({ id: `saved-phone-${i}`, name: `Phone jar ${i + 1}`, subtitle: '3 measured compounds', terps: { myrcene: 0.4, limonene: 0.3, caryophyllene: 0.2 } }))));
+        } catch (e) {}
+      });
+      const q = await ph.newPage();
+      q.on('pageerror', e => pageErrors.push(e.message));
+      await q.goto(`${BASE}/app`);
+      await q.waitForSelector('#palateSamples .sample-chip', { state: 'attached' });
+      const panelTop = () => q.evaluate(() => Math.round(document.getElementById('urlPanel').getBoundingClientRect().top));
+      const underHeader = timeout => q.waitForFunction(() => { const t = document.getElementById('urlPanel').getBoundingClientRect().top; return t >= 65 && t <= 100; },
+        null, { timeout }).then(() => true, () => false);
+      await q.click('#urlTab');
+      check('phone, 16 saved jars: choosing COA link brings its panel to just under the header', await underHeader(4000), `panel top ${await panelTop()}`);
+      await q.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+      await q.focus('#coaUrl');
+      check('phone: tapping the link box brings its panel up first, so the box sits where the keyboard leaves it in view',
+        await underHeader(2000), `panel top ${await panelTop()}`);
+      const fits = () => q.evaluate(() => { const w = document.querySelector('#fullResult .data-table-wrap'); return [w.scrollWidth, w.clientWidth]; });
+      const at390 = await fits();
+      await q.setViewportSize({ width: 320, height: 700 });
+      await q.waitForTimeout(200);
+      const at320 = await fits();
+      check('phone: the result\'s family table fits at 390 and at 320, with no sideways scroll',
+        at390[1] > 200 && at320[1] > 150 && at390[0] <= at390[1] && at320[0] <= at320[1],   // shown, and no wider than its box
+        `scroll and client widths: 390 ${JSON.stringify(at390)}, 320 ${JSON.stringify(at320)}`);
+      await ph.close();
+    }
+
     /* Keys and announcements (since 2026-11-14, "Focus you can see, messages
        you can hear"). The tabs pattern: the selected tab is the one in the
        Tab order; Right and Left move focus and selection and wrap; Home and

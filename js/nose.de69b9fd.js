@@ -388,7 +388,13 @@
     function chooseTab(tab){
       setTab(tab.dataset.tab);
       if(tab.dataset.tab==='scan') startQrScanner().then(live=>{ if(live) previewSized().then(revealScanner); });
+      else revealPanel(tab.dataset.tab);
     }
+    /* On a phone the panels sit below the tab list and Saved palate, so a
+       chosen tab opened off screen (the owner, 2026-11-19): its panel comes to
+       just under the sticky header (css/app's scroll-margin-top). Scan QR
+       goes once its camera is live (revealScanner). */
+    function revealPanel(name,behavior='auto'){ if(PHONE.matches) $id(`${name}Panel`).scrollIntoView({block:'start',behavior}); }
     /* The tabs pattern: Left and Right move focus and selection to the
        neighbour and wrap, Home and End go to the first and last. */
     function tabKey(event){
@@ -1251,6 +1257,9 @@
       on('saveManualButton','click',()=>useManualJar('add'));
       on('compareManualButton','click',()=>useManualJar('compare'));
       on('validateUrlButton','click',validateUrl);
+      /* The link box, tapped low on a phone, was covered by the keyboard: its
+         panel goes up first, at once, so the box sits above where the keyboard opens. */
+      on('coaUrl','focus',()=>revealPanel('url','instant'));
       on('exportButton','click',exportSaved);
       on('importButton','click',()=>{ const f=$id('importFile'); if(f) f.click(); });
       on('importFile','change',event=>{ const file=event.target.files[0]; event.target.value=''; if(file) importSaved(file); });
