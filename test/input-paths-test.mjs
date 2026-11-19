@@ -25,7 +25,10 @@
  *     and nothing was below (PARSER-HANDOFF s13)
  *   - on both paths, the warnings line (MCL-FLW-002's 103.8%) and the novelty
  *     line show when the reply carries them and not otherwise; KAY-CAR-001
- *     shows its 4.124; "Use this jar" and "Discard" do what they say. The
+ *     shows its 4.124; "Compare with my palate", "Add to my palate" and
+ *     "Discard" do what they say: a compared jar is the new jar and is not
+ *     saved, an added one is saved and the palate is every saved jar (since
+ *     2026-11-19, the owner: saved favourites against a new jar). The
  *     novelty line is shown on ACS-FLW-002 with one column heading added that
  *     no fixture prints: ACS-FLW-002 itself carries no novelty since
  *     2026-09-24 - its layout is known, and the handler's reply for it says so
@@ -514,7 +517,8 @@ try {
       return true;
     } catch { return false; }
   }
-  const READ = /read\. Check the values below, then add the jar\.$/;
+  const READ = /read\. Check the values below, then compare or add the jar\.$/;
+  const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
   /* The card after a usable reply: where it is, what it says, and the lines
      that depend on the reply. */
@@ -529,8 +533,8 @@ try {
     check(`${where}: the card is visible after ${fixture} is read`, shown,
       shown ? '' : `the message says "${await text(`#${messageId}`)}", and the card is in ${await panelOf()}`);
     check(`${where}: the card is in the panel with the message`, (await panelOf()) === `#${panelId}`, `found in ${await panelOf()}`);
-    check(`${where}: the message is "${data.lab} read. Check the values below, then add the jar."`,
-      (await text(`#${messageId}`)) === `${data.lab} read. Check the values below, then add the jar.`, `it says "${await text(`#${messageId}`)}"`);
+    check(`${where}: the message is "${data.lab} read. Check the values below, then compare or add the jar."`,
+      (await text(`#${messageId}`)) === `${data.lab} read. Check the values below, then compare or add the jar.`, `it says "${await text(`#${messageId}`)}"`);
 
     const known = await page.evaluate(() => Object.keys(window.NoseMatch.TERPENES));
     const want = Object.entries(data.terps).filter(([k]) => known.includes(k)).sort((a, b) => b[1] - a[1]);
@@ -560,17 +564,36 @@ try {
     return shown;
   }
 
-  async function useJar(where, messageId, name) {
+  /* "Add to my palate": the jar is saved, and the palate is every saved jar,
+     so `result` names the saved jars against the jar being compared. */
+  async function useJar(where, messageId, name, result) {
     if (!await visible('#coaConfirmAccept')) {
-      check(`${where}: "Use this jar" adds the jar`, false, 'the button is not visible');
+      check(`${where}: "Add to my palate" adds the jar`, false, 'the button is not visible');
       return;
     }
     await page.fill('#coaConfirmName', name);
     await page.click('#coaConfirmAccept');
-    const said = await messageMatches(messageId, new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} was added and saved in this browser\\.$`));
+    const said = await messageMatches(messageId, new RegExp(`^${esc(name)} was added to your palate and saved in this browser\\.$`));
     const saved = await page.$$eval('#savedPalateList .saved-item-name', ns => ns.map(n => n.textContent));
-    check(`${where}: "Use this jar" adds the jar and closes the card`, said && saved.includes(name) && !(await visible('#coaConfirm')),
+    check(`${where}: "Add to my palate" saves the jar and closes the card`, said && saved.includes(name) && !(await visible('#coaConfirm')),
       `message "${await text(`#${messageId}`)}", saved ${JSON.stringify(saved)}`);
+    check(`${where}: then the result reads "${result}"`, (await text('#resultNames')) === result, `it reads "${await text('#resultNames')}"`);
+  }
+
+  /* "Compare with my palate": the jar is the new jar, and nothing is saved. */
+  async function compareJar(where, messageId, name, result) {
+    if (!await visible('#coaConfirmCompare')) {
+      check(`${where}: "Compare with my palate" compares the jar`, false, 'the button is not visible');
+      return;
+    }
+    const before = await page.$$eval('#savedPalateList .saved-item-name', ns => ns.map(n => n.textContent));
+    await page.fill('#coaConfirmName', name);
+    await page.click('#coaConfirmCompare');
+    const said = await messageMatches(messageId, new RegExp(`^${esc(name)} is the new jar, compared with your palate below\\.$`));
+    const saved = await page.$$eval('#savedPalateList .saved-item-name', ns => ns.map(n => n.textContent));
+    check(`${where}: "Compare with my palate" makes it the new jar, saves nothing and closes the card`,
+      said && JSON.stringify(saved) === JSON.stringify(before) && !(await visible('#coaConfirm')) && (await text('#resultNames')) === result,
+      `message "${await text(`#${messageId}`)}", saved ${JSON.stringify(saved)}, result "${await text('#resultNames')}"`);
   }
 
   async function discard(where, messageId) {
@@ -599,7 +622,7 @@ try {
     await messageMatches('scannerMessage', READ, 20000) && sent.at(-1) === QR_URL,
     `message "${await text('#scannerMessage')}", sent ${JSON.stringify(sent)}`);
   await cardChecks('Scan QR (camera)', 'scanPanel', 'scannerMessage', FIXTURES.plain);
-  await useJar('Scan QR (camera)', 'scannerMessage', 'Input paths camera jar');
+  await compareJar('Scan QR (camera)', 'scannerMessage', 'Input paths camera jar', 'Lemon Tart Pucker compared with Input paths camera jar');
 
   /* ---- Scan QR, by "Choose QR image" ------------------------------------- */
   queue.push(FIXTURES.warned);
@@ -614,7 +637,7 @@ try {
   await page.setInputFiles('#qrImageFile', QR_PNG);
   await messageMatches('scannerMessage', READ);
   await cardChecks('Scan QR (image)', 'scanPanel', 'scannerMessage', FIXTURES.novel);
-  await useJar('Scan QR (image)', 'scannerMessage', 'Input paths image jar');
+  await useJar('Scan QR (image)', 'scannerMessage', 'Input paths image jar', 'Input paths image jar compared with Input paths camera jar');
 
   /* ---- COA link ------------------------------------------------------------ */
   async function readLink(fixture) {
@@ -634,7 +657,7 @@ try {
   const back = await visible('#coaConfirm');
   check('COA link: the card hides with its tab, and is there again on return', linkShown && !away && back,
     `visible: before ${linkShown}, on Samples ${away}, back on COA link ${back}`);
-  await useJar('COA link', 'urlMessage', 'Input paths link jar');
+  await useJar('COA link', 'urlMessage', 'Input paths link jar', 'Input paths image jar + Input paths link jar compared with Input paths camera jar');
 
   await readLink(FIXTURES.warned);
   await messageMatches('urlMessage', READ);
@@ -871,7 +894,9 @@ try {
      the page's saved jars. After each, the summary line and the result name
      only jars the person can see, and a vote's body names only those.
      Until 2026-11-14 a jar that was gone was read as Lemon Tart Pucker
-     (PARSER-HANDOFF s13, "A jar that is gone"). */
+     (PARSER-HANDOFF s13, "A jar that is gone"). Since 2026-11-19 the palate
+     is every saved jar, the sample while none is, and Manual's "Compare with
+     my palate" makes a jar the new jar without saving it. */
   {
     const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
     await ctx.addInitScript(BEACON_RECORDER);
@@ -894,7 +919,6 @@ try {
     await p.waitForSelector('#palateSamples .sample-chip', { state: 'attached' });
     const t = async sel => ((await p.locator(sel).textContent()) || '').trim();
     const LEMON = 'Lemon Tart Pucker';
-    const EMPTY = 'Select one or more jars you like. Your palate is their averaged aroma shape.';
     const chipAt = (mode, name) => p.locator(`#${mode}Samples .sample-chip`, { has: p.locator('strong', { hasText: name }) });
     /* the chips are in the Samples tab */
     const chip = (mode, name) => ({ click: async () => { await p.click('#sampleTab'); await chipAt(mode, name).click(); } });
@@ -915,24 +939,34 @@ try {
       try { return votes.length ? JSON.parse(votes[0]) : null; } catch { return null; }
     }
 
-    /* Delete: the saved jar is the palate alone, then every saved jar goes. */
+    /* Manual, "Compare with my palate": the new jar, and nothing saved. */
+    await p.click('#manualTab');
+    await p.fill('#manualName', 'Compared jar');
+    const manualValues = p.locator('#manualRows .manual-value');
+    await manualValues.nth(0).fill('0.4'); await manualValues.nth(1).fill('0.3'); await manualValues.nth(2).fill('0.2');
+    await p.click('#compareManualButton');
+    check('Manual: "Compare with my palate" makes the jar the new jar against the sample, and saves nothing',
+      (await t('#manualMessage')) === 'Compared jar is the new jar, compared with your palate below.'
+        && (await t('#resultNames')) === `${LEMON} compared with Compared jar` && (await savedNames()).length === 0,
+      `message "${await t('#manualMessage')}", result "${await t('#resultNames')}", saved ${JSON.stringify(await savedNames())}`);
+
+    /* Delete: an added jar is the palate alone, the sample not mixed in; then every saved jar goes. */
     await saveManual('Gone jar one');
-    await chip('palate', LEMON).click();
     check('a jar that is gone: before Delete, the palate is the saved jar alone',
       (await t('#palateSummaryLine')) === 'Palate = average of 1 jar: Gone jar one', await t('#palateSummaryLine'));
     await p.click('#clearButton');
     await chip('candidate', 'Violet Hour').click();
     let summary = await t('#palateSummaryLine');
-    check('a jar that is gone: after Delete, the summary asks for a jar and names none',
-      summary === EMPTY, `it says "${summary}"`);
-    check('a jar that is gone: after Delete, no result is shown', !(await p.isVisible('#fullResult')),
-      `the result reads "${await t('#resultNames')}"`);
-    check('a jar that is gone: after Delete, a vote sends nothing', (await vote()) === null, votes.join(' | '));
+    check('a jar that is gone: after Delete, the palate is the sample again and names no saved jar',
+      summary === `Palate = average of 1 jar: ${LEMON}`, `it says "${summary}"`);
+    check('a jar that is gone: after Delete, the result compares the sample with the jar chosen',
+      (await t('#resultNames')) === `${LEMON} compared with Violet Hour`, `the result reads "${await t('#resultNames')}"`);
+    let body = await vote();
+    check('a jar that is gone: after Delete, a vote names only the jars on screen',
+      !!body && JSON.stringify(body.palate) === '["lemon-tart"]' && body.candidate === 'violet-hour', JSON.stringify(body));
 
     /* Import: asks first when jars are saved; Cancel changes nothing. */
-    await chip('palate', LEMON).click();
     await saveManual('Gone jar two');
-    await chip('palate', LEMON).click();
     const file = { name: 'nose-palate.json', mimeType: 'application/json',
       buffer: Buffer.from(JSON.stringify({ version: 1, profiles: [{ id: 'saved-imported-1', name: 'Imported jar', subtitle: '2 measured compounds', terps: { linalool: 0.3, limonene: 0.1 } }] })) };
     asked.length = 0; answer = false;
@@ -947,11 +981,12 @@ try {
     await p.setInputFiles('#importFile', file);
     await p.waitForFunction(() => [...document.querySelectorAll('#savedPalateList .saved-item-name')].some(x => x.textContent === 'Imported jar'));
     summary = await t('#palateSummaryLine');
-    check('a jar that is gone: after Import, the replaced jar leaves the palate and no other takes its place',
-      summary === EMPTY && !(await p.isVisible('#fullResult')), `summary "${summary}", result "${await t('#resultNames')}"`);
+    check('a jar that is gone: after Import, the replaced jar leaves the palate and the imported jar is the palate',
+      summary === 'Palate = average of 1 jar: Imported jar', `summary "${summary}", result "${await t('#resultNames')}"`);
 
     /* Remove: the jar being compared goes. */
     await chip('palate', LEMON).click();
+    await chip('palate', 'Imported jar').click();
     await chip('candidate', 'Imported jar').click();
     check('a jar that is gone: before Remove, the result compares the imported jar',
       (await t('#resultNames')) === `${LEMON} compared with Imported jar`, await t('#resultNames'));
@@ -959,7 +994,7 @@ try {
     await p.waitForFunction(() => !document.querySelector('#savedPalateList .saved-item'));
     check('a jar that is gone: after Remove, the result compares the first sample jar, not the removed one',
       (await t('#resultNames')) === `${LEMON} compared with Cold Creek Kush`, await t('#resultNames'));
-    let body = await vote();
+    body = await vote();
     check('a jar that is gone: after Remove, a vote names only the jars on screen',
       !!body && JSON.stringify(body.palate) === '["lemon-tart"]' && body.candidate === 'cold-creek', JSON.stringify(body));
 
@@ -970,13 +1005,13 @@ try {
     await p.click('#palateRestoreButton');
     await p.waitForFunction(() => [...document.querySelectorAll('#savedPalateList .saved-item-name')].some(x => x.textContent === 'Account jar'));
     summary = await t('#palateSummaryLine');
-    check('a jar that is gone: after Load from account, the palate keeps only jars that exist',
-      summary === `Palate = average of 1 jar: ${LEMON}`, `it says "${summary}"`);
+    check('a jar that is gone: after Load from account, the palate is the loaded jar, and the replaced one has left it',
+      summary === 'Palate = average of 1 jar: Account jar', `it says "${summary}"`);
     check('a jar that is gone: after Load from account, the result no longer compares the replaced jar',
-      (await t('#resultNames')) === `${LEMON} compared with Cold Creek Kush`, await t('#resultNames'));
+      (await t('#resultNames')) === 'Account jar compared with Cold Creek Kush', await t('#resultNames'));
     body = await vote();
     check('a jar that is gone: after Load from account, a vote names only the jars on screen',
-      !!body && JSON.stringify(body.palate) === '["lemon-tart"]' && body.candidate === 'cold-creek', JSON.stringify(body));
+      !!body && JSON.stringify(body.palate) === '["custom"]' && body.candidate === 'cold-creek', JSON.stringify(body));
 
     /* Confidence is read from the smallest panel among the jars compared
        (since 2026-11-14, "The method page says what the code does"). Two
@@ -986,9 +1021,6 @@ try {
       { id: 'saved-sparse-1', name: 'Sparse jar one', subtitle: '4 measured compounds', terps: { limonene: 0.4, myrcene: 0.3, caryophyllene: 0.2, humulene: 0.1 } },
       { id: 'saved-sparse-2', name: 'Sparse jar two', subtitle: '4 measured compounds', terps: { pinene_a: 0.4, linalool: 0.3, terpinolene: 0.2, ocimene: 0.1 } }] })) });
     await p.waitForFunction(() => [...document.querySelectorAll('#savedPalateList .saved-item-name')].some(x => x.textContent === 'Sparse jar two'));
-    await chip('palate', 'Sparse jar one').click();
-    await chip('palate', 'Sparse jar two').click();
-    await chip('palate', LEMON).click();
     check('confidence: a palate of two jars with four compounds each, against Cold Creek Kush\'s thirteen, reads Low',
       [await t('#palateSummaryLine'), await t('#resultConfidence')].join(' | ')
         === 'Palate = average of 2 jars: Sparse jar one + Sparse jar two | Low — few measured compounds',
@@ -1000,6 +1032,20 @@ try {
     await chip('palate', 'Sparse jar two').click();
     check('confidence: Lemon Tart Pucker\'s seven against thirteen still reads Moderate',
       (await t('#resultConfidence')) === 'Moderate — useful but incomplete', await t('#resultConfidence'));
+
+    /* A new visit: the palate is every saved jar, not the sample (since
+       2026-11-19; until then each visit opened on the sample alone). */
+    {
+      const q = await ctx.newPage();
+      q.on('pageerror', e => pageErrors.push(e.message));
+      await q.goto(`${BASE}/app`);
+      if (await q.isVisible('.ag-yes')) await q.click('.ag-yes');
+      await q.waitForSelector('#palateSamples .sample-chip', { state: 'attached' });
+      const line = ((await q.locator('#palateSummaryLine').textContent()) || '').trim();
+      check('a new visit: the palate is every saved jar, not the sample',
+        line === 'Palate = average of 2 jars: Sparse jar one + Sparse jar two', `it says "${line}"`);
+      await q.close();
+    }
 
     /* Keys and announcements (since 2026-11-14, "Focus you can see, messages
        you can hear"). The tabs pattern: the selected tab is the one in the

@@ -132,7 +132,7 @@
                 <div id="scannerMessage" class="inline-message scanner-result" aria-live="polite" hidden></div>
 
                 <section id="coaConfirm" class="coa-confirm" aria-labelledby="coaConfirmTitle" hidden>
-                  <h3 id="coaConfirmTitle" class="u-fs-15">Check this before you add it</h3>
+                  <h3 id="coaConfirmTitle" class="u-fs-15">Check this before you use it</h3>
                   <p class="small" id="coaConfirmLead"></p>
                   <dl class="coa-meta" id="coaConfirmMeta"></dl>
                   <p class="coa-label mono">Aroma fingerprint</p>
@@ -145,7 +145,8 @@
                   <p class="small" id="coaConfirmEditNote">Correct anything that does not match the report in your hand.</p>
                   <div id="coaConfirmRows" class="coa-rows"></div>
                   <div class="buttons">
-                    <button class="button button-primary" id="coaConfirmAccept" type="button">Use this jar</button>
+                    <button class="button button-primary" id="coaConfirmCompare" type="button">Compare with my palate</button>
+                    <button class="button button-secondary" id="coaConfirmAccept" type="button">Add to my palate</button>
                     <button class="button button-secondary" id="coaConfirmCancel" type="button">Discard</button>
                   </div>
                 </section>
@@ -175,7 +176,8 @@
               </div>
               <div class="button-row u-mt-14">
                 <button class="button button-secondary" id="addRowButton" type="button">Add compound</button>
-                <button class="button button-primary" id="saveManualButton" type="button">Save to palate</button>
+                <button class="button button-primary" id="compareManualButton" type="button">Compare with my palate</button>
+                <button class="button button-secondary" id="saveManualButton" type="button">Add to my palate</button>
               </div>
               <div id="manualMessage" class="inline-message" role="status" hidden></div>
             </section>
@@ -264,7 +266,7 @@
   <script src="/js/match-math.65bb9941.js" defer></script>
   <script src="/js/aroma-bar.641ac1e1.js" defer></script>
   <script src="/js/hero.b1d9b5b3.js" defer></script>
-  <script src="/js/nose.c62a911b.js" defer></script>
+  <script src="/js/nose.5cc939f6.js" defer></script>
   <script src="/js/agegate.47a7d3ff.js" defer></script>
 </body>
 </html>

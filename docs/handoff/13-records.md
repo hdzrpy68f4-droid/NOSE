@@ -5631,3 +5631,41 @@ included, to wait for their OK.
   there is no preview site. After it (3b753d5, deployed 2026-11-19, CI's
   live-check green) the owner tried their iPhone: the camera works, and
   they scanned a new jar. Still not checked: real desktop Safari.
+
+### A scanned jar is compared with the palate, and the palate is every saved jar, 2026-11-19
+
+The owner scanned a new jar on their iPhone, and the result read "Lemon Tart
+Pucker + OG KUSH STORY: JOSH D OG compared with Cold Creek Kush". "Use this
+jar" had put the scanned jar into the palate, and the jar compared was still
+the default sample. The owner's rule: the palate is the mix of every jar in
+Saved palate, and a new jar is compared with it. Asked how a jar now gets into
+the palate, they chose two buttons on the card.
+
+- **Two buttons, on the card and in Manual** (js/nose's `useJar`). "Compare
+  with my palate" (the primary) makes the jar the new jar for this visit: it
+  is kept in `state.compared` and never saved. "Add to my palate" saves it to
+  Saved palate, as "Use this jar" and "Save to palate" did. The card's title is
+  now "Check this before you use it", its lead "Nothing is added to your palate
+  unless you choose to", and the read message "Check the values below, then
+  compare or add the jar."
+- **The palate is every saved jar** (`savedPalate()`), and the sample, Lemon
+  Tart Pucker, only while nothing is saved. That holds on every visit (until
+  now each visit opened on the sample alone, and saved jars had to be picked in
+  Samples) and after "Add to my palate" (the sample is no longer mixed in). It
+  also holds after Delete, Import, Remove and Load from account, which until
+  now kept the palate's old picks and left imported or loaded jars out of it.
+  The Samples tab's chips still change the palate for the visit.
+- **The tests follow the rule.**
+  - `input-paths-test` compares the camera's jar (the result reads the sample
+    against it, and nothing is saved) and adds the image's and the link's (the
+    result reads the saved jars against the camera's jar). It also compares a
+    jar from Manual, and opens a new visit (the palate is the two saved jars).
+  - Its "jar that is gone" checks now expect the sample after Delete, not an
+    empty palate, and the jars brought in after Import and Load from account.
+  - `match-feedback-test`'s stand-in state has `compared`.
+  - input-paths is clean in Chromium and Firefox, and match-feedback is clean.
+  - Rendered at 390px: the card's three buttons stack, then the result and
+    Manual's buttons.
+- **On the owner's phone**: OG KUSH STORY was saved by the old button, so from
+  the deploy it is in the palate; Remove in Saved palate takes it out.
+- **Not checked**: a real phone before the deploy.

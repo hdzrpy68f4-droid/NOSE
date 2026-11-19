@@ -79,18 +79,24 @@
     const state = {
       heroPalate:'lemon-tart', heroCandidate:'cold-creek',
       palateIds:['lemon-tart'], appCandidate:'cold-creek',
-      saved:loadSaved()
+      saved:loadSaved(),
+      compared:[]   // the jar met through "Compare with my palate": kept for this visit, never saved
     };
+    state.palateIds=savedPalate();
 
-    /* A jar that is neither a sample nor saved is undefined, never another jar:
-       until 2026-11-14 it was read as the first sample (PARSER-HANDOFF s13,
-       "A jar that is gone"). */
-    function profileById(id){ return [...PROFILES,...state.saved].find(profile=>profile.id===id); }
-    /* After Delete, Import, Remove and Load from account: the palate keeps
-       only jars that still exist, a compared jar that is gone gives way to the
-       default sample, and the chips and the result are drawn again. */
+    /* Your palate is every jar in Saved palate, and a new jar is compared with
+       it (the owner, 2026-11-19); the sample stands in while nothing is saved.
+       Until then each visit's palate was the sample, and a scanned jar joined it. */
+    function savedPalate(){ return state.saved.length ? state.saved.map(profile=>profile.id) : ['lemon-tart']; }
+    /* A jar that is not a sample, saved or being compared is undefined, never
+       another jar: until 2026-11-14 it was read as the first sample
+       (PARSER-HANDOFF s13, "A jar that is gone"). */
+    function profileById(id){ return [...PROFILES,...state.saved,...state.compared].find(profile=>profile.id===id); }
+    /* After Delete, Import, Remove and Load from account: the palate is every
+       jar still saved, a compared jar that is gone gives way to the default
+       sample, and the chips and the result are drawn again. */
     function dropMissingJars(){
-      state.palateIds=state.palateIds.filter(id=>profileById(id));
+      state.palateIds=savedPalate();
       if(!profileById(state.appCandidate)) state.appCandidate='cold-creek';
       if($id('palateSamples')) step('samples after a jar left',renderSampleButtons);
       if($id('fullResult')) step('result after a jar left',updateFullResult);
@@ -572,7 +578,7 @@
       Object.keys(data.terps||{}).forEach(key=>{ if(TERPENES[key]) known[key]=data.terps[key]; });
 
       $id('coaConfirmLead').textContent=
-        `${data.lab||'This lab'} reported this batch. Nothing is added to your palate until you confirm it.`;
+        `${data.lab||'This lab'} reported this batch. Nothing is added to your palate unless you choose to.`;
 
       const meta=$id('coaConfirmMeta');
       meta.textContent='';
@@ -706,16 +712,16 @@
 
       placeCoaConfirm(card,messageId);
       card.hidden=false;
-      showMessage(messageId,`${data.lab||'Report'} read. Check the values below, then add the jar.`,'success');
+      showMessage(messageId,`${data.lab||'Report'} read. Check the values below, then compare or add the jar.`,'success');
       card.scrollIntoView({block:'nearest'});
       $id('coaConfirmName').focus();
     }
 
-    function commitCoaProfile(){
+    function commitCoaProfile(how){
       if(!coaPending) return;
       const messageId=coaPending.messageId;
       const name=$id('coaConfirmName').value.trim();
-      if(!name){ showMessage(messageId,'Give the jar a name before adding it.','error'); return; }
+      if(!name){ showMessage(messageId,'Give the jar a name first.','error'); return; }
 
       const terps={};
       $id('coaConfirmRows').querySelectorAll('input[data-key]').forEach(input=>{
@@ -738,17 +744,31 @@
          four fields and drops this one, so it never reaches the account. */
       const form=coaPending.data&&coaPending.data.productClass;
       if(FORM_WORDS[form]) profile.form=form;
+      hideCoaConfirm();
+      useJar(profile,how,messageId);
+    }
+
+    /* The two buttons under a checked report and under Manual (the owner,
+       2026-11-19): "Compare with my palate" makes the jar the new jar, for this
+       visit only; "Add to my palate" saves it to Saved palate, which is the palate. */
+    function useJar(profile,how,messageId){
+      if(how==='compare'){
+        state.compared=[profile]; state.appCandidate=profile.id;
+        renderSampleButtons(); updateFullResult();
+        showMessage(messageId,`${profile.name} is the new jar, compared with your palate below.`,'success');
+        return;
+      }
       state.saved.push(profile);
       const persisted=persistSaved();
-      if(!state.palateIds.includes(profile.id)) state.palateIds.push(profile.id);
+      state.palateIds=savedPalate();
       updateSavedSummary(); renderSampleButtons(); updateFullResult();
-      hideCoaConfirm();
-      showMessage(messageId,`${name} was added ${persisted?'and saved in this browser':'for this session'}.`,'success');
+      showMessage(messageId,`${profile.name} was added to your palate ${persisted?'and saved in this browser':'for this session'}.`,'success');
     }
 
     (function bindCoaConfirm(){
-      const accept=$id('coaConfirmAccept'), cancel=$id('coaConfirmCancel');
-      if(accept) accept.onclick=commitCoaProfile;
+      const compare=$id('coaConfirmCompare'), accept=$id('coaConfirmAccept'), cancel=$id('coaConfirmCancel');
+      if(compare) compare.onclick=()=>commitCoaProfile('compare');
+      if(accept) accept.onclick=()=>commitCoaProfile('add');
       if(cancel) cancel.onclick=function(){
         const id=coaPending&&coaPending.messageId;
         hideCoaConfirm();
@@ -988,7 +1008,7 @@
       const node=document.getElementById(id); node.hidden=false; node.textContent=text; node.className=`inline-message ${type==='error'?'error-message':type==='success'?'success-message':''}`;
     }
 
-    function saveManualProfile(){
+    function useManualJar(how){
       const name=document.getElementById('manualName').value.trim();
       const rows=[...document.querySelectorAll('#manualRows tr')];
       const terps={}; const seen=new Set();
@@ -1000,11 +1020,9 @@
         seen.add(key);
         if(value>0) terps[key]=unit==='mg/g'?value/10:value;
       }
-      if(!name){ showMessage('manualMessage','Add a jar name before saving.','error'); return; }
+      if(!name){ showMessage('manualMessage','Give the jar a name first.','error'); return; }
       if(!Object.keys(terps).length){ showMessage('manualMessage','Enter at least one terpene value greater than zero.','error'); return; }
-      const profile={id:`saved-${slugify(name)}-${Date.now()}`,name,subtitle:`${Object.keys(terps).length} measured compounds`,terps};
-      state.saved.push(profile); const persisted=persistSaved(); if(!state.palateIds.includes(profile.id)) state.palateIds.push(profile.id); updateSavedSummary(); renderSampleButtons(); updateFullResult();
-      showMessage('manualMessage',`${name} was saved ${persisted?'in this browser':'for this session'} and selected as your palate.`,'success');
+      useJar({id:`saved-${slugify(name)}-${Date.now()}`,name,subtitle:`${Object.keys(terps).length} measured compounds`,terps},how,'manualMessage');
     }
 
     function loadSaved(){ try { const parsed=JSON.parse(localStorage.getItem('nose-palate-v1')||'[]'); return Array.isArray(parsed)?parsed.filter(item=>item&&item.name&&item.terps):[]; } catch { return []; } }
@@ -1224,7 +1242,8 @@
       on('candidateSamples','click',event=>{ const button=event.target.closest('.sample-chip'); if(!button)return; state.appCandidate=button.dataset.profile; renderSampleButtons(); updateFullResult(); });
       on('addRowButton','click',()=>addManualRow());
       on('manualRows','click',event=>{ const button=event.target.closest('.remove-row'); if(button&&document.querySelectorAll('#manualRows tr').length>1) button.closest('tr').remove(); });
-      on('saveManualButton','click',saveManualProfile);
+      on('saveManualButton','click',()=>useManualJar('add'));
+      on('compareManualButton','click',()=>useManualJar('compare'));
       on('validateUrlButton','click',validateUrl);
       on('exportButton','click',exportSaved);
       on('importButton','click',()=>{ const f=$id('importFile'); if(f) f.click(); });

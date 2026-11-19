@@ -96,6 +96,10 @@ schema comment if wanted.
 - **The word buttons were watched in Chromium only**, at 1280 and 390 px:
   their wrapping, the tick and the status line. Safari and Firefox have not
   been looked at, nor a screen reader's reading of the note.
+- **"Compare with my palate" and "Add to my palate" have not been tried on
+  a real phone** (13-records, "A scanned jar is compared with the palate").
+  Chromium and Firefox run both, and the 390px render stacks the card's three
+  buttons.
 - **Kept as they were when `/app` left `css/shell`, for design work**: focus
   rings in `css/shell`'s green `#2F6144` on the card's two inputs and the
   saved jars' Remove button, 2.43:1 on the raised panel (a focus indicator

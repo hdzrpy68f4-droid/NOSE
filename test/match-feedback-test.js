@@ -482,7 +482,7 @@ async function main() {
   const sandbox = {
     window: { NoseMatch: M }, Blob: class { constructor(parts, opts) { this.text = parts.join(''); this.type = opts.type; } },
     navigator: { sendBeacon: (url, blob) => { sent.push({ url, type: blob.type, body: blob.text }); return true; } },
-    document: { getElementById: element }, state: { palateIds: [defaults[1]], appCandidate: defaults[2], saved: [] },
+    document: { getElementById: element }, state: { palateIds: [defaults[1]], appCandidate: defaults[2], saved: [], compared: [] },
   };
   vm.createContext(sandbox);
   vm.runInContext(`const { normalize, averageProfiles, cosine, matchBand, shownScore } = window.NoseMatch;\n${pieces.join('\n')}\n${lines.join('\n')}\n` +

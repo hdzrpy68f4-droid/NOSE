@@ -16,7 +16,7 @@
 /legal/terms/          /terms/      301
 
 # Fingerprinted bundle: keep the unhashed path working if anything references it.
-/js/nose.js  /js/nose.c62a911b.js  302
+/js/nose.js  /js/nose.5cc939f6.js  302
 
 # Netlify serves /404.html automatically for unmatched paths.
 
