@@ -114,6 +114,7 @@ Square and fine. Controls have a 3px radius and a 1px border. Meter segments are
 - **Header.** The six-bar mark, whose bars move like a level meter (the owner's call, 2026-11-17; still for reduced motion), the wordmark in Fraunces, plain links in soft that turn ink, and a bordered menu button on a phone. Footer: the same links on rules.
 - **Focus.** A 3px solid ink outline, offset 3px, on every interactive element.
 - **The vote under a match result.** "Matched" and "Didn't match" keep their 👍 and 👎, the one colour outside the six families (the owner's call, 2026-11-19).
+- **Messages.** A message says in words what happened, on raised with a 1px border: ink when something went wrong, soft otherwise. No family colour marks a status.
 
 ## Do's and Don'ts
 

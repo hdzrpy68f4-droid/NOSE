@@ -5884,3 +5884,34 @@ of the build before it was pushed.
   the link box under the header, the table fitting). Before and after were
   rendered at 390px (the top, the result, the COA link panel with its message
   and the report card) and at 1280px (the top and the result).
+
+### /app's last departures from DESIGN.md go, 2026-11-19
+
+The owner said to continue with the rest of the list in open.md.
+
+- **Tab arrows**: the four tabs lose their "→" (shown on wider screens,
+  hidden on a phone). DESIGN.md says no arrows in button text.
+- **Messages**: success and error messages were bordered in pine and spice,
+  and DESIGN.md says no family colour marks a status. An error now has an
+  ink border and a success a soft one; the words say what happened.
+  DESIGN.md has a line on messages now. No other page used a family colour
+  as a status.
+- **Form fields elsewhere**: the account page's fields and the dispensary
+  demo's selects and textarea take the soft border DESIGN.md now gives form
+  fields, and turn ink on hover (they were rule, turning soft).
+- **Text under 13px** is raised to 13px: the tabs under 900px wide, both
+  tables' headings (11px), the card's labels, the sample chips' second lines,
+  Remove and the scanner note (12px). On a phone the tabs' sides go from 14px
+  to 12px so the four still fit one row at 390px. At 390px wide and under,
+  the family table's cells go to 6px sides so it still fits 320px.
+- **The family table**: a rise in the Difference column carries its "+"
+  (js/nose's `signedPoints`), and the jar's name heads its column
+  (`#resultCandidateHead`), as over its bars.
+- **Found**: only the home page and `/app` have the phone menu button. The
+  other pages' header shows its links in a row that runs off a phone's
+  screen. It is in open.md, not changed.
+- **Checked**: match-feedback, colour-tokens, page-chrome and input-paths are
+  clean, input-paths's phone block included (the table no wider than its box
+  at 390 and 320px). Rendered before and after at 390px: the top (four tabs on
+  one row), the result's table, the COA link message and card, and the
+  account page's fields. Also rendered at 1280px.

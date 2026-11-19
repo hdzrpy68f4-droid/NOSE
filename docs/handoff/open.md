@@ -96,26 +96,14 @@ schema comment if wanted.
 - **The word buttons were watched in Chromium only**, at 1280 and 390 px:
   their wrapping, the tick and the status line. Safari and Firefox have not
   been looked at, nor a screen reader's reading of the note.
-- **`/app`'s departures from DESIGN.md, left for design work**:
-  - the tab buttons carry an arrow on wider screens (hidden on a phone), and
-    DESIGN.md says no arrows in button text;
-  - success and error messages are bordered in pine and spice, which DESIGN.md
-    keeps for families;
-  - the account page's and the dispensary demo's form fields still have rule
-    borders, where DESIGN.md now says soft;
-  - text under DESIGN.md's 13px:
-    - the tabs at 12px, under 900px wide;
-    - the family table's and the Manual table's headings at 11px;
-    - the card's labels, the sample chips' second lines, Remove and the
-      scanner note at 12px;
-  - the family table's Difference column gives a rise without a "+";
-  - its column heading still says "New jar", while the bars above it carry
-    the jar's name.
-
-  Gone on 2026-11-19: the green focus rings, the rust hover, Inter, the
-  off-palette colours, the bolder header, the table's sideways scroll on a
-  phone, the labels above two headings, the three stat boxes and the boxed
-  panels. The vote emoji stay, the owner's call, and DESIGN.md says so.
+- **The phone header differs between pages**: only the home page and `/app`
+  have DESIGN.md's bordered menu button on a phone. The other pages (from
+  `partials/header.html`: the account, aroma, learn, about, legal and 404
+  pages) show their links in a row that runs off the screen. Seen on
+  2026-11-19 in a 390px render of `/account/`; nothing was changed there.
+  (`/app`'s list of departures from DESIGN.md was cleared on 2026-11-19,
+  13-records, "/app's last departures from DESIGN.md go"; the vote emoji
+  stay, the owner's call, and DESIGN.md says so.)
 - **The rebuilt reading pages have not been seen in real desktop Safari, nor
   read by a screen reader.** Chromium, Firefox, Playwright's WebKit, the
   owner's iPhone and a keyboard pass have been (13-records, "The reading pages

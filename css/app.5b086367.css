@@ -54,8 +54,9 @@ select,input,textarea{width:100%;margin-top:7px;min-height:46px;padding:10px 12p
 
 /* a panel's message line */
 .inline-message{margin:14px 0 0;padding:12px 14px;border-radius:var(--r);background:var(--raised);color:var(--soft);font-size:.875rem;line-height:1.5}
-.error-message{border:1px solid var(--spice);background:var(--raised);color:var(--ink)}
-.success-message{border:1px solid var(--pine);background:var(--raised);color:var(--ink)}
+/* a message says what happened in words; family colours mean families, never a status (DESIGN.md) */
+.error-message{border:1px solid var(--ink);background:var(--raised);color:var(--ink)}
+.success-message{border:1px solid var(--soft);background:var(--raised);color:var(--ink)}
 .scanner-result{overflow-wrap:anywhere}
 
 /* ---- samples ---- */
@@ -64,7 +65,7 @@ select,input,textarea{width:100%;margin-top:7px;min-height:46px;padding:10px 12p
 .sample-chip:hover{border-color:var(--soft)}
 .sample-chip[aria-pressed="true"]{border-color:var(--ink)}
 .sample-chip strong,.sample-chip span{display:block}
-.sample-chip span{margin-top:5px;color:var(--soft);font-size:.75rem}
+.sample-chip span{margin-top:5px;color:var(--soft);font-size:.8125rem}
 
 /* ---- the camera ---- */
 .scanner-shell{margin-top:20px}
@@ -100,7 +101,7 @@ select,input,textarea{width:100%;margin-top:7px;min-height:46px;padding:10px 12p
 .coa-confirm > h3{margin:0 0 6px}
 .coa-confirm > .small{margin:0 0 16px;color:var(--soft)}
 .coa-confirm .buttons{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
-.coa-label{margin:18px 0 8px;color:var(--soft);font-size:.75rem}
+.coa-label{margin:18px 0 8px;color:var(--soft);font-size:.8125rem}
 .coa-meta{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;margin:0;font-size:.9375rem}
 .coa-meta dt{color:var(--soft)}
 .coa-meta dd{margin:0;font-weight:650;font-variant-numeric:tabular-nums}
@@ -115,7 +116,7 @@ select,input,textarea{width:100%;margin-top:7px;min-height:46px;padding:10px 12p
 /* ---- entering values by hand ---- */
 .data-table-wrap{overflow-x:auto;margin-top:20px}
 .manual-table{width:100%;margin-top:16px;border-collapse:collapse}
-.manual-table th{padding:0 8px 8px;color:var(--soft);font-size:.6875rem;text-align:left}
+.manual-table th{padding:0 8px 8px;color:var(--soft);font-size:.8125rem;text-align:left}
 .manual-table td{padding:5px 8px}
 .manual-table td:last-child{width:48px}
 .manual-table input,.manual-table select{margin:0;min-height:42px}
@@ -141,7 +142,7 @@ select,input,textarea{width:100%;margin-top:7px;min-height:46px;padding:10px 12p
 .result-detail strong{font-weight:650;line-height:1.35}
 .data-table{width:100%;border-collapse:collapse}
 .data-table th,.data-table td{padding:11px 10px;border-bottom:1px solid var(--rule);font-size:.8125rem;text-align:left}
-.data-table th{color:var(--soft);font-size:.6875rem}
+.data-table th{color:var(--soft);font-size:.8125rem}
 
 /* ---- the vote under a result, and its smell words (PARSER-HANDOFF s13):
    the words smaller than the two vote buttons, a pressed word ticked as
@@ -172,7 +173,7 @@ select,input,textarea{width:100%;margin-top:7px;min-height:46px;padding:10px 12p
 .saved-list{display:grid;gap:6px;margin:12px 0 18px;padding:0;list-style:none}
 .saved-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border:1px solid var(--rule);border-radius:var(--r);background:var(--raised)}
 .saved-item-name{font-size:.875rem;line-height:1.3;overflow-wrap:anywhere}
-.saved-item-remove{flex:none;min-height:44px;padding:0 12px;border:1px solid var(--rule);border-radius:var(--r);background:transparent;color:var(--soft);font:inherit;font-size:.75rem;cursor:pointer}   /* 44px: the smallest tap target, in a narrow column */
+.saved-item-remove{flex:none;min-height:44px;padding:0 12px;border:1px solid var(--rule);border-radius:var(--r);background:transparent;color:var(--soft);font:inherit;font-size:.8125rem;cursor:pointer}   /* 44px: the smallest tap target, in a narrow column */
 .saved-item-remove:hover{border-color:var(--ink);color:var(--ink)}
 .saved-palate-block > summary{display:flex;align-items:center;gap:8px;min-height:44px;padding:10px 0;border-top:1px solid var(--rule);font:650 1rem/1 var(--body);cursor:pointer}
 .saved-palate-block > summary::-webkit-details-marker{display:none}
@@ -187,7 +188,7 @@ select,input,textarea{width:100%;margin-top:7px;min-height:46px;padding:10px 12p
   .app-grid{grid-template-columns:minmax(0,1fr);gap:32px}
   .app-grid > *,.app-grid .card,.app-grid .panel{min-width:0}   /* the sample row scrolls inside its column, not the page */
   .tab-list{grid-template-columns:repeat(4,1fr)}
-  .tab-button{justify-content:center;font-size:.75rem;text-align:center}
+  .tab-button{justify-content:center;font-size:.8125rem;text-align:center}
 }
 /* phones: compact, scanner first, easier one-handed */
 @media (max-width:720px){
@@ -201,8 +202,7 @@ select,input,textarea{width:100%;margin-top:7px;min-height:46px;padding:10px 12p
   aside.panel > .small{display:none}
   .tab-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;padding:1px 1px 2px;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none}
   .tab-list::-webkit-scrollbar{display:none}
-  .tab-button{flex:0 0 auto;width:auto;min-height:40px;padding:0 14px;scroll-snap-align:start;white-space:nowrap}
-  .tab-button span{display:none}
+  .tab-button{flex:0 0 auto;width:auto;min-height:40px;padding:0 12px;scroll-snap-align:start;white-space:nowrap}
   .input-panel{padding:16px 0 0}
   .input-panel h2{margin-bottom:5px;font-size:1.5625rem;line-height:1.05}
   .input-panel > .small{margin-bottom:10px;font-size:.875rem;line-height:1.5}
@@ -217,7 +217,7 @@ select,input,textarea{width:100%;margin-top:7px;min-height:46px;padding:10px 12p
   .scanner-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
   .scanner-actions .button{width:100%;min-height:46px;padding-inline:12px}
   #chooseQrImageButton{grid-column:1 / -1}
-  .scanner-note{margin:9px 0 0;font-size:.75rem;line-height:1.45}
+  .scanner-note{margin:9px 0 0;font-size:.8125rem;line-height:1.45}
   .result-panel{margin-top:28px;padding:16px 0 0}
   .data-table th,.data-table td{padding:10px 8px}
   .result-head{gap:10px}
@@ -237,6 +237,7 @@ select,input,textarea{width:100%;margin-top:7px;min-height:46px;padding:10px 12p
   .scanner-actions{grid-template-columns:1fr}
   #chooseQrImageButton{grid-column:auto}
   .sample-chip{flex-basis:86%}
+  .data-table th,.data-table td{padding:10px 6px}   /* the family table fits 320 with its headings at 13px */
 }
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}

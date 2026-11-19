@@ -28,8 +28,8 @@
 p + .acct-field{margin-top:24px}
 .acct-field label{display:block;margin-bottom:8px;font-size:.9375rem;color:var(--ink)}
 .acct-field input{width:100%;min-height:48px;padding:0 14px;font-size:1rem; /* 16px or more: smaller makes iOS Safari zoom on focus */
-  color:var(--ink);background:var(--raised);border:1px solid var(--rule);border-radius:var(--r)}
-.acct-field input:hover{border-color:var(--soft)}
+  color:var(--ink);background:var(--raised);border:1px solid var(--soft);border-radius:var(--r)}   /* a form field's border is soft (DESIGN.md, 2026-11-19) */
+.acct-field input:hover{border-color:var(--ink)}
 .acct-field input:focus{outline:none;border-color:var(--ink)}
 .acct-field input:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
 .acct-field input:disabled{opacity:.55;cursor:not-allowed}

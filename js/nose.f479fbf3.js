@@ -347,6 +347,9 @@
       return other?`These are different kinds of product: ${FORM_WORDS[other]} and ${FORM_WORDS[candidate.form]}. The score compares the shape of their terpene profiles, not their intensity.`:'';
     }
 
+    /* A difference between two family shares, in points; a rise carries its "+" (2026-11-19). */
+    function signedPoints(d){ const n=Math.round(d*100); return `${n>0?'+':''}${n} pts`; }
+
     function updateFullResult(){
       const b=profileById(state.appCandidate);
       const palateVec=palateVector();
@@ -362,6 +365,7 @@
       document.getElementById('fullResult').hidden=false;
       document.getElementById('resultNames').textContent=`${a.name} compared with ${b.name}`;
       document.getElementById('resultCandidateLabel').textContent=b.name||'New jar';   // the name of the jar over its bars (the owner, 2026-11-19); no apostrophe here: pieceOf in match-feedback-test reads one as a quote
+      document.getElementById('resultCandidateHead').textContent=b.name||'New jar';    // and over its column in the family table
       /* the button to keep a jar met through Compare, shown while it is not saved (the owner, 2026-11-19) */
       document.getElementById('resultAddButton').hidden=!state.compared.some(jar=>jar.id===b.id);
       document.getElementById('resultAddMessage').hidden=true;
@@ -377,7 +381,7 @@
       document.getElementById('resultConfidence').textContent=confidence([...palateProfiles(),b]);
       renderDesk('resultPalateBar',a.terps); renderDesk('resultCandidateBar',b.terps);
       const tbody=document.getElementById('accessibleResultRows'); tbody.replaceChildren();
-      FAMILY_ORDER.forEach(key=>{ const tr=document.createElement('tr'); [FAMILIES[key].label,`${Math.round(familyA[key]*100)}%`,`${Math.round(familyB[key]*100)}%`,`${Math.round((familyB[key]-familyA[key])*100)} pts`].forEach(text=>{ const td=document.createElement('td'); td.textContent=text; tr.append(td); }); tbody.append(tr); });
+      FAMILY_ORDER.forEach(key=>{ const tr=document.createElement('tr'); [FAMILIES[key].label,`${Math.round(familyA[key]*100)}%`,`${Math.round(familyB[key]*100)}%`,signedPoints(familyB[key]-familyA[key])].forEach(text=>{ const td=document.createElement('td'); td.textContent=text; tr.append(td); }); tbody.append(tr); });
     }
 
     function setTab(name){

@@ -27,10 +27,10 @@
 .demo-form .demo-wide,.demo-form .demo-h2{grid-column:1 / -1}
 .demo-form .demo-h2{margin-bottom:0;font-size:1.375rem}
 .demo-field{display:grid;gap:6px;min-width:0;margin:0;font-size:.875rem;color:var(--soft)}
-.demo-field select,.demo-field textarea{width:100%;color:var(--ink);background:var(--field);border:1px solid var(--rule);border-radius:var(--r)}
+.demo-field select,.demo-field textarea{width:100%;color:var(--ink);background:var(--field);border:1px solid var(--soft);border-radius:var(--r)}   /* a form field's border is soft (DESIGN.md, 2026-11-19) */
 .demo-field select{min-height:44px;padding:0 10px}
 .demo-field textarea{min-height:180px;padding:10px;font-size:.875rem;font-variant-numeric:tabular-nums}
-.demo-field select:hover,.demo-field textarea:hover{border-color:var(--soft)}
+.demo-field select:hover,.demo-field textarea:hover{border-color:var(--ink)}
 .demo-routes{display:flex;flex-wrap:wrap;gap:4px 20px;align-content:start;padding:0;border:0}
 .demo-routes legend{margin-bottom:4px;padding:0}
 .demo-routes label{display:inline-flex;align-items:center;gap:8px;min-height:44px;color:var(--ink)}
