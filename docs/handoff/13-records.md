@@ -5857,3 +5857,30 @@ which stay.
 - **Checked**: colour-tokens, page-chrome and input-paths are clean. Before
   and after were rendered at 390px (the top of the page, and the result) and
   at 1280px (the readouts side by side).
+
+### /app's panels lose their boxes, 2026-11-19
+
+The owner chose the unboxed panels from the mock, and asked to see pictures
+of the build before it was pushed.
+
+- **The six boxes** (the left column, the four tabs' panels and the result)
+  lose their border, fill and corners. Each is now a section on the field,
+  opened by a hairline (`.card{border-top:1px solid var(--rule)}`), with no
+  side padding, so its content lines up with the page title. On a phone that
+  gives about 30px of width: the four tabs fit on one row and the bars widen.
+- **Space**: on a desktop the two columns are 56px apart (they were 24px). The
+  sections stack 32px apart under 900px wide and 28px apart on a phone. The
+  result opens 40px below its panel (28px on a phone). The input panel's
+  465px minimum height went, since without a box it left an empty gap.
+- **Fills that sat on a raised box and now sit on the field**: messages and
+  the camera box take raised, so they still stand apart from the page.
+- **Still boxed**, as DESIGN.md allows for "a jar" and "a report": the saved
+  jars, the report card ("Check this before you use it", raised on the
+  field) and the coverage line inside it.
+- **Found**: the tab buttons carry an arrow on wider screens, and DESIGN.md
+  says no arrows in button text. It is in open.md.
+- **Checked**: colour-tokens, page-chrome and input-paths are clean in
+  Chromium, Firefox and WebKit, the phone checks included (a tab's panel and
+  the link box under the header, the table fitting). Before and after were
+  rendered at 390px (the top, the result, the COA link panel with its message
+  and the report card) and at 1280px (the top and the result).

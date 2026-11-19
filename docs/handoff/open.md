@@ -97,9 +97,8 @@ schema comment if wanted.
   their wrapping, the tick and the status line. Safari and Firefox have not
   been looked at, nor a screen reader's reading of the note.
 - **`/app`'s departures from DESIGN.md, left for design work**:
-  - the boxed panels: the left column, each tab's panel and the result. The
-    owner has a 390px mock of them unboxed, as sections opened by a hairline,
-    and is to choose (13-records, "The labels above /app's headings go").
+  - the tab buttons carry an arrow on wider screens (hidden on a phone), and
+    DESIGN.md says no arrows in button text;
   - success and error messages are bordered in pine and spice, which DESIGN.md
     keeps for families;
   - the account page's and the dispensary demo's form fields still have rule
@@ -115,8 +114,8 @@ schema comment if wanted.
 
   Gone on 2026-11-19: the green focus rings, the rust hover, Inter, the
   off-palette colours, the bolder header, the table's sideways scroll on a
-  phone, the labels above two headings and the three stat boxes. The vote
-  emoji stay, the owner's call, and DESIGN.md says so.
+  phone, the labels above two headings, the three stat boxes and the boxed
+  panels. The vote emoji stay, the owner's call, and DESIGN.md says so.
 - **The rebuilt reading pages have not been seen in real desktop Safari, nor
   read by a screen reader.** Chromium, Firefox, Playwright's WebKit, the
   owner's iPhone and a keyboard pass have been (13-records, "The reading pages

@@ -40,10 +40,11 @@ select,input,textarea{width:100%;margin-top:7px;min-height:46px;padding:10px 12p
 .page-head h1{font-size:clamp(2.625rem,7vw,4.875rem);line-height:.98}
 .page-head p{max-width:730px;color:var(--soft);font-size:1.125rem;line-height:1.65}
 .section-tight{padding:58px 0}
-.app-grid{display:grid;grid-template-columns:330px minmax(0,1fr);align-items:start;gap:24px}
-.card{border:1px solid var(--rule);border-radius:var(--r);background:var(--raised)}
-.panel{padding:22px}
-.input-panel{min-height:465px}
+.app-grid{display:grid;grid-template-columns:330px minmax(0,1fr);align-items:start;gap:56px}
+/* the menu, each tab's panel and the result are sections on the field, opened
+   by a hairline, not boxes (DESIGN.md; the owner's choice from a mock, 2026-11-19) */
+.card{border-top:1px solid var(--rule)}
+.panel{padding:22px 0 0}
 .input-panel h2{margin-bottom:8px;font-size:1.75rem}
 
 /* the four ways in */
@@ -52,7 +53,7 @@ select,input,textarea{width:100%;margin-top:7px;min-height:46px;padding:10px 12p
 .tab-button[aria-selected="true"]{border-color:var(--ink);background:var(--ink);color:var(--field)}
 
 /* a panel's message line */
-.inline-message{margin:14px 0 0;padding:12px 14px;border-radius:var(--r);background:var(--field);color:var(--soft);font-size:.875rem;line-height:1.5}
+.inline-message{margin:14px 0 0;padding:12px 14px;border-radius:var(--r);background:var(--raised);color:var(--soft);font-size:.875rem;line-height:1.5}
 .error-message{border:1px solid var(--spice);background:var(--raised);color:var(--ink)}
 .success-message{border:1px solid var(--pine);background:var(--raised);color:var(--ink)}
 .scanner-result{overflow-wrap:anywhere}
@@ -67,7 +68,7 @@ select,input,textarea{width:100%;margin-top:7px;min-height:46px;padding:10px 12p
 
 /* ---- the camera ---- */
 .scanner-shell{margin-top:20px}
-.scanner-reader{display:grid;place-items:center;min-height:280px;overflow:hidden;border:1px dashed var(--rule);border-radius:var(--r);background:var(--field)}
+.scanner-reader{display:grid;place-items:center;min-height:280px;overflow:hidden;border:1px dashed var(--rule);border-radius:var(--r);background:var(--raised)}
 .scanner-reader:empty::before{content:"Camera preview appears here";color:var(--soft);font-size:.875rem}
 .scanner-reader video{width:100% !important;height:auto !important;object-fit:cover}
 .scanner-reader img{max-width:100%}
@@ -121,7 +122,7 @@ select,input,textarea{width:100%;margin-top:7px;min-height:46px;padding:10px 12p
 .icon-button{width:42px;height:42px;border:1px solid var(--rule);border-radius:var(--r);background:var(--field);color:var(--ink);cursor:pointer}
 
 /* ---- the result (each profile on the desk, css/world's .result-eq) ---- */
-.result-panel{margin-top:24px;padding:24px}
+.result-panel{margin-top:40px;padding:22px 0 0}
 /* scrolled to when the report card closes (js/nose's useJar) and, on a phone, when a tab or the
    link box is chosen (revealPanel): 16px under the 65px sticky header */
 #fullResult,.inline-message,.input-panel{scroll-margin-top:81px}
@@ -183,7 +184,7 @@ select,input,textarea{width:100%;margin-top:7px;min-height:46px;padding:10px 12p
 
 /* ---- narrower screens ---- */
 @media (max-width:900px){
-  .app-grid{grid-template-columns:minmax(0,1fr);gap:16px}
+  .app-grid{grid-template-columns:minmax(0,1fr);gap:32px}
   .app-grid > *,.app-grid .card,.app-grid .panel{min-width:0}   /* the sample row scrolls inside its column, not the page */
   .tab-list{grid-template-columns:repeat(4,1fr)}
   .tab-button{justify-content:center;font-size:.75rem;text-align:center}
@@ -194,15 +195,15 @@ select,input,textarea{width:100%;margin-top:7px;min-height:46px;padding:10px 12p
   .page-head h1{max-width:330px;margin-bottom:10px;font-size:clamp(2.1875rem,10.5vw,2.875rem)}
   .page-head p{max-width:350px;margin-bottom:0;font-size:.9375rem;line-height:1.45}
   .section-tight{padding:10px 0 34px}
-  .app-grid{gap:10px}
-  aside.panel{padding:14px}
+  .app-grid{gap:28px}
+  aside.panel{padding:14px 0 0}
   aside.panel > h2{margin-bottom:5px;font-size:1.125rem !important}
   aside.panel > .small{display:none}
   .tab-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;padding:1px 1px 2px;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none}
   .tab-list::-webkit-scrollbar{display:none}
   .tab-button{flex:0 0 auto;width:auto;min-height:40px;padding:0 14px;scroll-snap-align:start;white-space:nowrap}
   .tab-button span{display:none}
-  .input-panel{min-height:0;padding:16px}
+  .input-panel{padding:16px 0 0}
   .input-panel h2{margin-bottom:5px;font-size:1.5625rem;line-height:1.05}
   .input-panel > .small{margin-bottom:10px;font-size:.875rem;line-height:1.5}
   #samplePanel h3{margin:16px 0 9px !important;font-size:.875rem !important}
@@ -217,7 +218,7 @@ select,input,textarea{width:100%;margin-top:7px;min-height:46px;padding:10px 12p
   .scanner-actions .button{width:100%;min-height:46px;padding-inline:12px}
   #chooseQrImageButton{grid-column:1 / -1}
   .scanner-note{margin:9px 0 0;font-size:.75rem;line-height:1.45}
-  .result-panel{margin-top:10px;padding:16px}
+  .result-panel{margin-top:28px;padding:16px 0 0}
   .data-table th,.data-table td{padding:10px 8px}
   .result-head{gap:10px}
   .result-head h2{font-size:1.375rem}
