@@ -73,6 +73,6 @@
 #nose-ag button{min-height:48px;border-radius:var(--r);font-weight:600;font-size:1rem;letter-spacing:0}
 #nose-ag .ag-yes{background:var(--ink);color:var(--field)}
 #nose-ag .ag-no,#nose-ag .ag-no:hover{color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
-#nose-ag .ag-no:hover{background:#1B241E}
+#nose-ag .ag-no:hover{background:var(--field)}
 #nose-ag .ag-yes:focus-visible,#nose-ag .ag-no:focus-visible{outline-color:var(--ink)}
 #nose-ag .ag-fine{color:var(--soft);letter-spacing:0;text-transform:none;font-size:.8125rem}

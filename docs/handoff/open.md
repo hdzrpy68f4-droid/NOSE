@@ -96,16 +96,24 @@ schema comment if wanted.
 - **The word buttons were watched in Chromium only**, at 1280 and 390 px:
   their wrapping, the tick and the status line. Safari and Firefox have not
   been looked at, nor a screen reader's reading of the note.
-- **Kept as they were when `/app` left `css/shell`, for design work**: focus
-  rings in `css/shell`'s green `#2F6144` on the card's two inputs and the
-  saved jars' Remove button, 2.43:1 on the raised panel (a focus indicator
-  needs 3:1); that button's rust hover text `#93401F`, 2.50:1; Inter, not
-  loaded, named on the vote buttons, the smell words and "Saved palate", so
-  they draw in the system face; `#1B241E` and `#46554A`, which are not
-  DESIGN.md's; header and menu links at 650 and a 42px call to action, where
-  other pages have 450 and 44px; the labels above "Compare the profile..."
-  and "Aroma similarity"; the boxed panels and three stat boxes; the vote
-  emoji. (The result table's sideways scroll on a phone went on 2026-11-19.)
+- **`/app`'s departures from DESIGN.md, left for design work**:
+  - the labels above "Compare the profile..." and "Aroma similarity";
+  - the boxed panels and the three stat boxes;
+  - the vote emoji.
+
+  Found on 2026-11-19 while the rest went (13-records, "/app's focus rings,
+  colours, faces and header follow DESIGN.md"):
+  - success and error messages are bordered in pine and spice, which DESIGN.md
+    keeps for families;
+  - the account page's and the dispensary demo's form fields still have rule
+    borders, where DESIGN.md now says soft;
+  - the family table's Difference column gives a rise without a "+";
+  - its column heading still says "New jar", while the bars above it carry
+    the jar's name.
+
+  (Gone on 2026-11-19: the green focus rings, the rust hover, Inter, the
+  off-palette colours, the bolder header and the table's sideways scroll on a
+  phone.)
 - **The rebuilt reading pages have not been seen in real desktop Safari, nor
   read by a screen reader.** Chromium, Firefox, Playwright's WebKit, the
   owner's iPhone and a keyboard pass have been (13-records, "The reading pages

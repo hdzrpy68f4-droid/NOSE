@@ -74,7 +74,7 @@ One bold element, everything else restrained: the equalizer is the bold element.
 
 ## Colors
 
-- **Field `#0E1410`**: a green-black, the room. Every page stands on it. **Raised `#141B16`** is the same field one step lighter, for a panel that must separate from the page. **Rule `#2E3A31`** draws hairlines and control borders.
+- **Field `#0E1410`**: a green-black, the room. Every page stands on it. **Raised `#141B16`** is the same field one step lighter, for a panel that must separate from the page. **Rule `#2E3A31`** draws hairlines and the borders of buttons and chips. A form field's border is **soft**, so the field can be found: rule is 1.5:1 on raised, soft 7.9:1 (the owner's call, 2026-11-19).
 - **Ink `#F4F1EA`** is text and the primary button's fill. **Soft `#B1AEA6`** is secondary text. Both pass 4.5:1 on the field and on raised.
 - **The six family colours are the only colour on the site.** They are defined once, in `css/tokens.*.css`, and `colour-tokens-test` holds every copy to it. They mean their family and nothing else: no family colour is ever used as decoration, as a button, or as a status.
 - On the field, family colour appears as **light** (meters, bars, swatches), not as small text: pine and earthy fall under 4.5:1 there. Text that names a family is ink.

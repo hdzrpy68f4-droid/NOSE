@@ -5775,3 +5775,55 @@ compared.
   and reported that everything works as intended. That covers both
   "Compare" and "Add" buttons, the result's "Add to my palate", and the
   fixes recorded above it.
+
+### /app's focus rings, colours, faces and header follow DESIGN.md, 2026-11-19
+
+The owner asked for items 1 to 5 of the list kept when `/app` left
+`css/shell` (open.md).
+
+- **Focus**: the card's two kinds of field and Saved palate's Remove button
+  lose `css/shell`'s green ring (`#2F6144`, 2.43:1 on raised). They take
+  `css/world`'s instead: 3px ink, offset 3px, 15.54:1.
+- **Remove's hover** turns ink instead of rust (`#93401F`, 2.50:1).
+- **Faces**: the vote buttons, the smell words and "Saved palate" named
+  Inter, which the site does not load, so they drew in the system face. They
+  now use the body face, Hanken Grotesk, at the same weights (600, 650, 650).
+- **Colours**: every colour in `css/app` is now one of `css/world`'s tokens.
+  - **Form fields** take a soft border. This was the owner's choice when
+    asked: rule would be 1.5:1 on raised, the old `#46554A` was 2.22:1, and
+    soft is 7.91:1. It covers every select, input and textarea, the camera
+    picker, and the jar name and the card's value boxes, which had rule.
+    DESIGN.md now says so.
+  - The smell words and the camera box's dashed outline take rule.
+  - The fills that were `#1B241E` (messages, the three stat boxes, the
+    coverage line, the camera box) take field.
+  - A pressed sample chip on a phone takes raised, and a hovered chip gains a
+    soft border instead of a fill.
+  - The age gate's "No" button takes field on hover, which is DESIGN.md's fill
+    for a secondary button.
+  - The old green's faint glow on a pressed sample chip is gone. So is the
+    partial-coverage outline's `#8A8377`, now soft at 45%.
+- **Header**: `/app`'s links at 650 and its 42px call to action are gone.
+  The computed weight, size and height now match the home page's: links at
+  450, 15px and 44px, the call to action at 600, and phone menu links at 450,
+  17px and 48px.
+- **Checked**:
+  - The computed style of every element was compared before and after in
+    Chromium: `/app` in its states, its hovers and keyboard stops, and the age
+    gate on four pages. That is 1,057 comparisons.
+  - Every difference falls under the changes above: border and background
+    colours, the font family (and the widths, heights and origins that follow
+    from the new face), the header links' weight, the call to action's height,
+    the Remove button's focus outline and hover colour, the chip and coverage
+    box shadows, and the layout below them moving by a few pixels (the app
+    grid's rows, the footer).
+  - The gate itself shows no difference.
+  - The focus ring on the card's fields, which the keyboard pass does not
+    reach, was rendered at 390px.
+  - colour-tokens, page-chrome and input-paths are clean.
+- **Left for design work**, in open.md:
+  - the labels above two headings, the boxed panels and the vote emoji;
+  - two things found while doing this: success and error messages are
+    bordered in pine and spice, which DESIGN.md keeps for families, and the
+    form fields on the account page and the dispensary demo still have rule
+    borders.
