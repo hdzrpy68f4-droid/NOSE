@@ -362,6 +362,9 @@
       document.getElementById('fullResult').hidden=false;
       document.getElementById('resultNames').textContent=`${a.name} compared with ${b.name}`;
       document.getElementById('resultCandidateLabel').textContent=b.name||'New jar';   // the name of the jar over its bars (the owner, 2026-11-19); no apostrophe here: pieceOf in match-feedback-test reads one as a quote
+      /* the button to keep a jar met through Compare, shown while it is not saved (the owner, 2026-11-19) */
+      document.getElementById('resultAddButton').hidden=!state.compared.some(jar=>jar.id===b.id);
+      document.getElementById('resultAddMessage').hidden=true;
       document.getElementById('resultBadge').textContent=matchBand(score)[0];
       document.getElementById('resultScore').textContent=shownScore(score);
       document.getElementById('resultSummary').textContent=`${shownScore(score)}% aroma similarity`;
@@ -775,6 +778,22 @@
       updateSavedSummary(); renderSampleButtons(); updateFullResult();
       showMessage(messageId,`${profile.name} was added to your palate ${persisted?'and saved in this browser':'for this session'}.`,'success');
       $id(messageId).scrollIntoView({block:'nearest'});
+    }
+
+    /* "Add to my palate" under a result, after Compare (the owner, 2026-11-19):
+       the compared jar joins Saved palate. The comparison stays on screen as it
+       was made, and the next one counts the jar in the palate; until then the
+       jar compared is the default sample, not this jar against a palate that
+       now holds it. Focus goes to the message that replaces the button. */
+    function addComparedJar(){
+      const jar=state.compared[0]; if(!jar) return;
+      state.compared=[]; state.saved.push(jar);
+      const persisted=persistSaved();
+      state.palateIds=savedPalate(); state.appCandidate='cold-creek';
+      updateSavedSummary(); renderSampleButtons();
+      $id('resultAddButton').hidden=true;
+      showMessage('resultAddMessage',`${jar.name} was added to your palate ${persisted?'and saved in this browser':'for this session'}.`,'success');
+      $id('resultAddMessage').focus({preventScroll:true});
     }
 
     (function bindCoaConfirm(){
@@ -1260,6 +1279,7 @@
       /* The link box, tapped low on a phone, was covered by the keyboard: its
          panel goes up first, at once, so the box sits above where the keyboard opens. */
       on('coaUrl','focus',()=>revealPanel('url','instant'));
+      on('resultAddButton','click',addComparedJar);
       on('exportButton','click',exportSaved);
       on('importButton','click',()=>{ const f=$id('importFile'); if(f) f.click(); });
       on('importFile','change',event=>{ const file=event.target.files[0]; event.target.value=''; if(file) importSaved(file); });

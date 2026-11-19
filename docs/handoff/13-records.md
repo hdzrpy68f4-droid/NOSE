@@ -5741,3 +5741,33 @@ family table under the result needed a sideways scroll.
   and 320px. Clean in Chromium, Firefox and WebKit. Rendered at 430px: the
   panel under the header, and the table whole.
 - **Not checked**: a real iPhone, its keyboard above all.
+
+### After Compare, the result offers "Add to my palate", 2026-11-19
+
+The owner reported that the COA link fixes work on their iPhone. They found
+one gap: after Compare there was no way to keep the jar they had just
+compared.
+
+- **The button** (`#resultAddButton`, primary) sits under the score's
+  explanation. It shows only while the jar being compared came through
+  Compare and is not saved (`state.compared`). A sample or a saved jar being
+  compared gets no button.
+- **Pressed** (js/nose's `addComparedJar`): the jar joins Saved palate
+  (`nose-palate-v1`), and the palate becomes every saved jar. A message
+  replaces the button (`#resultAddMessage`, `tabindex="-1"`) and is focused,
+  so a screen reader reads it. The comparison stays on screen as it was made,
+  and the next comparison counts the jar in the palate. Until then the jar
+  being compared is the default sample. That way a later redraw (a chip,
+  Remove, an Add from the card) does not score the jar against a palate that
+  now holds it.
+- **Tests** (`input-paths-test`):
+  - no button while a sample is being compared, and a button after a Manual
+    Compare;
+  - pressing it saves the jar, says so, focuses the message, and keeps the
+    result's names;
+  - the next Compare reads "Liked jar compared with Next jar", with the
+    button back and the message gone.
+
+  Clean in Chromium, Firefox and WebKit. Rendered at 390px before and after
+  the press.
+- **Not checked**: a real phone before the deploy.

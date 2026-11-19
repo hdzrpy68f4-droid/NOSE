@@ -1107,6 +1107,46 @@ try {
       await ph.close();
     }
 
+    /* After "Compare with my palate" the result offers "Add to my palate"
+       (since 2026-11-19, the owner): it saves the compared jar and says so,
+       the comparison stays on screen, and the next comparison counts the jar
+       in the palate. A sample being compared gets no such button. */
+    {
+      const c = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+      await c.addInitScript(() => { try { localStorage.setItem('nose-age-ok', '1'); } catch (e) {} });
+      const q = await c.newPage();
+      q.on('pageerror', e => pageErrors.push(e.message));
+      await q.goto(`${BASE}/app`);
+      await q.waitForSelector('#palateSamples .sample-chip', { state: 'attached' });
+      const tt = async sel => ((await q.locator(sel).textContent()) || '').trim();
+      const names = () => q.$$eval('#savedPalateList .saved-item-name', ns => ns.map(n => n.textContent));
+      async function compareManual(name) {
+        await q.click('#manualTab');
+        await q.fill('#manualName', name);
+        const v = q.locator('#manualRows .manual-value');
+        await v.nth(0).fill('0.4'); await v.nth(1).fill('0.3'); await v.nth(2).fill('0.2');
+        await q.click('#compareManualButton');
+      }
+      check('the result offers no "Add to my palate" while a sample is the jar compared',
+        await q.isVisible('#fullResult') && !(await q.isVisible('#resultAddButton')), await tt('#resultNames'));
+      await compareManual('Liked jar');
+      check('after Compare, the result offers "Add to my palate"', await q.isVisible('#resultAddButton'), await tt('#resultNames'));
+      const before = await tt('#resultNames');
+      await q.click('#resultAddButton');
+      const said = await tt('#resultAddMessage');
+      check('"Add to my palate" on the result saves the compared jar, says so where the button was, and leaves the comparison on screen',
+        JSON.stringify(await names()) === '["Liked jar"]' && !(await q.isVisible('#resultAddButton'))
+          && said === 'Liked jar was added to your palate and saved in this browser.'
+          && await q.evaluate(() => document.activeElement === document.getElementById('resultAddMessage'))
+          && (await tt('#resultNames')) === before,
+        `saved ${JSON.stringify(await names())}, message "${said}", result "${await tt('#resultNames')}" (was "${before}")`);
+      await compareManual('Next jar');
+      check('...and the next comparison counts it in the palate, the button offered again and the message gone',
+        (await tt('#resultNames')) === 'Liked jar compared with Next jar' && await q.isVisible('#resultAddButton') && !(await q.isVisible('#resultAddMessage')),
+        `result "${await tt('#resultNames')}"`);
+      await c.close();
+    }
+
     /* Keys and announcements (since 2026-11-14, "Focus you can see, messages
        you can hear"). The tabs pattern: the selected tab is the one in the
        Tab order; Right and Left move focus and selection and wrap; Home and

@@ -96,12 +96,11 @@ schema comment if wanted.
 - **The word buttons were watched in Chromium only**, at 1280 and 390 px:
   their wrapping, the tick and the status line. Safari and Firefox have not
   been looked at, nor a screen reader's reading of the note.
-- **Not yet seen on a real phone: "Add to my palate", COA link going to its
-  panel, and the link box above the keyboard** (13-records, "On a phone, COA
-  link goes to its panel"). The keyboard cannot be shown in a test browser.
-  On 2026-11-19 the owner's iPhone showed Compare, the scroll to the result
-  and the jar's name over its bars working. Chromium, Firefox and WebKit run
-  all of it.
+- **"Add to my palate", on the card and under a result, not yet seen on a
+  real phone** (13-records, "After Compare, the result offers"). On
+  2026-11-19 the owner's iPhone showed these working: Compare, the scroll to
+  the result, the jar's name over its bars, COA link going to its panel, and
+  the link box above the keyboard. Chromium, Firefox and WebKit run all of it.
 - **Kept as they were when `/app` left `css/shell`, for design work**: focus
   rings in `css/shell`'s green `#2F6144` on the card's two inputs and the
   saved jars' Remove button, 2.43:1 on the raised panel (a focus indicator

@@ -1881,6 +1881,7 @@ under the cap.
 - [A scanned jar is compared with the palate, and the palate is every saved jar, 2026-11-19](docs/handoff/13-records.md#a-scanned-jar-is-compared-with-the-palate-and-the-palate-is-every-saved-jar-2026-11-19)
 - [After Compare the page goes to the result, and the new jar's bars carry its name, 2026-11-19](docs/handoff/13-records.md#after-compare-the-page-goes-to-the-result-and-the-new-jars-bars-carry-its-name-2026-11-19)
 - [On a phone, COA link goes to its panel, the link box stays above the keyboard, and the family table fits, 2026-11-19](docs/handoff/13-records.md#on-a-phone-coa-link-goes-to-its-panel-the-link-box-stays-above-the-keyboard-and-the-family-table-fits-2026-11-19)
+- [After Compare, the result offers "Add to my palate", 2026-11-19](docs/handoff/13-records.md#after-compare-the-result-offers-add-to-my-palate-2026-11-19)
 
 ## 14. Dispensary integration
 
