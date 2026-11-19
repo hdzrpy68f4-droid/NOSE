@@ -23,7 +23,7 @@ const store = require(path.join(ROOT, 'netlify/functions/lib/store.js'));
 const rerun = require(path.join(ROOT, 'scripts/lib/rerun.js'));
 const { reparse } = require(path.join(ROOT, 'scripts/reparse.js'));
 const { backfill } = require(path.join(ROOT, 'scripts/backfill-from-blobs.js'));
-const { exportCandidate, namesInUse, UsageError, Refusal } = require(path.join(ROOT, 'scripts/export-candidate.js'));
+const { exportCandidate, exportReal, namesInUse, UsageError, Refusal } = require(path.join(ROOT, 'scripts/export-candidate.js'));
 
 const sha = b => crypto.createHash('sha256').update(b).digest('hex');
 const FILLER = 'Terpene profile by GC-MS. Values are percent by weight. '.repeat(5);
@@ -378,6 +378,26 @@ async function run(db, log = console.log) {
     const short = await rejects(() => exportCandidate({ db, blobs, extract, prefix: 'abc', pdfDir, textDir, baseline, log: () => {} }));
     check('...under 7 characters is a usage error', short instanceof UsageError, true);
     check('namesInUse: highest number per LAB-FORM for that lab only', namesInUse(baseline, 'Modern Canna').join(' '), 'MCL-FLW-002');
+
+    /* --real (since 2026-11-19): every document the seed did not store, into
+       the candidates folder - a scan from the live site, not the seeded A-D. */
+    const liveBytes = Buffer.from('%PDF-1.4 stand-in R');
+    const live = sha(liveBytes);
+    readings.R = { lab: 'Kaycha Labs', strain: 'Romeo', readBy: 'forward', usable: true, totalTerpenes: 1,
+                   terps: { myrcene: 1 }, warnings: [], rejectReasons: [] };
+    await store.saveScan({ sha256: live, byteSize: liveBytes.length, sourceUrl: null, fetchedAt: '2026-11-18',
+                           extractorVersion: '111111111111', text: textFor('R', 'v1'), parserVersion: 'abc1234',
+                           context: 'production', output: { ...readings.R, parserVersion: 'abc1234' } }, { client: db });
+    blobs.put(live, liveBytes, { sourceUrl: null, fetchedAt: '2026-11-18' });
+    const dir = path.join(TMP, 'candidates');
+    const real1 = await exportReal({ db, blobs, extract, dir, baseline, log: () => {} });
+    check('export --real: the live scan, as candidate-<first 8> in the candidates folder, and no seeded document',
+      JSON.stringify([real1.exported.includes(live), fs.existsSync(path.join(dir, 'pdf', `candidate-${live.slice(0, 8)}.pdf`)),
+        fs.existsSync(path.join(dir, 'extracted', `candidate-${live.slice(0, 8)}.txt`)),
+        [docs.A, docs.B, docs.C, docs.D].some(s => real1.exported.includes(s) || real1.kept.includes(s))]), '[true,true,true,false]');
+    const real2 = await exportReal({ db, blobs, extract, dir, baseline, log: () => {} });
+    check('...run again, the one already exported is left as it is',
+      JSON.stringify([real2.exported.includes(live), real2.kept.includes(live)]), '[false,true]');
   } finally {
     fs.rmSync(TMP, { recursive: true, force: true });
   }

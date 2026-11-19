@@ -4,6 +4,10 @@
  *
  *   node scripts/export-candidate.js <sha>                 files named candidate-<first 8>
  *   node scripts/export-candidate.js <sha> LAB-FORM-NNN    files named that
+ *   node scripts/export-candidate.js --real                every real scan - each document
+ *                                                          the seed did not store - into
+ *                                                          test/fixtures/candidates/, for
+ *                                                          the hand check (since 2026-11-19)
  *
  * <sha> is a document's fingerprint, or its first 7 or more characters, as
  * reparse.js and archive-health.js print them. Writes two files:
@@ -17,12 +21,12 @@
  * and prints the stored lab, strain and batch so it can be named LAB-FORM-NNN
  * (PARSER-HANDOFF s10). An existing file is never overwritten.
  *
- * WRITES FILES, NEVER COMMITS THEM. The repo is public, and whether fixture
- * PDFs belong in it is still open (PARSER-HANDOFF s9), so .gitignore keeps new
- * PDFs out of `git add`. The expected values are then recorded BY HAND from
- * the PDF (s10) - never copied from the parser's output, which is what the
- * fixture exists to check. Until they are, the gates count the new files and
- * fail.
+ * WRITES FILES, NEVER COMMITS THEM. Real reports join this public repo as
+ * fixtures, as the first 56 did (PARSER-HANDOFF s9, the owner's decision,
+ * 2026-11-19). The expected values are recorded BY HAND from the PDF (s10) -
+ * never copied from the parser's output, which is what the fixture exists to
+ * check. Until they are, the gates count a file in test/fixtures/pdf/ and
+ * fail; --real writes to test/fixtures/candidates/, which they do not count.
  *
  * Reads the archive only. Needs NOSE_DB_URL, NETLIFY_SITE_ID and
  * NETLIFY_AUTH_TOKEN. Prints no report text, no addresses, no secrets.
@@ -33,9 +37,11 @@ const path = require('path');
 const rerun = require('./lib/rerun');
 
 const { ROOT, LIB, SECRETS } = rerun;
-const USAGE = 'usage: node scripts/export-candidate.js <sha, or its first 7+ characters> [LAB-FORM-NNN]';
+const USAGE = 'usage: node scripts/export-candidate.js <sha, or its first 7+ characters> [LAB-FORM-NNN]\n' +
+              '       node scripts/export-candidate.js --real     every real scan, into test/fixtures/candidates/';
 const PDF_DIR = path.join(ROOT, 'test/fixtures/pdf');
 const TEXT_DIR = path.join(ROOT, 'test/fixtures/extracted');
+const CANDIDATES = path.join(ROOT, 'test/fixtures/candidates');
 const BASELINE = path.join(ROOT, 'test/fixtures/coa-baseline.json');
 const NAME = /^[A-Z][A-Z0-9]{1,5}-[A-Z]{3}-\d{3}$/;
 const FIXTURE_NAME = /^([A-Z][A-Z0-9]{1,5})-([A-Z]{3})-(\d{3})$/;
@@ -124,20 +130,53 @@ async function exportCandidate({ db, blobs, extract, prefix, name = null, pdfDir
   if (!name) {
     const used = out.lab ? namesInUse(baseline, out.lab) : [];
     log(`  1. Name it LAB-FORM-NNN (PARSER-HANDOFF s10).${used.length ? ` ${out.lab} so far: ${used.join('  ')}` : ''}`);
-    log(`       mv ${rel(pdfPath)} ${rel(path.join(pdfDir, 'LAB-FORM-NNN.pdf'))}`);
-    log(`       mv ${rel(textPath)} ${rel(path.join(textDir, 'LAB-FORM-NNN.txt'))}`);
+    log(`       mv ${rel(pdfPath)} ${rel(path.join(PDF_DIR, 'LAB-FORM-NNN.pdf'))}`);   // a named fixture lives in the fixture folders,
+    log(`       mv ${rel(textPath)} ${rel(path.join(TEXT_DIR, 'LAB-FORM-NNN.txt'))}`); // wherever the candidate was written
   } else {
     log(`  1. Named ${name}.`);
   }
   log('  2. Open the PDF and write its expected values into test/fixtures/coa-baseline.json BY HAND -');
   log('     never from the parser\'s output (PARSER-HANDOFF s10).');
-  log('  3. Until then the gates count the new files and fail. To undo: delete both files.');
-  log('  Nothing here commits. Do not commit the PDF while PARSER-HANDOFF s9 is open.');
+  log('  3. Until then the gates count a new file in test/fixtures/pdf/ and fail. To undo: delete both files.');
+  log('  Nothing here commits. Commit the PDF with its baseline entry (PARSER-HANDOFF s9: real reports are public fixtures).');
   return { pdfPath, textPath, sameText, documentId: row.id };
 }
 
+/* --real: every document the seed did not store - the real scans, from the
+   live site or a backfill - as candidate-<first 8> in test/fixtures/candidates/
+   (pdf/ and extracted/), for the hand check (PARSER-HANDOFF s10). Until
+   2026-11-19 they were exported one fingerprint at a time, and none ever was:
+   the review queue lists only refused or novel readings, so a real scan read
+   quietly, right or wrong, never came up. One already exported is left as it is;
+   one with no PDF is named and skipped. */
+const REAL_SQL = `
+  select d.sha256 from nose.documents d
+   where not exists (select 1 from nose.extractions x
+                       join nose.parses s on s.extraction_id = x.id
+                      where x.document_id = d.id and s.context = 'seed')
+   order by d.id`;
+async function exportReal({ db, blobs, extract, dir = CANDIDATES, baseline = {}, log = console.log }) {
+  const shas = (await db.query(REAL_SQL)).rows.map(r => r.sha256);
+  const exported = [], kept = [], skipped = [];
+  for (const sha256 of shas) {
+    try {
+      await exportCandidate({ db, blobs, extract, prefix: sha256, pdfDir: path.join(dir, 'pdf'), textDir: path.join(dir, 'extracted'),
+                              baseline, log });
+      exported.push(sha256);
+    } catch (e) {
+      if (!(e instanceof Refusal)) throw e;
+      if (/already exists/.test(e.message)) kept.push(sha256); else skipped.push([sha256, e.message]);
+    }
+  }
+  log(`\n${shas.length} real scan${shas.length === 1 ? '' : 's'}: ${exported.length} exported, ${kept.length} already there` +
+      `${skipped.length ? `, ${skipped.length} skipped` : ''}`);
+  for (const [s, why] of skipped) log(`  ${rerun.short(s)}  ${why}`);
+  return { real: shas.length, exported, kept, skipped };
+}
+
 async function main(argv = process.argv.slice(2)) {
-  if (argv.length < 1 || argv.length > 2 || argv.some(a => a.startsWith('-'))) {
+  const real = argv.length === 1 && argv[0] === '--real';
+  if (!real && (argv.length < 1 || argv.length > 2 || argv.some(a => a.startsWith('-')))) {
     console.error(USAGE);
     process.exit(2);
   }
@@ -156,7 +195,8 @@ async function main(argv = process.argv.slice(2)) {
     const blobs = rerun.openBlobs();
     db = rerun.openDb();
     await rerun.connectAsWriter(db);
-    await exportCandidate({ db, blobs, extract: extractCoaText, prefix: argv[0], name: argv[1] ?? null, baseline });
+    if (real) await exportReal({ db, blobs, extract: extractCoaText, baseline });
+    else await exportCandidate({ db, blobs, extract: extractCoaText, prefix: argv[0], name: argv[1] ?? null, baseline });
   } catch (e) {
     const known = e instanceof UsageError || e instanceof Refusal;
     console.error(known ? e.message : `export failed: ${rerun.explain(e)}`);
@@ -166,7 +206,7 @@ async function main(argv = process.argv.slice(2)) {
   }
 }
 
-module.exports = { exportCandidate, namesInUse, UsageError, Refusal, USAGE };
+module.exports = { exportCandidate, exportReal, namesInUse, UsageError, Refusal, USAGE };
 if (require.main === module) {
   main().catch(e => { console.error('export failed:', e && e.message); process.exit(1); });
 }

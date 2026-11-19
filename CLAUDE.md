@@ -92,4 +92,4 @@ Shared front-end modules, each with one home:
 
 ## Repository hygiene
 
-This repository is **public**. New fixture PDFs are gitignored (`test/fixtures/pdf/*.pdf`) until the §9 decision is made, and `git add -f` is the deliberate override. Never commit dispensary catalogs or reports (`b2b-out/`), shopper data, `.env` or `netlify/functions/lib/build-info.json`. Commit messages follow the form `<area>: <what changed - why>`.
+This repository is **public**. Real lab reports are committed as fixture PDFs, like the first 56 (§9, decided by the owner 2026-11-19). Never commit dispensary catalogs or reports (`b2b-out/`), shopper data, `.env` or `netlify/functions/lib/build-info.json`. Commit messages follow the form `<area>: <what changed - why>`.

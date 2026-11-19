@@ -289,7 +289,7 @@ a stale one fails the lint rather than misleading the next session.
 | `reparse.js --dry-run` | **run after every parser change, before trusting the gates**: which archived reports it reads differently; writes nothing. Without the flag it saves and records the run |
 | `reparse.js --reextract` | only after `extract-text.js` changes: extract every stored PDF again, keep new texts, then parse (`--dry-run` works too) |
 | `backfill-from-blobs.js` | a PDF with no database row (scanned while Supabase was paused or down) is extracted, parsed and saved as `backfill` |
-| `export-candidate.js <sha>` | an archived report's PDF and text into the fixture folders, to name and baseline by hand (§10); never commits |
+| `export-candidate.js <sha>` | an archived report's PDF and text into the fixture folders, to name and baseline by hand (§10); never commits. `--real`: every real scan (each document the seed did not store) into `test/fixtures/candidates/`, which the gates do not count |
 | `review-queue.js` | **what needs a look**: documents whose latest reading was refused or has `novelty` (§7), newest first, with reasons; reads only |
 | `drift.js "<strain>" [--lab X] [--client Y]` | one strain's usable batches - one per sample (§13) - in date order - total terpenes, top five as share of total - and the app's own score and band between consecutive batches; undated batches apart; reads only |
 | `lab-stats.js` | per lab: samples (and the documents they come from), accepted rate, median measured coverage, most common kind of warning; reads only |
@@ -617,12 +617,14 @@ not the parser's - it warns rather than refusing.
   parser can reach (§6). They are now guarded rather than exempt, so nothing is
   unsafe, but a future Method or ACS template might expose an adjacency worth
   matching on.
-- **All 56 source PDFs are tracked in the PUBLIC NOSE repo.** A deliberate decision
-  is still pending: accept it, rewrite history, or collect future COAs into a
-  private repo. The Codespace token is scoped to this repo only, so creating a
-  second repo needs a browser or a personal access token. Until it is made,
-  `.gitignore` keeps any NEW PDF in `test/fixtures/pdf/` out of `git add`
-  (tracked ones are unaffected); `git add -f` is the deliberate override.
+- **Decided 2026-11-19, the owner: real lab reports are public fixtures.**
+  The 56 source PDFs are tracked in this PUBLIC repo, and new ones join them
+  the same way. A private repo for new reports, and rewriting history to take
+  the 56 out, were the other choices. Weighed: a public fixture shows which jars
+  were scanned and republishes a lab's document. The rule in `.gitignore` that
+  kept new PDFs out of `git add` went that day. `export-candidate.js --real`
+  exports every real scan into `test/fixtures/candidates/` for the hand check
+  (13-records, "Real reports become public fixtures").
 - **The allowlist question.** `nose.js` holds a hardcoded `LAB_ALLOWLIST`. Most
   COAs arrive via retailer domains (The Flowery's S3), though `MCL-FLW-005` came
   from `coa.moderncanna.com` directly. Worth deciding whether to trust parsed
@@ -1887,6 +1889,7 @@ under the cap.
 - [/app's panels lose their boxes, 2026-11-19](docs/handoff/13-records.md#apps-panels-lose-their-boxes-2026-11-19)
 - [/app's last departures from DESIGN.md go, 2026-11-19](docs/handoff/13-records.md#apps-last-departures-from-designmd-go-2026-11-19)
 - [Every page gets the phone menu, 2026-11-19](docs/handoff/13-records.md#every-page-gets-the-phone-menu-2026-11-19)
+- [Real reports become public fixtures, and every real scan can be exported at once, 2026-11-19](docs/handoff/13-records.md#real-reports-become-public-fixtures-and-every-real-scan-can-be-exported-at-once-2026-11-19)
 
 ## 14. Dispensary integration
 

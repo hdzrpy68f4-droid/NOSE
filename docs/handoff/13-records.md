@@ -5950,3 +5950,36 @@ pictures of both, the owner chose the menu button everywhere.
 - **Rendered** at 430px: `/account/`, `/learn/` and `/aromas/citrus/`, closed
   and open, with no page errors.
 - **Not checked**: a real phone.
+
+### Real reports become public fixtures, and every real scan can be exported at once, 2026-11-19
+
+The owner chose to check the parser against the real scans. The archive held
+75 documents: 59 seeded fixtures and 16 real scans. No real scan had ever
+become a fixture; the last fixture was added on 2026-09-06.
+
+- **PARSER-HANDOFF §9, decided by the owner**: real lab reports join this
+  public repo as fixtures, as the first 56 did. A private repo for new
+  reports, and rewriting history to take the 56 out, were offered. Weighed: a
+  public fixture shows which jars were scanned and republishes a lab's
+  document. The `.gitignore` rule that kept new PDFs out of `git add` is gone,
+  and CLAUDE.md says so.
+- **`export-candidate.js --real`** exports every document the seed did not
+  store (`nose.parses.context` never `seed`: the live site's scans, and any
+  backfill) as `candidate-<first 8>`. Each gets a PDF and today's extracted
+  text, in `test/fixtures/candidates/`.
+  - The gates count only `test/fixtures/pdf/`, so a candidate waiting for its
+    hand check fails nothing.
+  - One already exported is left as it is; one with no PDF is named and
+    skipped.
+  - Until now each was exported by fingerprint, and none ever was. The review
+    queue lists only refused or novel readings, so a real scan read quietly,
+    right or wrong, never came up. Those are the "accepted but wrong" pile §10
+    says matters.
+  - The per-report hint now points a named fixture at `test/fixtures/pdf/`,
+    wherever the candidate was written.
+- **`rerun-test`**: a live-site scan beside the seeded ones; `--real` exports
+  only it, into the candidates folder, and a second run leaves it as it is.
+- **Next**: the export runs in the owner's Codespace, which holds the
+  archive's secrets, and the candidates come here on a branch. Each is
+  compared with its PDF, sorted (looks right, refused, accepted but wrong),
+  named `LAB-FORM-NNN`, and its expected values are written by hand (§10).
