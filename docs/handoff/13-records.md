@@ -5626,7 +5626,8 @@ included, to wait for their OK.
   `#46554A` are not DESIGN.md's; the labels above two headings ("Palate
   matcher", "Match result"), the boxed panels and three stat boxes, the vote
   emoji, and the result table's sideways scroll on a phone.
-- **Not checked**: the camera on a real phone before the deploy -
+- **Not checked before the deploy**: the camera on a real phone -
   Playwright's WebKit on Windows is not Safari, a camera needs HTTPS, and
-  there is no preview site - so the owner tries it on their iPhone after it;
-  real desktop Safari.
+  there is no preview site. After it (3b753d5, deployed 2026-11-19, CI's
+  live-check green) the owner tried their iPhone: the camera works, and
+  they scanned a new jar. Still not checked: real desktop Safari.

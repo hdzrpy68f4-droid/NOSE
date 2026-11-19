@@ -96,11 +96,6 @@ schema comment if wanted.
 - **The word buttons were watched in Chromium only**, at 1280 and 390 px:
   their wrapping, the tick and the status line. Safari and Firefox have not
   been looked at, nor a screen reader's reading of the note.
-- **`/app`'s camera has not been tried on a real phone since `css/shell`
-  went** (13-records, "/app leaves css/shell"). Every computed style matched
-  in Chromium, Firefox and Playwright's WebKit, the camera running on
-  Chromium's fake one; the owner tries their iPhone after the deploy: "Start
-  camera" fills the square, and a real COA's QR code reads.
 - **Kept as they were when `/app` left `css/shell`, for design work**: focus
   rings in `css/shell`'s green `#2F6144` on the card's two inputs and the
   saved jars' Remove button, 2.43:1 on the raised panel (a focus indicator
