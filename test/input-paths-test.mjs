@@ -451,8 +451,12 @@ const BEACON_RECORDER = () => {
 async function bodyOf(page, request) {
   const posted = request.postData();
   if (posted) return posted;
+  /* WebKit gives a beacon's request no body, so the page's copy is read:
+     oldest first, and taken off, so each POST reads its own. Until 2026-11-19
+     the newest copy was read, which was the vote before whenever this one's
+     copy was not yet kept (CI's WebKit, two votes on different jars). */
   for (let i = 0; i < 40; i++) {
-    const got = await page.evaluate(u => { const b = window.__beacons.filter(x => x[0].endsWith(u)); return b.length ? b[b.length - 1][1] : null; }, new URL(request.url()).pathname);
+    const got = await page.evaluate(u => { const i = window.__beacons.findIndex(x => x[0].endsWith(u)); return i < 0 ? null : window.__beacons.splice(i, 1)[0][1]; }, new URL(request.url()).pathname);
     if (got) return got;
     await new Promise(r => setTimeout(r, 25));
   }
