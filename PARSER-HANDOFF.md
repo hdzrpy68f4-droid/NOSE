@@ -1876,6 +1876,7 @@ under the cap.
 - [The guides' last numbers under a gate, and the app's dead hero rules gone, 2026-11-18](docs/handoff/13-records.md#the-guides-last-numbers-under-a-gate-and-the-apps-dead-hero-rules-gone-2026-11-18)
 - [family.css goes: the reading pages keep only what they use, 2026-11-18](docs/handoff/13-records.md#familycss-goes-the-reading-pages-keep-only-what-they-use-2026-11-18)
 - [The reading pages rebuilt: css/legacy and css/read go, 2026-11-18](docs/handoff/13-records.md#the-reading-pages-rebuilt-csslegacy-and-cssread-go-2026-11-18)
+- [The reading pages after the rebuild: underline, other browsers, keyboard, 2026-11-18](docs/handoff/13-records.md#the-reading-pages-after-the-rebuild-underline-other-browsers-keyboard-2026-11-18)
 
 ## 14. Dispensary integration
 

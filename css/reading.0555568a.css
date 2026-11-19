@@ -194,8 +194,10 @@
   .r-guide-row > p:not(.r-guide-meta){margin-top:12px}
   .r-cols{grid-template-columns:1fr}
   .r-cols > div + div{margin-top:16px}
-  .r-pager{grid-template-columns:1fr 1fr}
-  .r-pager a:not([rel]){grid-column:1 / -1;grid-row:2;justify-self:center}
+  /* one column in page order, so Tab moves down the links as they are seen */
+  .r-pager{grid-template-columns:1fr;gap:4px}
+  .r-pager a[rel="next"]{justify-content:flex-start;text-align:left}
+  .r-pager a:not([rel]){justify-self:start}
   .r-pager a{font-size:1.0625rem}
 }
 @media (max-width:700px){

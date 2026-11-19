@@ -5515,3 +5515,37 @@ the aroma pages and `/dispensaries/` were.
   nor keyboard focus or a screen reader's reading of the new structure.
 - **Noticed, not changed**: `/learn/` gives intensity-versus-character as
   "5 min read" and the guide itself says "6 min read".
+
+### The reading pages after the rebuild: underline, other browsers, keyboard, 2026-11-18
+
+Follow-ups to "The reading pages rebuilt" above, the same day.
+
+- **Guide titles on `/learn/` read as links** (4608bd3): their underline was
+  1px in the hairline colour and all but vanished on the dark field, so it is
+  2px in the secondary-text colour, turning ink on hover (the owner's call,
+  from a phone). Its first CI run timed out after 30 minutes inside
+  `npx playwright install` and was cancelled before any gate ran; the owner
+  re-ran it and it went live.
+- **Other browsers**: all eleven pages rendered at 390 and 1280px in
+  Playwright 1.64.1's Chromium, Firefox and WebKit, from their own HTML with
+  the age-gate script stubbed out. Same elements in all three, nothing wider
+  than the screen, no script errors; Firefox's key points, desk, tables and
+  COA sheet look as Chromium draws them, text wrapping a word earlier or later
+  here and there. Playwright's WebKit on Windows draws Fraunces at the wrong
+  weight (300 as heavy as 400) and ignores its optical size, so its headings
+  look near-black and wrap differently; the owner's iPhone Safari draws them
+  correctly (their screenshot of `/learn/` that day), so that is the test
+  browser, as CLAUDE.md's Windows notes warn.
+- **Keyboard**: a script tabbed through every page in Chromium and Firefox at
+  both widths. "Skip to content" is the first stop everywhere, every stop shows
+  a focus style and is on screen when reached. One fault: on phones the guide
+  pager moved "All guides" to a row below the previous and next links, so Tab
+  went down to it and back up. Under 900px the pager is now one column in page
+  order (previous, all guides, next), all left-aligned; the desktop pager is
+  unchanged and the markup untouched.
+- **Reading time**: `/learn/` now gives intensity-versus-character as
+  "6 min read", as the guide itself does (1,360 words; the owner's call). The
+  only word changed on these pages since the rebuild.
+- **Checked**: the tab script again after the pager change, both engines and
+  widths, no stop moving backwards; `bash build.sh`; `bash scripts/gates.sh`.
+  Not checked: real desktop Safari, a screen reader.

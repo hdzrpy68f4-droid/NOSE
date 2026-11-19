@@ -100,16 +100,11 @@ schema comment if wanted.
   Since 2026-11-18 no other page uses it: the eleven reading pages were
   rebuilt on `css/reading` (13-records, "The reading pages rebuilt"). The
   account pages, 404 and the B2B demo are on `css/page` and their own sheets.
-- **The rebuilt reading pages have not been seen in real desktop Safari**, nor
-  checked with the keyboard or a screen reader. On 2026-11-18 all eleven were
-  rendered at 390 and 1280px in Playwright 1.64.1's Chromium, Firefox and
-  WebKit, without the age-gate script: same elements in all three, nothing
-  wider than the screen, no script errors, Firefox's key points, desk, tables
-  and COA sheet as Chromium draws them. Playwright's WebKit on Windows draws
-  Fraunces at the wrong weight and ignores its optical size, so its headings
-  look near-black and wrap differently; the owner's iPhone Safari draws them
-  correctly (their screenshot of /learn/ that day), so that is the test
-  browser's fault, not the site's.
+- **The rebuilt reading pages have not been seen in real desktop Safari, nor
+  read by a screen reader.** Chromium, Firefox, Playwright's WebKit, the
+  owner's iPhone and a keyboard pass have been (13-records, "The reading pages
+  after the rebuild"). Playwright's WebKit on Windows draws Fraunces wrongly,
+  so it cannot stand in for Safari's look.
 - **The Codespace's Netlify token expires about 2027-02-12** (made
   2026-11-14, 90 days). `archive-health` and `reparse --reextract` then fail
   with a 401: make a new personal access token in Netlify (User settings,
