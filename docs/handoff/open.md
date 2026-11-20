@@ -45,10 +45,29 @@ and this note. Ask the owner before every push; a parser change has
   report), `KAY-AIO-007`, `KAY-CAR-005` (a pod, was a concentrate),
   `KAY-CAR-006` (June layout, 8 terpenes), `KAY-CAR-007` (12.7%),
   `KAY-LRS-009` (0.638%, a THCA rosin), `KAY-LRS-010` (12.6%, older layout).
-  Two parser changes, in §11. Not pushed: the dry run comes first.
-- **Next**: the crawl's report list into `sources-crawl.tsv`
-  (`tools/crawl-merge.js`), download it (`tools/dl-rate.sh`, one curl, at
-  most 50 a minute), `tools/inventory.js`, then batches 2 and 3 for the gaps.
+  Two parser changes, in §11. Commit `b642c8e`: `reparse.js --dry-run` in
+  the Codespace on the branch `flowery-fixtures` gave 75 documents, 75
+  unchanged, 0 changed, 0 failed; pushed to main at the owner's word on
+  2026-11-20. Still to do: check that CI, promote and live-check went green,
+  then the real `reparse.js` with the owner's OK (it should change nothing).
+- **Where the survey stopped (2026-11-20, a pause for the owner's usage).**
+  The product-page crawl was left running in Chrome, in the tab on
+  theflowery.co: its results are in that page's `window.__crawl` and, every 25
+  pages, in theflowery.co's `localStorage` key `__crawl_results` ({n, hash,
+  results[]}, index i = line i of `tools/crawl-slugs.txt`; `808e4786` is the
+  hash of that list). Pages 0-1349 were exported (`crawl-export/part1*.txt`,
+  decoded by `tools/crawl-decode.js`): 1,458 report files, 1,019 not in the
+  catalog. 566 of those were downloaded (1,005 PDFs in all) before the
+  download was stopped; resume with `tools/dl-rate.sh tools/dl-list-crawl.txt
+  <pdf dir> <log>`, which skips files already there. The older files include
+  about 210 Kaycha Davie reports (lab IDs `DA...`, 2023-2025), Modern Canna
+  reports named by older lab IDs (`J...`, `K...`), and 15 `coa-download.pdf`
+  from a source not yet seen. The inventory holds 470 rows so far; its
+  duplicate columns predate batch 1's fixtures, so recompute them.
+- **Next**: export pages 1350 onwards the same way (a compact list read with
+  the page-text tool; the JavaScript tool's output stops near 1,500
+  characters), finish the downloads, `tools/inventory.js`, then batches 2 and
+  3 for the gaps.
 - **Kaycha's J rows and rule 5.** §4 says a value below the limit of
   quantitation is 0. Since July 2026 Kaycha prints a figure with the qualifier
   J for rows between the two limits, and the parser reads it as a value; the
