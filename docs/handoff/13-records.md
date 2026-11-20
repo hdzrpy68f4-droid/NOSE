@@ -5711,7 +5711,9 @@ their new jar.
   header. Clean in Chromium, Firefox and, on Windows with
   `NOSE_ENGINES=webkit`, WebKit. The 390px render after Compare shows the
   result's top under the header.
-- **Not checked**: a real phone before the deploy.
+- **Not checked before the deploy**: a real phone. After it (9690117, CI run
+  115 green), the owner tried it on their iPhone: "These changes worked
+  great."
 
 ### On a phone, COA link goes to its panel, the link box stays above the keyboard, and the family table fits, 2026-11-19
 
@@ -5740,7 +5742,9 @@ family table under the result needed a sideways scroll.
   is focused. It also checks that the table is no wider than its box at 390
   and 320px. Clean in Chromium, Firefox and WebKit. Rendered at 430px: the
   panel under the header, and the table whole.
-- **Not checked**: a real iPhone, its keyboard above all.
+- **Not checked before the deploy**: a real iPhone, its keyboard above all.
+  After it (081cde9 with bf00ca8, CI run 116 green), the owner tried COA
+  link on their iPhone: "It works great."
 
 ### After Compare, the result offers "Add to my palate", 2026-11-19
 
@@ -5827,6 +5831,7 @@ The owner asked for items 1 to 5 of the list kept when `/app` left
     bordered in pine and spice, which DESIGN.md keeps for families, and the
     form fields on the account page and the dispensary demo still have rule
     borders.
+- **Deployed**: cfeb125, CI run 118 green (gates, promote, live-check).
 
 ### The labels above /app's headings go, and the result's three boxes become readouts, 2026-11-19
 
@@ -5857,6 +5862,7 @@ which stay.
 - **Checked**: colour-tokens, page-chrome and input-paths are clean. Before
   and after were rendered at 390px (the top of the page, and the result) and
   at 1280px (the readouts side by side).
+- **Deployed**: 2b7f9ca, CI run 119 green (gates, promote, live-check).
 
 ### /app's panels lose their boxes, 2026-11-19
 
@@ -5884,6 +5890,7 @@ of the build before it was pushed.
   the link box under the header, the table fitting). Before and after were
   rendered at 390px (the top, the result, the COA link panel with its message
   and the report card) and at 1280px (the top and the result).
+- **Deployed**: 4c23538, CI run 120 green (gates, promote, live-check).
 
 ### /app's last departures from DESIGN.md go, 2026-11-19
 
@@ -5915,6 +5922,7 @@ The owner said to continue with the rest of the list in open.md.
   at 390 and 320px). Rendered before and after at 390px: the top (four tabs on
   one row), the result's table, the COA link message and card, and the
   account page's fields. Also rendered at 1280px.
+- **Deployed**: 8bb8f67, CI run 121 green (gates, promote, live-check).
 
 ### Every page gets the phone menu, 2026-11-19
 
@@ -5950,6 +5958,7 @@ pictures of both, the owner chose the menu button everywhere.
 - **Rendered** at 430px: `/account/`, `/learn/` and `/aromas/citrus/`, closed
   and open, with no page errors.
 - **Not checked**: a real phone.
+- **Deployed**: d0908ab, CI run 122 green (gates, promote, live-check).
 
 ### Real reports become public fixtures, and every real scan can be exported at once, 2026-11-19
 

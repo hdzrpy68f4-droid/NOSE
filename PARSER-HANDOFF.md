@@ -700,6 +700,42 @@ the DOCUMENT says the product is, not what the dispensary called it: one file na
 3. **Accepted but wrong** — plausible coverage, values do not match the PDF. **This
    is the pile that matters.** Bring these, with the extracted `.txt`.
 
+### Adding a fixture: everything that names one
+
+Written on 2026-11-19, after the first 14 real scans needed all of it
+(13-records, "The first 14 real scans become fixtures"). One commit:
+
+1. **Export** in the Codespace, which holds the archive's secrets:
+   `node scripts/export-candidate.js --real`, or a fingerprint for one report.
+   Candidates land in `test/fixtures/candidates/`, which no gate counts. To
+   work on them elsewhere, push them on a branch of their own and never merge
+   it (`real-scans` the first time). Until open.md's item is closed, `--real`
+   exports the first 14 again: skip a candidate whose first 8 characters
+   match a fixture PDF's SHA-256.
+2. **Check each by hand** against its PDF: every terpene row, the printed
+   total, strain, batch, lab ID, product class, moisture and water activity.
+   Where a small digit is unclear, the mg column (the % times the unit's
+   weight) settles it. Sort into the three piles above.
+3. **Name it** `LAB-FORM-NNN`, put the PDF in `test/fixtures/pdf/`, and run
+   `node test/extract-dump.js`.
+4. **Type its baseline** into `test/fixtures/coa-baseline.json` from the PDF,
+   then compare it with what the parser reads.
+5. **A parser fix**, if one is needed: the fixtures already there must read
+   the same (the gate, parity, and `node test/mutation-test.js` on their
+   texts alone). Run `reparse.js --dry-run` in the Codespace before the push
+   and `reparse.js` after it.
+6. **The counts**: `scripts/gates.sh` (the coa gate and parity lines),
+   CLAUDE.md's two command comments, §2's block and `readBy` table, §5's
+   "Expect" line, §3's column-major note (`node test/columnmajor-audit.js`),
+   §7's harvest-date count, and the mutation figure in §2 and twice in §9
+   (run the harness again: `fixture-lint` checks the three agree, not that
+   they are true).
+7. **Three tests that pin each fixture**: `coa-dates-test` (its finish day,
+   and any harvest or report date, typed from the PDF), `archive-wiring-test`
+   (how many show all three signs of a lab report) and `b2b-store-test`
+   (accepted, and how many carry a finish day).
+8. `bash scripts/gates.sh` ends ALL GATES GREEN.
+
 ---
 
 ## 11. Session log — bugs found, so they are not reintroduced

@@ -31,7 +31,7 @@ Give terminal and Git instructions as beginner-friendly numbered steps with exac
 The project ran in a GitHub Codespace (Linux). Every script is bash and Node 24 (`.nvmrc`). It also runs on Windows: see "Windows" below.
 
 ```bash
-npm ci
+npm ci                               # again after any git pull that changes package-lock.json: a pull never updates node_modules
 node test/extract-dump.js            # regenerate test/fixtures/extracted/*.txt from the PDFs (gitignored; gates need it)
 npm install --no-save playwright@1.64.1 && npx playwright install --with-deps chromium webkit firefox   # for the 3 browser gates; redo after any npm ci
 bash scripts/gates.sh                # every gate; must end "ALL GATES GREEN" (npm test / npm run gates are the same)
