@@ -64,6 +64,13 @@ refused('two terpenes on flower', reasons([['Limonene', 0.612], ['beta-Myrcene',
   'only 2 terpenes were found, too few for this kind of product, so the panel was probably misread');
 refused('a total and its isomers that disagree', reasons([...BASE, ['Total Terpineol', 0.060]], '2.141'),
   'this report lists terpineol both as a total and as separate rows, and the two disagree, so NOSE cannot tell which to use');
+/* Kaycha's row shape - limits, %, mg per unit, then TESTED - with rows that add
+   up to neither printed total (since 2026-11-20; test/shifted-rows-test.js). */
+const twoUnits = (rows, total) => ['Some New Lab LLC', 'Certificate of Analysis', 'Type: Preroll', 'Terpenes', 'TESTED',
+  'TOTAL TERPENES', '0.00700', '0.0200', total.toFixed(2), (total * 10).toFixed(1), 'TESTED',
+  ...rows.flatMap(([name, v]) => [name.toUpperCase(), '0.00700', '0.0200', v.toFixed(3), (v * 10).toFixed(2), 'TESTED'])].join('\n');
+refused('two figures a row, adding up to neither total', P.parseCoa(twoUnits(BASE, 1.90)).rejectReasons,
+  'this report prints two figures for each terpene, in two units, and neither set adds up to its own printed total, so NOSE cannot tell which figures are the percentages');
 
 check('no sentence shown for those reports holds a word of the parser\'s own', seen.filter(s => INTERNAL.test(s)), []);
 check('...and each is one clause a person can read after "That report could not be read reliably."',

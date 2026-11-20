@@ -124,5 +124,37 @@ x = read(['Some New Lab LLC', 'Matrix: Flower', '24.1%', 'Total THC', `${TOTAL}%
 check('value-then-label tiles over a value-first table (Modern Canna\'s summary) read as before: the figure above the label',
   [x.state, x.r.totalTerpenes, x.r.readBy], ['correct', 2, 'backward']);
 
+/* --- 6. a total that counts only the quantified rows (2026-11-20) ------------ */
+/* Kaycha's template of late July 2026, as a real pre-roll prints it (KAY-PRR-002):
+   each row WEIGHT / VOLUME / DILUTION / LOD / LOQ / % / mg per unit / [J] /
+   TESTED, a figure for rows between the two limits (qualifier J), and TOTAL
+   TERPENES leaving those rows out. On a 1 g unit the mg column is ten times
+   the %. Until 2026-11-20 no column reconciled, the forward reading kept the
+   figure printed last before TESTED, and every value read ten times high. */
+const QUANT = [
+  ['BETA-CARYOPHYLLENE', 0.391, 'caryophyllene'], ['LINALOOL', 0.239, 'linalool'], ['LIMONENE', 0.197, 'limonene'],
+  ['ALPHA-HUMULENE', 0.129, 'humulene'], ['BETA-MYRCENE', 0.109, 'myrcene'], ['ALPHA-BISABOLOL', 0.087, 'bisabolol'],
+  ['ALPHA-TERPINEOL', 0.063, 'terpineol'], ['FENCHYL ALCOHOL', 0.060, 'fenchol'], ['BETA-PINENE', 0.030, 'pinene_b'],
+];   // 1.305, printed as 1.30
+const BELOW = [   // between the limits: LOQ 0.0200, Borneol 0.0400
+  ['BORNEOL', 0.021, null, '0.0400'], ['OCIMENE', 0.014, 'ocimene'], ['ALPHA-PINENE', 0.013, 'pinene_a'],
+  ['TRANS-NEROLIDOL', 0.012, 'nerolidol'], ['ALPHA-TERPINOLENE', 0.008, 'terpinolene'], ['CAMPHENE', 0.007, 'camphene'],
+];   // 0.075
+const UNITS = 'this report prints two figures for each terpene, in two units, and neither set adds up to its own printed total, so NOSE cannot tell which figures are the percentages';
+const kRow = ([n, v, , loq = '0.0200'], q) => [n, '1.000 g', '10 ml', '1 x', '0.00700', loq, f(v), (v * 10).toFixed(2), ...(q ? [q] : []), 'TESTED'];
+const kaycha = (total, rows, below) => ['Some New Lab LLC', 'Certificate of Analysis', 'Matrix: Usable Whole Flower Marijuana', 'Type: Preroll',
+  'Terpenes', 'TESTED', 'ANALYTES', 'WEIGHT VOLUME DILUTION LIMIT LOD', 'LOQ', 'RESULT(%) (MG/UNIT) QUALIFIER PASS/FAIL',
+  'TOTAL TERPENES', '1.000 g', '10 ml', '1 x', '0.00700', '0.0200', total.toFixed(2), (total * 10).toFixed(1), 'TESTED',
+  ...rows.flatMap(r => kRow(r)), ...below.flatMap(r => kRow(r, 'J')),
+  'CAMPHOR', '1.000 g', '10 ml', '1 x', '0.00700', '0.0200', '<0.00700', '<0.200', 'TESTED'];
+x = read(kaycha(1.30, QUANT, BELOW), [...QUANT, ...BELOW]);
+check('LOD / LOQ / % / mg before TESTED, the total counting only rows at or above their LOQ: read from the % column, the J rows as printed',
+  [x.state, x.r.readBy, x.r.totalTerpenes], ['correct', 'multicolumn', 1.3]);
+x = read(kaycha(1.38, QUANT, BELOW), [...QUANT, ...BELOW]);
+check('...and the September form, the total counting every row, reads as it did', [x.state, x.r.readBy, x.r.totalTerpenes], ['correct', 'multicolumn', 1.38]);
+x = read(kaycha(1.30, [...QUANT, ['GUAIOL', 0.060, null], ['CARYOPHYLLENE OXIDE', 0.050, null]], []));
+check('rows above every limit that add up to neither printed total: refused in a plain sentence, not read in mg per unit',
+  [x.state, x.r.rejectReasons], ['refused', [UNITS]]);
+
 if (failures) { console.log(`\nshifted-rows: ${failures} failure${failures === 1 ? '' : 's'}`); process.exit(1); }
 console.log('\nshifted-rows clean');

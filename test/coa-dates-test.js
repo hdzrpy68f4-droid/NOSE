@@ -131,18 +131,22 @@ check('every fixture carries harvestOn, reportOn and testedOn, even when null',
   names.filter(n => !('harvestOn' in outputs[n]) || !('reportOn' in outputs[n]) || !('testedOn' in outputs[n])), []);
 check('harvestOn and reportOn are each the ISO form of the printed date beside it',
   names.filter(n => outputs[n].harvestOn !== isoDate(outputs[n].harvestDate) || outputs[n].reportOn !== isoDate(outputs[n].reportDate)), []);
-check('the corpus: 27 harvest dates (3 ACS, 24 Kaycha) and two TerpLife report dates read - unchanged by testedOn',
+check('the corpus: 37 harvest dates (3 ACS, 34 Kaycha) and two TerpLife report dates read - unchanged by testedOn',
   names.filter(n => outputs[n].harvestOn || outputs[n].reportOn).map(n => [n, outputs[n].harvestOn, outputs[n].reportOn]),
   [['ACS-FLW-002', '2026-04-03', null], ['ACS-LRS-001', '2026-03-23', null], ['ACS-PRR-001', '2026-04-27', null],
    ['Grease_Monkey_cart', '2026-03-23', null], ['Grease_monkey_live_resin', '2026-03-23', null],
    ['GreenRoadsFullSpectrumCBDOil750mgLot24007', null, '2024-11-11'],
-   ['KAY-AIO-002', '2025-12-05', null], ['KAY-AIO-003', '2026-04-28', null], ['KAY-CAR-001', '2025-07-07', null],
-   ['KAY-CAR-002', '2025-11-18', null], ['KAY-CAR-003', '2026-05-27', null], ['KAY-FLW-001', '2026-01-27', null],
+   ['KAY-AIO-002', '2025-12-05', null], ['KAY-AIO-003', '2026-04-28', null],
+   ['KAY-AIO-005', '2026-08-20', null], ['KAY-AIO-006', '2026-08-06', null], ['KAY-AIO-007', '2026-07-07', null],
+   ['KAY-CAR-001', '2025-07-07', null], ['KAY-CAR-002', '2025-11-18', null], ['KAY-CAR-003', '2026-05-27', null],
+   ['KAY-CAR-005', '2026-07-15', null], ['KAY-CAR-006', '2026-06-02', null], ['KAY-CAR-007', '2026-09-17', null],
+   ['KAY-FLW-001', '2026-01-27', null],
    ['KAY-FLW-003', '2024-09-24', null], ['KAY-FLW-004', '2026-07-06', null], ['KAY-FLW-005', '2026-09-06', null],
    ['KAY-FLW-006', '2026-08-10', null], ['KAY-FLW-007', '2026-08-10', null], ['KAY-FLW-008', '2026-09-07', null],
    ['KAY-FLW-009', '2026-09-28', null], ['KAY-LRS-001', '2025-10-06', null], ['KAY-LRS-002', '2026-05-22', null],
    ['KAY-LRS-003', '2026-05-25', null], ['KAY-LRS-005', '2024-10-22', null], ['KAY-LRS-007', '2026-05-19', null],
-   ['KAY-LRS-008', '2026-03-23', null], ['KAY-PRR-001', '2026-01-14', null],
+   ['KAY-LRS-008', '2026-03-23', null], ['KAY-LRS-009', '2026-06-24', null], ['KAY-LRS-010', '2026-01-26', null],
+   ['KAY-PRR-001', '2026-01-14', null], ['KAY-PRR-002', '2026-07-16', null], ['KAY-PRR-003', '2026-08-27', null],
    ['Kush_Creek', '2026-05-24', null], ['TerpLife_GrpeBblGm_flower', null, '2025-11-17'], ['external-download', '2026-05-24', null]]);
 check('every printed harvest or report date in the corpus reads',
   names.filter(n => (outputs[n].harvestDate && !outputs[n].harvestOn) || (outputs[n].reportDate && !outputs[n].reportOn)), []);
@@ -151,7 +155,8 @@ check('KAY-CAR-001 prints "07/07/25": 2025-07-07',
 
 /* testedOn, fixture by fixture: the day each lab's own finish row prints, as
    test/date-probe.js showed it on 2026-10-05 and again on 2026-10-14, and
-   for the 14 real scans that joined on 2026-11-19, as their PDFs print it.
+   for the 14 real scans that joined on 2026-11-19 and the reports from The
+   Flowery's site that joined from 2026-11-20, as their PDFs print it.
    Kaycha and Modern Canna "Completed:", ACS "Completion Date:", ACT "Report
    Created:", Method its sign-off; TerpLife none, Green Scientific none. */
 const TESTED = {
@@ -162,13 +167,16 @@ const TESTED = {
   'Grease_Monkey_cart': '2026-06-22', 'Grease_monkey_flower': '2026-06-18', 'Grease_monkey_live_resin': '2026-07-13',
   'GreenRoadsFullSpectrumCBDOil750mgLot24007': null, 'Harmony-Muscle-Rub-COA-PHRO1': null,
   'KAY-AIO-001': '2026-04-06', 'KAY-AIO-002': '2025-12-12', 'KAY-AIO-003': '2026-06-28', 'KAY-AIO-004': '2026-05-21',
+  'KAY-AIO-005': '2026-09-15', 'KAY-AIO-006': '2026-09-11', 'KAY-AIO-007': '2026-07-30',
   'KAY-CAR-001': '2025-07-11', 'KAY-CAR-002': '2025-12-19', 'KAY-CAR-003': '2026-07-23', 'KAY-CAR-004': '2024-08-21',
+  'KAY-CAR-005': '2026-10-19', 'KAY-CAR-006': '2026-06-19', 'KAY-CAR-007': '2026-09-30',
   'KAY-FLW-001': '2026-02-03', 'KAY-FLW-002': '2024-06-15', 'KAY-FLW-003': '2024-10-19',
   'KAY-FLW-004': '2026-09-09', 'KAY-FLW-005': '2026-10-05', 'KAY-FLW-006': '2026-10-06', 'KAY-FLW-007': '2026-10-20',
   'KAY-FLW-008': '2026-11-02', 'KAY-FLW-009': '2026-11-08',
   'KAY-LRS-001': '2025-11-11', 'KAY-LRS-002': '2026-07-16', 'KAY-LRS-003': '2026-07-10', 'KAY-LRS-004': '2024-05-03',
   'KAY-LRS-005': '2025-02-17', 'KAY-LRS-006': '2026-04-10', 'KAY-LRS-007': '2026-09-12', 'KAY-LRS-008': '2026-09-12',
-  'KAY-PRR-001': '2026-01-23',
+  'KAY-LRS-009': '2026-08-11', 'KAY-LRS-010': '2026-07-16',
+  'KAY-PRR-001': '2026-01-23', 'KAY-PRR-002': '2026-07-30', 'KAY-PRR-003': '2026-09-08',
   'KF2025-046-PB-AU-COA': '2025-07-29', 'Kush_Creek': '2026-06-24', 'LAB-0425BSWS-20250731': '2025-07-31',
   'MCL-CAR-001': '2024-11-08', 'MCL-CAR-002': '2024-11-08', 'MCL-FLW-001': '2024-11-08', 'MCL-FLW-002': '2021-10-05',
   'MCL-FLW-003': '2025-08-28', 'MCL-FLW-004': '2026-07-17', 'MCL-FLW-005': '2026-07-23', 'MCL-FLW-006': '2026-11-05',
@@ -182,20 +190,20 @@ const TESTED = {
 };
 check('testedOn on every fixture: the day its lab\'s finish row prints',
   names.filter(n => outputs[n].testedOn !== TESTED[n]).map(n => [n, outputs[n].testedOn, TESTED[n]]), []);
-check('...and the list names every fixture, no more', [names.length, Object.keys(TESTED).length, names.every(n => n in TESTED)], [73, 73, true]);
+check('...and the list names every fixture, no more', [names.length, Object.keys(TESTED).length, names.every(n => n in TESTED)], [83, 83, true]);
 {
   const accepted = names.filter(n => outputs[n].usable);
   const dated = o => o.harvestOn || o.testedOn || o.reportOn;
-  check('dated accepted fixtures, by harvestOn, testedOn or reportOn: 28 of 70 become 69 of 70 - only Method\'s older layout is undated',
+  check('dated accepted fixtures, by harvestOn, testedOn or reportOn: 38 of 80 become 79 of 80 - only Method\'s older layout is undated',
     [accepted.length, accepted.filter(n => outputs[n].harvestOn || outputs[n].reportOn).length, accepted.filter(n => dated(outputs[n])).length,
-     accepted.filter(n => !dated(outputs[n]))], [70, 28, 69, ['Method_DulceDeUva_flower']]);
+     accepted.filter(n => !dated(outputs[n]))], [80, 38, 79, ['Method_DulceDeUva_flower']]);
   const perLab = {};
   for (const n of accepted) {
     const L = perLab[outputs[n].lab] || (perLab[outputs[n].lab] = [0, 0]);
     L[0]++; if (outputs[n].testedOn) L[1]++;
   }
-  check('...testedOn per lab: Kaycha 30/30, Modern Canna 15/15, ACS 8/8, ACT 3/3, Method 12/13, TerpLife 0/1',
-    perLab, { 'Modern Canna': [15, 15], 'ACS Laboratory': [8, 8], 'ACT Laboratories': [3, 3], 'Kaycha Labs': [30, 30],
+  check('...testedOn per lab: Kaycha 40/40, Modern Canna 15/15, ACS 8/8, ACT 3/3, Method 12/13, TerpLife 0/1',
+    perLab, { 'Modern Canna': [15, 15], 'ACS Laboratory': [8, 8], 'ACT Laboratories': [3, 3], 'Kaycha Labs': [40, 40],
               'Method Testing Labs': [13, 12], 'TerpLife Labs': [1, 0] });
 }
 

@@ -410,7 +410,14 @@ const CLASSES = [
   /* Form beats material, and the form word is often only an acronym: a jar
      printing "AIO" three times and "Type: Distillate" once is a cart full of
      distillate, not a concentrate, and was read as one until AIO was listed. */
-  [/all[- ]?in[- ]?one vape|\bAIO\b|\bvape\b|\bcart(ridge)?\b|disposable|Sample Matrix:\s*Pod|^Pod$/im, 'vape'],
+  /* A pen and a pod are vapes too. Kaycha names them only in the product line,
+     "PW DISTILLATE PEN - BLACK BOX - ..." and "710 POD - PERSY ROSIN ...",
+     over "Type: Distillate" and "Type: Rosin", so the material rule below
+     made concentrates of them (KAY-AIO-005, KAY-CAR-005; 2026-11-20). Whole
+     words only: the corpus and the 439 reports The Flowery listed that day
+     print pen or pod nowhere else, and Modern Canna's bare "Pod" matrix line
+     is the same word. */
+  [/all[- ]?in[- ]?one vape|\bAIO\b|\bvape\b|\bcart(ridge)?\b|disposable|\bpens?\b|\bpods?\b/im, 'vape'],
   /* One bucket for every concentrate form. Labs name the texture rather than
      the category - budder, badder, wax, shatter, resin, rosin, water hash - and
      they all behave the same for our purposes. "Full Extract Cannabis Oil"
@@ -599,6 +606,11 @@ function parseCoa(text){
   /* Set by the unit-ratio cross-check further down, which runs before the
      warnings array exists. Merged in with the other warnings at the end. */
   let columnCrossCheck = null;
+  /* Set by the column chooser when the total row prints two figures that
+     could each be a percentage and no column reconciles with either. The
+     forward reading would then be a guess between units. Refused further
+     down while that reading stands. */
+  let unitsUndecided = false;
   /* Set by the backward reader's decision when the table reads equally well
      with each figure before its name and after it, and nothing on the
      document says which. Refused further down. */
@@ -1096,11 +1108,41 @@ function parseCoa(text){
     for (let idx = 0; idx < width; idx++){
       const declared = totalCandidates[idx];
       if (!(declared > 0)) continue;
-      let sum = 0, filled = 0;
-      rows.forEach(x => { const v = x.c[idx]; if (v != null){ if (!shadowed(x.r)) sum += v; filled++; } });
+      let sum = 0, filled = 0, quantified = 0;
+      rows.forEach(x => {
+        const v = x.c[idx];
+        if (v == null) return;
+        filled++;
+        if (shadowed(x.r)) return;
+        sum += v;
+        /* A row counts as quantified unless its figure is below the cell
+           printed just before it, which on these rows is its own limit of
+           quantitation (see the next comment). */
+        const limit = idx > 0 ? x.c[idx - 1] : null;
+        if (!(limit > 0 && v < limit)) quantified += v;
+      });
       if (filled < rows.length * 0.5) continue;
-      if (sum > declared * (1 + RECONCILE_TOLERANCE)) continue;
-      const share = sum / declared;
+      /* The lab's total may count only the rows it quantified. Kaycha's
+         template of late July 2026 prints each row as LOD | LOQ | % | mg per
+         unit, gives a figure for rows between the two limits (often with a
+         J qualifier), and leaves those rows out of TOTAL TERPENES; from
+         September the same template counts them. On a pre-roll of 1.30%
+         (2 x 0.5 g) the rows below the limit came to 0.126%, so every column
+         overshot its total by 10%, no column was chosen here, and the forward
+         reading stood with the figure printed last before TESTED: mg per unit,
+         every value and the total ten times high, accepted (PARSER-HANDOFF
+         s11, "A total that counts only the quantified rows"). So a column
+         also reconciles when its quantified rows alone come within the
+         tolerance of the total. Its values are then read for every row, as
+         printed, the way KAY-FLW-004 to -009 read their J rows. The cell
+         before the result is the limit only on this layout; on the others it
+         is a mass column (larger, so no row counts and this path closes
+         nothing) or a limit of detection (larger only where the row reads
+         0), and the first column has no cell before it. */
+      const sumCloses = sum <= declared * (1 + RECONCILE_TOLERANCE);
+      const quantifiedCloses = Math.abs(quantified - declared) <= declared * RECONCILE_TOLERANCE;
+      if (!sumCloses && !quantifiedCloses) continue;
+      const share = (sumCloses ? sum : quantified) / declared;
       if (share < MIN_ROW_SHARE) continue;
       /* Several columns can reconcile: a mg/g column is internally consistent
          with its own mg/g total just as the % column is with the % total. They
@@ -1110,6 +1152,27 @@ function parseCoa(text){
          percentage, which is the % column by construction. */
       if (declared > PLAUSIBLE_TOTAL_PERCENT) continue;
       if (!best || declared < best.declared) best = { idx, share, declared };
+    }
+    /* No column reconciles, yet the total row printed two figures that could
+       each be a percentage total, over two columns of measurements (a limit
+       column repeats itself and is not counted). The reading that stands is
+       then the forward one, whose verdict took a cell by POSITION: the last
+       before TESTED, or the first after it, and the order of Kaycha's two
+       result cells varies by jar (s11). That is a guess between the
+       percentage and a mass figure ten or more times larger, so it is
+       refused below rather than asserted. No accepted fixture is in this
+       state; a pre-roll was, before the quantified-rows rule above. */
+    if (!best){
+      let measuredTotals = 0;
+      for (let idx = 0; idx < width; idx++){
+        const declared = totalCandidates[idx];
+        if (!(declared > 0) || declared > PLAUSIBLE_TOTAL_PERCENT) continue;
+        const values = rows.map(x => x.c[idx]).filter(v => v > 0);
+        if (values.length >= MIN_DISTINCTNESS_SAMPLE
+            && new Set(values).size / values.length < MIN_COLUMN_DISTINCTNESS) continue;
+        measuredTotals++;
+      }
+      if (measuredTotals >= 2) unitsUndecided = true;
     }
     if (best && best.idx > 0){
       readBy = 'multicolumn';
@@ -1381,6 +1444,8 @@ function parseCoa(text){
   }
   if (orderUndecided && layout === 'row')
     rejectReasons.push('NOSE cannot tell whether this report prints each figure before or after the name of its terpene, so it cannot be sure which figure belongs to which');
+  if (unitsUndecided && readBy === 'forward')
+    rejectReasons.push('this report prints two figures for each terpene, in two units, and neither set adds up to its own printed total, so NOSE cannot tell which figures are the percentages');
   for (const key of summedDisagree)
     rejectReasons.push(`this report lists ${printedName(key)} both as a total and as separate rows, and the two disagree, so NOSE cannot tell which to use`);
 

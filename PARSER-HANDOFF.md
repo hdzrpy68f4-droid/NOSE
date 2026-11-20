@@ -36,15 +36,21 @@ is exactly what the parser sees.
 ## 2. Current state
 
 ```
-70 accepted / 3 rejected      (73 COA fixtures)
-70 match / 0 differ           (extraction parity, unpdf vs pdftotext)
+80 accepted / 3 rejected      (83 COA fixtures)
+80 match / 0 differ           (extraction parity, unpdf vs pdftotext)
 corpus clean                  (fixture lint)
-43 mutation failures          (mutation harness, 560 cases - see §9)
+50 mutation failures          (mutation harness, 640 cases - see §9)
 ```
 
 The first 14 real scans joined on 2026-11-19, each checked by hand against its
 PDF: eight Kaycha, four Method, two Modern Canna. The two Modern Canna reports
 were accepted but wrong, and fixed (§11, the lone `≤`).
+
+From 2026-11-20 reports come from The Flowery's own site as well, each
+checked by hand the same way (13-records). The first ten are Kaycha. Three
+were accepted but wrong, and fixed: a pre-roll read ten times high (§11, "A
+total that counts only the quantified rows"), and a pen and a pod read as
+concentrates (§11, "A pen and a pod").
 
 Seven labs, four inhalable product classes. Kaycha, Modern Canna, ACS, ACT,
 TerpLife, Method all working. Green Scientific has no working sample and is not
@@ -60,7 +66,7 @@ Live scanning works end to end: camera → QR → viewer-page resolution → fet
 unpdf → parse → confirmation card, including the warnings row, which has been
 seen rendering on a real scanned jar.
 
-All 73 source PDFs are tracked in git, so the corpus is reproducible from a clone:
+All 83 source PDFs are tracked in git, so the corpus is reproducible from a clone:
 `node test/extract-dump.js` regenerates `test/fixtures/extracted/` in about a
 minute. This was proven the hard way when a Codespace container failed and the
 whole workspace had to be rebuilt from the remote.
@@ -68,14 +74,14 @@ whole workspace had to be rebuilt from the remote.
 **Which reader serves which documents**, from `readBy`:
 
 ```
-forward      52      the plain name-then-value pass
-multicolumn  16      Kaycha's three-column rows
+forward      54      the plain name-then-value pass
+multicolumn  24      Kaycha's three-column rows
 backward      2      value-before-name layouts
-columnmajor   0      dead - declines on all 73, unreached on 70
+columnmajor   0      dead - declines on all 83, unreached on 80
 
-Counts are of ACCEPTED fixtures (52+16+2 = 70), measured 2026-11-19. Rejected
-documents also carry a `readBy`, so counting all 73 gives 55 forward. The table
-before that day said 43 forward of 53 accepted, while the 56 then accepted read
+Counts are of ACCEPTED fixtures (54+24+2 = 80), measured 2026-11-20. Rejected
+documents also carry a `readBy`, so counting all 83 gives 57 forward. The table
+before 2026-11-19 said 43 forward of 53 accepted, while the 56 then accepted read
 46 forward: it had drifted, so re-count rather than add.
 ```
 
@@ -95,7 +101,7 @@ Three accepted-but-wrong faults were found and fixed this session - see §11.
 No lint failures remain.
 
 1. **The column-major reader is dead.** `test/columnmajor-audit.js` shows it
-declines on all 73 fixtures and is never reached on 70 - it runs only when
+declines on all 83 fixtures and is never reached on 80 - it runs only when
 `rowPassLooksWrong`. Its own comment names ACS, ACT Florida and TerpLife, NOT
 Modern Canna, and all three now read `forward` and accept, so the row-wise
 reconciler superseded it. Keeping it costs nothing on the 70 passing fixtures.
@@ -185,7 +191,7 @@ node test/extraction-parity.js test/fixtures/pdf 2>&1 | grep -v "^Warning:" | ta
 node test/fixture-lint.js | tail -2
 ```
 
-Expect `70 accepted / 3 rejected`, `70 match / 0 differ`, and `corpus clean`.
+Expect `80 accepted / 3 rejected`, `80 match / 0 differ`, and `corpus clean`.
 Also run `node test/resolver-test.js` - expect `resolver clean`, and
 `bash build.sh` - expect `OK - ready to deploy`.
 
@@ -469,9 +475,9 @@ reportDate  client  parserVersion  harvestOn  reportOn  testedOn
   lacks, a day after today (UTC), or one before 2014-01-01. With those two
   bounds a two-digit year reads only from 14 to the current year, so 20YY is
   never a guess between centuries. On the corpus every printed harvest and
-  report date reads: 27 harvest dates (3 ACS, printed ISO already; 24
-  Kaycha, eight of them since 2026-11-19) and 2 TerpLife report dates - the
-  widening moved none of them.
+  report date reads: 37 harvest dates (3 ACS, printed ISO already; 34
+  Kaycha, eight of them since 2026-11-19 and ten since 2026-11-20) and 2
+  TerpLife report dates - the widening moved none of them.
   Widening the forms again needs a prompt that asks for it.
 - **`testedOn`** (since 2026-10-14) is the day the lab finished, as an ISO
   day or null: `lib/coa-dates.js` applied to ONE row per lab, chosen from what
@@ -598,27 +604,29 @@ fifth pattern.
 - **Every accepted fixture now reconciles** against its own printed total.
 `MCL-FLW-002` is the sole exception at 103.8%, and that is the lab's arithmetic,
 not the parser's - it warns rather than refusing.
-- **43 mutation failures** out of 560 (~8%), in two unrelated groups. The
-  FIRST fourteen were down from 19 - see the `gamma-`
+- **50 mutation failures** out of 640 (~8%), in two unrelated groups. The
+  FIRST group, fourteen until 2026-11-20, was down from 19 - see the `gamma-`
   fault in the log below, which accounted for five. A re-run on 2026-11-19
   found those fourteen are six `destructive/shuffleValues`, seven
   `cosmetic/pageNumbers` and one `destructive/glueNames` (ACS-FLW-001), not
   fourteen `shuffleValues` as this said; the same on the parser before that
-  day's change, so older drift (open.md). The `shuffleValues` ones are a KNOWN
+  day's change, so older drift (open.md). `KAY-LRS-010` made the
+  `pageNumbers` eight on 2026-11-20, so the group is fifteen. The `shuffleValues` ones are a KNOWN
   LIMIT rather than a backlog item. That mutation reverses every standalone numeric line in the
   document, so the multiset of values is conserved and every sum still
   reconciles by construction - no document-internal check can see it. Four of
   the fourteen push mass onto unmodelled compounds and are caught by
   `MIN_MODEL_COVERAGE`, but a warning leaves the fingerprint unchanged, so the
   harness still counts them. Do not spend a session trying to reach zero.
-- **29 of the 43 are `destructive/blankNonDetects`**: 21 on the first 56
-  fixtures, and all eight Kaycha reports that joined on 2026-11-19. Added later
+- **35 of the 50 are `destructive/blankNonDetects`**: 21 on the first 56
+  fixtures, all eight Kaycha reports that joined on 2026-11-19, and six of the
+  ten Kaycha reports from The Flowery's site that joined on 2026-11-20. Added later
   and a DIFFERENT mechanism from the fourteen above. It strips every ND / BQL /
   `<LOQ` / `<0.nnn` line from the terpene section, modelling a lab that leaves
   the cell empty. Unlike `shuffleValues` this one is fixable in principle —
   see the mutation's own comment for the mechanism and the proposed
   discriminator. Deliberately NOT fixed: no lab in the corpus omits the
-  marker, so no fixture justifies touching the verdict handler (§6). The 17
+  marker, so no fixture justifies touching the verdict handler (§6). The 21
   that reject under it, including all seven ACS files, are behaving correctly
   — a blank cell carries no information and failing closed is the honest
   answer.
@@ -921,6 +929,38 @@ fixture, because no fixture can currently reach it
   `normalize()` now glues a lone `<` or `≤` to the number on the next line.
   No earlier fixture has a lone sign, and the first 59 read the same.
   **A sign the extractor splits off is still a sign.**
+
+- **A total that counts only the quantified rows was read ten times high**
+  (found and fixed 2026-11-20, a pre-roll from The Flowery's site). Kaycha's
+  template of late July 2026 prints each terpene as LOD | LOQ | % | mg per
+  unit before TESTED, gives a figure for rows between the two limits (the
+  qualifier J), and leaves those rows out of TOTAL TERPENES; by 11 August the
+  same template counts them. On `KAY-PRR-002`, a 2 x 0.5 g pre-roll at 1.30%,
+  the rows below the limit came to 0.126%, so every column overshot its total
+  by 10% and the multicolumn reader chose none. The forward reading stood,
+  and its verdict rule takes the figure printed last before TESTED: mg per
+  unit. Every value and the total read ten times high (13%, β-caryophyllene
+  3.91 for 0.391), except the J rows, whose last cell is the qualifier and
+  which read as percentages - so the shape was wrong too. Accepted, with only
+  the warning that 13% is unusually high. A column now also reconciles when
+  its quantified rows alone come within the tolerance of the total, and its
+  values are read for every row as printed, the way `KAY-FLW-004` to `-009`
+  read their J rows. A total row offering two figures that could each be a
+  percentage, over two columns of measurements, with neither reconciling, is
+  refused rather than guessed (`shifted-rows-test`, `refusal-words-test`).
+  The first 70 read the same, and the mutation harness gives each of their
+  560 cases the verdict it gave before. **A verdict's position is safe only
+  while a column reconciles; when none does, refuse.**
+
+- **A pen and a pod were read as concentrates** (found and fixed 2026-11-20).
+  Kaycha names the form only in the product line - "PW DISTILLATE PEN - BLACK
+  BOX - Grapefruit Kush", "710 POD - PERSY ROSIN ..." - over "Type:
+  Distillate" and "Type: Rosin". The vape rule knew neither word, so the
+  material rule made concentrates of them (`KAY-AIO-005`, `KAY-CAR-005`; four
+  pens and two pods among the 439 reports The Flowery listed that day), with
+  a concentrate's ceiling. `pen` and `pod` are form words now, whole words
+  only; Modern Canna's bare `Pod` matrix line is the same word, and no
+  fixture changed class.
 
 ## 12. The fetcher — `netlify/functions/lib/fetch-report.js`, called by `coa.js`
 

@@ -2,6 +2,65 @@
 
 What is known and not yet done, moved here from PARSER-HANDOFF.md on 2026-11-14 (M7), unchanged: §13's and §14's Still open lists, then §14's Later. A closed item comes off this file in the same commit that closes it.
 
+## In progress: reports from The Flowery's site become fixtures (from 2026-11-20)
+
+The owner's brief: take the corpus from 73 to at least 100 with lab reports
+from theflowery.co, flower and extracts, chosen for lab x class x template
+(§10), each checked by hand against its PDF, and fix the parser wherever one
+reads wrong. About ten a batch; after each, the gates green, one local commit
+and this note. Ask the owner before every push; a parser change has
+`reparse.js --dry-run` run in the Codespace first, on a branch of its own.
+
+- **Where things are**, outside the repo: `C:\Users\chris\Documents\flowery-coas\`.
+  `pdf/<S3 id>.pdf` as downloaded (never edited), `text/` the repo
+  extractor's text, `inventory.tsv` (one row per PDF: URL, SHA-256, lab and
+  licence, the product as printed, the parser's class, strain, batch, lab ID,
+  dates, terpene panel, the parser's reading, nearest fixture by label
+  similarity, duplicates), `catalog-2026-11-20/` (the site's own product
+  list), `sources-*.tsv`, `download-log.tsv`, and `tools/` (the scripts that
+  built it all, and the hand readings `tools/hand/<name>.json`). Never commit
+  the inventory or a PDF not chosen.
+- **How the site serves reports.** Every page redirects to `/age-gate`, which
+  robots.txt keeps crawlers off; it was passed in Chrome with the owner's
+  permission. The terms say the site is for Florida residents who are
+  qualified patients; the owner confirmed and said to go on. Each product has
+  a `coa_link`: a PDF in Salve's public S3 bucket
+  (`salve-platform-production-pub-1.s3.amazonaws.com/<id>/...`). The current
+  catalog comes from the site's own `/api/platform/products?page_size=150`
+  (not gated, allowed by robots.txt); older products only from their pages
+  (the sitemap lists 5,407). Never enumerate S3 ids: the bucket is Salve's and
+  holds other dispensaries' files. One request at a time, at least a second
+  apart, a generic user agent.
+- **Survey.** The current catalog (2026-11-20): 501 products, 439 distinct
+  reports for flower, concentrates and vapes - Kaycha 403 (flower 87, pre-roll
+  35, cart 108, AIO 36, concentrate 137) and Modern Canna 36 (all flower, the
+  November "FLOWER JUNIORS 7G" template), every one with a terpene panel; 11
+  are fixtures already. No other lab: the corpus gaps (Modern Canna, Method,
+  ACS and TerpLife extracts and pre-rolls, a new lab) can only come from
+  older products. Their pages were being crawled in Chrome when batch 1 was
+  committed (3,743 pages after a slug filter, `tools/crawl-slugs.txt`).
+- **Batch 1, ten Kaycha** (one commit): `KAY-PRR-002` (late July, the total
+  counts only quantified rows - was read ten times high), `KAY-PRR-003`,
+  `KAY-AIO-005` (a pen, was a concentrate), `KAY-AIO-006` (an amended
+  report), `KAY-AIO-007`, `KAY-CAR-005` (a pod, was a concentrate),
+  `KAY-CAR-006` (June layout, 8 terpenes), `KAY-CAR-007` (12.7%),
+  `KAY-LRS-009` (0.638%, a THCA rosin), `KAY-LRS-010` (12.6%, older layout).
+  Two parser changes, in §11. Not pushed: the dry run comes first.
+- **Next**: the crawl's report list into `sources-crawl.tsv`
+  (`tools/crawl-merge.js`), download it (`tools/dl-rate.sh`, one curl, at
+  most 50 a minute), `tools/inventory.js`, then batches 2 and 3 for the gaps.
+- **Kaycha's J rows and rule 5.** §4 says a value below the limit of
+  quantitation is 0. Since July 2026 Kaycha prints a figure with the qualifier
+  J for rows between the two limits, and the parser reads it as a value; the
+  baselines typed on 2026-11-19 (`KAY-FLW-004` to `-009`) and on 2026-11-20
+  keep them, as printed. Reading them as 0 would change those fixtures and is
+  the owner's call.
+- **A late-July 2026 Kaycha report says its arithmetic does not close**
+  (`KAY-PRR-002` 110.1%, `KAY-AIO-007` 102.8%). Under the lab's rule for those
+  weeks - the total counts only the quantified rows - it does close. The
+  warning is literally true, the rows add up to more than the printed total;
+  a sentence for this case is its own change.
+
 ## §13, the archive and the app: still open
 
 - **A scan made while the database is down is neither capped nor checked
@@ -196,8 +255,9 @@ schema comment if wanted.
   `MCL-FLW-006`, 0.51 on `MCL-FLW-007`), but its detection limits (0.040)
   pass the same range check, so reading it takes a change of its own; until
   then null, honestly "not read".
-- **The mutation harness's `cosmetic/pageNumbers` silently changes seven
-  fixtures** (found 2026-11-19; §9 had them down as `shuffleValues`): a
+- **The mutation harness's `cosmetic/pageNumbers` silently changes eight
+  fixtures** (found 2026-11-19, seven then; `KAY-LRS-010` is the eighth,
+  2026-11-20; §9 had them down as `shuffleValues`): a
   page-number line moves one value - `KAY-LRS-006` limonene 1.22 to 0.02,
   `KAY-CAR-001` terpineol and alpha-pinene to 0, nerolidol on `KAY-FLW-001`
   and `Kush_Creek`, and three more. The same on the parser before that day.
