@@ -36,10 +36,10 @@ is exactly what the parser sees.
 ## 2. Current state
 
 ```
-80 accepted / 3 rejected      (83 COA fixtures)
-80 match / 0 differ           (extraction parity, unpdf vs pdftotext)
+84 accepted / 3 rejected      (87 COA fixtures)
+84 match / 0 differ           (extraction parity, unpdf vs pdftotext)
 corpus clean                  (fixture lint)
-50 mutation failures          (mutation harness, 640 cases - see §9)
+56 mutation failures          (mutation harness, 672 cases - see §9)
 ```
 
 The first 14 real scans joined on 2026-11-19, each checked by hand against its
@@ -50,7 +50,10 @@ From 2026-11-20 reports come from The Flowery's own site as well, each
 checked by hand the same way (13-records). The first ten are Kaycha. Three
 were accepted but wrong, and fixed: a pre-roll read ten times high (§11, "A
 total that counts only the quantified rows"), and a pen and a pod read as
-concentrates (§11, "A pen and a pod").
+concentrates (§11, "A pen and a pod"). The next four are two Modern Canna
+pre-rolls, the first in the corpus, a Modern Canna April juniors and a
+Kaycha sauce; the last two read as `unknown` until their form words were
+known (§11, "A sauce and flower juniors").
 
 Seven labs, four inhalable product classes. Kaycha, Modern Canna, ACS, ACT,
 TerpLife, Method all working. Green Scientific has no working sample and is not
@@ -66,7 +69,7 @@ Live scanning works end to end: camera → QR → viewer-page resolution → fet
 unpdf → parse → confirmation card, including the warnings row, which has been
 seen rendering on a real scanned jar.
 
-All 83 source PDFs are tracked in git, so the corpus is reproducible from a clone:
+All 87 source PDFs are tracked in git, so the corpus is reproducible from a clone:
 `node test/extract-dump.js` regenerates `test/fixtures/extracted/` in about a
 minute. This was proven the hard way when a Codespace container failed and the
 whole workspace had to be rebuilt from the remote.
@@ -74,13 +77,13 @@ whole workspace had to be rebuilt from the remote.
 **Which reader serves which documents**, from `readBy`:
 
 ```
-forward      54      the plain name-then-value pass
+forward      58      the plain name-then-value pass
 multicolumn  24      Kaycha's three-column rows
 backward      2      value-before-name layouts
-columnmajor   0      dead - declines on all 83, unreached on 80
+columnmajor   0      dead - declines on all 87, unreached on 84
 
-Counts are of ACCEPTED fixtures (54+24+2 = 80), measured 2026-11-20. Rejected
-documents also carry a `readBy`, so counting all 83 gives 57 forward. The table
+Counts are of ACCEPTED fixtures (58+24+2 = 84), measured 2026-11-20. Rejected
+documents also carry a `readBy`, so counting all 87 gives 61 forward. The table
 before 2026-11-19 said 43 forward of 53 accepted, while the 56 then accepted read
 46 forward: it had drifted, so re-count rather than add.
 ```
@@ -101,7 +104,7 @@ Three accepted-but-wrong faults were found and fixed this session - see §11.
 No lint failures remain.
 
 1. **The column-major reader is dead.** `test/columnmajor-audit.js` shows it
-declines on all 83 fixtures and is never reached on 80 - it runs only when
+declines on all 87 fixtures and is never reached on 84 - it runs only when
 `rowPassLooksWrong`. Its own comment names ACS, ACT Florida and TerpLife, NOT
 Modern Canna, and all three now read `forward` and accept, so the row-wise
 reconciler superseded it. Keeping it costs nothing on the 70 passing fixtures.
@@ -191,7 +194,7 @@ node test/extraction-parity.js test/fixtures/pdf 2>&1 | grep -v "^Warning:" | ta
 node test/fixture-lint.js | tail -2
 ```
 
-Expect `80 accepted / 3 rejected`, `80 match / 0 differ`, and `corpus clean`.
+Expect `84 accepted / 3 rejected`, `84 match / 0 differ`, and `corpus clean`.
 Also run `node test/resolver-test.js` - expect `resolver clean`, and
 `bash build.sh` - expect `OK - ready to deploy`.
 
@@ -262,7 +265,7 @@ someone to look.
 | `fetch-guard-test.js` | the fetcher's guards (§13, "Security audit items 3, 4, 6, 7, 14, 15 and 16"): 27 private host forms refused - IPv4-mapped and NAT64 IPv6, `[::]`, 100.64/10, 0/8, fec0::/10 among them - and 8 public ones passed; a body with no Content-Length past 12 MB refused, its stream cancelled; a small PDF in two pieces arrives whole |
 | `novelty-test.js` | the five `novelty` notes (§7) and the furniture the `unmapped` diagnostic skips; FAILS if an accepted fixture carries any novelty, and lists the refused ones that do, as information |
 | `match-test.js` | the matching maths has one home, `js/match-math.*.js`: the app takes it from there, nothing else holds a copy, and it returns every score in `test/fixtures/match-golden.json` to the last bit; every score is shown and sent through `shownScore()`, floored (§13, "The shown score"), and the worked examples on `learn/intensity-versus-character/` are the numbers the app shows; since 2026-10-14, a profile carrying `harvestOn`, `reportOn` and `totalTerpenes` normalises exactly as without them (§4) |
-| `match-props-test.js` | what must always hold of the maths (§13, "The maths has a property test"): over 20,000 seeded pairs on the 15 keys - every score between 0 and 1; one jar multiplied, the pair swapped, keys or a palate's jars reordered, each moving no score by more than 1e-12 and no shown number or band; a jar against itself shows 100; a below-limit row scores as an absent one; cis- and trans-nerolidol sum; cannabinoids, a date and a total change nothing; an empty jar is skipped; the band edges at 0.55, 0.75 and 0.90. It does not assert the alias table or `coerce()` on `0,45`, which the golden file pins until their own change Since 2026-11-18 also the methodology page's two figures: among the accepted flower fixtures, the share of pairs scoring "Close match" and at least "Related profile" stays within 5 points of the page's "one time in four" and "two times in three", and the page still says them (13-records, "Three small open items closed"). |
+| `match-props-test.js` | what must always hold of the maths (§13, "The maths has a property test"): over 20,000 seeded pairs on the 15 keys - every score between 0 and 1; one jar multiplied, the pair swapped, keys or a palate's jars reordered, each moving no score by more than 1e-12 and no shown number or band; a jar against itself shows 100; a below-limit row scores as an absent one; cis- and trans-nerolidol sum; cannabinoids, a date and a total change nothing; an empty jar is skipped; the band edges at 0.55, 0.75 and 0.90. It does not assert the alias table or `coerce()` on `0,45`, which the golden file pins until their own change Since 2026-11-18 also the methodology page's two figures: among the accepted flower fixtures, the share of pairs scoring "Close match" and at least "Related profile" stays within 5 points of the page's "three times in ten" ("one time in four" until 2026-11-20) and "two times in three", and the page still says them (13-records, "Three small open items closed"). |
 | `match-feedback-test.js` | the app's votes (§13, "Every vote stored"): `match-feedback.js` and `feedback-read.js` offline, `@netlify/blobs` stood in for - matchBand()'s four names each stored under its slug, every other band refused with `bad-band` and nothing stored, a score of 0 kept; the key layout, the store, the record's ten fields and anonymity unmoved; the summary, filters and CSV over the four, in matchBand()'s order, its caveat word for word; the bundle's own vote run on the default `/app` pair, 74 · Moderate, stored and counted; the question asks about smell and taste, no effect word in the block; the privacy page's sentence about votes; since 2026-10-14 the smell words (§13, "Smell words on a vote") - the bundle's `SMELL_NOTES` and the handler's `NOTES` one list, up to three distinct words stored in list order in a v 2 record, every other shape refused with `bad-notes` and nothing stored, `null` when none was sent, the CSV's notes column, no word on the list an effect word |
 | `accounts-test.js` | the account functions (§13, "A gate for the account system"): `auth-signup`, `auth-login`, `auth-me`, `auth-logout`, `auth-reset`, `account-delete`, `palate-sync` and `sessions-purge` offline over `netlify/lib/auth.js`, `@netlify/blobs` and Supabase (global `fetch`) stood in for - the age attestation and password length, the cookie word for word, the session record's five fields, the fixed bad-password message and the ninth try, a malformed cookie signed-out, logout here and everywhere, deletion's order and each failing step named, the palate's limits and one user never reading another's, one reset reply, the purge of expired sessions, no console line with an address or password |
 | `client-error-test.js` | the app's error reports (§13, "Start-up error reports reach the server"): `client-error.js` offline, `@netlify/blobs` stood in for by `test/lib/functions-harness.js` - `error`, `unhandledrejection` and `init:<step>` stored, every name the bundle passes to `step()` accepted, every other kind refused with `bad-kind` and nothing stored, an init record's fields the same as an error record's |
@@ -604,23 +607,24 @@ fifth pattern.
 - **Every accepted fixture now reconciles** against its own printed total.
 `MCL-FLW-002` is the sole exception at 103.8%, and that is the lab's arithmetic,
 not the parser's - it warns rather than refusing.
-- **50 mutation failures** out of 640 (~8%), in two unrelated groups. The
+- **56 mutation failures** out of 672 (~8%), in two unrelated groups. The
   FIRST group, fourteen until 2026-11-20, was down from 19 - see the `gamma-`
   fault in the log below, which accounted for five. A re-run on 2026-11-19
   found those fourteen are six `destructive/shuffleValues`, seven
   `cosmetic/pageNumbers` and one `destructive/glueNames` (ACS-FLW-001), not
   fourteen `shuffleValues` as this said; the same on the parser before that
-  day's change, so older drift (open.md). `KAY-LRS-010` made the
-  `pageNumbers` eight on 2026-11-20, so the group is fifteen. The `shuffleValues` ones are a KNOWN
+  day's change, so older drift (open.md). `KAY-LRS-010`, then
+  `KAY-LRS-011` and `MCL-FLW-008`, made the `pageNumbers` ten on 2026-11-20, so
+  the group is seventeen. The `shuffleValues` ones are a KNOWN
   LIMIT rather than a backlog item. That mutation reverses every standalone numeric line in the
   document, so the multiset of values is conserved and every sum still
   reconciles by construction - no document-internal check can see it. Four of
   the fourteen push mass onto unmodelled compounds and are caught by
   `MIN_MODEL_COVERAGE`, but a warning leaves the fingerprint unchanged, so the
   harness still counts them. Do not spend a session trying to reach zero.
-- **35 of the 50 are `destructive/blankNonDetects`**: 21 on the first 56
-  fixtures, all eight Kaycha reports that joined on 2026-11-19, and six of the
-  ten Kaycha reports from The Flowery's site that joined on 2026-11-20. Added later
+- **39 of the 56 are `destructive/blankNonDetects`**: 21 on the first 56
+  fixtures, all eight Kaycha reports that joined on 2026-11-19, and ten of the
+  fourteen reports from The Flowery's site that joined on 2026-11-20. Added later
   and a DIFFERENT mechanism from the fourteen above. It strips every ND / BQL /
   `<LOQ` / `<0.nnn` line from the terpene section, modelling a lab that leaves
   the cell empty. Unlike `shuffleValues` this one is fixable in principle —
@@ -961,6 +965,19 @@ fixture, because no fixture can currently reach it
   a concentrate's ceiling. `pen` and `pod` are form words now, whole words
   only; Modern Canna's bare `Pod` matrix line is the same word, and no
   fixture changed class.
+
+- **A sauce and flower juniors read as `unknown`** (found and fixed
+  2026-11-20). Kaycha's spring 2026 sauces print "Type: Sauce" under
+  "Classification: High THC", and the concentrate rule knew only "live
+  sauce"; Modern Canna's April 2026 juniors print "Product Name: FLOWER
+  JUNIORS" over "Sample Matrix: Juniors" with no "Testing Matrix" row. Nine
+  of the 1,005 reports then on disk read `unknown`, which for flower hides
+  moisture and water activity from the card and judges the total against the
+  highest ceiling. `sauce` is a concentrate word now and "flower juniors" a
+  flower one (`KAY-LRS-011`, `MCL-FLW-008`): every report printing either, in
+  the corpus and among the 1,005, is that kind, and no fixture changed class.
+  A Kaycha THCA report printing only "Type: Extract for Inhalation" stays
+  `unknown` - one document is not a rule (§6).
 
 ## 12. The fetcher — `netlify/functions/lib/fetch-report.js`, called by `coa.js`
 

@@ -175,12 +175,13 @@ const TESTED = {
   'KAY-FLW-008': '2026-11-02', 'KAY-FLW-009': '2026-11-08',
   'KAY-LRS-001': '2025-11-11', 'KAY-LRS-002': '2026-07-16', 'KAY-LRS-003': '2026-07-10', 'KAY-LRS-004': '2024-05-03',
   'KAY-LRS-005': '2025-02-17', 'KAY-LRS-006': '2026-04-10', 'KAY-LRS-007': '2026-09-12', 'KAY-LRS-008': '2026-09-12',
-  'KAY-LRS-009': '2026-08-11', 'KAY-LRS-010': '2026-07-16',
+  'KAY-LRS-009': '2026-08-11', 'KAY-LRS-010': '2026-07-16', 'KAY-LRS-011': '2026-04-08',
   'KAY-PRR-001': '2026-01-23', 'KAY-PRR-002': '2026-07-30', 'KAY-PRR-003': '2026-09-08',
   'KF2025-046-PB-AU-COA': '2025-07-29', 'Kush_Creek': '2026-06-24', 'LAB-0425BSWS-20250731': '2025-07-31',
   'MCL-CAR-001': '2024-11-08', 'MCL-CAR-002': '2024-11-08', 'MCL-FLW-001': '2024-11-08', 'MCL-FLW-002': '2021-10-05',
   'MCL-FLW-003': '2025-08-28', 'MCL-FLW-004': '2026-07-17', 'MCL-FLW-005': '2026-07-23', 'MCL-FLW-006': '2026-11-05',
-  'MCL-FLW-007': '2026-11-05', 'MCL-LRS-001': '2024-11-08',
+  'MCL-FLW-007': '2026-11-05', 'MCL-FLW-008': '2026-04-10', 'MCL-LRS-001': '2024-11-08',
+  'MCL-PRR-001': '2026-04-08', 'MCL-PRR-002': '2026-07-20',
   'MC_PeanutButterBreath_flower': '2026-06-30', 'MC_TwinSnakez_flower': '2026-07-17',
   'MTL-CAR-001': '2025-03-03', 'MTL-CAR-002': '2026-09-14', 'MTL-FLW-001': '2026-03-09', 'MTL-FLW-002': '2026-08-31',
   'MTL-FLW-003': '2026-08-21', 'MTL-FLW-004': '2026-08-04', 'MTL-FLW-005': '2026-09-04', 'MTL-FLW-006': '2026-09-28',
@@ -190,20 +191,20 @@ const TESTED = {
 };
 check('testedOn on every fixture: the day its lab\'s finish row prints',
   names.filter(n => outputs[n].testedOn !== TESTED[n]).map(n => [n, outputs[n].testedOn, TESTED[n]]), []);
-check('...and the list names every fixture, no more', [names.length, Object.keys(TESTED).length, names.every(n => n in TESTED)], [83, 83, true]);
+check('...and the list names every fixture, no more', [names.length, Object.keys(TESTED).length, names.every(n => n in TESTED)], [87, 87, true]);
 {
   const accepted = names.filter(n => outputs[n].usable);
   const dated = o => o.harvestOn || o.testedOn || o.reportOn;
-  check('dated accepted fixtures, by harvestOn, testedOn or reportOn: 38 of 80 become 79 of 80 - only Method\'s older layout is undated',
+  check('dated accepted fixtures, by harvestOn, testedOn or reportOn: 38 of 84 become 83 of 84 - only Method\'s older layout is undated',
     [accepted.length, accepted.filter(n => outputs[n].harvestOn || outputs[n].reportOn).length, accepted.filter(n => dated(outputs[n])).length,
-     accepted.filter(n => !dated(outputs[n]))], [80, 38, 79, ['Method_DulceDeUva_flower']]);
+     accepted.filter(n => !dated(outputs[n]))], [84, 38, 83, ['Method_DulceDeUva_flower']]);
   const perLab = {};
   for (const n of accepted) {
     const L = perLab[outputs[n].lab] || (perLab[outputs[n].lab] = [0, 0]);
     L[0]++; if (outputs[n].testedOn) L[1]++;
   }
-  check('...testedOn per lab: Kaycha 40/40, Modern Canna 15/15, ACS 8/8, ACT 3/3, Method 12/13, TerpLife 0/1',
-    perLab, { 'Modern Canna': [15, 15], 'ACS Laboratory': [8, 8], 'ACT Laboratories': [3, 3], 'Kaycha Labs': [40, 40],
+  check('...testedOn per lab: Kaycha 41/41, Modern Canna 18/18, ACS 8/8, ACT 3/3, Method 12/13, TerpLife 0/1',
+    perLab, { 'Modern Canna': [18, 18], 'ACS Laboratory': [8, 8], 'ACT Laboratories': [3, 3], 'Kaycha Labs': [41, 41],
               'Method Testing Labs': [13, 12], 'TerpLife Labs': [1, 0] });
 }
 

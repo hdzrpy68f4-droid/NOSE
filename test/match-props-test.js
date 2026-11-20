@@ -20,8 +20,10 @@
  * Since 2026-11-18 it also holds the methodology page's two figures (13-records,
  * "The methodology page's figures under a gate"): among the accepted flower
  * fixtures, how often two jars score "Close match", and at least "Related
- * profile". The page says "about one time in four" and "about two times in
- * three"; each stays true while the measured share is within 5 points of it.
+ * profile". The page says "about three times in ten" (one time in four until
+ * 2026-11-20, when three flower fixtures from The Flowery's site moved it to
+ * 30%) and "about two times in three"; each stays true while the measured
+ * share is within 5 points of it.
  * Needs test/fixtures/extracted (node test/extract-dump.js), as the gates do.
  *
  * Offline. Nothing is written.
@@ -162,7 +164,7 @@ property('coerce() reads a plain number, with an exponent or a trailing %, and a
     pairs++; if (band === 'Strong') close++; if (band === 'Strong' || band === 'Good') related++;
   }
   const page = fs.readFileSync(path.join(ROOT, 'methodology/index.html'), 'utf8');
-  const said = [['&ldquo;Close match&rdquo; about one time in four', close, 1 / 4],
+  const said = [['&ldquo;Close match&rdquo; about three times in ten', close, 3 / 10],
     ['at least &ldquo;Related profile&rdquo; about two times in three', related, 2 / 3]];
   for (const [words, count, share] of said) {
     const got = pairs ? count / pairs : NaN;

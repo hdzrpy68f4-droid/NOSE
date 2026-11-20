@@ -50,6 +50,15 @@ and this note. Ask the owner before every push; a parser change has
   unchanged, 0 changed, 0 failed; pushed to main at the owner's word on
   2026-11-20. Still to do: check that CI, promote and live-check went green,
   then the real `reparse.js` with the owner's OK (it should change nothing).
+- **Batch 2, four** (local commit): `MCL-PRR-001` and `-002`, the first
+  Modern Canna pre-rolls (April and July 2026); `MCL-FLW-008`, an April
+  juniors, and `KAY-LRS-011`, a Kaycha sauce, both `unknown` before the
+  class words in §11. Three flower fixtures moved the methodology page's
+  "Close match" share to 30% (250 of 820 pairs), outside `match-props-test`'s
+  five points, so the page now says "about three times in ten" (was "one time
+  in four"); its sitemap date moved with it. Batch 1 is live: CI, promote and
+  live-check green on `b642c8e`; the real `reparse.js` waits for the owner.
+  Batch 2 needs its own dry run before a push.
 - **Where the survey stopped (2026-11-20, a pause for the owner's usage).**
   The product-page crawl was left running in Chrome, in the tab on
   theflowery.co: its results are in that page's `window.__crawl` and, every 25
@@ -274,9 +283,9 @@ schema comment if wanted.
   `MCL-FLW-006`, 0.51 on `MCL-FLW-007`), but its detection limits (0.040)
   pass the same range check, so reading it takes a change of its own; until
   then null, honestly "not read".
-- **The mutation harness's `cosmetic/pageNumbers` silently changes eight
-  fixtures** (found 2026-11-19, seven then; `KAY-LRS-010` is the eighth,
-  2026-11-20; §9 had them down as `shuffleValues`): a
+- **The mutation harness's `cosmetic/pageNumbers` silently changes ten
+  fixtures** (found 2026-11-19, seven then; `KAY-LRS-010`, `KAY-LRS-011` and
+  `MCL-FLW-008` joined 2026-11-20; §9 had them down as `shuffleValues`): a
   page-number line moves one value - `KAY-LRS-006` limonene 1.22 to 0.02,
   `KAY-CAR-001` terpineol and alpha-pinene to 0, nerolidol on `KAY-FLW-001`
   and `Kush_Creek`, and three more. The same on the parser before that day.

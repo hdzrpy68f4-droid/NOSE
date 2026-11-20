@@ -422,12 +422,21 @@ const CLASSES = [
      the category - budder, badder, wax, shatter, resin, rosin, water hash - and
      they all behave the same for our purposes. "Full Extract Cannabis Oil"
      matched nothing at all, so a FECO jar fell through to 'unknown', which
-     carries NO plausibility ceiling and NO minimum-analyte check. */
-  [/live resin|live sauce|\brosin\b|shatter|badder|budder|\bwax\b|water hash|bubble hash|\bhash\b|\bcrumble\b|\bsugar\b|\bdiamonds?\b|full extract cannabis oil|\bFECO\b|distillate|Derivative Product Intended for Inhalation/i, 'concentrate'],
+     carries NO plausibility ceiling and NO minimum-analyte check. Sauce is a
+     texture too: Kaycha's spring 2026 sauces print only "Type: Sauce" under
+     "Classification: High THC", and "live sauce" alone left them 'unknown'
+     (KAY-LRS-011, 2026-11-20). Every report printing the word, in the corpus
+     and among the 1,005 from The Flowery's site, is a concentrate. */
+  [/live resin|\bsauce\b|\brosin\b|shatter|badder|budder|\bwax\b|water hash|bubble hash|\bhash\b|\bcrumble\b|\bsugar\b|\bdiamonds?\b|full extract cannabis oil|\bFECO\b|distillate|Derivative Product Intended for Inhalation/i, 'concentrate'],
   [/edible gummy|\bgummy\b|Ingestible, Beverage/i, 'edible'],
   [/\btincture\b/i, 'tincture'],
   [/topical|muscle rub|roll[- ]?on|Derivative Non-inhalable/i, 'topical'],
-  [/hand[- ]?roll|pre[- ]?roll|\bjoint\b|Usable Whole Flower|Whole Flower|Flower Inhalable|Matrix:\s*Flower\b|Flower\s*-?\s*Cured|Flower & Plants|Plant, Flower/i, 'flower']
+  /* Modern Canna's April 2026 juniors print "Product Name: FLOWER JUNIORS" over
+     "Sample Matrix: Juniors" and no "Testing Matrix" row, so they read
+     'unknown' (MCL-FLW-008, 2026-11-20); the November template adds "Testing
+     Matrix: Usable Whole Flower Marijuana". The words appear in no other kind
+     of report in the corpus or among the 1,005. */
+  [/hand[- ]?roll|pre[- ]?roll|\bjoint\b|Usable Whole Flower|Whole Flower|Flower Inhalable|Matrix:\s*Flower\b|Flower\s*-?\s*Cured|Flower & Plants|Plant, Flower|\bflower juniors\b/i, 'flower']
 ];
 
 function detectLab(text){
