@@ -277,7 +277,20 @@ function normalize(text){
     .replace(/\u03B1[ \t]*-?[ \t]*/g, 'ALPHA-')
     .replace(/\u03B2[ \t]*-?[ \t]*/g, 'BETA-')
     .replace(/\u03B3[ \t]*-?[ \t]*/g, 'GAMMA-')
-    .split('\n').map(l => l.trim()).filter(Boolean);
+    .split('\n').map(l => l.trim()).filter(Boolean)
+    /* Modern Canna's November 2026 flower template sets its below-limit sign
+       (less-than-or-equal, U+2264) as a text item of its own: the sign on one
+       line, "0.00492" on the next. Read apart, the bare number was a
+       measurement: 0.00492 on every row below the limit, a cis-nerolidol added
+       to trans, and a false "rows add up to 104%" warning on reports whose
+       arithmetic closes (MCL-FLW-006, -007). Glued back on, resultToNumber sees
+       one token starting with the sign and reads 0, as it does for Kaycha's
+       "<0.00700". */
+    .reduce((out, l) => {
+      if (/^\d/.test(l) && /^[<\u2264]$/.test(out[out.length - 1])) out[out.length - 1] += l;
+      else out.push(l);
+      return out;
+    }, []);
 }
 
 /* Spec rule 5: a printed "<0.0200" is below the limit of quantitation, which

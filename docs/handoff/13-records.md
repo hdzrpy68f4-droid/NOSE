@@ -5983,3 +5983,57 @@ become a fixture; the last fixture was added on 2026-09-06.
   archive's secrets, and the candidates come here on a branch. Each is
   compared with its PDF, sorted (looks right, refused, accepted but wrong),
   named `LAB-FORM-NNN`, and its expected values are written by hand (§10).
+
+### The first 14 real scans become fixtures, and a below-limit sign printed apart reads as 0, 2026-11-19
+
+Run from the owner's Codespace, through the browser: `git pull`, then
+`export-candidate.js --real`. Of 16 real scans, 14 were exported and 2 were
+skipped: documents #3 and #184 have no PDF in Blobs. The 14 came here on a
+branch, `real-scans`, which carries them only and is never merged.
+
+- **The hand check.** Each PDF was read page by page beside the parser's
+  reading: every terpene row, the printed total, strain, batch, lab ID,
+  product class, moisture and water activity.
+  - Looks right, 12: eight Kaycha (six flower, a live badder, a live sauce)
+    and four Method (three flower, a live rosin cartridge).
+  - Refused: none.
+  - Accepted but wrong, 2: both Modern Canna flower. Their template prints
+    the below-limit sign apart from its number, and the parser read the
+    number (§11, "A below-limit sign printed as its own text item"). On
+    E85, nerolidol 0.10692 where the report says 0.102; on Nirvana #6,
+    nerolidol 0.08542 for 0.0805 and ocimene 0.00492 for below the limit.
+    Both carried the warning that the report's arithmetic does not close
+    (104.6%, 104.0%); their rows add up to the printed total.
+- **Names**, in document order: `KAY-FLW-004` to `-009`, `KAY-LRS-007` and
+  `-008`, `MTL-FLW-005` to `-007`, `MTL-CAR-002`, `MCL-FLW-006` and `-007`.
+  Each baseline was typed from the PDF, and a script only added the figures
+  up. Two of the typed figures were a digit out, both in rows outside the
+  model (a fenchone, a geraniol), and the mg column settled both for the
+  parser.
+- **The fix**: `normalize()` glues a lone `<` or `≤` to the number on the
+  next line. No earlier fixture has a lone sign. The first 59 read the same
+  before and after: the gate, parity, and the mutation harness (262 absorbed,
+  151 rejected, 35 changed on both parsers).
+- **`reparse.js --dry-run`** in the Codespace, with the change applied as an
+  uncommitted patch: 75 documents, 73 unchanged, 2 values changed (the two
+  Modern Canna), 0 accepted to rejected, 0 rejected to accepted. The
+  Codespace's packages predate `undici` (in the lockfile since 2026-11-17),
+  so that run took it from a folder in `/tmp`. Its own `node_modules` were
+  left alone, because `npm ci` would remove its Playwright.
+- **Counts**: 70 accepted / 3 rejected of 73 fixtures, 70 match / 0 differ,
+  43 mutation failures of 560 cases. All 8 new failures are
+  `blankNonDetects` on the eight Kaycha reports. `gates.sh`, CLAUDE.md and §2
+  carry the new counts, and §2's `readBy` table was counted again, since it
+  had drifted.
+- **Three tests pin facts per fixture** and each took the 14:
+  - `coa-dates-test`: each report's finish day, and the Kaycha eight's
+    harvest day from their Harvest/Lot ID, typed from the PDFs.
+  - `archive-wiring-test`: 66 of 73 show all three signs of a lab report,
+    the 14 among them.
+  - `b2b-store-test`: 70 accepted stored as read, 68 of 73 with a finish day.
+- **Not done**: water activity on Modern Canna is still not read (printed
+  0.54 and 0.51; the parser leaves that row alone by design). §9's fourteen
+  other mutation failures are 6 `shuffleValues`, 7 `pageNumbers` and 1
+  `glueNames`, not 14 `shuffleValues`. Both are in open.md.
+- **Next**: after the push, `reparse.js` for real, so the two stored readings
+  change.

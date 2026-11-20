@@ -178,6 +178,25 @@ schema comment if wanted.
   template" in the dashboard, or a new template (invite, magic link, email
   change - none is used), puts Supabase's own link back, and the privacy
   page would then be wrong.
+- **Two real scans have no PDF** (documents #3 and #184, found 2026-11-19 by
+  `export-candidate.js --real`): kept before PDFs were, or their PDF write
+  failed. Neither can be checked by hand or become a fixture unless its jar
+  is scanned again.
+- **Modern Canna's water activity is never read** (13-records, "The first 14
+  real scans become fixtures"). `parse-coa.js` leaves the "Activity of Water
+  (Aw)" row alone on purpose: an older template printed the figure three
+  lines after the label, behind an SOP row, and matching the label read the
+  dilution, 1. The November 2026 template prints the figure first (0.54 on
+  `MCL-FLW-006`, 0.51 on `MCL-FLW-007`), but its detection limits (0.040)
+  pass the same range check, so reading it takes a change of its own; until
+  then null, honestly "not read".
+- **The mutation harness's `cosmetic/pageNumbers` silently changes seven
+  fixtures** (found 2026-11-19; §9 had them down as `shuffleValues`): a
+  page-number line moves one value - `KAY-LRS-006` limonene 1.22 to 0.02,
+  `KAY-CAR-001` terpineol and alpha-pinene to 0, nerolidol on `KAY-FLW-001`
+  and `Kush_Creek`, and three more. The same on the parser before that day.
+  The mutation copies a real fault: "1 of 6" was once read as a terpene
+  value.
 
 ---
 

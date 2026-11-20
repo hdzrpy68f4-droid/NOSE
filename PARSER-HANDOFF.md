@@ -36,11 +36,15 @@ is exactly what the parser sees.
 ## 2. Current state
 
 ```
-56 accepted / 3 rejected      (59 COA fixtures)
-56 match / 0 differ           (extraction parity, unpdf vs pdftotext)
+70 accepted / 3 rejected      (73 COA fixtures)
+70 match / 0 differ           (extraction parity, unpdf vs pdftotext)
 corpus clean                  (fixture lint)
-35 mutation failures          (mutation harness, 448 cases - see §9)
+43 mutation failures          (mutation harness, 560 cases - see §9)
 ```
+
+The first 14 real scans joined on 2026-11-19, each checked by hand against its
+PDF: eight Kaycha, four Method, two Modern Canna. The two Modern Canna reports
+were accepted but wrong, and fixed (§11, the lone `≤`).
 
 Seven labs, four inhalable product classes. Kaycha, Modern Canna, ACS, ACT,
 TerpLife, Method all working. Green Scientific has no working sample and is not
@@ -56,7 +60,7 @@ Live scanning works end to end: camera → QR → viewer-page resolution → fet
 unpdf → parse → confirmation card, including the warnings row, which has been
 seen rendering on a real scanned jar.
 
-All 56 source PDFs are tracked in git, so the corpus is reproducible from a clone:
+All 73 source PDFs are tracked in git, so the corpus is reproducible from a clone:
 `node test/extract-dump.js` regenerates `test/fixtures/extracted/` in about a
 minute. This was proven the hard way when a Codespace container failed and the
 whole workspace had to be rebuilt from the remote.
@@ -64,14 +68,15 @@ whole workspace had to be rebuilt from the remote.
 **Which reader serves which documents**, from `readBy`:
 
 ```
-forward      43      the plain name-then-value pass
-multicolumn   8      Kaycha's three-column rows
+forward      52      the plain name-then-value pass
+multicolumn  16      Kaycha's three-column rows
 backward      2      value-before-name layouts
-columnmajor   0      dead - declines on all 56, unreached on 53
+columnmajor   0      dead - declines on all 73, unreached on 70
 
-Counts are of ACCEPTED fixtures (43+8+2 = 53). Rejected documents also carry a
-`readBy`, so counting all 56 gives 46 forward - which is what an earlier version
-of this table did, without saying so.
+Counts are of ACCEPTED fixtures (52+16+2 = 70), measured 2026-11-19. Rejected
+documents also carry a `readBy`, so counting all 73 gives 55 forward. The table
+before that day said 43 forward of 53 accepted, while the 56 then accepted read
+46 forward: it had drifted, so re-count rather than add.
 ```
 
 ---
@@ -90,10 +95,10 @@ Three accepted-but-wrong faults were found and fixed this session - see §11.
 No lint failures remain.
 
 1. **The column-major reader is dead.** `test/columnmajor-audit.js` shows it
-declines on all 56 fixtures and is never reached on 53 - it runs only when
+declines on all 73 fixtures and is never reached on 70 - it runs only when
 `rowPassLooksWrong`. Its own comment names ACS, ACT Florida and TerpLife, NOT
 Modern Canna, and all three now read `forward` and accept, so the row-wise
-reconciler superseded it. Keeping it costs nothing on the 53 passing fixtures.
+reconciler superseded it. Keeping it costs nothing on the 70 passing fixtures.
 Do not spend time trying to make it fire.
 2. **`MCL-FLW-002` accepts** and reads `forward`. It warns: its full panel lists
 `Ocimene, Total 0.068`, which its own headline 1.769% omits, so the rows sum to
@@ -180,7 +185,7 @@ node test/extraction-parity.js test/fixtures/pdf 2>&1 | grep -v "^Warning:" | ta
 node test/fixture-lint.js | tail -2
 ```
 
-Expect `56 accepted / 3 rejected`, `56 match / 0 differ`, and `corpus clean`.
+Expect `70 accepted / 3 rejected`, `70 match / 0 differ`, and `corpus clean`.
 Also run `node test/resolver-test.js` - expect `resolver clean`, and
 `bash build.sh` - expect `OK - ready to deploy`.
 
@@ -464,8 +469,9 @@ reportDate  client  parserVersion  harvestOn  reportOn  testedOn
   lacks, a day after today (UTC), or one before 2014-01-01. With those two
   bounds a two-digit year reads only from 14 to the current year, so 20YY is
   never a guess between centuries. On the corpus every printed harvest and
-  report date reads: 19 harvest dates (3 ACS, printed ISO already; 16
-  Kaycha) and 2 TerpLife report dates - the widening moved none of them.
+  report date reads: 27 harvest dates (3 ACS, printed ISO already; 24
+  Kaycha, eight of them since 2026-11-19) and 2 TerpLife report dates - the
+  widening moved none of them.
   Widening the forms again needs a prompt that asks for it.
 - **`testedOn`** (since 2026-10-14) is the day the lab finished, as an ISO
   day or null: `lib/coa-dates.js` applied to ONE row per lab, chosen from what
@@ -592,18 +598,22 @@ fifth pattern.
 - **Every accepted fixture now reconciles** against its own printed total.
 `MCL-FLW-002` is the sole exception at 103.8%, and that is the lab's arithmetic,
 not the parser's - it warns rather than refusing.
-- **35 mutation failures** out of 448 (~8%), in two unrelated groups. The
+- **43 mutation failures** out of 560 (~8%), in two unrelated groups. The
   FIRST fourteen were down from 19 - see the `gamma-`
-  fault in the log below, which accounted for five. Those fourteen are all
-  `destructive/shuffleValues`, and they are a KNOWN LIMIT rather than a
-  backlog item. That mutation reverses every standalone numeric line in the
+  fault in the log below, which accounted for five. A re-run on 2026-11-19
+  found those fourteen are six `destructive/shuffleValues`, seven
+  `cosmetic/pageNumbers` and one `destructive/glueNames` (ACS-FLW-001), not
+  fourteen `shuffleValues` as this said; the same on the parser before that
+  day's change, so older drift (open.md). The `shuffleValues` ones are a KNOWN
+  LIMIT rather than a backlog item. That mutation reverses every standalone numeric line in the
   document, so the multiset of values is conserved and every sum still
   reconciles by construction - no document-internal check can see it. Four of
   the fourteen push mass onto unmodelled compounds and are caught by
   `MIN_MODEL_COVERAGE`, but a warning leaves the fingerprint unchanged, so the
   harness still counts them. Do not spend a session trying to reach zero.
-- **21 of the 35 are `destructive/blankNonDetects`**, added later and a
-  DIFFERENT mechanism from the fourteen above. It strips every ND / BQL /
+- **29 of the 43 are `destructive/blankNonDetects`**: 21 on the first 56
+  fixtures, and all eight Kaycha reports that joined on 2026-11-19. Added later
+  and a DIFFERENT mechanism from the fourteen above. It strips every ND / BQL /
   `<LOQ` / `<0.nnn` line from the terpene section, modelling a lab that leaves
   the cell empty. Unlike `shuffleValues` this one is fixable in principle —
   see the mutation's own comment for the mechanism and the proposed
@@ -861,6 +871,20 @@ fixture, because no fixture can currently reach it
   seven refusals were not, and a person could read "coverage 141.1% exceeds
   the lab total — parse fault, not a lab finding" or a list of internal keys.
   A new reason goes through `refusal-words-test`'s word list.
+
+- **A below-limit sign printed as its own text item read as a measurement**
+  (found and fixed 2026-11-19, the first hand check of real scans). Modern
+  Canna's November 2026 flower template sets `≤` apart from its number, so
+  the extracted text has `≤` on one line and `0.00492` on the next.
+  `resultToNumber` reads a sign only at the start of a token, so the bare
+  number became a result: 0.00492 on every row below the limit. On
+  `MCL-FLW-006` cis-nerolidol joined trans (0.10692 for 0.102); on
+  `MCL-FLW-007` also a phantom ocimene; on both, the warning that "the
+  report's own arithmetic does not close" (104.6%, 104.0%) on reports whose
+  rows add up to the printed total. Accepted, plausible, and blaming the lab.
+  `normalize()` now glues a lone `<` or `≤` to the number on the next line.
+  No earlier fixture has a lone sign, and the first 59 read the same.
+  **A sign the extractor splits off is still a sign.**
 
 ## 12. The fetcher — `netlify/functions/lib/fetch-report.js`, called by `coa.js`
 
@@ -1890,6 +1914,7 @@ under the cap.
 - [/app's last departures from DESIGN.md go, 2026-11-19](docs/handoff/13-records.md#apps-last-departures-from-designmd-go-2026-11-19)
 - [Every page gets the phone menu, 2026-11-19](docs/handoff/13-records.md#every-page-gets-the-phone-menu-2026-11-19)
 - [Real reports become public fixtures, and every real scan can be exported at once, 2026-11-19](docs/handoff/13-records.md#real-reports-become-public-fixtures-and-every-real-scan-can-be-exported-at-once-2026-11-19)
+- [The first 14 real scans become fixtures, and a below-limit sign printed apart reads as 0, 2026-11-19](docs/handoff/13-records.md#the-first-14-real-scans-become-fixtures-and-a-below-limit-sign-printed-apart-reads-as-0-2026-11-19)
 
 ## 14. Dispensary integration
 

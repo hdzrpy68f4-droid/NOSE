@@ -68,9 +68,9 @@ anchors() {
 # lockfile name the same one. Offline; reads only those three files.
 gate 'node version'   'node-version clean'       '^node-version clean$' \
   node test/node-version-test.js
-gate 'coa gate'       '56 accepted / 3 rejected' '^56 accepted / 3 rejected$' \
+gate 'coa gate'       '70 accepted / 3 rejected' '^70 accepted / 3 rejected$' \
   node test/coa-gate-test.js test/fixtures/extracted netlify/functions/lib/parse-coa.js
-gate 'parity'         '56 match / 0 differ'      '^56 match / 0 differ( |$)' \
+gate 'parity'         '70 match / 0 differ'      '^70 match / 0 differ( |$)' \
   node test/extraction-parity.js test/fixtures/pdf
 gate 'fixture lint'   'corpus clean'             '^corpus clean$' \
   node test/fixture-lint.js
