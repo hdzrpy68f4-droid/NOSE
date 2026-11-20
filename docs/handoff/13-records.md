@@ -6035,5 +6035,9 @@ branch, `real-scans`, which carries them only and is never merged.
   0.54 and 0.51; the parser leaves that row alone by design). §9's fourteen
   other mutation failures are 6 `shuffleValues`, 7 `pageNumbers` and 1
   `glueNames`, not 14 `shuffleValues`. Both are in open.md.
-- **Next**: after the push, `reparse.js` for real, so the two stored readings
-  change.
+- **After the push** (gates, promote and live-check green; `live` at
+  `8989f8c`), the Codespace's packages were brought up to date at the owner's
+  word (`npm ci`, then CLAUDE.md's Playwright line), and `reparse.js` ran for
+  real: run #25, parser `8989f8c`, 2026-11-20 (UTC). 75 documents: 73
+  unchanged, 2 values changed (E85 and Nirvana #6, as the dry run said), 0
+  accepted to rejected, 0 rejected to accepted, 0 failed.

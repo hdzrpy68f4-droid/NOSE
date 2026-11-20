@@ -182,6 +182,12 @@ schema comment if wanted.
   `export-candidate.js --real`): kept before PDFs were, or their PDF write
   failed. Neither can be checked by hand or become a fixture unless its jar
   is scanned again.
+- **`export-candidate.js --real` would export the first 14 again.** It skips
+  a scan only when its `candidate-<first 8>` files exist, and those 14 now
+  live in `test/fixtures/pdf/` under their fixture names. Each fixture PDF is
+  byte for byte its archived document (same SHA-256), so skipping a document
+  whose fingerprint matches a fixture PDF would end it. Until then, ignore a
+  candidate whose first 8 match a fixture's SHA-256.
 - **Modern Canna's water activity is never read** (13-records, "The first 14
   real scans become fixtures"). `parse-coa.js` leaves the "Activity of Water
   (Aw)" row alone on purpose: an older template printed the figure three
