@@ -6299,6 +6299,12 @@ activity that reads exactly at its limit, to print it.
   `waterActivity`), each still accepted on the same route with no terpene
   moved. Bloobry and every other lab: unchanged. A real `reparse.js` would
   write those three corrections to the archive; it was not run.
+- **Live.** On `main` as `f7ccd05` at the owner's word, the risk of the water
+  activity rule told first; CI, promote and live-check green, `live` at that
+  commit. Scanned on nose-app.com afterwards: Happily Ever After read water
+  activity 0.65 and `testedOn` 2026-10-13 (moisture 8.6 as before), Georgia
+  Runtz `testedOn` 2026-11-17, still a flower. The branch
+  `water-activity-at-limit` was deleted, merged.
 - **Counts**: 102 accepted / 3 rejected of 105, 102 match; `coa-dates-test`
   (Method's testedOn 17 of 17, every accepted fixture dated) and
   `b2b-store-test` (100 of 105 carry a finish day) moved. The branches

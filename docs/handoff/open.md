@@ -59,7 +59,8 @@ faults". The PDFs are in `coa-crawl-out\` (git-ignored); only `01`, `08` and
   total this report prints". It fails closed; only the wording is off.
 - **TerpLife's moisture** is still unread (§9): `TLL-FLW-001` prints 13.1 and
   reads null.
-- **A water activity at its action level now prints; one shape is a risk.** A
+- **A water activity at its action level now prints (live since 2026-11-24,
+  `f7ccd05`); one shape is a risk.** A
   table that printed its limit twice and no result would read as the limit: the
   reader wants the same level (0.65 or 0.85) exactly twice, only known limit
   cells beside it and a Pass, and no report on disk prints that shape. Moisture
