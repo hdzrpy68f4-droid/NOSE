@@ -198,5 +198,28 @@ check('"CANNABIS FLOWER" in a product line, no matrix text: a flower, not unknow
 check('...but a vape or a concentrate that says it is still that form',
   [classOf(['FT - CANNABIS FLOWER - VAPE CART - 1G']), classOf(['FT - CANNABIS FLOWER - LIVE ROSIN - 1G'])], ['vape', 'concentrate']);
 
+/* --- 9. a water activity at its action level (2026-11-24) -----------------
+ * Method's "Water Activity | Pass | 0.65 | 0.65" (MTL-FLW-009) prints the
+ * limit and a result of exactly the same number, and freshValue threw both
+ * away as limits. The result is read when the same action level stands twice,
+ * nothing else but known limit cells beside it, and a Pass; each condition is
+ * one case here that fails without it. */
+const AWHEAD = ['Some New Lab LLC', 'Certificate of Analysis', 'Matrix: Flower', 'TERPENES SUMMARY', 'Analyte', 'Result', 'Result'];
+const awOf = row => read([...AWHEAD, ...cells(DESC, URATE), `Total Terpenes: ${TOTAL}%`, 'Limit', '(aw)', 'Result', '(aw)', 'Water Activity', ...row, 'Batch Reviewed By:']).r.waterActivity;
+check('the limit 0.65 and a result of 0.65 under a Pass: read as 0.65; 0.85 the same',
+  [awOf(['Pass', '0.65', '0.65']), awOf(['Pass', '0.85', '0.85'])], [0.65, 0.85]);
+check('...a limit and a different result: the result, as before',
+  [awOf(['Pass', '0.65', '0.58']), awOf(['Pass', '0.85', '0.52'])], [0.58, 0.52]);
+check('...the limit once, with no result: still not read',
+  [awOf(['Pass', '0.65'])], [null]);
+check('...the same figure three times: a row this does not know, not read',
+  [awOf(['Pass', '0.65', '0.65', '0.65'])], [null]);
+check('...no Pass beside two equal figures: not read',
+  [awOf(['0.65', '0.65'])], [null]);
+check('...a different figure beside the pair: that one is the result',
+  [awOf(['Pass', '0.65', '0.65', '0.52'])], [0.52]);
+check('...two different figures beside the pair: which is the result is not known, not read',
+  [awOf(['Pass', '0.65', '0.65', '0.52', '0.58'])], [null]);
+
 if (failures) { console.log(`\nshifted-rows: ${failures} failure${failures === 1 ? '' : 's'}`); process.exit(1); }
 console.log('\nshifted-rows clean');

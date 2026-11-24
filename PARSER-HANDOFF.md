@@ -515,15 +515,16 @@ reportDate  client  parserVersion  harvestOn  reportOn  testedOn
   There is no printed twin: `finishedOn()` reads the row and keeps only the
   day. Kaycha and Modern Canna `Completed:`, ACS `Completion Date:`, ACT
   `Report Created:` (also when the label wraps after "Report"), Method its
-  sign-off - the line after "<name> - Lab Director" - and no row for
+  sign-off - the line after "<name> - Lab Director", or, since 2026-11-24, the
+  date drawn before a bare "Lab Director" line (the autumn 2026 layout) - and no row for
   TerpLife (its "Date Reported:" is `reportOn`), Green Scientific or an
   unrecognised lab. Colon labels only, so Modern Canna's bare "Completed"
   status tile is never read. The first row with a value is read; a later row
   never stands in for an unreadable one. Computed after the reading and read
   by nothing in the parser: with `coa-dates.js` unavailable it is null and
-  every other field identical. On the corpus 54 of 59 fixtures carry one:
-  every accepted fixture but Method_DulceDeUva and TerpLife's, and none of
-  the three refusals. **B2B keeps it too**, since 2026-10-14: a store's
+  every other field identical. On the corpus 100 of 105 fixtures carry one
+  (since 2026-11-24): every accepted fixture but the two TerpLife reports (their
+  finish day is `reportOn`), and none of the three refusals. **B2B keeps it too**, since 2026-10-14: a store's
   reading holds it as `b2b.batch_reads.tested_on`, whatever the verdict, and
   the feed carries it as `tested_on`, after `harvest_on`, from the current
   reading only (§14, "The day the lab finished, in a store's readings").
@@ -1103,6 +1104,30 @@ fixture, because no fixture can currently reach it
   rejected and 102 match; the mutation figure is 63 of 816 (`MTL-FLW-010`
   under `glueNames`, the third); the methodology page's "Close match" share is
   29% of 1,128 flower pairs, inside match-props-test's window.
+- **A water activity at its action level, and Method's autumn sign-off**
+  (found and fixed 2026-11-24). `MTL-FLW-009` prints `Water Activity | Pass |
+  0.65 | 0.65`: the limit, and a result of exactly the same number. `freshValue`
+  throws away every cell equal to 0.65, 0.85, 0.10 or 0.01 (the limit and LOD
+  cells a table prints), so the result went with them, and a later filter at the
+  end of the freshness block would have thrown away what the declared-table
+  reader kept. The declared-table reader now returns the action level when it
+  stands exactly twice in the row, nothing else but known limit cells beside it,
+  and a Pass; the final filter skips only that reader's value (the fallback
+  reader's can still be a limit cell). Seven made-up cases in `shifted-rows-test`,
+  section 9, each fails with its condition removed. The card already shows 0.65
+  as inside ASTM D8197's 0.55 to 0.65 range. Across 1,911 files the parser before
+  and after differ on one report, `MTL-FLW-009` (and its saved copy). Moisture at
+  its own limit (15) is not changed. Method's autumn 2026 layout draws the
+  sign-off date BEFORE its title ("Anthony Repay", "11/12/2026 17:18", "Lab
+  Director": one row on the page, the date at its right), so the old rule, which
+  reads the line after "name - Lab Director", found nothing. `signedBefore`
+  reads the date above an exact "Lab Director" line, for Method only:
+  `MTL-FLW-008`, `-009`, `-010` and `MTL-AIO-001` get their day. It also dates
+  `Method_DulceDeUva_flower`, deliberately left undated until now: its printed
+  completion date and its sign-off are the same moment, 10/21/2024 20:15, so the
+  fixture's `testedOn` moves from null to 2024-10-21, and is pinned. The
+  assistant director's block (a title over three lines) has no fixture and is
+  not read.
 
 ## 12. The fetcher — `netlify/functions/lib/fetch-report.js`, called by `coa.js`
 
@@ -2136,6 +2161,7 @@ under the cap.
 - [Reports from The Flowery's site become fixtures, from 73 to 100, and a new lab, 2026-11-23](docs/handoff/13-records.md#reports-from-the-flowerys-site-become-fixtures-from-73-to-100-and-a-new-lab-2026-11-23)
 - [Twelve refused St. Petersburg reports: three faults found, three become fixtures, 2026-11-24](docs/handoff/13-records.md#twelve-refused-st-petersburg-reports-three-faults-found-three-become-fixtures-2026-11-24)
 - [Georgia Runtz's class and Happily Ever After: two more fixtures, 2026-11-24](docs/handoff/13-records.md#georgia-runtzs-class-and-happily-ever-after-two-more-fixtures-2026-11-24)
+- [A water activity at its limit prints, and Method's autumn sign-off dates its reports, 2026-11-24](docs/handoff/13-records.md#a-water-activity-at-its-limit-prints-and-methods-autumn-sign-off-dates-its-reports-2026-11-24)
 
 ## 14. Dispensary integration
 

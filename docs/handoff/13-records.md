@@ -6256,3 +6256,41 @@ reparsed"); this is the second.
   `reparse.js` was not run: it would change no reading.
 - **Left**, in open.md: the water activity at its limit, now beside
   TerpLife's unread moisture; Method's four fixtures with no finish day.
+
+### A water activity at its limit prints, and Method's autumn sign-off dates its reports, 2026-11-24
+
+Asked after the live scan: what to do about the open decisions, and, for a water
+activity that reads exactly at its limit, to print it.
+
+- **Live scan** first, through the deployed `/api/coa` (one archived read each):
+  Georgia Runtz read as a flower (total 1.66, 10 terpenes, no warning or
+  novelty note, `freshnessApplies` true), Happily Ever After as the six-page
+  flower (2.77, moisture 8.6, 96.9%), Bloobry as TerpLife (total 2, 15
+  terpenes, water activity 0.58): each equal to its local reading.
+- **Water activity** (§11, "A water activity at its action level, and Method's
+  autumn sign-off"): the two figures of `Pass | 0.65 | 0.65` were both thrown
+  away as limits, and a second filter at the end of the freshness block would
+  have thrown a kept one away again - found when the first version changed
+  nothing on `MTL-FLW-009`. Before and after over 1,911 files: one report
+  changes. The risk, said to the owner: a table that prints its limit twice
+  and no result would read as the limit; the reader needs the same level
+  exactly twice, only limit cells besides, and a Pass, and no report on disk
+  prints that. `MTL-FLW-009`'s baseline moved from null to 0.65, typed from
+  its PDF (the limit in one column, the result 0.65 in the next).
+- **Method's finish day**, an item the owner handed over: four fixtures now
+  print the same sign-off, so a rule can be justified. Its change also dated
+  `Method_DulceDeUva_flower`, checked against its PDF (completion date and
+  sign-off both 10/21/2024 20:15). Left undated: the three-line assistant
+  director's block, no fixture.
+- **Left, and why.** Kaycha's J rows read as values against rule 5 (open.md):
+  zeroing them re-baselines about ten fixtures chosen on 2026-11-19, and the
+  Method side already follows rule 5 by accident; the owner's call. Kief:
+  one report, whose own matrix line says flower. A refusal sentence that says
+  more than it knows: made-up reports only. TerpLife's moisture: the table
+  declares no unit marker. Six-page Method reports read from the top ten:
+  by design.
+- **Counts**: 102 accepted / 3 rejected of 105, 102 match; `coa-dates-test`
+  (Method's testedOn 17 of 17, every accepted fixture dated) and
+  `b2b-store-test` (100 of 105 carry a finish day) moved. The branches
+  `st-petersburg-coas` and `method-flower-class` were deleted, locally and on
+  GitHub, merged and redundant.

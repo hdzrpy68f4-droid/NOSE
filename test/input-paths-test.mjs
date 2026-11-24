@@ -52,7 +52,8 @@
  *   - the row after Batch: "Harvested" and the harvest day with how long ago
  *     (KAY-FLW-001), else "Tested" and the day the lab finished (MTL-FLW-002,
  *     MCL-FLW-001), else "Report dated" (TerpLife_GrpeBblGm_flower), else no
- *     row (Method_DulceDeUva_flower); the note under it; every other row as
+ *     row (Method_DulceDeUva_flower without its sign-off line, which is the
+     only way left to a report with no date); the note under it; every other row as
  *     before; today, yesterday and the person's tomorrow, on a frozen clock in
  *     New York's time zone. Since 2026-10-14; "Tested" since the same day's
  *     "When the lab finished" (PARSER-HANDOFF s13)
@@ -144,7 +145,8 @@ const SHOTS = process.env.INPUT_PATHS_SHOTS || '';
    (https://playwright.dev/docs/emulation, read 2026-10-14). Five real
    reports: one with a harvest day and a finish day (the harvest day wins),
    two with only a finish day (Method's sign-off, Modern Canna's
-   "Completed:"), one with only a report day, one with none. Then a real reply
+   "Completed:"), one with only a report day, one with none (a Method
+   report's text with its sign-off line taken out). Then a real reply
    with one field set: a report day as well (the harvest day still wins on
    KAY-FLW-001, the finish day on MTL-FLW-002), and KAY-FLW-001 harvested
    today, yesterday, and on the UTC today, which is the person's tomorrow (the
@@ -161,7 +163,7 @@ const DATED = [
     row: ['Tested', 'Nov 8, 2024 · 705 days ago'], moisture: NO_NUMBER, water: NO_NUMBER },
   { name: 'TerpLife_GrpeBblGm_flower', fixture: 'TerpLife_GrpeBblGm_flower', harvestOn: null, testedOn: null, reportOn: '2025-11-17',
     row: ['Report dated', 'Nov 17, 2025 · 331 days ago'], moisture: NO_NUMBER, water: `0.49 — below ${RANGE}` },
-  { name: 'Method_DulceDeUva_flower, no date', fixture: 'Method_DulceDeUva_flower', harvestOn: null, testedOn: null, reportOn: null,
+  { name: 'Method_DulceDeUva_flower without its sign-off, no date', fixture: 'Method_DulceDeUva_flower:unsigned', harvestOn: null, testedOn: null, reportOn: null,
     row: null },
   { name: 'KAY-FLW-001 with a report day too', fixture: 'KAY-FLW-001', set: { reportOn: '2026-02-03' },
     row: ['Harvested', 'Jan 27, 2026 · 260 days ago'] },
@@ -175,7 +177,7 @@ const DATED = [
     row: ['Harvested', 'Oct 15, 2026'] }
 ];
 const FILES = [FIXTURES.plain, FIXTURES.warned, NOVEL_BASE, FIXTURES.refused,
-  ...new Set([...FRESHNESS, ...DATED].map(c => c.fixture))];
+  ...new Set([...FRESHNESS, ...DATED].map(c => c.fixture.split(':')[0]))];
 /* The card's one novelty sentence, as js/nose.*.js publishes it (s7). */
 const NOVELTY_LINE = 'NOSE hasn\'t seen this lab\'s layout before — check the top three against the report.';
 
@@ -265,6 +267,14 @@ const PDF = Buffer.concat([Buffer.from('%PDF-1.4\n'), Buffer.alloc(1024, 0x20)])
 /* A fixture's extracted text; for the novelty case, NOVEL_BASE's with the
    unseen heading after the line that opens its first terpene section. */
 function textOf(fixture) {
+  /* "<name>:unsigned" is that fixture's text with its "Lab Director" line taken
+     out, the one row Method's finish day is read from: a report with no date
+     at all, which no accepted fixture is since 2026-11-24 (Method_DulceDeUva_flower
+     reads 2024-10-21). */
+  if (fixture.endsWith(':unsigned')) {
+    return fs.readFileSync(path.join(EXTRACTED, `${fixture.slice(0, -':unsigned'.length)}.txt`), 'utf8')
+      .split('\n').filter(l => l.trim() !== 'Lab Director').join('\n');
+  }
   if (fixture !== FIXTURES.novel) return fs.readFileSync(path.join(EXTRACTED, `${fixture}.txt`), 'utf8');
   const lines = fs.readFileSync(path.join(EXTRACTED, `${NOVEL_BASE}.txt`), 'utf8').split('\n');
   const at = lines.findIndex(l => NOVELTY.NOVELTY_SECTION_OPEN.test(l.trim()));

@@ -14,8 +14,10 @@ faults". The PDFs are in `coa-crawl-out\` (git-ignored); only `01`, `08` and
   green), and `8afafcd` since (the flower class rule and `MTL-FLW-009`, `-010`;
   CI green, its dry run 75 unchanged, no real reparse run); reparse run #27 at
   the first, 2026-11-24: 75 documents, 75
-  unchanged, 0 failed - the archive holds no Method six-page or TerpLife report
-  of these kinds, so it proves only that no other reading moved. The live
+  unchanged, 0 failed - the archive then held no Method six-page or TerpLife
+  report of these kinds (the three live scans of 2026-11-24 added one of each
+  since: Georgia Runtz, Happily Ever After, Bloobry), so it proved only that no
+  other reading moved. The live
   check, 2026-11-24 (owner's override of the labs' robots.txt, one page at a
   time): seven reports never read before, through `read-report.js` - four
   Method from Surterra (Happily Ever After, a six-page flower with the two-up
@@ -36,13 +38,12 @@ faults". The PDFs are in `coa-crawl-out\` (git-ignored); only `01`, `08` and
   (the item below, the owner's call). `MTL-AIO-001` pins the Method side:
   its alpha-Humulene (0.00300 J) is absent, and the reading closes at 99.8%
   of 4.46. Deciding the Kaycha item decides this one too.
-- **Method's autumn 2026 finish day is printed and not read.** Its
-  "Completion Date:" label sits apart from its value, and the sign-off is a
-  name, a date and "Lab Director" on separate lines, not the one-line
-  "name - Lab Director" the rule reads. `testedOn` is null on `MTL-FLW-008`,
-  `-009`, `-010` and `MTL-AIO-001`; so are strain, batch and lab ID (labels apart from their
-  values, as on `Method_DulceDeUva_flower`). Reading them needs
-  `test/date-probe.js` and its own change.
+- **Method's autumn 2026 reports: strain, batch and lab ID are null** (their
+  labels are printed apart from their values, as on `Method_DulceDeUva_flower`).
+  The finish day is read since 2026-11-24 from the director's sign-off (the date
+  drawn before a bare "Lab Director"); the assistant director's block, a title
+  over three lines, has no fixture and is not read, so a report signed by one is
+  still undated.
 - **Method's six-page reports are read from the top ten.** The full panel is
   cut (§6); the summary reads at 95.5-99.8% of the printed total on the seven
   reports. The panel's smaller rows are not in the fingerprint.
@@ -58,13 +59,16 @@ faults". The PDFs are in `coa-crawl-out\` (git-ignored); only `01`, `08` and
   total this report prints". It fails closed; only the wording is off.
 - **TerpLife's moisture** is still unread (§9): `TLL-FLW-001` prints 13.1 and
   reads null.
-- **A water activity equal to its action level reads null.** `MTL-FLW-009`
-  prints `Water Activity | Pass | 0.65 | 0.65` - the limit and a result of
-  exactly 0.65 - and the parser never takes a value equal to the action level
-  (0.65, 0.85, 0.10, 0.01: they are what the limit column prints), so the
-  baseline is null. Like TerpLife's moisture, the report prints a value the
-  parser deliberately does not read; a flower sitting exactly at the limit
-  shows no water activity on the card.
+- **A water activity at its action level now prints; one shape is a risk.** A
+  table that printed its limit twice and no result would read as the limit: the
+  reader wants the same level (0.65 or 0.85) exactly twice, only known limit
+  cells beside it and a Pass, and no report on disk prints that shape. Moisture
+  at its own limit (15) still reads null.
+- **Decided 2026-11-24, the owner having handed the open items over, and left
+  as they are:** Kaycha's J rows (zeroing them re-baselines about ten fixtures
+  chosen on 2026-11-19, the Method side follows rule 5 by accident - the owner's
+  call), kief (one report), the refusal sentence on a made-up shape, TerpLife's
+  moisture (no unit marker declares its table).
 
 ## Reports from The Flowery's site: what is left (2026-11-23)
 
@@ -177,9 +181,6 @@ promise that NOSE keeps nothing.
   report day, if it prints one the parser reads, or listed as undated.
   TerpLife's finish day is in `report_on`, not `tested_on`, by choice: a
   question about when labs finished reads `coalesce(tested_on, report_on)`.
-- **Method_DulceDeUva's layout stays undated.** It prints a completion date,
-  but apart from its label, among unlabelled values; matching it would be
-  fitting to one document (§6, "`unknown` is guarded").
 - **The date row's note was watched in Chromium only**, at 1280 and 390 px.
   Its normal weight comes from the element's `style` property, which MDN
   says `style-src` does not block; Safari and Firefox have not been looked

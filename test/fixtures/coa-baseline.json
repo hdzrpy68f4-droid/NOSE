@@ -3312,7 +3312,7 @@
   "batch": null,
   "labId": null,
   "moisture": 8.6,
-  "waterActivity": null,
+  "waterActivity": 0.65,
   "warnings": []
  },
  "MTL-FLW-010": {

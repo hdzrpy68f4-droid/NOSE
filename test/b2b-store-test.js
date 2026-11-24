@@ -484,13 +484,12 @@ async function run(db, log = console.log) {
   check('...accepted ones with exactly the parser\'s terpenes and total, refused ones with neither; days and reader as read',
     [storedFx.filter(r => r.usable).length, storedFx.filter(r => !r.usable).length, mismatch], [102, 3, []]);
   /* The day the lab finished, as the parser read it (PARSER-HANDOFF s7):
-     a day on 95 of the 105, null on Method_DulceDeUva, the two TerpLife reports,
-     the four Method reports of autumn 2026 and the three refusals - and nothing
-     else in its place. */
-  check('every fixture\'s stored tested_on is the parser\'s testedOn: 95 of the 105 carry one',
+     a day on 100 of the 105, null on the two TerpLife reports and the three
+     refusals - and nothing else in its place. */
+  check('every fixture\'s stored tested_on is the parser\'s testedOn: 100 of the 105 carry one',
     [storedFx.filter(r => r.tested !== (byId.get(r.batch_id).testedOn ?? null)).map(r => r.batch_id),
      storedFx.filter(r => r.tested !== null).length, storedFx.length],
-    [[], 95, 105]);
+    [[], 100, 105]);
   const kay = storedFx.find(r => r.batch_id === 'FX-KAY-CAR-001');
   check('KAY-CAR-001: total 4.124 exactly, 15 terpene values (zeros kept as 0)',
     kay ? [kay.total, Object.keys(kay.terps).length] : null, ['4.124', 15]);

@@ -600,7 +600,7 @@ const FINISHED = {
   'ACS Laboratory':      { label: /^Completion Date\s*:\s*(.*)$/i },
   'ACT Laboratories':    { label: /^Report Created\s*:\s*(.*)$/i,
                            wrapped: { before: /(?:^|[\s,])Report$/i, label: /^Created\s*:\s*(.*)$/i } },
-  'Method Testing Labs': { signedAfter: /\s-\sLab Director$/i },
+  'Method Testing Labs': { signedAfter: /\s-\sLab Director$/i, signedBefore: /^Lab Director$/ },
   'Certified Testing and Data': { signedAfter: /^Laboratory Director$/i }
 };
 
@@ -608,8 +608,14 @@ function finishedOn(lines, lab){
   const rule = Object.prototype.hasOwnProperty.call(FINISHED, lab) ? FINISHED[lab] : null;
   if (!rule) return null;
   for (let i = 0; i < lines.length; i++){
-    if (rule.signedAfter){
-      if (i > 0 && rule.signedAfter.test(lines[i - 1])) return isoDate(lines[i]);
+    if (rule.signedAfter || rule.signedBefore){
+      if (rule.signedAfter && i > 0 && rule.signedAfter.test(lines[i - 1])) return isoDate(lines[i]);
+      /* Method's autumn 2026 layout draws the date BEFORE the title it signs under:
+         "Anthony Repay", "11/12/2026 17:18", "Lab Director" (one row on the page,
+         the date at its right). Only the exact line, on the four reports that print
+         it (MTL-FLW-008, -009, -010, MTL-AIO-001): the assistant director's block
+         spreads its title over three lines and has no fixture. */
+      if (rule.signedBefore && i > 0 && rule.signedBefore.test(lines[i])) return isoDate(lines[i - 1]);
       continue;
     }
     const m = rule.label.exec(lines[i]) ||
@@ -1620,6 +1626,7 @@ function parseCoa(text){
      or a batch number. The document declaring its own table, as everywhere else
      here. Runs FIRST and falls back to the existing reader, which is what serves
      Kaycha and Modern Canna. */
+  let awFromTable = false;   // water activity read by the declared-table reader below
   {
     /* Two dialects for the same declaration. ACS and ACT print the unit itself
        in the header - "(aw)", "Limit (%)" - while Kaycha names the column
@@ -1632,22 +1639,36 @@ function parseCoa(text){
       for (let i = 0; i < lines.length; i++){
         if (!re.test(lines[i])) continue;
         if (!lines.slice(Math.max(0, i - 5), i).some(t => UNIT.test(t))) continue;
-        const c = lines.slice(i + 1, i + 8)
+        const row = lines.slice(i + 1, i + 8);
+        const nums = row
           .map(t => Number(String(t).match(/^\d+(?:\.\d+)?$/) || NaN))
-          .filter(v => !isNaN(v))
-          .map(v => freshValue(v, isAw))
-          .filter(v => v != null);
+          .filter(v => !isNaN(v));
+        const c = nums.map(v => freshValue(v, isAw)).filter(v => v != null);
         if (c.length === 1) return c[0];
+        /* A result exactly at the action level. Both of its figures are then the
+           same number, and freshValue throws each away as a limit: Method's
+           "Water Activity | Pass | 0.65 | 0.65" (MTL-FLW-009), a limit and a result
+           of 0.65, read as nothing. The same action level twice, nothing else
+           but the known limit cells, and a Pass beside it: the second is the
+           result. Exactly twice - once is only the limit, and three times is a
+           row this does not know. */
+        if (isAw && !c.length && row.some(t => /^PASS$/i.test(t))){
+          const atLimit = [0.65, 0.85].find(v => nums.filter(n => n === v).length === 2);
+          if (atLimit !== undefined) return atLimit;
+        }
       }
       return null;
     };
     const aw = pick(/^WATER ACTIVITY$/i, true);
     const ms = pick(/^(MOISTURE|MOISTURE CONTENT|PERCENT MOISTURE)$/i, false);
-    if (aw != null) waterActivity = aw;
+    if (aw != null){ waterActivity = aw; awFromTable = true; }
     if (ms != null) moisture = ms;
   }
 
-  waterActivity = freshValue(waterActivity, true);
+  /* The declared-table reader's value has been through freshValue already, and may
+     be an action level that is the result as well (pick's at-limit case); only the
+     fallback reader's value, which may be a limit cell, is filtered here. */
+  if (!awFromTable) waterActivity = freshValue(waterActivity, true);
   moisture      = freshValue(moisture, false);
 
   const freshnessApplies = productClass === 'flower';
