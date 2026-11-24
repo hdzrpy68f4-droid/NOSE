@@ -9,12 +9,14 @@ The loop is done: 27 reports joined from theflowery.co between 2026-11-20 and
 "Reports from The Flowery's site become fixtures, from 73 to 100, and a new
 lab". What remains:
 
-- **Deploys and reparse.** Batches 1 (`b642c8e`) and 2 (`7c05f71`) are live,
-  each with a clean dry run (75 documents, 75 unchanged); the real
-  `node scripts/reparse.js` for them waits for the owner's OK. Batches 3
-  (`3be629e`) and 4 (CTND and two pods) are local commits on the branch
-  `flowery-fixtures`: a dry run in the Codespace, then a push with the
-  owner's word, then the real `reparse.js`.
+- **Deployed and reparsed.** All four batches are live (`b642c8e`,
+  `7c05f71`, `3be629e`, `b11353c`; CI, promote and live-check green), each
+  pushed after a dry run. The real `reparse.js` ran once at the end, at the
+  owner's word: run #26, parser `b11353c`, 2026-11-24 (UTC), 75 documents,
+  73 unchanged, 2 values changed (ACT's Purple Brulee gained its farnesene,
+  0.2284, total unchanged - the scan behind `KF2025`; ACT's Apple Burst now
+  reads `multicolumn`, values unchanged), 0 accepted to rejected, 0 rejected
+  to accepted, 0 failed. Nothing is left to deploy from this loop.
 - **Where things are**, outside the repo: `C:\Users\chris\Documents\flowery-coas\`
   - `pdf/<S3 id>.pdf` as downloaded (never edited), `text/`, `inventory.tsv`
   (1,807 rows: URL, SHA-256, lab, class, strain, batch, dates, the parser's
