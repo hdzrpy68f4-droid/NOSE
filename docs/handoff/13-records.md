@@ -6177,6 +6177,14 @@ reaches, and pin the reports as fixtures. The PDFs sit in `coa-crawl-out\`
   `coa-dates-test`, `archive-wiring-test`, `b2b-store-test`, `novelty-test`
   and `gates.sh`, CLAUDE.md and §2 moved with them. Kaycha anchors unchanged
   (4.124, 0.944). No golden file moved.
+- **Dry run**, in the Codespace through the browser, on a separate git worktree
+  of the pushed branch `st-petersburg-coas` (the Codespace's own checkout, which
+  has an uncommitted `package-lock.json`, was not touched): parser `846dd7f`,
+  75 documents, 75 unchanged, 0 values changed, 0 accepted to rejected, 0
+  rejected to accepted, 0 failed; nothing written. The archive holds none of
+  the refused kinds (59 seeded fixtures and 16 real scans), so nothing could
+  turn from refused to accepted there: the run shows no other reading moved.
+  The real `reparse.js` waits for the owner's word, after the push to `main`.
 - **Found on the way.** The Edit tool rewrote the file's line endings once and
   turned `█` into the literal character; Git Bash ate backslashes in
   `node -e` edits twice and `grep -c $'\r'` reported a count equal to the line
