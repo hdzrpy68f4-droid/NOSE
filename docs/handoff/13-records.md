@@ -6289,6 +6289,16 @@ activity that reads exactly at its limit, to print it.
   more than it knows: made-up reports only. TerpLife's moisture: the table
   declares no unit marker. Six-page Method reports read from the top ten:
   by design.
+- **Dry run**, in the Codespace through the browser, from a clean worktree of
+  the branch `water-activity-at-limit` (the Codespace's own checkout left as it
+  was), with the expected set written down first: parser `3436d52`, 78
+  documents (the 75 and the three live scans), 75 unchanged, 3 values changed,
+  0 accepted to rejected, 0 rejected to accepted, 0 failed; nothing written.
+  The three, by their totals: `Method_DulceDeUva_flower` (2.52, `testedOn`),
+  Georgia Runtz (1.66, `testedOn`) and Happily Ever After (2.77, `testedOn` and
+  `waterActivity`), each still accepted on the same route with no terpene
+  moved. Bloobry and every other lab: unchanged. A real `reparse.js` would
+  write those three corrections to the archive; it was not run.
 - **Counts**: 102 accepted / 3 rejected of 105, 102 match; `coa-dates-test`
   (Method's testedOn 17 of 17, every accepted fixture dated) and
   `b2b-store-test` (100 of 105 carry a finish day) moved. The branches
