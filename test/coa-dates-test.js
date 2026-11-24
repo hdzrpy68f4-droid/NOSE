@@ -131,7 +131,7 @@ check('every fixture carries harvestOn, reportOn and testedOn, even when null',
   names.filter(n => !('harvestOn' in outputs[n]) || !('reportOn' in outputs[n]) || !('testedOn' in outputs[n])), []);
 check('harvestOn and reportOn are each the ISO form of the printed date beside it',
   names.filter(n => outputs[n].harvestOn !== isoDate(outputs[n].harvestDate) || outputs[n].reportOn !== isoDate(outputs[n].reportDate)), []);
-check('the corpus: 39 harvest dates (3 ACS, 36 Kaycha) and two TerpLife report dates read - unchanged by testedOn',
+check('the corpus: 40 harvest dates (3 ACS, 36 Kaycha, 1 TerpLife) and three TerpLife report dates read - unchanged by testedOn',
   names.filter(n => outputs[n].harvestOn || outputs[n].reportOn).map(n => [n, outputs[n].harvestOn, outputs[n].reportOn]),
   [['ACS-FLW-002', '2026-04-03', null], ['ACS-LRS-001', '2026-03-23', null], ['ACS-PRR-001', '2026-04-27', null],
    ['Grease_Monkey_cart', '2026-03-23', null], ['Grease_monkey_live_resin', '2026-03-23', null],
@@ -148,7 +148,7 @@ check('the corpus: 39 harvest dates (3 ACS, 36 Kaycha) and two TerpLife report d
    ['KAY-LRS-003', '2026-05-25', null], ['KAY-LRS-005', '2024-10-22', null], ['KAY-LRS-007', '2026-05-19', null],
    ['KAY-LRS-008', '2026-03-23', null], ['KAY-LRS-009', '2026-06-24', null], ['KAY-LRS-010', '2026-01-26', null],
    ['KAY-PRR-001', '2026-01-14', null], ['KAY-PRR-002', '2026-07-16', null], ['KAY-PRR-003', '2026-08-27', null],
-   ['Kush_Creek', '2026-05-24', null], ['TerpLife_GrpeBblGm_flower', null, '2025-11-17'], ['external-download', '2026-05-24', null]]);
+   ['Kush_Creek', '2026-05-24', null], ['TLL-FLW-001', '2026-06-30', '2026-08-28'], ['TerpLife_GrpeBblGm_flower', null, '2025-11-17'], ['external-download', '2026-05-24', null]]);
 check('every printed harvest or report date in the corpus reads',
   names.filter(n => (outputs[n].harvestDate && !outputs[n].harvestOn) || (outputs[n].reportDate && !outputs[n].reportOn)), []);
 check('KAY-CAR-001 prints "07/07/25": 2025-07-07',
@@ -188,26 +188,27 @@ const TESTED = {
   'MTL-CAR-001': '2025-03-03', 'MTL-CAR-002': '2026-09-14', 'MTL-FLW-001': '2026-03-09', 'MTL-FLW-002': '2026-08-31',
   'MTL-FLW-003': '2026-08-21', 'MTL-FLW-004': '2026-08-04', 'MTL-FLW-005': '2026-09-04', 'MTL-FLW-006': '2026-09-28',
   'MTL-FLW-007': '2026-10-26', 'MTL-LRS-001': '2025-03-03', 'MTL-LRS-002': '2025-05-09', 'MTL-PRR-001': '2026-03-07',
+  'MTL-AIO-001': null, 'MTL-FLW-008': null, 'TLL-FLW-001': null,   // Method's autumn 2026 sign-off is not the line the rule reads; TerpLife none
   'Method_DulceDeUva_flower': null, 'TerpLife_GrpeBblGm_flower': null, 'external-download': '2026-06-30',
   'hemp-bombs-cbd-gummies-50-count-750mg-of-cbd-COA': null
 };
 check('testedOn on every fixture: the day its lab\'s finish row prints',
   names.filter(n => outputs[n].testedOn !== TESTED[n]).map(n => [n, outputs[n].testedOn, TESTED[n]]), []);
-check('...and the list names every fixture, no more', [names.length, Object.keys(TESTED).length, names.every(n => n in TESTED)], [100, 100, true]);
+check('...and the list names every fixture, no more', [names.length, Object.keys(TESTED).length, names.every(n => n in TESTED)], [103, 103, true]);
 {
   const accepted = names.filter(n => outputs[n].usable);
   const dated = o => o.harvestOn || o.testedOn || o.reportOn;
-  check('dated accepted fixtures, by harvestOn, testedOn or reportOn: 40 of 97 become 96 of 97 - only Method\'s older layout is undated',
+  check('dated accepted fixtures, by harvestOn, testedOn or reportOn: 41 of 100 become 97 of 100 - only Method\'s two layouts with no readable sign-off are undated',
     [accepted.length, accepted.filter(n => outputs[n].harvestOn || outputs[n].reportOn).length, accepted.filter(n => dated(outputs[n])).length,
-     accepted.filter(n => !dated(outputs[n]))], [97, 40, 96, ['Method_DulceDeUva_flower']]);
+     accepted.filter(n => !dated(outputs[n]))], [100, 41, 97, ['MTL-AIO-001', 'MTL-FLW-008', 'Method_DulceDeUva_flower']]);
   const perLab = {};
   for (const n of accepted) {
     const L = perLab[outputs[n].lab] || (perLab[outputs[n].lab] = [0, 0]);
     L[0]++; if (outputs[n].testedOn) L[1]++;
   }
-  check('...testedOn per lab: Kaycha 47/47, Modern Canna 20/20, ACS 8/8, ACT 3/3, Method 12/13, TerpLife 0/1, CTND 5/5',
+  check('...testedOn per lab: Kaycha 47/47, Modern Canna 20/20, ACS 8/8, ACT 3/3, Method 12/15, TerpLife 0/2, CTND 5/5',
     perLab, { 'Modern Canna': [20, 20], 'ACS Laboratory': [8, 8], 'ACT Laboratories': [3, 3], 'Certified Testing and Data': [5, 5],
-              'Kaycha Labs': [47, 47], 'Method Testing Labs': [13, 12], 'TerpLife Labs': [1, 0] });
+              'Kaycha Labs': [47, 47], 'Method Testing Labs': [15, 12], 'TerpLife Labs': [2, 0] });
 }
 
 /* The rules behind those values, each on a real fixture's text changed in one

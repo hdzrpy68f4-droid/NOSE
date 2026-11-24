@@ -36,10 +36,10 @@ is exactly what the parser sees.
 ## 2. Current state
 
 ```
-97 accepted / 3 rejected      (100 COA fixtures)
-97 match / 0 differ           (extraction parity, unpdf vs pdftotext)
+100 accepted / 3 rejected     (103 COA fixtures)
+100 match / 0 differ          (extraction parity, unpdf vs pdftotext)
 corpus clean                  (fixture lint)
-61 mutation failures          (mutation harness, 776 cases - see §9)
+62 mutation failures          (mutation harness, 800 cases - see §9)
 ```
 
 The first 14 real scans joined on 2026-11-19, each checked by hand against its
@@ -87,13 +87,13 @@ whole workspace had to be rebuilt from the remote.
 **Which reader serves which documents**, from `readBy`:
 
 ```
-forward      64      the plain name-then-value pass
+forward      67      the plain name-then-value pass
 multicolumn  31      Kaycha's three-column rows
 backward      2      value-before-name layouts
-columnmajor   0      dead - declines on all 100, unreached on 97
+columnmajor   0      dead - declines on all 103, unreached on 100
 
-Counts are of ACCEPTED fixtures (64+31+2 = 97), measured 2026-11-23. Rejected
-documents also carry a `readBy`, so counting all 100 gives 67 forward. The table
+Counts are of ACCEPTED fixtures (67+31+2 = 100), measured 2026-11-24. Rejected
+documents also carry a `readBy`, so counting all 103 gives 70 forward. The table
 before 2026-11-19 said 43 forward of 53 accepted, while the 56 then accepted read
 46 forward: it had drifted, so re-count rather than add.
 ```
@@ -114,7 +114,7 @@ Three accepted-but-wrong faults were found and fixed this session - see §11.
 No lint failures remain.
 
 1. **The column-major reader is dead.** `test/columnmajor-audit.js` shows it
-declines on all 100 fixtures and is never reached on 97 - it runs only when
+declines on all 103 fixtures and is never reached on 100 - it runs only when
 `rowPassLooksWrong`. Its own comment names ACS, ACT Florida and TerpLife, NOT
 Modern Canna, and all three now read `forward` and accept, so the row-wise
 reconciler superseded it. Keeping it costs nothing on the 70 passing fixtures.
@@ -204,7 +204,7 @@ node test/extraction-parity.js test/fixtures/pdf 2>&1 | grep -v "^Warning:" | ta
 node test/fixture-lint.js | tail -2
 ```
 
-Expect `97 accepted / 3 rejected`, `97 match / 0 differ`, and `corpus clean`.
+Expect `100 accepted / 3 rejected`, `100 match / 0 differ`, and `corpus clean`.
 Also run `node test/resolver-test.js` - expect `resolver clean`, and
 `bash build.sh` - expect `OK - ready to deploy`.
 
@@ -363,6 +363,16 @@ against a correct 1.00. Scoring them as equals lets a shifted reading win a
 tie-break. **Do not replace this with a scoring contest** — it was tried and it
 broke ACS and TerpLife.
 
+**Method's two-up panel is cut, not read.** When a Method report prints its
+full terpene panel as two half-tables side by side (`TERPENES`, `TESTED`, two
+`Analyte` headings in a row, a `Total Terpenes:` line before any other section
+opens), the text layer interleaves the two halves' cells and no reader of names
+and cells in text order gets them right. The panel is removed before reading
+and the top-ten summary above it is what the report is read from, as every
+one-page Method report is - the top ten at 95-99% of the printed total, not the
+panel's remaining rows. Anything short of the exact signature is left whole
+(`test/shifted-rows-test.js`, section 7).
+
 **Fails closed.** Guards reject rather than degrade. A refusal whose reasons do not
 match the document should be treated as a possible parser fault, not a lab quirk.
 
@@ -488,9 +498,10 @@ reportDate  client  parserVersion  harvestOn  reportOn  testedOn
   lacks, a day after today (UTC), or one before 2014-01-01. With those two
   bounds a two-digit year reads only from 14 to the current year, so 20YY is
   never a guess between centuries. On the corpus every printed harvest and
-  report date reads: 39 harvest dates (3 ACS, printed ISO already; 36
-  Kaycha, eight of them since 2026-11-19 and twelve since 2026-11-20) and 2
-  TerpLife report dates - the widening moved none of them.
+  report date reads: 40 harvest dates (3 ACS, printed ISO already; 36
+  Kaycha, eight of them since 2026-11-19 and twelve since 2026-11-20; 1
+  TerpLife, TLL-FLW-001) and 3 TerpLife report dates - the widening moved
+  none of them.
   Widening the forms again needs a prompt that asks for it.
 - **`testedOn`** (since 2026-10-14) is the day the lab finished, as an ISO
   day or null: `lib/coa-dates.js` applied to ONE row per lab, chosen from what
@@ -617,7 +628,7 @@ fifth pattern.
 - **Every accepted fixture now reconciles** against its own printed total.
 `MCL-FLW-002` is the sole exception at 103.8%, and that is the lab's arithmetic,
 not the parser's - it warns rather than refusing.
-- **61 mutation failures** out of 776 (~8%), in two unrelated groups. The
+- **62 mutation failures** out of 800 (~8%), in two unrelated groups. The
   FIRST group, fourteen until 2026-11-20, was down from 19 - see the `gamma-`
   fault in the log below, which accounted for five. A re-run on 2026-11-19
   found those fourteen are six `destructive/shuffleValues`, seven
@@ -625,14 +636,18 @@ not the parser's - it warns rather than refusing.
   fourteen `shuffleValues` as this said; the same on the parser before that
   day's change, so older drift (open.md). `KAY-LRS-010`, then
   `KAY-LRS-011` and `MCL-FLW-008`, made the `pageNumbers` ten on 2026-11-20, so
-  the group is seventeen. The `shuffleValues` ones are a KNOWN
+  the group is seventeen, and eighteen since `MTL-AIO-001` (2026-11-24): a
+  second `glueNames`, which glues every alpha- and beta- name to the line
+  above and so loses three of its ten summary rows (0.203 of 4.46); the other
+  seven rows still read 94.9% of the total, over the coverage floor. The
+  `shuffleValues` ones are a KNOWN
   LIMIT rather than a backlog item. That mutation reverses every standalone numeric line in the
   document, so the multiset of values is conserved and every sum still
   reconciles by construction - no document-internal check can see it. Four of
   the fourteen push mass onto unmodelled compounds and are caught by
   `MIN_MODEL_COVERAGE`, but a warning leaves the fingerprint unchanged, so the
   harness still counts them. Do not spend a session trying to reach zero.
-- **44 of the 61 are `destructive/blankNonDetects`**: 21 on the first 56
+- **44 of the 62 are `destructive/blankNonDetects`**: 21 on the first 56
   fixtures, all eight Kaycha reports that joined on 2026-11-19, ten of the
   twenty reports from The Flowery's site that joined on 2026-11-20, and five
   of the seven that joined on 2026-11-23 (four CTND, `KAY-CAR-009`). Added later
@@ -1030,6 +1045,35 @@ fixture, because no fixture can currently reach it
   limit and the result both in range, which the moisture readers leave
   unread on purpose - and its strain, batch and sample ID labels
   ("Cultivar(s):", "Batch No.:", "Sample ID:") are not read (open.md).
+- **Twelve refused reports, three faults** (found and fixed 2026-11-24). A
+  local read of 26 reports from five St. Petersburg stores (Surterra, AYR,
+  Goldflower, Sanctuary, Trulieve) refused 12; every one failed closed, and
+  none was a bad lab. (1) Method's autumn 2026 summary draws its total before
+  its label - "1.63%" then "Total Terpenes:", one line on the page - where the
+  older layout printed "Total Terpenes: 3.27%"; the colon label was not a
+  total label, so those reports had no total. The pair is now joined into the
+  inline form, only when the line below is not a figure and the nearest name
+  above is not a cannabinoid. Taking the figure as the total in place
+  failed: the last analyte's look-ahead swallowed it, a column of that one
+  cell summed to 100% of the total and beat the true column at 96%, and only
+  the "only 1 terpene" refusal stopped it. (2) The same Method reports, six
+  pages long, print a full panel as two half-tables side by side, each row
+  drawn in a different cell order on each half, so the text layer runs one
+  row's cells into the next and the forward reader read ug and mg figures as
+  percentages. The panel is cut out, on its exact signature, and the summary
+  above it - the same top ten as one clean row each - is read, as on every
+  one-page Method report: 95.5-99.8% of the printed total on the seven reports.
+  (3) TerpLife draws each result as up to 36 one-character lines of bar; they
+  pushed the LOD cell out of the 14-line look-ahead, rows kept one, two or
+  (on the full panel, a dilution of 1 first) three cells, no column position
+  reconciled, and the fallback read the dilution as the result for about 30
+  rows: 160-195% of the total. Not a second column or a different basis: the
+  real figures reconcile to 99.99-100.02% once the bars are dropped. Every one
+  of the 100 fixtures and 1,773 other saved reports reads exactly as before,
+  every field. `MTL-FLW-008`, `MTL-AIO-001` and `TLL-FLW-001` take the counts
+  to 100 accepted / 3 rejected and 100 match; the mutation figure is 62 of
+  800 (`MTL-AIO-001` under `glueNames`). Left: Method's J rows, its finish day
+  and the kief class of one Trulieve report (open.md).
 
 ## 12. The fetcher — `netlify/functions/lib/fetch-report.js`, called by `coa.js`
 
@@ -2061,6 +2105,7 @@ under the cap.
 - [Real reports become public fixtures, and every real scan can be exported at once, 2026-11-19](docs/handoff/13-records.md#real-reports-become-public-fixtures-and-every-real-scan-can-be-exported-at-once-2026-11-19)
 - [The first 14 real scans become fixtures, and a below-limit sign printed apart reads as 0, 2026-11-19](docs/handoff/13-records.md#the-first-14-real-scans-become-fixtures-and-a-below-limit-sign-printed-apart-reads-as-0-2026-11-19)
 - [Reports from The Flowery's site become fixtures, from 73 to 100, and a new lab, 2026-11-23](docs/handoff/13-records.md#reports-from-the-flowerys-site-become-fixtures-from-73-to-100-and-a-new-lab-2026-11-23)
+- [Twelve refused St. Petersburg reports: three faults found, three become fixtures, 2026-11-24](docs/handoff/13-records.md#twelve-refused-st-petersburg-reports-three-faults-found-three-become-fixtures-2026-11-24)
 
 ## 14. Dispensary integration
 

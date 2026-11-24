@@ -243,8 +243,13 @@ const NOT_AN_ANALYTE = /\b(CBD|CBDA|CBDV|CBG|CBGA|CBN|CBC|THC|THCA|THCV|THCVA|To
 const STRUCTURE_LABEL = /^MOISTURE$/i;
 const ID_LABEL = /^(?:[A-Za-z.]+ )?(?:No\.?|Number|ID)$|^Licen[cs]e$/i;
 const LABEL_ALONE = /:$/;
+/* CODE_LINE: a code, not a compound - a run of five digits ("SQUE-17-FQ-071926",
+   a batch code in Method's header block) or Method's method number
+   ("TM-004 Terpenes", the SOP under "Analysis Method:"). No analyte name has
+   either. Diagnostic only, like the three above. */
+const CODE_LINE = /\d{5,}|^TM-\d{3}\b/;
 const notAnAnalyteHere = (line, prev) =>
-  STRUCTURE_LABEL.test(line) || ID_LABEL.test(line) || (prev != null && LABEL_ALONE.test(prev));
+  STRUCTURE_LABEL.test(line) || ID_LABEL.test(line) || CODE_LINE.test(line) || (prev != null && LABEL_ALONE.test(prev));
 
 /* ACT writes Greek letters as bare initials: a-Pinene, b-Myrcene, g-Terpinene.
    This is notation, not chemistry - the same class as beta/β - so expanding it
@@ -279,6 +284,36 @@ function normalize(text){
     .replace(/\u03B2[ \t]*-?[ \t]*/g, 'BETA-')
     .replace(/\u03B3[ \t]*-?[ \t]*/g, 'GAMMA-')
     .split('\n').map(l => l.trim()).filter(Boolean)
+    /* TerpLife draws each result as a bar of block characters, one character
+       per line and up to 36 lines a row. They stood between a row's result and
+       its LOD cell and pushed the cell out of the look-ahead, so the long-bar
+       rows kept one cell, the rest two, and the full panel's rows three (a
+       dilution of 1 first): no column position lined up, none reconciled, and
+       the fallback read the dilution as the result. Nothing reads a bar. */
+    .filter(l => !/^\u2588+$/.test(l))
+    /* Method's autumn 2026 summary draws its total before its label (the two
+       share one line of the page), with a colon: "1.63%" then
+       "Total Terpenes:", where the older one printed "Total Terpenes: 3.27%".
+       Joined into that inline form, the figure leaves
+       the last analyte's look-ahead (where a lone column of it summed to the
+       whole total) and the existing inline reader takes it. Only when the line
+       below is not itself a figure and the nearest name above is not a
+       cannabinoid, so a run of "Total THC: | 24.1% | Total Terpenes: | 2.0%"
+       tiles is left as it was. */
+    .reduce((out, l, i, all) => {
+      const prev = out[out.length - 1];
+      if (/^Total Terpenes:$/i.test(l) && prev && /^\d[\d.,]*\s*%$/.test(prev) && !/^[\d<]/.test(all[i + 1] || '')){
+        let k = out.length - 2;
+        while (k >= 0 && isResultToken(out[k])) k--;
+        const owner = k >= 0 ? out[k] : '';
+        if (!CANNABINOID.test(owner.toUpperCase()) && !TOTAL_OF_CANNABINOID.test(owner)){
+          out[out.length - 1] = 'Total Terpenes: ' + prev;
+          return out;
+        }
+      }
+      out.push(l);
+      return out;
+    }, [])
     /* Modern Canna's November 2026 flower template sets its below-limit sign
        (less-than-or-equal, U+2264) as a text item of its own: the sign on one
        line, "0.00492" on the next. Read apart, the bare number was a
@@ -580,8 +615,34 @@ function finishedOn(lines, lab){
 
 /* ------------------------------------------------------------------- parser */
 
+/* Method's full terpene panel is two half-tables side by side, a row of each
+   across the page: "Analyte | LOD | LOQ | Result | Result %" twice. The PDF
+   draws a row's cells in a different order on each half (left: %, LOQ, LOD,
+   name, ug/g; right: ug/g, %, name, LOQ, LOD), so the text layer runs one
+   row's cells into the next row's, and no reader of names and cells in text
+   order gets them right: the forward reader took neighbours' cells for five
+   reports and read mg and ug figures as percentages. The summary above it
+   prints the same top ten as one clean row each, and is what every one-page
+   report of the lab is read from. So the panel is cut out, and only when its
+   signature is exact: the TERPENES and TESTED headings, then two Analyte
+   headings in a row, then a line "Total Terpenes:" before any other section
+   opens. Anything else is left whole. */
+function cutTwoUpPanel(lines){
+  const a = lines.findIndex((l, k) => l === 'Analyte' && lines[k + 1] === 'Analyte'
+    && lines[k - 1] === 'TESTED' && lines[k - 2] === 'TERPENES');
+  if (a < 0) return lines;
+  let e = a;
+  while (e < lines.length && !/^Total Terpenes:?$/i.test(lines[e])){
+    if (NOVELTY_SECTION_CLOSE.test(lines[e])) return lines;   // the headings that close the terpene section; test/novelty-test.js pins it to the loop's
+    e++;
+  }
+  if (e >= lines.length) return lines;
+  if (/^\d[\d.,]*\s*%$/.test(lines[e + 1] || '')) e++;
+  return lines.slice(0, a - 2).concat(lines.slice(e + 1));
+}
+
 function parseCoa(text){
-  const lines = normalize(text);
+  const lines = cutTwoUpPanel(normalize(text));
   const terps = {};
   const unmapped = new Set();      // diagnostic only — never enters the vector
   let unmodelledTotal = 0;
@@ -1892,7 +1953,8 @@ const SEEN_HEADINGS = new Set([
   'REG. LIMIT',                                           // Modern Canna, 5
   'LIMIT OF QUANTIFICATION', 'METHOD DETECTION LIMIT',    // Modern Canna, 2
   'PRACTICAL QUANTITATION LIMIT',                         //   the same
-  'UG/KG'                                                 // Modern Canna 2023, MCL-LRS-002: the unit heading of the next panel
+  'UG/KG',                                                // Modern Canna 2023, MCL-LRS-002: the unit heading of the next panel
+  'RESULT UNITS', 'RESULT %'                              // Method, autumn 2026: the summary's two result columns
 ]);
 
 const NOVELTY_EXAMPLES = 3;

@@ -2,6 +2,48 @@
 
 What is known and not yet done, moved here from PARSER-HANDOFF.md on 2026-11-14 (M7), unchanged: §13's and §14's Still open lists, then §14's Later. A closed item comes off this file in the same commit that closes it.
 
+## Reports from the St. Petersburg stores: what is left (2026-11-24)
+
+A local read of 26 reports from five stores refused 12; the fixes and the
+three fixtures are in PARSER-HANDOFF.md §11, "Twelve refused reports, three
+faults". The PDFs are in `coa-crawl-out\` (git-ignored); only `01`, `08` and
+`19` became fixtures (`MTL-FLW-008`, `MTL-AIO-001`, `TLL-FLW-001`); `02`, `06`,
+`07`, `09`, `10`, `16`-`18` and `20` print the same layouts and now read.
+
+- **The reparse.** Run `node scripts/reparse.js --dry-run` in the Codespace on
+  the branch before anything reaches `main`. A good result: only Method and
+  TerpLife documents change, all from refused to accepted; no document goes
+  from accepted to rejected; no other lab's values move.
+- **Method's J rows are not read; Kaycha's are.** A cell such as `0.00300 J`
+  (detected between the limit of detection and of quantitation) is not a
+  result token in the forward look-ahead: the same made-up row reads 0.003
+  without the J and is dropped with it. Kaycha's J rows are read as printed
+  (the item below, the owner's call). `MTL-AIO-001` pins the Method side:
+  its alpha-Humulene (0.00300 J) is absent, and the reading closes at 99.8%
+  of 4.46. Deciding the Kaycha item decides this one too.
+- **Method's autumn 2026 finish day is printed and not read.** Its
+  "Completion Date:" label sits apart from its value, and the sign-off is a
+  name, a date and "Lab Director" on separate lines, not the one-line
+  "name - Lab Director" the rule reads. `testedOn` is null on `MTL-FLW-008`
+  and `MTL-AIO-001`; so are strain, batch and lab ID (labels apart from their
+  values, as on `Method_DulceDeUva_flower`). Reading them needs
+  `test/date-probe.js` and its own change.
+- **Method's six-page reports are read from the top ten.** The full panel is
+  cut (§6); the summary reads at 95.5-99.8% of the printed total on the seven
+  reports. The panel's smaller rows are not in the fingerprint.
+- **Trulieve's kief reads as flower** (a Modern Canna report whose
+  "Sample Matrix: Kief" sits over "Testing Matrix: Usable Whole Flower
+  Marijuana"; the flower rule matches the second). Recorded, not changed: no
+  fixture and none of 1,773 saved reports mentions kief, and the report's own
+  testing matrix says flower. `Matrix:\s*Kief\b` as a concentrate word would
+  fix it if a second report shows up.
+- **A refusal sentence that says more than it knows.** A stray figure above a
+  colon "Total Terpenes:" with no total printed anywhere (made up, not seen)
+  is joined as the total and then refused for adding up to "more than the
+  total this report prints". It fails closed; only the wording is off.
+- **TerpLife's moisture** is still unread (§9): `TLL-FLW-001` prints 13.1 and
+  reads null.
+
 ## Reports from The Flowery's site: what is left (2026-11-23)
 
 The loop is done: 27 reports joined from theflowery.co between 2026-11-20 and

@@ -6113,3 +6113,85 @@ dry runs in the Codespace through the browser.
   sample-ID labels; Kaycha's J-flagged rows read as values against rule 5,
   for the owner. All in open.md. About 1,730 reports remain in the
   inventory, mostly Kaycha templates the corpus already has.
+
+### Twelve refused St. Petersburg reports: three faults found, three become fixtures, 2026-11-24
+
+The owner ran a local test the day before: 26 reports from five St. Petersburg
+stores (Surterra, AYR, Goldflower, Sanctuary, Trulieve) read through
+`lib/read-report.js`, nothing archived. Twelve were refused, and the parser
+failed closed on all of them. The task: say why, fix only what a safe fix
+reaches, and pin the reports as fixtures. The PDFs sit in `coa-crawl-out\`
+(git-ignored) numbered by read; the per-read records are `reads.jsonl`.
+
+- **Probed.** Each PDF through `extract-text.js` and `parseCoa`, text saved;
+  for the layout, the page geometry from pdf.js (items grouped by height and
+  sorted across), because no PDF renderer is installed here. The parser got
+  nothing but `extract-text.js` output. Candidate changes were tried on
+  scratch copies of the parser lib, never the repo file, against the 100
+  fixtures, the 26 reads and the 1,773 texts in `flowery-coas\text`.
+- **Group A, Method Testing Labs, seven reads, route `forward` throughout.**
+  Three separate faults. Reads 01 and 02 (one page, autumn 2026) draw the total
+  before a colon label: "1.63%" then "Total Terpenes:", one line on the page;
+  the colon label was not a total label. Reads 06-09 (six pages, same total)
+  and 10 (six pages, June, inline total) print the full panel as two
+  half-tables side by side. Each row is drawn in a different cell order on each
+  half (left: %, LOQ, LOD, name, ug/g; right: ug/g, %, name, LOQ, LOD), so the
+  text layer runs one row's cells into the next. The summary rows read right;
+  the panel added junk. 03-05 (Surterra vapes, June, accepted) are the older
+  one-page layout `Method_DulceDeUva_flower` already pins. `TM-004 Terpenes` is
+  the lab's SOP number under "Analysis Method:", not an analyte: no new key, no
+  golden file to regenerate. `SQUE-17-FQ-071926` is a batch code.
+- **Group B, TerpLife, five reads, route `forward`.** Not a second column or a
+  different basis. Page 1 prints the top 14 rows (read 16: 3.0424 of 3.104),
+  page 4 the full panel with a dilution of 1 in front of every row; together
+  they sum to 3.1038. Each result is followed by up to 36 bar glyphs, one per
+  line, which filled the 14-line look-ahead: rows kept one, two or three
+  cells, no column position reconciled, and the fallback read the dilution as
+  the result for about 30 rows (160-195%). Dumped per row before and after.
+- **Built**, in `parse-coa.js`: bar-only lines dropped in `normalize()`; the
+  pair "n%" + "Total Terpenes:" joined into the inline form, only when the line
+  below is not a figure and the nearest name above is not a cannabinoid;
+  `cutTwoUpPanel()`, on the exact signature (TERPENES, TESTED, two Analyte
+  headings, a `Total Terpenes:` line before any section closer), so the
+  summary is read; `SEEN_HEADINGS` `RESULT UNITS` and `RESULT %`; `CODE_LINE`
+  for the diagnostic. **Tried and dropped**: taking the figure above the
+  label as the total in place - the last analyte's look-ahead swallowed it, a
+  one-cell column summed to 100% of the total and beat the real column at 96%,
+  and only the "only 1 terpene" refusal stopped it (`ownerAboveIsAnalyte`
+  guards exactly that, and was left alone). A named `SECTION_CLOSER` for the cut
+  broke `novelty-test`'s pin of the loop's inline closer; the cut reuses
+  `NOVELTY_SECTION_CLOSE`.
+- **Verified.** Fixtures `MTL-FLW-008` (read 01), `MTL-AIO-001` (08) and
+  `TLL-FLW-001` (19), each typed from the PDF's own rows and total before
+  comparing: 96.38%, 99.82% and 100.00% of the printed totals; parity agreed
+  on every field. All 100 earlier fixtures and all 1,773 saved reports read
+  identically, every field, on the changed parser; 14 of the 26 reads unchanged,
+  the 12 refused ones the rest, all accepted now at 95.5-100.02%. Mutation
+  harness: 459 absorbed / 256 rejected / 61 changed before, 471 / 267 / 62
+  after - the one new case `MTL-AIO-001` under `glueNames` (three of its ten
+  summary rows lost, the rest still over the floor), the same class as
+  `ACS-FLW-001`. Seven made-up cases pin the guards in `shifted-rows-test`;
+  each of the four guards, taken out in a scratch copy, fails exactly one of
+  them (the first draft covered one of four: the others were masked by a second
+  guard or never reached). Counts: 100 accepted / 3 rejected of 103, 100 match.
+  `coa-dates-test`, `archive-wiring-test`, `b2b-store-test`, `novelty-test`
+  and `gates.sh`, CLAUDE.md and §2 moved with them. Kaycha anchors unchanged
+  (4.124, 0.944). No golden file moved.
+- **Found on the way.** The Edit tool rewrote the file's line endings once and
+  turned `█` into the literal character; Git Bash ate backslashes in
+  `node -e` edits twice and `grep -c $'\r'` reported a count equal to the line
+  count (`tr -cd '\r' | wc -c` tells the truth). A J-suffixed cell
+  (`0.00300 J`) is not a result token in the look-ahead, so Method's J rows are
+  dropped, not zeroed by rule 5; Kaycha's are read as printed (open.md).
+- **Left**, all in open.md: Method's J rows, its finish day and strain/batch/lab
+  ID (printed, not read), the top-ten-only reading of six-page reports,
+  Trulieve's kief read as flower (recorded, not changed), a refusal sentence
+  that says "more than the total this report prints" when none is printed,
+  TerpLife's moisture. Not committed as fixtures: reads 02, 06, 07, 09, 10 and
+  16-18, 20, which print layouts now pinned; 10 and 02 and 06 are signed by a
+  person no fixture names.
+- **Personal data in the three fixtures**: Anthony Repay (Method's lab
+  director, already in 13 fixtures) and the AYR dispensary's street address (a
+  business) in `MTL-AIO-001`; Brian C. Spann (TerpLife's director, already in
+  two) and the client company's phone number in `TLL-FLW-001`; PDF metadata
+  holds none.

@@ -156,5 +156,35 @@ x = read(kaycha(1.30, [...QUANT, ['GUAIOL', 0.060, null], ['CARYOPHYLLENE OXIDE'
 check('rows above every limit that add up to neither printed total: refused in a plain sentence, not read in mg per unit',
   [x.state, x.r.rejectReasons], ['refused', [UNITS]]);
 
+/* --- 7. a total drawn before its colon label; a two-up panel (2026-11-24) ----
+ * Method's autumn 2026 summary writes "1.63%" and then "Total Terpenes:" (one
+ * line on the page, the figure drawn first), and its full panel is two
+ * half-tables a row of each across the page. Both are read from real reports
+ * (MTL-FLW-008, MTL-AIO-001); these made-up cases isolate each guard, so that
+ * taking one away fails here and not only on a report nobody has yet. */
+const URATE = ([n, v]) => [n, f(v), String(Math.round(v * 10000))];
+const SUMMARY = ['Some New Lab LLC', 'Certificate of Analysis', 'Matrix: Flower', 'TERPENES SUMMARY', 'Analyte', 'Result', 'Result'];
+x = read([...SUMMARY, ...cells(DESC, URATE), TOTAL + '%', 'Total Terpenes:', 'Sampling Date:']);
+check('a total drawn before its colon label, nothing figure-like after it: read from the figure, as an inline total',
+  [x.state, x.r.readBy, x.r.totalTerpenes], ['correct', 'forward', 2]);
+x = read([...SUMMARY, ...cells(DESC, URATE), 'Total THC:', '24.1%', 'Total Terpenes:', TOTAL + '%']);
+check('...a run of colon tiles, a figure below the label: the cannabinoid figure is not the terpene total',
+  [x.state, x.r.totalTerpenes], ['refused', null]);
+x = read([...SUMMARY, ...cells(DESC, URATE), 'Total THC:', '24.1%', 'Total Terpenes:', 'Sampling Date:']);
+check('...a cannabinoid total above the label and nothing below it: not taken as the terpene total either',
+  [x.state, x.r.totalTerpenes], ['refused', null]);
+x = read([...SUMMARY, ...cells(DESC, URATE), 'Nerolidol', '0.217%', 'Total Terpenes:', '4.530%']);
+check('...an analyte figure above the label and a figure below it: the analyte figure is not the total',
+  [x.state, x.r.totalTerpenes], ['refused', null]);
+x = read([...SUMMARY, ...cells(DESC, URATE), 'Nerolidol', '0.217%', 'Total Terpenes:', 'Sampling Date:']);
+check('...the last analyte figure above the label, no total printed: refused, never read as the total',
+  [x.state], ['refused']);
+x = read([...SUMMARY.slice(0, 3), 'TERPENES', 'TESTED', 'Analyte', 'Analyte', 'Pesticides', ...cells(DESC, URATE), 'Total Terpenes', TOTAL]);
+check('two Analyte headings after TERPENES and TESTED, but another section opens before the total: nothing is cut',
+  [x.state, x.r.totalTerpenes], ['correct', 2]);
+x = read([...SUMMARY.slice(0, 3), 'Terpenes', 'Analyte', 'Analyte', ...cells(DESC, URATE), 'Total Terpenes', TOTAL]);
+check('two Analyte headings with no TERPENES and TESTED above them: nothing is cut',
+  [x.state, x.r.totalTerpenes], ['correct', 2]);
+
 if (failures) { console.log(`\nshifted-rows: ${failures} failure${failures === 1 ? '' : 's'}`); process.exit(1); }
 console.log('\nshifted-rows clean');
