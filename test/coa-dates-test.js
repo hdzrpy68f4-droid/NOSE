@@ -159,18 +159,19 @@ check('KAY-CAR-001 prints "07/07/25": 2025-07-07',
    for the 14 real scans that joined on 2026-11-19 and the reports from The
    Flowery's site that joined from 2026-11-20, as their PDFs print it.
    Kaycha and Modern Canna "Completed:", ACS "Completion Date:", ACT "Report
-   Created:", Method its sign-off; TerpLife none, Green Scientific none. */
+   Created:", Method and CTND their sign-off; TerpLife none, Green Scientific none. */
 const TESTED = {
   '17484_0006800467': '2024-11-27', '17569_0005294444': '2023-12-29',
   'ACS-CAR-001': '2026-06-24', 'ACS-CAR-002': '2022-04-25', 'ACS-FLW-001': '2022-10-15', 'ACS-FLW-002': '2026-05-04',
   'ACS-LRS-001': '2026-06-11', 'ACS-LRS-002': '2021-08-03', 'ACS-PRR-001': '2026-06-16',
-  'ACT_AppleBurst_vape': '2025-02-13', 'COA_GassiusClay_3_5gWF_4793_1807_7220_8969': '2025-08-21',
+  'ACT_AppleBurst_vape': '2025-02-13',
+  'CTN-CAR-001': '2023-12-08', 'CTN-FLW-001': '2023-12-13', 'CTN-LRS-001': '2023-12-08', 'CTN-LRS-002': '2023-12-08', 'CTN-LRS-003': '2023-12-08', 'COA_GassiusClay_3_5gWF_4793_1807_7220_8969': '2025-08-21',
   'Grease_Monkey_cart': '2026-06-22', 'Grease_monkey_flower': '2026-06-18', 'Grease_monkey_live_resin': '2026-07-13',
   'GreenRoadsFullSpectrumCBDOil750mgLot24007': null, 'Harmony-Muscle-Rub-COA-PHRO1': null,
   'KAY-AIO-001': '2026-04-06', 'KAY-AIO-002': '2025-12-12', 'KAY-AIO-003': '2026-06-28', 'KAY-AIO-004': '2026-05-21',
   'KAY-AIO-005': '2026-09-15', 'KAY-AIO-006': '2026-09-11', 'KAY-AIO-007': '2026-07-30',
   'KAY-CAR-001': '2025-07-11', 'KAY-CAR-002': '2025-12-19', 'KAY-CAR-003': '2026-07-23', 'KAY-CAR-004': '2024-08-21',
-  'KAY-CAR-005': '2026-10-19', 'KAY-CAR-006': '2026-06-19', 'KAY-CAR-007': '2026-09-30', 'KAY-CAR-008': '2024-04-20',
+  'KAY-CAR-005': '2026-10-19', 'KAY-CAR-006': '2026-06-19', 'KAY-CAR-007': '2026-09-30', 'KAY-CAR-008': '2024-04-20', 'KAY-CAR-009': '2022-12-19',
   'KAY-FLW-001': '2026-02-03', 'KAY-FLW-002': '2024-06-15', 'KAY-FLW-003': '2024-10-19',
   'KAY-FLW-004': '2026-09-09', 'KAY-FLW-005': '2026-10-05', 'KAY-FLW-006': '2026-10-06', 'KAY-FLW-007': '2026-10-20',
   'KAY-FLW-008': '2026-11-02', 'KAY-FLW-009': '2026-11-08', 'KAY-FLW-010': '2025-02-20', 'KAY-FLW-011': '2025-01-02',
@@ -179,7 +180,7 @@ const TESTED = {
   'KAY-LRS-009': '2026-08-11', 'KAY-LRS-010': '2026-07-16', 'KAY-LRS-011': '2026-04-08', 'KAY-LRS-012': '2023-09-12', 'KAY-LRS-013': '2024-01-11',
   'KAY-PRR-001': '2026-01-23', 'KAY-PRR-002': '2026-07-30', 'KAY-PRR-003': '2026-09-08',
   'KF2025-046-PB-AU-COA': '2025-07-29', 'Kush_Creek': '2026-06-24', 'LAB-0425BSWS-20250731': '2025-07-31',
-  'MCL-CAR-001': '2024-11-08', 'MCL-CAR-002': '2024-11-08', 'MCL-FLW-001': '2024-11-08', 'MCL-FLW-002': '2021-10-05',
+  'MCL-CAR-001': '2024-11-08', 'MCL-CAR-002': '2024-11-08', 'MCL-CAR-003': '2023-08-03', 'MCL-FLW-001': '2024-11-08', 'MCL-FLW-002': '2021-10-05',
   'MCL-FLW-003': '2025-08-28', 'MCL-FLW-004': '2026-07-17', 'MCL-FLW-005': '2026-07-23', 'MCL-FLW-006': '2026-11-05',
   'MCL-FLW-007': '2026-11-05', 'MCL-FLW-008': '2026-04-10', 'MCL-LRS-001': '2024-11-08', 'MCL-LRS-002': '2023-11-02',
   'MCL-PRR-001': '2026-04-08', 'MCL-PRR-002': '2026-07-20',
@@ -192,21 +193,21 @@ const TESTED = {
 };
 check('testedOn on every fixture: the day its lab\'s finish row prints',
   names.filter(n => outputs[n].testedOn !== TESTED[n]).map(n => [n, outputs[n].testedOn, TESTED[n]]), []);
-check('...and the list names every fixture, no more', [names.length, Object.keys(TESTED).length, names.every(n => n in TESTED)], [93, 93, true]);
+check('...and the list names every fixture, no more', [names.length, Object.keys(TESTED).length, names.every(n => n in TESTED)], [100, 100, true]);
 {
   const accepted = names.filter(n => outputs[n].usable);
   const dated = o => o.harvestOn || o.testedOn || o.reportOn;
-  check('dated accepted fixtures, by harvestOn, testedOn or reportOn: 40 of 90 become 89 of 90 - only Method\'s older layout is undated',
+  check('dated accepted fixtures, by harvestOn, testedOn or reportOn: 40 of 97 become 96 of 97 - only Method\'s older layout is undated',
     [accepted.length, accepted.filter(n => outputs[n].harvestOn || outputs[n].reportOn).length, accepted.filter(n => dated(outputs[n])).length,
-     accepted.filter(n => !dated(outputs[n]))], [90, 40, 89, ['Method_DulceDeUva_flower']]);
+     accepted.filter(n => !dated(outputs[n]))], [97, 40, 96, ['Method_DulceDeUva_flower']]);
   const perLab = {};
   for (const n of accepted) {
     const L = perLab[outputs[n].lab] || (perLab[outputs[n].lab] = [0, 0]);
     L[0]++; if (outputs[n].testedOn) L[1]++;
   }
-  check('...testedOn per lab: Kaycha 46/46, Modern Canna 19/19, ACS 8/8, ACT 3/3, Method 12/13, TerpLife 0/1',
-    perLab, { 'Modern Canna': [19, 19], 'ACS Laboratory': [8, 8], 'ACT Laboratories': [3, 3], 'Kaycha Labs': [46, 46],
-              'Method Testing Labs': [13, 12], 'TerpLife Labs': [1, 0] });
+  check('...testedOn per lab: Kaycha 47/47, Modern Canna 20/20, ACS 8/8, ACT 3/3, Method 12/13, TerpLife 0/1, CTND 5/5',
+    perLab, { 'Modern Canna': [20, 20], 'ACS Laboratory': [8, 8], 'ACT Laboratories': [3, 3], 'Certified Testing and Data': [5, 5],
+              'Kaycha Labs': [47, 47], 'Method Testing Labs': [13, 12], 'TerpLife Labs': [1, 0] });
 }
 
 /* The rules behind those values, each on a real fixture's text changed in one

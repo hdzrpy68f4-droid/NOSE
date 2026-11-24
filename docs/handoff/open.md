@@ -2,116 +2,59 @@
 
 What is known and not yet done, moved here from PARSER-HANDOFF.md on 2026-11-14 (M7), unchanged: §13's and §14's Still open lists, then §14's Later. A closed item comes off this file in the same commit that closes it.
 
-## In progress: reports from The Flowery's site become fixtures (from 2026-11-20)
+## Reports from The Flowery's site: what is left (2026-11-23)
 
-The owner's brief: take the corpus from 73 to at least 100 with lab reports
-from theflowery.co, flower and extracts, chosen for lab x class x template
-(§10), each checked by hand against its PDF, and fix the parser wherever one
-reads wrong. About ten a batch; after each, the gates green, one local commit
-and this note. Ask the owner before every push; a parser change has
-`reparse.js --dry-run` run in the Codespace first, on a branch of its own.
+The loop is done: 27 reports joined from theflowery.co between 2026-11-20 and
+2026-11-23, the corpus is 100 (97 accepted), and the record is 13-records,
+"Reports from The Flowery's site become fixtures, from 73 to 100, and a new
+lab". What remains:
 
-- **Where things are**, outside the repo: `C:\Users\chris\Documents\flowery-coas\`.
-  `pdf/<S3 id>.pdf` as downloaded (never edited), `text/` the repo
-  extractor's text, `inventory.tsv` (one row per PDF: URL, SHA-256, lab and
-  licence, the product as printed, the parser's class, strain, batch, lab ID,
-  dates, terpene panel, the parser's reading, nearest fixture by label
-  similarity, duplicates), `catalog-2026-11-20/` (the site's own product
-  list), `sources-*.tsv`, `download-log.tsv`, and `tools/` (the scripts that
-  built it all, and the hand readings `tools/hand/<name>.json`). Never commit
-  the inventory or a PDF not chosen.
-- **How the site serves reports.** Every page redirects to `/age-gate`, which
-  robots.txt keeps crawlers off; it was passed in Chrome with the owner's
-  permission. The terms say the site is for Florida residents who are
-  qualified patients; the owner confirmed and said to go on. Each product has
-  a `coa_link`: a PDF in Salve's public S3 bucket
-  (`salve-platform-production-pub-1.s3.amazonaws.com/<id>/...`). The current
-  catalog comes from the site's own `/api/platform/products?page_size=150`
-  (not gated, allowed by robots.txt); older products only from their pages
-  (the sitemap lists 5,407). Never enumerate S3 ids: the bucket is Salve's and
-  holds other dispensaries' files. One request at a time, at least a second
-  apart, a generic user agent.
-- **Survey.** The current catalog (2026-11-20): 501 products, 439 distinct
-  reports for flower, concentrates and vapes - Kaycha 403 (flower 87, pre-roll
-  35, cart 108, AIO 36, concentrate 137) and Modern Canna 36 (all flower, the
-  November "FLOWER JUNIORS 7G" template), every one with a terpene panel; 11
-  are fixtures already. No other lab: the corpus gaps (Modern Canna, Method,
-  ACS and TerpLife extracts and pre-rolls, a new lab) can only come from
-  older products. Their pages were being crawled in Chrome when batch 1 was
-  committed (3,743 pages after a slug filter, `tools/crawl-slugs.txt`).
-- **Batch 1, ten Kaycha** (one commit): `KAY-PRR-002` (late July, the total
-  counts only quantified rows - was read ten times high), `KAY-PRR-003`,
-  `KAY-AIO-005` (a pen, was a concentrate), `KAY-AIO-006` (an amended
-  report), `KAY-AIO-007`, `KAY-CAR-005` (a pod, was a concentrate),
-  `KAY-CAR-006` (June layout, 8 terpenes), `KAY-CAR-007` (12.7%),
-  `KAY-LRS-009` (0.638%, a THCA rosin), `KAY-LRS-010` (12.6%, older layout).
-  Two parser changes, in §11. Commit `b642c8e`: `reparse.js --dry-run` in
-  the Codespace on the branch `flowery-fixtures` gave 75 documents, 75
-  unchanged, 0 changed, 0 failed; pushed to main at the owner's word on
-  2026-11-20. Still to do: check that CI, promote and live-check went green,
-  then the real `reparse.js` with the owner's OK (it should change nothing).
-- **Batch 2, four** (local commit): `MCL-PRR-001` and `-002`, the first
-  Modern Canna pre-rolls (April and July 2026); `MCL-FLW-008`, an April
-  juniors, and `KAY-LRS-011`, a Kaycha sauce, both `unknown` before the
-  class words in §11. Three flower fixtures moved the methodology page's
-  "Close match" share to 30% (250 of 820 pairs), outside `match-props-test`'s
-  five points, so the page now says "about three times in ten" (was "one time
-  in four"); its sitemap date moved with it. Batch 1 is live: CI, promote and
-  live-check green on `b642c8e`; the real `reparse.js` waits for the owner.
-  Batch 2 (`7c05f71`) had its dry run on 2026-11-20 (75 documents, 75
-  unchanged) and was pushed to main at the owner's word. The real
-  `reparse.js` for batches 1 and 2 still waits for the owner's OK.
-- **Batch 3, first six** (local commit, 2026-11-23): `KAY-FLW-010` (Davie, Feb 2025,
-  14 g - the row lost to a figure above 100), `KAY-LRS-012` (Davie, 2023,
-  13.3%), `KAY-CAR-008` (Davie, 2024 pod), `KAY-LRS-013` (Davie, 2024),
-  `KAY-FLW-011` (Davie, 2025), `MCL-LRS-002` (Modern Canna 2023, the second
-  Modern Canna concentrate). `KF2025-046-PB-AU-COA` re-typed: its baseline
-  lacked farnesene (§11). Their strains print without a "Strain:" label and
-  read empty, as on `KAY-FLW-002`/`003`. The demo store is regenerated (KF2025's farnesene), which the widget gate
-  needed. Its own dry run comes before any push.
-- **Known and left**: a Kaycha row with a blank LOD cell is lost by the
-  multicolumn reader (12837, a 2023 pre-roll, farnesene 0.011; not taken as
-  a fixture); right-alignment fixed it and cost five mutation verdicts.
-  11315 (Kaycha 2023 flower) is refused correctly - its own rows add up to
-  76.5% of its printed total - but the sentence says the table "was not read
-  completely". S3 slowed to about 10 KB/s for this PC after ~1,800 files;
-  349 of part 2 are not downloaded (`tools/dl-list-crawl2.txt`).
-- **`archive-wiring-test`'s "both writes hang" check fails on this PC
-  whenever `parse-coa.js` differs from the last commit** - even a comment
-  appended - at about 2,900 ms against 2,400; it passes with the committed
-  file and passed in the gates of batch 2. Not found: no git call, no file
-  read and no parser time on that path. On 2026-11-23 the same tree passed
-  it twice and all the gates, so it tracks the state of this PC, not the
-  code. Watch it in the gates; CI runs Linux.
-- **Where the survey stopped (2026-11-20, a pause for the owner's usage).**
-  The product-page crawl was left running in Chrome, in the tab on
-  theflowery.co: its results are in that page's `window.__crawl` and, every 25
-  pages, in theflowery.co's `localStorage` key `__crawl_results` ({n, hash,
-  results[]}, index i = line i of `tools/crawl-slugs.txt`; `808e4786` is the
-  hash of that list). Pages 0-1349 were exported (`crawl-export/part1*.txt`,
-  decoded by `tools/crawl-decode.js`): 1,458 report files, 1,019 not in the
-  catalog. 566 of those were downloaded (1,005 PDFs in all) before the
-  download was stopped; resume with `tools/dl-rate.sh tools/dl-list-crawl.txt
-  <pdf dir> <log>`, which skips files already there. The older files include
-  about 210 Kaycha Davie reports (lab IDs `DA...`, 2023-2025), Modern Canna
-  reports named by older lab IDs (`J...`, `K...`), and 15 `coa-download.pdf`
-  from a source not yet seen. The inventory holds 470 rows so far; its
-  duplicate columns predate batch 1's fixtures, so recompute them.
-- **Next**: export pages 1350 onwards the same way (a compact list read with
-  the page-text tool; the JavaScript tool's output stops near 1,500
-  characters), finish the downloads, `tools/inventory.js`, then batches 2 and
-  3 for the gaps.
+- **Deploys and reparse.** Batches 1 (`b642c8e`) and 2 (`7c05f71`) are live,
+  each with a clean dry run (75 documents, 75 unchanged); the real
+  `node scripts/reparse.js` for them waits for the owner's OK. Batches 3
+  (`3be629e`) and 4 (CTND and two pods) are local commits on the branch
+  `flowery-fixtures`: a dry run in the Codespace, then a push with the
+  owner's word, then the real `reparse.js`.
+- **Where things are**, outside the repo: `C:\Users\chris\Documents\flowery-coas\`
+  - `pdf/<S3 id>.pdf` as downloaded (never edited), `text/`, `inventory.tsv`
+  (1,807 rows: URL, SHA-256, lab, class, strain, batch, dates, the parser's
+  reading, duplicates), `tools/` (the scripts, and the hand readings in
+  `tools/hand/`). Never commit the inventory or a PDF not chosen. 34 of the
+  files are ZIP archives under a `.pdf` name: left unopened, never run.
+- **The site route**, if more are wanted: the age gate passed in Chrome with
+  the owner's permission (robots.txt keeps crawlers off `/age-gate` itself);
+  the terms are for Florida patients, which the owner read. The catalog is the
+  site's own `/api/platform/products?page_size=150`; older products only from
+  their pages, crawled in the browser (`tools/crawl-slugs.txt`, results in
+  that tab's `localStorage` key `__crawl_results`). PDFs sit on Salve's public
+  S3 bucket: fetch by name, never enumerate ids - it holds other
+  dispensaries' files. One request at a time, a generic user agent.
+- **About 1,730 reports remain**, all Kaycha or Modern Canna except one
+  CTND (a second Persy Sauce, left as adding nothing), mostly templates the
+  corpus has. No Method, ACS or TerpLife report is on the site.
 - **Kaycha's J rows and rule 5.** §4 says a value below the limit of
   quantitation is 0. Since July 2026 Kaycha prints a figure with the qualifier
   J for rows between the two limits, and the parser reads it as a value; the
-  baselines typed on 2026-11-19 (`KAY-FLW-004` to `-009`) and on 2026-11-20
-  keep them, as printed. Reading them as 0 would change those fixtures and is
-  the owner's call.
+  baselines typed on 2026-11-19 (`KAY-FLW-004` to `-009`) and since keep
+  them, as printed. Reading them as 0 would change those fixtures and is the
+  owner's call.
 - **A late-July 2026 Kaycha report says its arithmetic does not close**
   (`KAY-PRR-002` 110.1%, `KAY-AIO-007` 102.8%). Under the lab's rule for those
   weeks - the total counts only the quantified rows - it does close. The
-  warning is literally true, the rows add up to more than the printed total;
-  a sentence for this case is its own change.
+  warning is literally true; a sentence for this case is its own change.
+- **Known and left in the parser**: a Kaycha row with a blank LOD cell is lost
+  by the multicolumn reader (12837, a 2023 pre-roll, farnesene 0.011); lining
+  short rows up from the right fixed it and cost five mutation verdicts, so it
+  was reverted. 11315 (Kaycha 2023 flower) is refused correctly - its own rows
+  add up to 76.5% of its printed total - but the sentence says the table "was
+  not read completely". CTND's moisture ("Moisture / 15 % / 11.8 %", limit
+  then result, both in range) reads null on purpose, and its "Cultivar(s):",
+  "Batch No.:" and "Sample ID:" labels are not read.
+- **`archive-wiring-test`'s "both writes hang" check** failed on this PC on
+  2026-11-20 whenever `parse-coa.js` differed from the last commit (about
+  2,900 ms against 2,400), and on 2026-11-23 the same tree passed it and all
+  the gates: it tracks the state of this PC, not the code. Cause not found.
+  Watch it in the gates; CI runs Linux.
 
 ## §13, the archive and the app: still open
 

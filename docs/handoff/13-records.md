@@ -6050,3 +6050,66 @@ branch, `real-scans`, which carries them only and is never merged.
   real: run #25, parser `8989f8c`, 2026-11-20 (UTC). 75 documents: 73
   unchanged, 2 values changed (E85 and Nirvana #6, as the dry run said), 0
   accepted to rejected, 0 rejected to accepted, 0 failed.
+
+### Reports from The Flowery's site become fixtures, from 73 to 100, and a new lab, 2026-11-23
+
+The owner asked for at least 27 more real reports, flower and extracts, from
+The Flowery's own site (theflowery.co), and for the parser to be fixed wherever
+one read wrong: the loop of "The first 14 real scans become fixtures", with the
+site as the source. Run from 2026-11-20 to 2026-11-23 on the owner's PC, the
+dry runs in the Codespace through the browser.
+
+- **The site**: robots.txt (it disallows only /cart, /verify, /checkout,
+  /profile/ and /age-gate) and the terms read first; the terms sit behind the
+  age gate, which the owner allowed, and speak to Florida patients, which the
+  owner read and said to continue. Products come from the site's own catalog
+  route, each product page names its report, and the PDFs sit on the
+  platform's public S3 bucket - fetched by name only, never by walking ids,
+  since the bucket holds other dispensaries' files. One request at a time, a
+  generic user agent, curl at most 50 a minute. The inventory and the PDFs not
+  chosen stay in a folder outside the repo, for later batches.
+- **The survey**: 1,807 files, of which 34 are ZIP archives under a `.pdf`
+  name (left unopened) and 1,773 are reports, every one with a terpene panel:
+  Kaycha 1,635 (AIO 36, cartridge and pod 432, flower 440, concentrate 630,
+  pre-roll 92, five unclassed), Modern Canna 132 (flower 96, pre-roll 23,
+  concentrate 5, pod 2, six unclassed) and CTND 6. No Method, ACS or TerpLife:
+  The Flowery sends its jars to Kaycha and Modern Canna, and sent six to CTND
+  in December 2023. 14 were already fixtures, byte for byte.
+- **Chosen, 27**, each hand-checked against its PDF (every terpene row, the
+  total, strain, batch, lab ID, class, moisture, water activity), its baseline
+  typed from that reading, readBy and warnings taken from the parser only
+  after checking them:
+  - batch 1 (`b642c8e`): `KAY-PRR-002`, `-003`, `KAY-AIO-005` to `-007`,
+    `KAY-CAR-005` to `-007`, `KAY-LRS-009`, `-010` - Kaycha 2026 templates;
+  - batch 2 (`7c05f71`): `MCL-PRR-001`, `-002` (the first Modern Canna
+    pre-rolls), `MCL-FLW-008` (juniors), `KAY-LRS-011` (a sauce);
+  - batch 3 (`3be629e`): `KAY-FLW-010`, `-011`, `KAY-LRS-012`, `-013`,
+    `KAY-CAR-008` (Kaycha's Davie licence, 2023-2025), `MCL-LRS-002`
+    (Modern Canna 2023);
+  - batch 4 (this commit): `CTN-LRS-001` to `-003`, `CTN-CAR-001`,
+    `CTN-FLW-001` (CTND, a new lab code), `MCL-CAR-003` (a 2023 Modern
+    Canna pod), `KAY-CAR-009` (a December 2022 Kaycha pod, the oldest).
+- **Parser changes**, each in §11, every earlier fixture reading as before:
+  a total that counts only the quantified rows, read ten times high, and a
+  refusal when two unit columns each fail to close; a pen and a pod read as
+  concentrates; a sauce and flower juniors read as `unknown`; a figure above
+  100 slid a row out of its column (and `KF2025-046-PB-AU-COA`'s baseline
+  had lacked farnesene, typed again); CTND's top-five summary won over its
+  panel, with three spellings and its sign-off date. Five reports were
+  accepted but wrong before these: `KAY-PRR-002`, the pen, the pod,
+  `CTN-LRS-001`, and `KF2025` already in the corpus.
+- **Counts**: 97 accepted / 3 rejected of 100, 97 match / 0 differ, corpus
+  clean, 61 mutation failures of 776 (the 18 new since 2026-11-19 are three
+  `pageNumbers` and fifteen `blankNonDetects`); the methodology page's
+  "Close match" share moved to about three times in ten (batch 2).
+- **Dry runs**: batch 1 and batch 2 each 75 documents, 75 unchanged, before
+  their pushes. The real `reparse.js` for them waits for the owner's word,
+  and batches 3 and 4 wait for their own dry run and push.
+- **Skipped or left**: a Kaycha row with a blank LOD cell (12837, farnesene
+  0.011) - reading it cost five mutation verdicts, reverted; 11315, correctly
+  refused (its rows reach 76.5% of its total) but with a sentence that blames
+  the reading; the second CTND Persy Sauce (adds nothing); CTND moisture
+  (limit and result both in range, left null) and its strain, batch and
+  sample-ID labels; Kaycha's J-flagged rows read as values against rule 5,
+  for the owner. All in open.md. About 1,730 reports remain in the
+  inventory, mostly Kaycha templates the corpus already has.

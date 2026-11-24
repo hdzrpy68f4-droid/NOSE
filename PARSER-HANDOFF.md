@@ -36,10 +36,10 @@ is exactly what the parser sees.
 ## 2. Current state
 
 ```
-90 accepted / 3 rejected      (93 COA fixtures)
-90 match / 0 differ           (extraction parity, unpdf vs pdftotext)
+97 accepted / 3 rejected      (100 COA fixtures)
+97 match / 0 differ           (extraction parity, unpdf vs pdftotext)
 corpus clean                  (fixture lint)
-56 mutation failures          (mutation harness, 720 cases - see §9)
+61 mutation failures          (mutation harness, 776 cases - see §9)
 ```
 
 The first 14 real scans joined on 2026-11-19, each checked by hand against its
@@ -58,10 +58,15 @@ Kaycha's Davie licence (CMTL-0002) from 2023 to 2025 and a Modern Canna
 concentrate of 2023; reading them found that the multicolumn reader lost a
 row whose mg figure passed 100, and that ACT's `KF2025-046-PB-AU-COA` had
 been baselined without its farnesene (§11, "A figure above 100 slid a row
-out of its column").
+out of its column"). Seven more on 2026-11-23 bring the first new lab since
+the archive began: five reports of Certified Testing and Data (CTND, licence
+CMTL-2023-00011, code `CTN`) from December 2023 - two badders, a sauce, a pod
+and a flower - one of them accepted but wrong until its page-one summary was
+skipped (§11, "A top-five summary won over the panel"); with them a 2023
+Modern Canna pod and a December 2022 Kaycha pod, the oldest fixture.
 
-Seven labs, four inhalable product classes. Kaycha, Modern Canna, ACS, ACT,
-TerpLife, Method all working. Green Scientific has no working sample and is not
+Eight labs, four inhalable product classes. Kaycha, Modern Canna, ACS, ACT,
+TerpLife, Method and CTND all working. Green Scientific has no working sample and is not
 currently OMMU-certified.
 
 The three rejections are all **correct**:
@@ -74,7 +79,7 @@ Live scanning works end to end: camera → QR → viewer-page resolution → fet
 unpdf → parse → confirmation card, including the warnings row, which has been
 seen rendering on a real scanned jar.
 
-All 93 source PDFs are tracked in git, so the corpus is reproducible from a clone:
+All 100 source PDFs are tracked in git, so the corpus is reproducible from a clone:
 `node test/extract-dump.js` regenerates `test/fixtures/extracted/` in about a
 minute. This was proven the hard way when a Codespace container failed and the
 whole workspace had to be rebuilt from the remote.
@@ -82,13 +87,13 @@ whole workspace had to be rebuilt from the remote.
 **Which reader serves which documents**, from `readBy`:
 
 ```
-forward      58      the plain name-then-value pass
-multicolumn  30      Kaycha's three-column rows
+forward      64      the plain name-then-value pass
+multicolumn  31      Kaycha's three-column rows
 backward      2      value-before-name layouts
-columnmajor   0      dead - declines on all 93, unreached on 90
+columnmajor   0      dead - declines on all 100, unreached on 97
 
-Counts are of ACCEPTED fixtures (58+30+2 = 90), measured 2026-11-20. Rejected
-documents also carry a `readBy`, so counting all 93 gives 61 forward. The table
+Counts are of ACCEPTED fixtures (64+31+2 = 97), measured 2026-11-23. Rejected
+documents also carry a `readBy`, so counting all 100 gives 67 forward. The table
 before 2026-11-19 said 43 forward of 53 accepted, while the 56 then accepted read
 46 forward: it had drifted, so re-count rather than add.
 ```
@@ -109,7 +114,7 @@ Three accepted-but-wrong faults were found and fixed this session - see §11.
 No lint failures remain.
 
 1. **The column-major reader is dead.** `test/columnmajor-audit.js` shows it
-declines on all 93 fixtures and is never reached on 90 - it runs only when
+declines on all 100 fixtures and is never reached on 97 - it runs only when
 `rowPassLooksWrong`. Its own comment names ACS, ACT Florida and TerpLife, NOT
 Modern Canna, and all three now read `forward` and accept, so the row-wise
 reconciler superseded it. Keeping it costs nothing on the 70 passing fixtures.
@@ -199,7 +204,7 @@ node test/extraction-parity.js test/fixtures/pdf 2>&1 | grep -v "^Warning:" | ta
 node test/fixture-lint.js | tail -2
 ```
 
-Expect `90 accepted / 3 rejected`, `90 match / 0 differ`, and `corpus clean`.
+Expect `97 accepted / 3 rejected`, `97 match / 0 differ`, and `corpus clean`.
 Also run `node test/resolver-test.js` - expect `resolver clean`, and
 `bash build.sh` - expect `OK - ready to deploy`.
 
@@ -612,7 +617,7 @@ fifth pattern.
 - **Every accepted fixture now reconciles** against its own printed total.
 `MCL-FLW-002` is the sole exception at 103.8%, and that is the lab's arithmetic,
 not the parser's - it warns rather than refusing.
-- **56 mutation failures** out of 720 (~8%), in two unrelated groups. The
+- **61 mutation failures** out of 776 (~8%), in two unrelated groups. The
   FIRST group, fourteen until 2026-11-20, was down from 19 - see the `gamma-`
   fault in the log below, which accounted for five. A re-run on 2026-11-19
   found those fourteen are six `destructive/shuffleValues`, seven
@@ -627,15 +632,16 @@ not the parser's - it warns rather than refusing.
   the fourteen push mass onto unmodelled compounds and are caught by
   `MIN_MODEL_COVERAGE`, but a warning leaves the fingerprint unchanged, so the
   harness still counts them. Do not spend a session trying to reach zero.
-- **39 of the 56 are `destructive/blankNonDetects`**: 21 on the first 56
-  fixtures, all eight Kaycha reports that joined on 2026-11-19, and ten of the
-  twenty reports from The Flowery's site that joined on 2026-11-20. Added later
+- **44 of the 61 are `destructive/blankNonDetects`**: 21 on the first 56
+  fixtures, all eight Kaycha reports that joined on 2026-11-19, ten of the
+  twenty reports from The Flowery's site that joined on 2026-11-20, and five
+  of the seven that joined on 2026-11-23 (four CTND, `KAY-CAR-009`). Added later
   and a DIFFERENT mechanism from the fourteen above. It strips every ND / BQL /
   `<LOQ` / `<0.nnn` line from the terpene section, modelling a lab that leaves
   the cell empty. Unlike `shuffleValues` this one is fixable in principle —
   see the mutation's own comment for the mechanism and the proposed
   discriminator. Deliberately NOT fixed: no lab in the corpus omits the
-  marker, so no fixture justifies touching the verdict handler (§6). The 27
+  marker, so no fixture justifies touching the verdict handler (§6). The 28
   that reject under it, including all seven ACS files, are behaving correctly
   — a blank cell carries no information and failing closed is the honest
   answer.
@@ -1003,6 +1009,27 @@ fixture, because no fixture can currently reach it
   row whose LOD cell is blank (a 2023 Kaycha pre-roll prints FARNESENE | |
   0.11 | 0.011) is still lost - lining short rows up from the right read it
   but cost five `blankNonDetects` verdicts, so it was reverted (open.md).
+- **A top-five summary won over the panel** (found and fixed 2026-11-23).
+  CTND, a lab new to NOSE, prints "TOP 5 TERPENES" on page one - rounded
+  figures with a flavour word each - and its full panel on page two, Dilution |
+  LOD | LOQ | % | mg/g. The skip that keeps ACT's "Dominant Terpenes" legend
+  out did not know the words, so the summary's five rows took the
+  first-occurrence dedupe and were then lost, and the panel's other rows were
+  read from the mg/g column: `CTN-LRS-001` was ACCEPTED at 87% with pinenes
+  ten times high and no caryophyllene, limonene or linalool; four more refused
+  at 65-767%. The legend skip now opens on "TOP 5 TERPENES" too and closes the
+  terpene section for `unmapped` and the novelty notes, as the panel reopens
+  it. Three spellings came with the lab: `(-)-` is dropped from a name (`(-)-α-Bisabolol`
+  is bisabolol, `(-)-Guaiol` guaiol, both already known), a bare
+  `1,8-Cineole` is unmodelled like its "(Eucalyptol)" form (missing, it fell
+  out of the measured share unflagged - its comma keeps it out of `unmapped`),
+  and the tile word "TERPENES" is not an unknown analyte. CTND's sign-off
+  ("Laboratory Director" over a date) gives `testedOn`, as Method's does.
+  Every other fixture reads exactly as before, every field. Left: CTND's
+  "Moisture / 15 % / 11.8 %" reads null - a bare Moisture label with the
+  limit and the result both in range, which the moisture readers leave
+  unread on purpose - and its strain, batch and sample ID labels
+  ("Cultivar(s):", "Batch No.:", "Sample ID:") are not read (open.md).
 
 ## 12. The fetcher — `netlify/functions/lib/fetch-report.js`, called by `coa.js`
 
@@ -2033,6 +2060,7 @@ under the cap.
 - [Every page gets the phone menu, 2026-11-19](docs/handoff/13-records.md#every-page-gets-the-phone-menu-2026-11-19)
 - [Real reports become public fixtures, and every real scan can be exported at once, 2026-11-19](docs/handoff/13-records.md#real-reports-become-public-fixtures-and-every-real-scan-can-be-exported-at-once-2026-11-19)
 - [The first 14 real scans become fixtures, and a below-limit sign printed apart reads as 0, 2026-11-19](docs/handoff/13-records.md#the-first-14-real-scans-become-fixtures-and-a-below-limit-sign-printed-apart-reads-as-0-2026-11-19)
+- [Reports from The Flowery's site become fixtures, from 73 to 100, and a new lab, 2026-11-23](docs/handoff/13-records.md#reports-from-the-flowerys-site-become-fixtures-from-73-to-100-and-a-new-lab-2026-11-23)
 
 ## 14. Dispensary integration
 

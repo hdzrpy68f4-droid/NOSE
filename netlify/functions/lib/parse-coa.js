@@ -198,7 +198,7 @@ function summedTally(){
 /* Terpenes a lab may report that NOSE does not model. Tracked only so we can
    tell the user how much of the measured mass the fingerprint represents.
    Caryophyllene OXIDE is deliberately here and NOT mapped to caryophyllene. */
-const UNMODELLED = /^(GUAIOL|\(\+\/-\)-BORNEOL|BORNEOL|ISOBORNEOL|CARYOPHYLLENE OXIDE|CAMPHOR|CAMPHORS|\[\+\/-\]-CAMPHOR|CEDROL|\(\+\)-CEDROL|EUCALYPTOL|1,8-CINEOLE \(EUCALYPTOL\)|GERANIOL|GERANYL ACETATE|HEXAHYDROTHYMOL|ISOPULEGOL|MENTHOL|DL-MENTHOL|NEROL|P-CYMENE|PULEGONE|\(\+\)-PULEGONE|SABINENE|SABINENE HYDRATE|VALENCENE|ALPHA-CEDRENE|ALPHA-PHELLANDRENE|ALPHA-TERPINENE|GAMMA-TERPINENE|GAMMA-TERPINEOL|3-CARENE|3-CARENE \(\+\)-?|3-CARENE \(\+\)-|DELTA-3-CARENE|D-3-CARENE|FENCHONE|\(\+\/-\)-FENCHONE)$/i;
+const UNMODELLED = /^(GUAIOL|\(\+\/-\)-BORNEOL|BORNEOL|ISOBORNEOL|CARYOPHYLLENE OXIDE|CAMPHOR|CAMPHORS|\[\+\/-\]-CAMPHOR|CEDROL|\(\+\)-CEDROL|EUCALYPTOL|1,8-CINEOLE \(EUCALYPTOL\)|1,8-CINEOLE|GERANIOL|GERANYL ACETATE|HEXAHYDROTHYMOL|ISOPULEGOL|MENTHOL|DL-MENTHOL|NEROL|P-CYMENE|PULEGONE|\(\+\)-PULEGONE|SABINENE|SABINENE HYDRATE|VALENCENE|ALPHA-CEDRENE|ALPHA-PHELLANDRENE|ALPHA-TERPINENE|GAMMA-TERPINENE|GAMMA-TERPINEOL|3-CARENE|3-CARENE \(\+\)-?|3-CARENE \(\+\)-|DELTA-3-CARENE|D-3-CARENE|FENCHONE|\(\+\/-\)-FENCHONE)$/i;
 
 /* Row labels that are structure, not analytes — used to stop the look-ahead
    and to keep them out of the unrecognised-name diagnostic. */
@@ -252,6 +252,7 @@ const notAnAnalyteHere = (line, prev) =>
    NOT expanded: d-Limonene means dextrorotatory, not delta. */
 function canonicalAnalyte(name){
   return name.toUpperCase()
+    .replace(/^\(-\)-(?=[A-Z])/, '')   // CTND: "(-)-α-Bisabolol", "(-)-Guaiol" - the same compounds
     .replace(/^A-(?=[A-Z])/, 'ALPHA-')
     .replace(/^B-(?=[A-Z])/, 'BETA-')
     .replace(/^G-(?=[A-Z])/, 'GAMMA-');
@@ -331,8 +332,10 @@ const isNumberish = t => VALUE_LINE.test(String(t).trim());
    panel later. Left alone it wins on first-occurrence dedupe and, because
    "Others" is not an analyte name, the preceding row runs on and collects the
    Others figure as its own value. Skip the block. Bounded by the next section
-   heading, or a fixed window if none appears. */
-const CHART_LEGEND_START = /^Dominant Terpenes$/i;
+   heading, or a fixed window if none appears. CTND (Certified Testing and
+   Data) prints its page-one "TOP 5 TERPENES" in the same way: read, its
+   rounded figures won the dedupe over the panel and a report took mg/g as %. */
+const CHART_LEGEND_START = /^(Dominant Terpenes|TOP 5 TERPENES)$/i;
 
 /* A page-one "top ten" summary, where the document ALSO carries a full panel
    later. The summary is a subset by definition, and under pdf.js Modern Canna
@@ -398,7 +401,8 @@ const LABS = [
   [/ACT Lab|actlab/i,                 'ACT Laboratories'],
   [/terplife|TL Laboratories/i,       'TerpLife Labs'],
   [/method testing/i,                 'Method Testing Labs'],
-  [/green scientific/i,               'Green Scientific Labs']
+  [/green scientific/i,               'Green Scientific Labs'],
+  [/Certified Testing and Data|certifiedtnd/i, 'Certified Testing and Data']
 ];
 
 /* Product class drives three things that are NOT comparable across forms:
@@ -553,7 +557,8 @@ const FINISHED = {
   'ACS Laboratory':      { label: /^Completion Date\s*:\s*(.*)$/i },
   'ACT Laboratories':    { label: /^Report Created\s*:\s*(.*)$/i,
                            wrapped: { before: /(?:^|[\s,])Report$/i, label: /^Created\s*:\s*(.*)$/i } },
-  'Method Testing Labs': { signedAfter: /\s-\sLab Director$/i }
+  'Method Testing Labs': { signedAfter: /\s-\sLab Director$/i },
+  'Certified Testing and Data': { signedAfter: /^Laboratory Director$/i }
 };
 
 function finishedOn(lines, lab){
@@ -773,6 +778,7 @@ function parseCoa(text){
     }
 
     if (CHART_LEGEND_START.test(line)){
+      inTerpeneSection = false;   // a summary tile opened it; the panel reopens it (CTND)
       legendUntil = Math.min(i + CHART_LEGEND_MAX, lines.length);
       for (let k = i + 1; k < legendUntil; k++)
         if (CHART_LEGEND_END.test(lines[k])){ legendUntil = k; break; }
@@ -807,7 +813,7 @@ function parseCoa(text){
       const totalOfUnknown = /^Total\s+\S/i.test(line) && !TOTAL_OF_CANNABINOID.test(line)
         && !/^TOTAL TERPENES$/i.test(line)
         && !NOT_AN_ANALYTE.test(line.replace(/^Total\s+/i, ''));
-      if (inTerpeneSection && !SECTION_LABELS.test(upper)
+      if (inTerpeneSection && !SECTION_LABELS.test(upper) && upper !== 'TERPENES'   // CTND: the tile word, value after it
           && !notAnAnalyteHere(line, lines[i - 1])
           && (totalOfUnknown || !NOT_AN_ANALYTE.test(line)) &&
           /^[A-Za-z0-9(][A-Za-z0-9()+\-\/. ]{2,29}$/.test(line) &&
@@ -1922,7 +1928,7 @@ function noveltyOf(lines, lab, unmapped){
   let inSection = false;
   for (const line of lines){
     if (NOVELTY_SECTION_OPEN.test(line)) inSection = true;
-    else if (NOVELTY_SECTION_CLOSE.test(line)) inSection = false;
+    else if (NOVELTY_SECTION_CLOSE.test(line) || CHART_LEGEND_START.test(line)) inSection = false;   // as the loop does
     if (!inSection) continue;
     if (line.length <= UNIT_CELL_MAX && UNIT_CELL.test(line) && !VALUE_LINE.test(line) && !PERCENT_WITH_MASS.test(line))
       units.push(line);

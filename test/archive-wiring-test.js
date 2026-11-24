@@ -964,7 +964,7 @@ async function main() {
   const texts = fs.existsSync(dir) ? fs.readdirSync(dir).filter(f => f.endsWith('.txt')) : [];
   /* Every fixture is kept, by at least two signs - and which two is pinned,
      so a parser or rule change that leaves a report one sign from refusal
-     shows here: 86 show all three, the six ACS reports print no "Certificate
+     shows here: 93 show all three, the six ACS reports print no "Certificate
      of Analysis", and Harmony's topical runs no terpene panel. */
   await test(`every real report shows at least two signs, and none carries a personal key (${texts.length} fixtures)`, async () => {
     if (!texts.length) { console.log('note  no extracted fixtures - run: node test/extract-dump.js'); return; }
@@ -979,7 +979,7 @@ async function main() {
     }
     for (const k of Object.keys(bySigns)) bySigns[k].sort();
     assert.deepStrictEqual(Object.keys(bySigns).sort(), ['lab + panel', 'lab + phrase', 'lab + phrase + panel']);
-    assert.strictEqual(bySigns['lab + phrase + panel'].length, 86);
+    assert.strictEqual(bySigns['lab + phrase + panel'].length, 93);
     assert.deepStrictEqual(bySigns['lab + panel'], ['ACS-CAR-001', 'ACS-CAR-002', 'ACS-FLW-002', 'ACS-LRS-001', 'ACS-LRS-002', 'ACS-PRR-001']);
     assert.deepStrictEqual(bySigns['lab + phrase'], ['Harmony-Muscle-Rub-COA-PHRO1']);
   });
