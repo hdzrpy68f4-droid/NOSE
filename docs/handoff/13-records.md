@@ -6245,5 +6245,14 @@ reparsed"); this is the second.
   for `CODE_LINE`), `b2b-store-test`, `archive-wiring-test`, `gates.sh`,
   CLAUDE.md and §2 moved with the counts: 102 accepted / 3 rejected of 105,
   102 match. Mutation harness 479 absorbed / 274 rejected / 63 changed.
+- **Dry run**, in the Codespace through the browser, from a clean worktree of
+  the pushed branch `method-flower-class` (the Codespace's own checkout left
+  as it was): parser `8afafcd`, 75 documents, 75 unchanged, 0 values changed,
+  0 accepted to rejected, 0 rejected to accepted, 0 failed; nothing written.
+  `reparse.js` compares the whole output, so a class change alone would have
+  counted as "values changed": no archived report flipped class. On `main` as
+  `8afafcd` at the owner's word, who judged the two reports public and their
+  names and addresses no concern; CI, promote and live-check green. The real
+  `reparse.js` was not run: it would change no reading.
 - **Left**, in open.md: the water activity at its limit, now beside
   TerpLife's unread moisture; Method's four fixtures with no finish day.

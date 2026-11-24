@@ -11,7 +11,9 @@ faults". The PDFs are in `coa-crawl-out\` (git-ignored); only `01`, `08` and
 `07`, `09`, `10`, `16`-`18` and `20` print the same layouts and now read.
 
 - **Live, reparsed.** On `main` as `9518bc8` (CI, promote and live-check
-  green); reparse run #27 at that parser, 2026-11-24: 75 documents, 75
+  green), and `8afafcd` since (the flower class rule and `MTL-FLW-009`, `-010`;
+  CI green, its dry run 75 unchanged, no real reparse run); reparse run #27 at
+  the first, 2026-11-24: 75 documents, 75
   unchanged, 0 failed - the archive holds no Method six-page or TerpLife report
   of these kinds, so it proves only that no other reading moved. The live
   check, 2026-11-24 (owner's override of the labs' robots.txt, one page at a
