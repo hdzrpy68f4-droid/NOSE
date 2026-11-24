@@ -186,5 +186,17 @@ x = read([...SUMMARY.slice(0, 3), 'Terpenes', 'Analyte', 'Analyte', ...cells(DES
 check('two Analyte headings with no TERPENES and TESTED above them: nothing is cut',
   [x.state, x.r.totalTerpenes], ['correct', 2]);
 
+/* --- 8. a flower that says so only in its product line (2026-11-24) ----------
+ * Method's one-page report with an empty Matrix cell prints "CANNABIS FLOWER"
+ * in its product lines and no "Usable Whole Flower" (MTL-FLW-010); it read
+ * 'unknown' and the card left out moisture and water activity. The phrase is
+ * the flower row's last words, so any other form that says it still wins. */
+const NOMATRIX = ['Some New Lab LLC', 'Certificate of Analysis', 'TERPENES SUMMARY', 'Analyte', 'Result', 'Result'];
+const classOf = extra => read([...NOMATRIX, ...cells(DESC, URATE), `Total Terpenes: ${TOTAL}%`, ...extra]).r.productClass;
+check('"CANNABIS FLOWER" in a product line, no matrix text: a flower, not unknown',
+  [classOf(['FT - CANNABIS FLOWER - 3.5G - GRZ - HYB']), classOf(['Float - Georgia Runtz'])], ['flower', 'unknown']);
+check('...but a vape or a concentrate that says it is still that form',
+  [classOf(['FT - CANNABIS FLOWER - VAPE CART - 1G']), classOf(['FT - CANNABIS FLOWER - LIVE ROSIN - 1G'])], ['vape', 'concentrate']);
+
 if (failures) { console.log(`\nshifted-rows: ${failures} failure${failures === 1 ? '' : 's'}`); process.exit(1); }
 console.log('\nshifted-rows clean');

@@ -159,10 +159,10 @@ if (withoutFurniture) {
   }
   check('with the furniture check switched off, every other field of every fixture is the same', readingMoved, []);
   /* The four ACS reports are what the first three furniture patterns were
-     written for; MTL-AIO-001 (2026-11-24) is what CODE_LINE was: its batch
+     written for; MTL-AIO-001 and MTL-FLW-009 (2026-11-24) are what CODE_LINE was: its batch
      code and its method number ("SQUE-17-FQ-071926", "TM-004 Terpenes"). */
-  check('...and only the four accepted ACS reports it was written for, and Method\'s MTL-AIO-001 for its codes, gain unmapped furniture again',
-    diagnosticMoved, ['ACS-FLW-002', 'ACS-LRS-002', 'ACS-PRR-001', 'COA_GassiusClay_3_5gWF_4793_1807_7220_8969', 'MTL-AIO-001']);
+  check('...and only the four accepted ACS reports it was written for, and Method\'s MTL-AIO-001 and MTL-FLW-009 for their codes, gain unmapped furniture again',
+    diagnosticMoved, ['ACS-FLW-002', 'ACS-LRS-002', 'ACS-PRR-001', 'COA_GassiusClay_3_5gWF_4793_1807_7220_8969', 'MTL-AIO-001', 'MTL-FLW-009']);
 }
 
 /* --- the corpus: an accepted fixture's layout is known ------------------------ */

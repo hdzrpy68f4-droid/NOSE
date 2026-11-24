@@ -470,12 +470,20 @@ const CLASSES = [
   [/edible gummy|\bgummy\b|Ingestible, Beverage/i, 'edible'],
   [/\btincture\b/i, 'tincture'],
   [/topical|muscle rub|roll[- ]?on|Derivative Non-inhalable/i, 'topical'],
+  /* Method's autumn 2026 one-page flower with an empty Matrix cell prints no
+     "Usable Whole Flower" anywhere, only "CANNABIS FLOWER" in its two product
+     lines ("Float - CANNABIS FLOWER - Georgia Runtz"), and read 'unknown': no
+     moisture or water activity row on the card. Modern Canna's "PREFERRED
+     SMALLS - CANNABIS FLOWER" (a saved report, 80571) read 'unknown' the same
+     way. This is the last row, so a vape, concentrate, edible, tincture or
+     topical that says it still wins; on every report on disk the phrase is a
+     flower's. */
   /* Modern Canna's April 2026 juniors print "Product Name: FLOWER JUNIORS" over
      "Sample Matrix: Juniors" and no "Testing Matrix" row, so they read
      'unknown' (MCL-FLW-008, 2026-11-20); the November template adds "Testing
      Matrix: Usable Whole Flower Marijuana". The words appear in no other kind
      of report in the corpus or among the 1,005. */
-  [/hand[- ]?roll|pre[- ]?roll|\bjoint\b|Usable Whole Flower|Whole Flower|Flower Inhalable|Matrix:\s*Flower\b|Flower\s*-?\s*Cured|Flower & Plants|Plant, Flower|\bflower juniors\b/i, 'flower']
+  [/hand[- ]?roll|pre[- ]?roll|\bjoint\b|Usable Whole Flower|Whole Flower|Flower Inhalable|Matrix:\s*Flower\b|Flower\s*-?\s*Cured|Flower & Plants|Plant, Flower|\bflower juniors\b|\bcannabis flower\b/i, 'flower']
 ];
 
 function detectLab(text){

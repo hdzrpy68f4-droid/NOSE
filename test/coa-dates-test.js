@@ -188,27 +188,27 @@ const TESTED = {
   'MTL-CAR-001': '2025-03-03', 'MTL-CAR-002': '2026-09-14', 'MTL-FLW-001': '2026-03-09', 'MTL-FLW-002': '2026-08-31',
   'MTL-FLW-003': '2026-08-21', 'MTL-FLW-004': '2026-08-04', 'MTL-FLW-005': '2026-09-04', 'MTL-FLW-006': '2026-09-28',
   'MTL-FLW-007': '2026-10-26', 'MTL-LRS-001': '2025-03-03', 'MTL-LRS-002': '2025-05-09', 'MTL-PRR-001': '2026-03-07',
-  'MTL-AIO-001': null, 'MTL-FLW-008': null, 'TLL-FLW-001': null,   // Method's autumn 2026 sign-off is not the line the rule reads; TerpLife none
+  'MTL-AIO-001': null, 'MTL-FLW-008': null, 'MTL-FLW-009': null, 'MTL-FLW-010': null, 'TLL-FLW-001': null,   // Method's autumn 2026 sign-off is not the line the rule reads; TerpLife none
   'Method_DulceDeUva_flower': null, 'TerpLife_GrpeBblGm_flower': null, 'external-download': '2026-06-30',
   'hemp-bombs-cbd-gummies-50-count-750mg-of-cbd-COA': null
 };
 check('testedOn on every fixture: the day its lab\'s finish row prints',
   names.filter(n => outputs[n].testedOn !== TESTED[n]).map(n => [n, outputs[n].testedOn, TESTED[n]]), []);
-check('...and the list names every fixture, no more', [names.length, Object.keys(TESTED).length, names.every(n => n in TESTED)], [103, 103, true]);
+check('...and the list names every fixture, no more', [names.length, Object.keys(TESTED).length, names.every(n => n in TESTED)], [105, 105, true]);
 {
   const accepted = names.filter(n => outputs[n].usable);
   const dated = o => o.harvestOn || o.testedOn || o.reportOn;
-  check('dated accepted fixtures, by harvestOn, testedOn or reportOn: 41 of 100 become 97 of 100 - only Method\'s two layouts with no readable sign-off are undated',
+  check('dated accepted fixtures, by harvestOn, testedOn or reportOn: 41 of 102 become 97 of 102 - only Method\'s two layouts with no readable sign-off are undated',
     [accepted.length, accepted.filter(n => outputs[n].harvestOn || outputs[n].reportOn).length, accepted.filter(n => dated(outputs[n])).length,
-     accepted.filter(n => !dated(outputs[n]))], [100, 41, 97, ['MTL-AIO-001', 'MTL-FLW-008', 'Method_DulceDeUva_flower']]);
+     accepted.filter(n => !dated(outputs[n]))], [102, 41, 97, ['MTL-AIO-001', 'MTL-FLW-008', 'MTL-FLW-009', 'MTL-FLW-010', 'Method_DulceDeUva_flower']]);
   const perLab = {};
   for (const n of accepted) {
     const L = perLab[outputs[n].lab] || (perLab[outputs[n].lab] = [0, 0]);
     L[0]++; if (outputs[n].testedOn) L[1]++;
   }
-  check('...testedOn per lab: Kaycha 47/47, Modern Canna 20/20, ACS 8/8, ACT 3/3, Method 12/15, TerpLife 0/2, CTND 5/5',
+  check('...testedOn per lab: Kaycha 47/47, Modern Canna 20/20, ACS 8/8, ACT 3/3, Method 12/17, TerpLife 0/2, CTND 5/5',
     perLab, { 'Modern Canna': [20, 20], 'ACS Laboratory': [8, 8], 'ACT Laboratories': [3, 3], 'Certified Testing and Data': [5, 5],
-              'Kaycha Labs': [47, 47], 'Method Testing Labs': [15, 12], 'TerpLife Labs': [2, 0] });
+              'Kaycha Labs': [47, 47], 'Method Testing Labs': [17, 12], 'TerpLife Labs': [2, 0] });
 }
 
 /* The rules behind those values, each on a real fixture's text changed in one

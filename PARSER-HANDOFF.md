@@ -36,10 +36,10 @@ is exactly what the parser sees.
 ## 2. Current state
 
 ```
-100 accepted / 3 rejected     (103 COA fixtures)
-100 match / 0 differ          (extraction parity, unpdf vs pdftotext)
+102 accepted / 3 rejected     (105 COA fixtures)
+102 match / 0 differ          (extraction parity, unpdf vs pdftotext)
 corpus clean                  (fixture lint)
-62 mutation failures          (mutation harness, 800 cases - see §9)
+63 mutation failures          (mutation harness, 816 cases - see §9)
 ```
 
 The first 14 real scans joined on 2026-11-19, each checked by hand against its
@@ -87,13 +87,13 @@ whole workspace had to be rebuilt from the remote.
 **Which reader serves which documents**, from `readBy`:
 
 ```
-forward      67      the plain name-then-value pass
+forward      69      the plain name-then-value pass
 multicolumn  31      Kaycha's three-column rows
 backward      2      value-before-name layouts
-columnmajor   0      dead - declines on all 103, unreached on 100
+columnmajor   0      dead - declines on all 105, unreached on 102
 
-Counts are of ACCEPTED fixtures (67+31+2 = 100), measured 2026-11-24. Rejected
-documents also carry a `readBy`, so counting all 103 gives 70 forward. The table
+Counts are of ACCEPTED fixtures (69+31+2 = 102), measured 2026-11-24. Rejected
+documents also carry a `readBy`, so counting all 105 gives 72 forward. The table
 before 2026-11-19 said 43 forward of 53 accepted, while the 56 then accepted read
 46 forward: it had drifted, so re-count rather than add.
 ```
@@ -114,7 +114,7 @@ Three accepted-but-wrong faults were found and fixed this session - see §11.
 No lint failures remain.
 
 1. **The column-major reader is dead.** `test/columnmajor-audit.js` shows it
-declines on all 103 fixtures and is never reached on 100 - it runs only when
+declines on all 105 fixtures and is never reached on 102 - it runs only when
 `rowPassLooksWrong`. Its own comment names ACS, ACT Florida and TerpLife, NOT
 Modern Canna, and all three now read `forward` and accept, so the row-wise
 reconciler superseded it. Keeping it costs nothing on the 70 passing fixtures.
@@ -204,7 +204,7 @@ node test/extraction-parity.js test/fixtures/pdf 2>&1 | grep -v "^Warning:" | ta
 node test/fixture-lint.js | tail -2
 ```
 
-Expect `100 accepted / 3 rejected`, `100 match / 0 differ`, and `corpus clean`.
+Expect `102 accepted / 3 rejected`, `102 match / 0 differ`, and `corpus clean`.
 Also run `node test/resolver-test.js` - expect `resolver clean`, and
 `bash build.sh` - expect `OK - ready to deploy`.
 
@@ -385,6 +385,12 @@ minimum-analyte check applies to `unknown` as well, and `TYPICAL_MAX_TOTAL` give
 it the HIGHEST ceiling — not a guess at the form, but a bound no legitimate product
 of any form exceeds. Previously `unknown` had no entry and skipped both checks, so
 a 30% total was rejected as flower and accepted silently as unknown.
+The line is not that nothing may be classified: a Method flower of autumn 2026
+with an empty Matrix cell prints the phrase "CANNABIS FLOWER" in its product
+lines, and since 2026-11-24 that phrase makes a flower - the flower row, last in
+the order, needs no adjacency, and Modern Canna's `80571` reads the same way
+(§11, "A flower that says so only in its product line"). `Method_DulceDeUva_flower`
+and `ACS-LRS-001` print no such words and stay `unknown`.
 
 **Two coverage figures.**
 - `measuredCoverage = (mapped + unmodelled) / total` — did we read the table?
@@ -628,7 +634,7 @@ fifth pattern.
 - **Every accepted fixture now reconciles** against its own printed total.
 `MCL-FLW-002` is the sole exception at 103.8%, and that is the lab's arithmetic,
 not the parser's - it warns rather than refusing.
-- **62 mutation failures** out of 800 (~8%), in two unrelated groups. The
+- **63 mutation failures** out of 816 (~8%), in two unrelated groups. The
   FIRST group, fourteen until 2026-11-20, was down from 19 - see the `gamma-`
   fault in the log below, which accounted for five. A re-run on 2026-11-19
   found those fourteen are six `destructive/shuffleValues`, seven
@@ -636,10 +642,11 @@ not the parser's - it warns rather than refusing.
   fourteen `shuffleValues` as this said; the same on the parser before that
   day's change, so older drift (open.md). `KAY-LRS-010`, then
   `KAY-LRS-011` and `MCL-FLW-008`, made the `pageNumbers` ten on 2026-11-20, so
-  the group is seventeen, and eighteen since `MTL-AIO-001` (2026-11-24): a
-  second `glueNames`, which glues every alpha- and beta- name to the line
-  above and so loses three of its ten summary rows (0.203 of 4.46); the other
-  seven rows still read 94.9% of the total, over the coverage floor. The
+  the group is seventeen, and nineteen since `MTL-AIO-001` and `MTL-FLW-010`
+  (2026-11-24): a second and a third `glueNames`, which glues every alpha- and
+  beta- name to the line above and so loses three of the ten summary rows
+  (0.203 of 4.46; 0.206 of 1.66); the other seven still read 94.9% and 87.6%
+  of the total, over the coverage floor. The
   `shuffleValues` ones are a KNOWN
   LIMIT rather than a backlog item. That mutation reverses every standalone numeric line in the
   document, so the multiset of values is conserved and every sum still
@@ -647,7 +654,7 @@ not the parser's - it warns rather than refusing.
   the fourteen push mass onto unmodelled compounds and are caught by
   `MIN_MODEL_COVERAGE`, but a warning leaves the fingerprint unchanged, so the
   harness still counts them. Do not spend a session trying to reach zero.
-- **44 of the 62 are `destructive/blankNonDetects`**: 21 on the first 56
+- **44 of the 63 are `destructive/blankNonDetects`**: 21 on the first 56
   fixtures, all eight Kaycha reports that joined on 2026-11-19, ten of the
   twenty reports from The Flowery's site that joined on 2026-11-20, and five
   of the seven that joined on 2026-11-23 (four CTND, `KAY-CAR-009`). Added later
@@ -664,7 +671,8 @@ not the parser's - it warns rather than refusing.
   `ACS-LRS-001`. This is honest: neither document states its form in text the
   parser can reach (§6). They are now guarded rather than exempt, so nothing is
   unsafe, but a future Method or ACS template might expose an adjacency worth
-  matching on.
+  matching on. Since 2026-11-24 Method's autumn flowers are classified by the
+  words of their product line (§6, §11); both of these still read `unknown`.
 - **Decided 2026-11-19, the owner: real lab reports are public fixtures.**
   The 56 source PDFs are tracked in this PUBLIC repo, and new ones join them
   the same way. A private repo for new reports, and rewriting history to take
@@ -1074,6 +1082,27 @@ fixture, because no fixture can currently reach it
   to 100 accepted / 3 rejected and 100 match; the mutation figure is 62 of
   800 (`MTL-AIO-001` under `glueNames`). Left: Method's J rows, its finish day
   and the kief class of one Trulieve report (open.md).
+- **A flower that says so only in its product line** (found and fixed
+  2026-11-24). A live check of seven new reports (four Method from Surterra,
+  three TerpLife from Sanctuary) accepted all seven and matched their PDFs; one,
+  Georgia Runtz, read `unknown`. Its Matrix cell is blank, so no "Usable Whole
+  Flower Marijuana" is printed, only "CANNABIS FLOWER" in two product lines,
+  and an `unknown` flower leaves moisture and water activity off the card.
+  `cannabis flower` is now a word of the flower row, which is last in the
+  first-match list, so a vape, concentrate, edible, tincture or topical that
+  says it still wins (`test/shifted-rows-test.js`, section 8). The parser at
+  `HEAD` and the patched one, over 1,909 reports (the 103 fixtures then, the 26
+  crawl reads, the seven new ones and the 1,773 saved), differ on exactly two,
+  each `unknown` to `flower` in `productClass` and `freshnessApplies` and
+  nothing else: Georgia Runtz and Modern Canna's `80571` ("PREFERRED SMALLS -
+  CANNABIS FLOWER"; total 2.4, moisture 11.1 as printed, water activity
+  unread under "Activity of Water (Aw)" on purpose). On the card, Georgia
+  Runtz's moisture and water activity rows now say not read, where they were
+  left out: its one page prints neither. `MTL-FLW-009` (Happily Ever After)
+  and `MTL-FLW-010` (Georgia Runtz) take the counts to 102 accepted / 3
+  rejected and 102 match; the mutation figure is 63 of 816 (`MTL-FLW-010`
+  under `glueNames`, the third); the methodology page's "Close match" share is
+  29% of 1,128 flower pairs, inside match-props-test's window.
 
 ## 12. The fetcher — `netlify/functions/lib/fetch-report.js`, called by `coa.js`
 
@@ -2106,6 +2135,7 @@ under the cap.
 - [The first 14 real scans become fixtures, and a below-limit sign printed apart reads as 0, 2026-11-19](docs/handoff/13-records.md#the-first-14-real-scans-become-fixtures-and-a-below-limit-sign-printed-apart-reads-as-0-2026-11-19)
 - [Reports from The Flowery's site become fixtures, from 73 to 100, and a new lab, 2026-11-23](docs/handoff/13-records.md#reports-from-the-flowerys-site-become-fixtures-from-73-to-100-and-a-new-lab-2026-11-23)
 - [Twelve refused St. Petersburg reports: three faults found, three become fixtures, 2026-11-24](docs/handoff/13-records.md#twelve-refused-st-petersburg-reports-three-faults-found-three-become-fixtures-2026-11-24)
+- [Georgia Runtz's class and Happily Ever After: two more fixtures, 2026-11-24](docs/handoff/13-records.md#georgia-runtzs-class-and-happily-ever-after-two-more-fixtures-2026-11-24)
 
 ## 14. Dispensary integration
 

@@ -6208,3 +6208,42 @@ reaches, and pin the reports as fixtures. The PDFs sit in `coa-crawl-out\`
   business) in `MTL-AIO-001`; Brian C. Spann (TerpLife's director, already in
   two) and the client company's phone number in `TLL-FLW-001`; PDF metadata
   holds none.
+
+### Georgia Runtz's class and Happily Ever After: two more fixtures, 2026-11-24
+
+After "Twelve refused St. Petersburg reports", the owner asked for new Method
+(autumn 2026) and TerpLife reports to test the live parser, then whether the
+seven found should be fixtures. The first answer is in open.md ("Live,
+reparsed"); this is the second.
+
+- **Which of the seven.** Each was weighed by what it pins that the corpus does
+  not. Happily Ever After (six-page flower): the only flower on that layout
+  (`MTL-AIO-001` is a vape), the only fixture pinning moisture through the
+  panel cut (8.6, a limit of 15 beside it, read off the PDF's own row), and a
+  water activity printed as `Pass | 0.65 | 0.65` - the limit and a result at
+  it - which the parser reads as null because it never takes a value equal to
+  an action level. Georgia Runtz: a real finding, class `unknown`. Jupiter Leo
+  and Hot Mess: one-page layouts already pinned. Bloobry, Gelonade and Witch
+  Doctor: `TLL-FLW-001`'s layout, its rule already justified. Added: two;
+  five stay recorded, their PDFs in `coa-crawl-out` (git-ignored) as
+  `new-01` to `new-07`, the seven source links in `new-links.txt` beside them.
+- **The rule.** `cannabis flower` appended to the flower row of `CLASSES`
+  (§11, "A flower that says so only in its product line"). Checked first on
+  every report on disk with the parser at `HEAD` against the patched one: two
+  of 1,909 change, both `unknown` to `flower`, nothing else in either. The
+  second, `80571`, is a Modern Canna report, so the rule is not one lab's
+  habit. Two made-up checks pin it - the phrase makes a flower, a vape or a
+  concentrate that says it still wins - and the first fails with the rule
+  taken out.
+- **Fixtures**, typed from the PDFs before comparing: `MTL-FLW-009` 96.93%,
+  `MTL-FLW-010` 94.64% of their printed totals, parity agreed on every field.
+  Personal data: the client "Parallel" (a company) with its address "On File",
+  Method's own business address, Anthony Repay as signer (already in 13
+  fixtures); no phone number or email; empty PDF metadata.
+- **Verified.** `coa-dates-test`, `novelty-test` (`MTL-FLW-009` now also gains
+  unmapped furniture, the method number, with the check off: a second reason
+  for `CODE_LINE`), `b2b-store-test`, `archive-wiring-test`, `gates.sh`,
+  CLAUDE.md and §2 moved with the counts: 102 accepted / 3 rejected of 105,
+  102 match. Mutation harness 479 absorbed / 274 rejected / 63 changed.
+- **Left**, in open.md: the water activity at its limit, now beside
+  TerpLife's unread moisture; Method's four fixtures with no finish day.

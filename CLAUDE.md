@@ -48,8 +48,8 @@ bash build.sh                        # must end "OK — ready to deploy"
 There is no test framework. Each test is a plain Node script, so run one by itself with `node test/<name>-test.js` (or `.mjs`). Each prints one exact success line, usually `<name> clean`. `gates.sh` passes a gate only on that exact line, and the expected counts are hard-coded there. The core parser checks:
 
 ```bash
-node test/coa-gate-test.js test/fixtures/extracted netlify/functions/lib/parse-coa.js | tail -1   # 100 accepted / 3 rejected
-node test/extraction-parity.js test/fixtures/pdf                                                 # 100 match / 0 differ
+node test/coa-gate-test.js test/fixtures/extracted netlify/functions/lib/parse-coa.js | tail -1   # 102 accepted / 3 rejected
+node test/extraction-parity.js test/fixtures/pdf                                                 # 102 match / 0 differ
 node test/fixture-lint.js                                                                        # corpus clean
 ```
 

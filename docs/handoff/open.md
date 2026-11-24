@@ -21,14 +21,12 @@ faults". The PDFs are in `coa-crawl-out\` (git-ignored); only `01`, `08` and
   cartridge) and three TerpLife from Sanctuary (Bloobry, Gelonade, Witch
   Doctor). All accepted, route `forward`, no warning, no novelty: Method at
   94.6-96.9% of its printed total, TerpLife at 100.01-100.02%. Every row
-  matched the PDF read from its own geometry, not through the parser. None is
-  a fixture; the PDFs stay outside the repo.
-- **Georgia Runtz reads right and its class is `unknown`.** Its Matrix cell is
-  blank, so no "Usable Whole Flower Marijuana" is printed - only "CANNABIS
-  FLOWER" in its two product lines - and `unknown` means the card leaves out
-  moisture and water activity for a flower (`Method_DulceDeUva_flower` is
-  `unknown` for a like reason). A rule on the product line would classify it;
-  it needs this report as a fixture first (§6, constants). Not changed.
+  matched the PDF read from its own geometry, not through the parser. Two
+  became fixtures the same day: `MTL-FLW-009` (Happily Ever After: the
+  six-page flower, the only fixture pinning moisture through the panel cut)
+  and `MTL-FLW-010` (Georgia Runtz, with the class rule below). The other five
+  are not - their layouts are pinned. All seven PDFs and their links are in
+  `coa-crawl-out` (git-ignored) as `new-01` to `new-07` and `new-links.txt`.
 - **Method's J rows are not read; Kaycha's are.** A cell such as `0.00300 J`
   (detected between the limit of detection and of quantitation) is not a
   result token in the forward look-ahead: the same made-up row reads 0.003
@@ -39,8 +37,8 @@ faults". The PDFs are in `coa-crawl-out\` (git-ignored); only `01`, `08` and
 - **Method's autumn 2026 finish day is printed and not read.** Its
   "Completion Date:" label sits apart from its value, and the sign-off is a
   name, a date and "Lab Director" on separate lines, not the one-line
-  "name - Lab Director" the rule reads. `testedOn` is null on `MTL-FLW-008`
-  and `MTL-AIO-001`; so are strain, batch and lab ID (labels apart from their
+  "name - Lab Director" the rule reads. `testedOn` is null on `MTL-FLW-008`,
+  `-009`, `-010` and `MTL-AIO-001`; so are strain, batch and lab ID (labels apart from their
   values, as on `Method_DulceDeUva_flower`). Reading them needs
   `test/date-probe.js` and its own change.
 - **Method's six-page reports are read from the top ten.** The full panel is
@@ -58,6 +56,13 @@ faults". The PDFs are in `coa-crawl-out\` (git-ignored); only `01`, `08` and
   total this report prints". It fails closed; only the wording is off.
 - **TerpLife's moisture** is still unread (§9): `TLL-FLW-001` prints 13.1 and
   reads null.
+- **A water activity equal to its action level reads null.** `MTL-FLW-009`
+  prints `Water Activity | Pass | 0.65 | 0.65` - the limit and a result of
+  exactly 0.65 - and the parser never takes a value equal to the action level
+  (0.65, 0.85, 0.10, 0.01: they are what the limit column prints), so the
+  baseline is null. Like TerpLife's moisture, the report prints a value the
+  parser deliberately does not read; a flower sitting exactly at the limit
+  shows no water activity on the card.
 
 ## Reports from The Flowery's site: what is left (2026-11-23)
 
