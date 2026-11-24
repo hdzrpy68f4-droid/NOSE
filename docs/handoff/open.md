@@ -13,8 +13,22 @@ faults". The PDFs are in `coa-crawl-out\` (git-ignored); only `01`, `08` and
 - **Live, reparsed.** On `main` as `9518bc8` (CI, promote and live-check
   green); reparse run #27 at that parser, 2026-11-24: 75 documents, 75
   unchanged, 0 failed - the archive holds no Method six-page or TerpLife report
-  of these kinds, so it proves only that no other reading moved. The first
-  Method autumn 2026 or TerpLife scan that arrives is the live check.
+  of these kinds, so it proves only that no other reading moved. The live
+  check, 2026-11-24 (owner's override of the labs' robots.txt, one page at a
+  time): seven reports never read before, through `read-report.js` - four
+  Method from Surterra (Happily Ever After, a six-page flower with the two-up
+  panel; Georgia Runtz, flower; Jupiter Leo, an all-in-one; Hot Mess, a
+  cartridge) and three TerpLife from Sanctuary (Bloobry, Gelonade, Witch
+  Doctor). All accepted, route `forward`, no warning, no novelty: Method at
+  94.6-96.9% of its printed total, TerpLife at 100.01-100.02%. Every row
+  matched the PDF read from its own geometry, not through the parser. None is
+  a fixture; the PDFs stay outside the repo.
+- **Georgia Runtz reads right and its class is `unknown`.** Its Matrix cell is
+  blank, so no "Usable Whole Flower Marijuana" is printed - only "CANNABIS
+  FLOWER" in its two product lines - and `unknown` means the card leaves out
+  moisture and water activity for a flower (`Method_DulceDeUva_flower` is
+  `unknown` for a like reason). A rule on the product line would classify it;
+  it needs this report as a fixture first (§6, constants). Not changed.
 - **Method's J rows are not read; Kaycha's are.** A cell such as `0.00300 J`
   (detected between the limit of detection and of quantitation) is not a
   result token in the forward look-ahead: the same made-up row reads 0.003
