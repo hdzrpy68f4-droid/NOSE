@@ -29,3 +29,4 @@ docs/project-notes/nose-b2b-readiness-audit-2026-10-26.md
 # Reviews that list open weaknesses with file and line numbers. This repo is
 # public, so they stay on this computer only, as the three audits above do.
 docs/reviews/
+coa-crawl-out/
