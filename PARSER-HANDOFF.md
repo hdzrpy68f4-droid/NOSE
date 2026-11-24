@@ -36,10 +36,10 @@ is exactly what the parser sees.
 ## 2. Current state
 
 ```
-84 accepted / 3 rejected      (87 COA fixtures)
-84 match / 0 differ           (extraction parity, unpdf vs pdftotext)
+90 accepted / 3 rejected      (93 COA fixtures)
+90 match / 0 differ           (extraction parity, unpdf vs pdftotext)
 corpus clean                  (fixture lint)
-56 mutation failures          (mutation harness, 672 cases - see §9)
+56 mutation failures          (mutation harness, 720 cases - see §9)
 ```
 
 The first 14 real scans joined on 2026-11-19, each checked by hand against its
@@ -53,7 +53,12 @@ total that counts only the quantified rows"), and a pen and a pod read as
 concentrates (§11, "A pen and a pod"). The next four are two Modern Canna
 pre-rolls, the first in the corpus, a Modern Canna April juniors and a
 Kaycha sauce; the last two read as `unknown` until their form words were
-known (§11, "A sauce and flower juniors").
+known (§11, "A sauce and flower juniors"). Six more reach back to 2023:
+Kaycha's Davie licence (CMTL-0002) from 2023 to 2025 and a Modern Canna
+concentrate of 2023; reading them found that the multicolumn reader lost a
+row whose mg figure passed 100, and that ACT's `KF2025-046-PB-AU-COA` had
+been baselined without its farnesene (§11, "A figure above 100 slid a row
+out of its column").
 
 Seven labs, four inhalable product classes. Kaycha, Modern Canna, ACS, ACT,
 TerpLife, Method all working. Green Scientific has no working sample and is not
@@ -69,7 +74,7 @@ Live scanning works end to end: camera → QR → viewer-page resolution → fet
 unpdf → parse → confirmation card, including the warnings row, which has been
 seen rendering on a real scanned jar.
 
-All 87 source PDFs are tracked in git, so the corpus is reproducible from a clone:
+All 93 source PDFs are tracked in git, so the corpus is reproducible from a clone:
 `node test/extract-dump.js` regenerates `test/fixtures/extracted/` in about a
 minute. This was proven the hard way when a Codespace container failed and the
 whole workspace had to be rebuilt from the remote.
@@ -78,12 +83,12 @@ whole workspace had to be rebuilt from the remote.
 
 ```
 forward      58      the plain name-then-value pass
-multicolumn  24      Kaycha's three-column rows
+multicolumn  30      Kaycha's three-column rows
 backward      2      value-before-name layouts
-columnmajor   0      dead - declines on all 87, unreached on 84
+columnmajor   0      dead - declines on all 93, unreached on 90
 
-Counts are of ACCEPTED fixtures (58+24+2 = 84), measured 2026-11-20. Rejected
-documents also carry a `readBy`, so counting all 87 gives 61 forward. The table
+Counts are of ACCEPTED fixtures (58+30+2 = 90), measured 2026-11-20. Rejected
+documents also carry a `readBy`, so counting all 93 gives 61 forward. The table
 before 2026-11-19 said 43 forward of 53 accepted, while the 56 then accepted read
 46 forward: it had drifted, so re-count rather than add.
 ```
@@ -104,7 +109,7 @@ Three accepted-but-wrong faults were found and fixed this session - see §11.
 No lint failures remain.
 
 1. **The column-major reader is dead.** `test/columnmajor-audit.js` shows it
-declines on all 87 fixtures and is never reached on 84 - it runs only when
+declines on all 93 fixtures and is never reached on 90 - it runs only when
 `rowPassLooksWrong`. Its own comment names ACS, ACT Florida and TerpLife, NOT
 Modern Canna, and all three now read `forward` and accept, so the row-wise
 reconciler superseded it. Keeping it costs nothing on the 70 passing fixtures.
@@ -194,7 +199,7 @@ node test/extraction-parity.js test/fixtures/pdf 2>&1 | grep -v "^Warning:" | ta
 node test/fixture-lint.js | tail -2
 ```
 
-Expect `84 accepted / 3 rejected`, `84 match / 0 differ`, and `corpus clean`.
+Expect `90 accepted / 3 rejected`, `90 match / 0 differ`, and `corpus clean`.
 Also run `node test/resolver-test.js` - expect `resolver clean`, and
 `bash build.sh` - expect `OK - ready to deploy`.
 
@@ -478,8 +483,8 @@ reportDate  client  parserVersion  harvestOn  reportOn  testedOn
   lacks, a day after today (UTC), or one before 2014-01-01. With those two
   bounds a two-digit year reads only from 14 to the current year, so 20YY is
   never a guess between centuries. On the corpus every printed harvest and
-  report date reads: 37 harvest dates (3 ACS, printed ISO already; 34
-  Kaycha, eight of them since 2026-11-19 and ten since 2026-11-20) and 2
+  report date reads: 39 harvest dates (3 ACS, printed ISO already; 36
+  Kaycha, eight of them since 2026-11-19 and twelve since 2026-11-20) and 2
   TerpLife report dates - the widening moved none of them.
   Widening the forms again needs a prompt that asks for it.
 - **`testedOn`** (since 2026-10-14) is the day the lab finished, as an ISO
@@ -607,7 +612,7 @@ fifth pattern.
 - **Every accepted fixture now reconciles** against its own printed total.
 `MCL-FLW-002` is the sole exception at 103.8%, and that is the lab's arithmetic,
 not the parser's - it warns rather than refusing.
-- **56 mutation failures** out of 672 (~8%), in two unrelated groups. The
+- **56 mutation failures** out of 720 (~8%), in two unrelated groups. The
   FIRST group, fourteen until 2026-11-20, was down from 19 - see the `gamma-`
   fault in the log below, which accounted for five. A re-run on 2026-11-19
   found those fourteen are six `destructive/shuffleValues`, seven
@@ -624,13 +629,13 @@ not the parser's - it warns rather than refusing.
   harness still counts them. Do not spend a session trying to reach zero.
 - **39 of the 56 are `destructive/blankNonDetects`**: 21 on the first 56
   fixtures, all eight Kaycha reports that joined on 2026-11-19, and ten of the
-  fourteen reports from The Flowery's site that joined on 2026-11-20. Added later
+  twenty reports from The Flowery's site that joined on 2026-11-20. Added later
   and a DIFFERENT mechanism from the fourteen above. It strips every ND / BQL /
   `<LOQ` / `<0.nnn` line from the terpene section, modelling a lab that leaves
   the cell empty. Unlike `shuffleValues` this one is fixable in principle —
   see the mutation's own comment for the mechanism and the proposed
   discriminator. Deliberately NOT fixed: no lab in the corpus omits the
-  marker, so no fixture justifies touching the verdict handler (§6). The 21
+  marker, so no fixture justifies touching the verdict handler (§6). The 27
   that reject under it, including all seven ACS files, are behaving correctly
   — a blank cell carries no information and failing closed is the honest
   answer.
@@ -978,6 +983,26 @@ fixture, because no fixture can currently reach it
   the corpus and among the 1,005, is that kind, and no fixture changed class.
   A Kaycha THCA report printing only "Type: Extract for Inhalation" stays
   `unknown` - one document is not a rule (§6).
+
+- **A figure above 100 slid a row out of its column** (found and fixed
+  2026-11-20). The multicolumn reader pairs each row's figures with the
+  total row's by position, but the rows reached it with figures above 100
+  taken out while the total row kept all of its own. On a 14 g Kaycha jar
+  printing LOD | mg | %, limonene's 111.86 mg went, its % moved one place
+  left, the chosen column found nothing, and limonene was lost: 73% of the
+  total recovered, refused (`KAY-FLW-010`; three more Davie reports of 2023
+  and 2025 among the 1,601 on disk). The same slide had cost ACT's
+  `KF2025-046-PB-AU-COA` its farnesene since it was baselined - LOQ 247
+  beside 0.2284%, the third terpene on its page 1 - accepted at 87.7%
+  measured with the baseline defending it, as `ACS-FLW-002`'s once did. The
+  reader now takes every figure in its place; the column it chooses sums to
+  at most `PLAUSIBLE_TOTAL_PERCENT`, so no figure above 100 can be read.
+  `KF2025` was typed again from its PDF (13 terpenes, 99.99% measured) and
+  `ACT_AppleBurst_vape` now reads `multicolumn`, its values unchanged; the
+  mutation harness gives every case the verdict it gave before. Not fixed: a
+  row whose LOD cell is blank (a 2023 Kaycha pre-roll prints FARNESENE | |
+  0.11 | 0.011) is still lost - lining short rows up from the right read it
+  but cost five `blankNonDetects` verdicts, so it was reverted (open.md).
 
 ## 12. The fetcher — `netlify/functions/lib/fetch-report.js`, called by `coa.js`
 

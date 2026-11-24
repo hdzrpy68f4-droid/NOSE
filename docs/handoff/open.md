@@ -58,7 +58,31 @@ and this note. Ask the owner before every push; a parser change has
   five points, so the page now says "about three times in ten" (was "one time
   in four"); its sitemap date moved with it. Batch 1 is live: CI, promote and
   live-check green on `b642c8e`; the real `reparse.js` waits for the owner.
-  Batch 2 needs its own dry run before a push.
+  Batch 2 (`7c05f71`) had its dry run on 2026-11-20 (75 documents, 75
+  unchanged) and was pushed to main at the owner's word. The real
+  `reparse.js` for batches 1 and 2 still waits for the owner's OK.
+- **Batch 3, first six** (local commit, 2026-11-23): `KAY-FLW-010` (Davie, Feb 2025,
+  14 g - the row lost to a figure above 100), `KAY-LRS-012` (Davie, 2023,
+  13.3%), `KAY-CAR-008` (Davie, 2024 pod), `KAY-LRS-013` (Davie, 2024),
+  `KAY-FLW-011` (Davie, 2025), `MCL-LRS-002` (Modern Canna 2023, the second
+  Modern Canna concentrate). `KF2025-046-PB-AU-COA` re-typed: its baseline
+  lacked farnesene (§11). Their strains print without a "Strain:" label and
+  read empty, as on `KAY-FLW-002`/`003`. The demo store is regenerated (KF2025's farnesene), which the widget gate
+  needed. Its own dry run comes before any push.
+- **Known and left**: a Kaycha row with a blank LOD cell is lost by the
+  multicolumn reader (12837, a 2023 pre-roll, farnesene 0.011; not taken as
+  a fixture); right-alignment fixed it and cost five mutation verdicts.
+  11315 (Kaycha 2023 flower) is refused correctly - its own rows add up to
+  76.5% of its printed total - but the sentence says the table "was not read
+  completely". S3 slowed to about 10 KB/s for this PC after ~1,800 files;
+  349 of part 2 are not downloaded (`tools/dl-list-crawl2.txt`).
+- **`archive-wiring-test`'s "both writes hang" check fails on this PC
+  whenever `parse-coa.js` differs from the last commit** - even a comment
+  appended - at about 2,900 ms against 2,400; it passes with the committed
+  file and passed in the gates of batch 2. Not found: no git call, no file
+  read and no parser time on that path. On 2026-11-23 the same tree passed
+  it twice and all the gates, so it tracks the state of this PC, not the
+  code. Watch it in the gates; CI runs Linux.
 - **Where the survey stopped (2026-11-20, a pause for the owner's usage).**
   The product-page crawl was left running in Chrome, in the tab on
   theflowery.co: its results are in that page's `window.__crawl` and, every 25

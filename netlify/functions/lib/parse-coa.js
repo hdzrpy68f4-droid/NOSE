@@ -954,7 +954,10 @@ function parseCoa(text){
          become a row - so index n meant different rows in the two arrays and
          every value landed one analyte off. */
       rowKeys.push({ key, isUnmodelled, upper, index: i,
-                     candidates: numerics.filter(n => n != null && n <= PERCENT_CEILING) });
+                     candidates: numerics.filter(n => n != null && n <= PERCENT_CEILING),
+                     /* Every figure, as the total row keeps its own (totalCandidates):
+                        the column chooser below pairs the two by position. */
+                     cells: numerics.filter(n => n != null) });
     }
 
     if (value === null || value === undefined) continue;
@@ -1109,7 +1112,15 @@ function parseCoa(text){
    * the one whose analyte values sum to the total in that SAME column, which is
    * the document's own internal check. */
   if (rowKeys.length >= 4 && totalCandidates.length > 1){
-    const rows = rowKeys.map(r => ({ r, c: r.candidates || [] }));
+    /* By position against the total row, so every figure stays in its place.
+       The rows once came here with figures above 100 taken out while the total
+       row kept all of its own: on a 14 g jar printing LOD | mg | %, limonene's
+       111.86 mg went, its % slid one place left, and the chosen column found
+       nothing there - limonene lost, 73% of the total recovered, refused (four
+       Kaycha flower and concentrate reports of 2023 and 2025 on The Flowery's
+       site; KAY-FLW-010, 2026-11-20). A figure above 100 cannot be chosen:
+       the column taken sums to a total of at most PLAUSIBLE_TOTAL_PERCENT. */
+    const rows = rowKeys.map(r => ({ r, c: r.cells || r.candidates || [] }));
     const bothWays = keysPrintedBothWays(rowKeys);
     const shadowed = r => bothWays.size > 0 && bothWays.has(r.key) && ISOMER_SPELLINGS.has(r.upper);
     const width = Math.max(...rows.map(x => x.c.length), totalCandidates.length);
@@ -1874,7 +1885,8 @@ const SEEN_HEADINGS = new Set([
   'RESULT (MG/G)',                                        // ACS, 8
   'REG. LIMIT',                                           // Modern Canna, 5
   'LIMIT OF QUANTIFICATION', 'METHOD DETECTION LIMIT',    // Modern Canna, 2
-  'PRACTICAL QUANTITATION LIMIT'                          //   the same
+  'PRACTICAL QUANTITATION LIMIT',                         //   the same
+  'UG/KG'                                                 // Modern Canna 2023, MCL-LRS-002: the unit heading of the next panel
 ]);
 
 const NOVELTY_EXAMPLES = 3;
