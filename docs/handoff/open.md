@@ -10,12 +10,11 @@ faults". The PDFs are in `coa-crawl-out\` (git-ignored); only `01`, `08` and
 `19` became fixtures (`MTL-FLW-008`, `MTL-AIO-001`, `TLL-FLW-001`); `02`, `06`,
 `07`, `09`, `10`, `16`-`18` and `20` print the same layouts and now read.
 
-- **The reparse.** The dry run on the branch (parser `846dd7f`, 2026-11-24) was
-  75 documents, 75 unchanged, 0 changed either way, 0 failed: the archive holds
-  no Method six-page or TerpLife report of these kinds, so it proves only that
-  no other reading moved. After the push to `main`, the real
-  `node scripts/reparse.js` waits for the owner's word; the first Method
-  autumn 2026 or TerpLife scan that arrives is the live check.
+- **Live, reparsed.** On `main` as `9518bc8` (CI, promote and live-check
+  green); reparse run #27 at that parser, 2026-11-24: 75 documents, 75
+  unchanged, 0 failed - the archive holds no Method six-page or TerpLife report
+  of these kinds, so it proves only that no other reading moved. The first
+  Method autumn 2026 or TerpLife scan that arrives is the live check.
 - **Method's J rows are not read; Kaycha's are.** A cell such as `0.00300 J`
   (detected between the limit of detection and of quantitation) is not a
   result token in the forward look-ahead: the same made-up row reads 0.003

@@ -6184,7 +6184,12 @@ reaches, and pin the reports as fixtures. The PDFs sit in `coa-crawl-out\`
   rejected to accepted, 0 failed; nothing written. The archive holds none of
   the refused kinds (59 seeded fixtures and 16 real scans), so nothing could
   turn from refused to accepted there: the run shows no other reading moved.
-  The real `reparse.js` waits for the owner's word, after the push to `main`.
+  Pushed to `main` as `9518bc8` on 2026-11-24 at the owner's word: the gates
+  passed on CI (WebKit included), `promote` moved `live` to it and `live-check`
+  passed. The real `reparse.js` then ran in the Codespace from a clean
+  worktree of `origin/main`: run #27, parser `9518bc8`, 75 documents (through
+  document #470), 75 unchanged, 0 values changed, 0 accepted to rejected, 0
+  rejected to accepted, 0 failed.
 - **Found on the way.** The Edit tool rewrote the file's line endings once and
   turned `█` into the literal character; Git Bash ate backslashes in
   `node -e` edits twice and `grep -c $'\r'` reported a count equal to the line
