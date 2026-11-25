@@ -10,6 +10,9 @@ faults". The PDFs are in `coa-crawl-out\` (git-ignored); only `01`, `08` and
 `19` became fixtures then (`MTL-FLW-008`, `MTL-AIO-001`, `TLL-FLW-001`), and
 `06` on 2026-11-25 (`MTL-FLW-011`); `02`, `07`, `09`, `10`, `16`-`18` and `20` print the same layouts and now read.
 
+- **Up to date, 2026-11-25.** `main` and `live` took Method's full panel as
+  `86c6e9a`; reparse run #28 wrote the one correction still waiting (78
+  documents, 77 unchanged), so no real reparse is owed.
 - **Live, reparsed.** On `main` as `9518bc8` (CI, promote and live-check
   green), and `8afafcd` since (the flower class rule and `MTL-FLW-009`, `-010`;
   CI green, its dry run 75 unchanged, no real reparse run); reparse run #27 at

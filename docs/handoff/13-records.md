@@ -6360,4 +6360,14 @@ fixture.
   times, a restart included, before it opened.
 - **Left**, in open.md: the older six-page layout, the assistant director's
   sign-off (now pinned undated by `MTL-FLW-011`) and Kaycha's July warning. Not
-  watched: the longer list on the card in a browser. No real reparse was run.
+  watched: the longer list on the card in a browser.
+- **Live, reparsed.** On `main` as `86c6e9a` at the owner's word; CI gates,
+  promote and live-check green, `live` at that commit, and both new sentences
+  read on nose-app.com. Scanned there afterwards, Happily Ever After read 13
+  terpenes above zero in 15 rows, each equal to the `MTL-FLW-009` baseline, no
+  warning, `testedOn` 2026-10-13 and water activity 0.65. Then `reparse.js` for
+  real, from a temporary worktree of `main` after a dry run that matched the
+  expected result written down first: run #28, parser `86c6e9a`, 78 documents
+  (through #473), 77 unchanged, 1 values changed (`cf451c7a`, `testedOn`), 0
+  accepted to rejected, 0 rejected to accepted, 0 failed; a dry run after it
+  read 78 unchanged. The branch `method-full-panel` was deleted, merged.
