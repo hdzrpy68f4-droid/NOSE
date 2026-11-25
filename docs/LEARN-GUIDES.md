@@ -19,7 +19,7 @@ JSON-LD with a `citation` list, and a numbered source list on each page.
   summary before it was cited, and the wording stays inside what it says.
 - Every statement about what NOSE does was checked against the code:
   confidence bands (`confidence()` in `js/nose.*.js`: 9+ high, 5+ moderate),
-  below-LOQ → 0, cannabinoids dropped, the report reader's refusal rules
+  below-limit markers → 0 and J figures counted as printed (2026-11-25), cannabinoids dropped, the report reader's refusal rules
   (`netlify/functions/lib/parse-coa.js`), and the "intensity, not shape" label.
 - The worked examples in Guide 04 (scores 100 / 33, palate 85–86 vs 63–98) and
   the % vs mg/g example in Guide 01 were computed by running the app's own

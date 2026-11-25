@@ -34,10 +34,10 @@ faults". The PDFs are in `coa-crawl-out\` (git-ignored); only `01`, `08` and
 - **Method's J rows are not read; Kaycha's are.** A cell such as `0.00300 J`
   (detected between the limit of detection and of quantitation) is not a
   result token in the forward look-ahead: the same made-up row reads 0.003
-  without the J and is dropped with it. Kaycha's J rows are read as printed
-  (the item below, the owner's call). `MTL-AIO-001` pins the Method side:
+  without the J and is dropped with it. Kaycha's J rows are read as printed,
+  as section 4 now says (2026-11-25). `MTL-AIO-001` pins the Method side:
   its alpha-Humulene (0.00300 J) is absent, and the reading closes at 99.8%
-  of 4.46. Deciding the Kaycha item decides this one too.
+  of 4.46.
 - **Method's autumn 2026 reports: strain, batch and lab ID are null** (their
   labels are printed apart from their values, as on `Method_DulceDeUva_flower`).
   The finish day is read since 2026-11-24 from the director's sign-off (the date
@@ -66,9 +66,7 @@ faults". The PDFs are in `coa-crawl-out\` (git-ignored); only `01`, `08` and
   cells beside it and a Pass, and no report on disk prints that shape. Moisture
   at its own limit (15) still reads null.
 - **Decided 2026-11-24, the owner having handed the open items over, and left
-  as they are:** Kaycha's J rows (zeroing them re-baselines about ten fixtures
-  chosen on 2026-11-19, the Method side follows rule 5 by accident - the owner's
-  call), kief (one report), the refusal sentence on a made-up shape, TerpLife's
+  as they are:** kief (one report), the refusal sentence on a made-up shape, TerpLife's
   moisture (no unit marker declares its table).
 
 ## Reports from The Flowery's site: what is left (2026-11-23)
@@ -103,12 +101,6 @@ lab". What remains:
 - **About 1,730 reports remain**, all Kaycha or Modern Canna except one
   CTND (a second Persy Sauce, left as adding nothing), mostly templates the
   corpus has. No Method, ACS or TerpLife report is on the site.
-- **Kaycha's J rows and rule 5.** §4 says a value below the limit of
-  quantitation is 0. Since July 2026 Kaycha prints a figure with the qualifier
-  J for rows between the two limits, and the parser reads it as a value; the
-  baselines typed on 2026-11-19 (`KAY-FLW-004` to `-009`) and since keep
-  them, as printed. Reading them as 0 would change those fixtures and is the
-  owner's call.
 - **A late-July 2026 Kaycha report says its arithmetic does not close**
   (`KAY-PRR-002` 110.1%, `KAY-AIO-007` 102.8%). Under the lab's rule for those
   weeks - the total counts only the quantified rows - it does close. The

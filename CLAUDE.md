@@ -82,7 +82,7 @@ Shared front-end modules, each with one home:
 
 `netlify/functions/lib/parse-coa.js` is the riskiest file. From PARSER-HANDOFF §4–§8:
 
-- Below-LOQ values (`<LOQ`, `ND`, `BQL`, `<0.200`) are **0**. cis- and trans-nerolidol are summed. Cannabinoids never enter the terpene vector. Total terpenes is a separate intensity axis; profiles are compared as share of total. **Names match exactly** (caryophyllene oxide ≠ caryophyllene).
+- Below-limit markers (`<LOQ`, `ND`, `BQL`, `<0.200`) are **0**; a figure the lab marks J (its estimate, between its two limits) is counted as printed (owner, 2026-11-25). cis- and trans-nerolidol are summed. Cannabinoids never enter the terpene vector. Total terpenes is a separate intensity axis; profiles are compared as share of total. **Names match exactly** (caryophyllene oxide ≠ caryophyllene).
 - **Fail closed:** a correct reading or a clear refusal, never a believable wrong fingerprint.
 - Columns are chosen by **reconciliation** (which column sums to the lab's own printed total), not by position. The readers form an **ordered pipeline** (forward → column-major → backward), not a scoring contest; a contest was tried and broke ACS and TerpLife. The empirical constants each come from a real failure, so changing one needs a fixture that justifies it.
 - **A change that fixes one lab and breaks another is not a fix.** Revert it. Parity also compares `readBy`, `productClass`, `moisture`, `waterActivity` and `warnings`, so a change of route shows up as DIFFER and needs deliberate re-baselining in `test/fixtures/coa-baseline.json`.

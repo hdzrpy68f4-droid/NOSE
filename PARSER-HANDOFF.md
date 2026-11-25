@@ -140,8 +140,13 @@ fifth reader is ever needed.
 
 From the algorithm spec. Getting these wrong makes the product meaningless.
 
-- **Below-LOQ values are 0, never the printed number.** `<0.200`, `<LOQ`, `ND`,
-  `BQL`, `BLQ` all resolve to `0`.
+- **A below-limit marker is 0, never the printed number.** `<0.200`, `<LOQ`,
+  `ND`, `BQL`, `BLQ` all resolve to `0`: a limit is never read as a result.
+- **A figure the lab marks J is counted as printed.** Kaycha and Method print
+  one for a compound detected between the limit of detection and of
+  quantitation, and call it an estimate. The owner's decision, 2026-11-25, for
+  the fuller panel; until then this section read as if it should be 0, Kaycha's
+  were counted and Method's were dropped.
 - **cis- and trans-nerolidol sum** into a single `nerolidol` value.
 - **Cannabinoids are excluded** — THCA, Δ9-THC, CBD and friends never enter the
   terpene vector.
