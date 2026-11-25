@@ -2202,6 +2202,7 @@ under the cap.
 - [Twelve refused St. Petersburg reports: three faults found, three become fixtures, 2026-11-24](docs/handoff/13-records.md#twelve-refused-st-petersburg-reports-three-faults-found-three-become-fixtures-2026-11-24)
 - [Georgia Runtz's class and Happily Ever After: two more fixtures, 2026-11-24](docs/handoff/13-records.md#georgia-runtzs-class-and-happily-ever-after-two-more-fixtures-2026-11-24)
 - [A water activity at its limit prints, and Method's autumn sign-off dates its reports, 2026-11-24](docs/handoff/13-records.md#a-water-activity-at-its-limit-prints-and-methods-autumn-sign-off-dates-its-reports-2026-11-24)
+- [Method's full panel is read and J figures count, 2026-11-25](docs/handoff/13-records.md#methods-full-panel-is-read-and-j-figures-count-2026-11-25)
 
 ## 14. Dispensary integration
 

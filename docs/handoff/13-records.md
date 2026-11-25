@@ -6310,3 +6310,54 @@ activity that reads exactly at its limit, to print it.
   `b2b-store-test` (100 of 105 carry a finish day) moved. The branches
   `st-petersburg-coas` and `method-flower-class` were deleted, locally and on
   GitHub, merged and redundant.
+
+### Method's full panel is read and J figures count, 2026-11-25
+
+Asked: figure out the J rows. The owner, after the pros and cons, decided to
+count them and to read Method fuller, then approved a plan and report `06` as a
+fixture.
+
+- **What J is.** Both labs' reports say it: detected between the limit of
+  detection and of quantitation, an estimate. Kaycha prints it in a cell of its
+  own (414 of the 1,773 saved reports have a terpene one) and those figures were
+  already counted; Method prints it in the figure's own cell and the row was
+  dropped. Counting nothing (zero) was built in a scratch copy first and
+  measured; the owner chose to count.
+- **Method's panel, probed.** Of 27 accepted Method reports on disk, one top
+  ten printed a terpene J; six have six pages. In five of those the panel text
+  runs in a fixed order, rows alternating (left %, LOQ, LOD, name, ug/g; right
+  ug/g, %, name, LOQ, LOD), and that reading matched one made from page
+  positions on every compared row. The lab's total leaves J rows out: with them
+  the rows come to 100.1-101.6% of it, without them 99.8-100.0%. The sixth is an
+  older layout with no LOQ column.
+- **Built**: section 4, CLAUDE.md, the methodology page, How to read a COA and
+  the sitemap say a J figure counts; `VALUE_LINE` takes a trailing J;
+  `readTwoUpPanel` (section 6) reads the panel only when every check fits, and
+  the J mass is set aside from the two comparisons with the lab's total.
+  `MTL-FLW-011` is report `06`: it holds a lab employee's name and sign-off,
+  analyst numbers and business addresses, as the Method fixtures before it do,
+  and no email, phone number or consumer detail was found.
+- **Verified**: the parser before and after, over the fixtures, the 33 reports
+  read from the stores and the 1,773 saved ones, differ only on the five panel
+  reports (7-10 terpenes to 10-14, the same jar at least 99.9% alike), each
+  equal to the page-position reading; the three baselines were written from
+  those readings. Fourteen made-up cases in `shifted-rows-test` section 10;
+  each of the reader's conditions, removed from a scratch copy, fails one.
+  Mutation harness: 63 of 824, the same cases the parser before it fails. All
+  gates green, Kaycha anchors 4.124 and 0.944, 103 accepted / 3 rejected of
+  106, 103 match. A second review found the methodology page saying "two reading
+  rules" over three; the J clause was folded into the first and the gates run
+  again, green.
+- **Dry run**, in the Codespace through the browser, from a temporary worktree
+  of the branch `method-full-panel` (the Codespace's own checkout left as it
+  was), the expected set written down first: parser `39ddd46`, 78 documents, 76
+  unchanged, 2 values changed, 0 accepted to rejected, 0 rejected to accepted,
+  0 failed; nothing written. `cf451c7a` (total 2.52): `testedOn` only, left from
+  2026-11-24, whose real reparse was not run. `b3dcf936` (2.77, Happily Ever
+  After by its total): `forward` to `panel`, gaining bisabolol 0.044, camphene
+  0.016 and terpinolene 0.008, with the coverage figures, `mappedTotal` and
+  `unmodelledTotal`. The Codespace's page answered GitHub's error 500 several
+  times, a restart included, before it opened.
+- **Left**, in open.md: the older six-page layout, the assistant director's
+  sign-off (now pinned undated by `MTL-FLW-011`) and Kaycha's July warning. Not
+  watched: the longer list on the card in a browser. No real reparse was run.
