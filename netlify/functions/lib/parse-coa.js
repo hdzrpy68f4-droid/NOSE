@@ -355,8 +355,10 @@ function resultToNumber(token, takeLast){
    artefact (TerpLife appends bar-chart glyphs after the figure). It must NOT
    accept arbitrary text that merely begins with a digit: "3-Carene" is an
    analyte, "1 of 6" is a page footer and "16 Corporate Drive" is the lab's
-   address, and all three were being read as terpene values. */
-const VALUE_LINE = /^[<\u2264]?\s*\d[\d.,]*(?:\s+[<\u2264]?\d[\d.,]*)*\s*(?:%|mg|mg\/g|mg\/unit|ug\/g|ug\/ml|ppm|ppb|aw)?\s*[^\w]*$/i;
+   address, and all three were being read as terpene values. Method marks an
+   estimated figure with a J in the same cell, "0.00300 J": a value, counted
+   (s4); left out of this pattern, its row was dropped. */
+const VALUE_LINE = /^[<\u2264]?\s*\d[\d.,]*(?:\s+[<\u2264]?\d[\d.,]*)*\s*(?:%|mg|mg\/g|mg\/unit|ug\/g|ug\/ml|ppm|ppb|aw)?\s*[^\w]*(?:\s+J)?$/i;
 const isNumberish = t => VALUE_LINE.test(String(t).trim());
 
 /* Cannabinoid names, in the spellings observed across the seven labs. Never
@@ -640,7 +642,8 @@ function finishedOn(lines, lab){
    report of the lab is read from. So the panel is cut out, and only when its
    signature is exact: the TERPENES and TESTED headings, then two Analyte
    headings in a row, then a line "Total Terpenes:" before any other section
-   opens. Anything else is left whole. */
+   opens. Anything else is left whole. What is cut here the row readers never
+   see; readTwoUpPanel() below reads it apart, by its own order. */
 function cutTwoUpPanel(lines){
   const a = lines.findIndex((l, k) => l === 'Analyte' && lines[k + 1] === 'Analyte'
     && lines[k - 1] === 'TESTED' && lines[k - 2] === 'TERPENES');
@@ -655,8 +658,55 @@ function cutTwoUpPanel(lines){
   return lines.slice(0, a - 2).concat(lines.slice(e + 1));
 }
 
+/* Method's full terpene panel, read from the order its text comes in (its
+   autumn 2026 six-page reports, MTL-AIO-001, MTL-FLW-009 and -011). Two
+   half-tables stand side by side and their rows alternate in the text, five
+   cells each: the left half draws %, LOQ, LOD, name, ug/g; the right ug/g, %,
+   name, LOQ, LOD. It stands for the top ten above it only when all of it fits:
+   these headings exactly; every cell in a row of that shape, up to "Total
+   Terpenes:"; each LOD below its LOQ; the two result figures agreeing (ug/g is
+   the % times 10,000, each rounded as printed); every name known and none
+   twice, nor a terpene both as a total and as its isomers; the rows the lab
+   did not mark J adding up to its total, which leaves the J rows out; and
+   every terpene the top ten read printing the same figure here. Anything else
+   is null, and the top ten is the reading, as it was. */
+const PANEL_HEAD = ['Analyte', 'Analyte', 'LOQ', 'LOD', 'Result', 'Result', '(ug/g)', '%', '(ug/g)', '(ug/g)', '%',
+  '(ug/g)', '(ug/g)', '(ug/g)', 'Result', 'Result', 'LOQ', 'LOD'];
+function readTwoUpPanel(lines, topTen, total){
+  let k = lines.findIndex((l, i) => PANEL_HEAD.every((h, n) => lines[i + n] === h));
+  if (k < 0 || !(total > 0)) return null;
+  const figure = /^\d+(?:\.\d+)?$/, result = /^(\d+(?:\.\d+)?)( J)?$/, below = /^<\s*LO[DQ]$/;
+  const terps = {}, rows = [], seen = new Set();
+  let unmodelled = 0, totalled = 0, estimated = 0;
+  for (k += PANEL_HEAD.length; !/^Total Terpenes:?$/i.test(lines[k] || ''); k += 5){
+    const [a, b, c, d, e] = lines.slice(k, k + 5);
+    const [pct, loq, lod, name, mass] = rows.length % 2 ? [b, d, e, c, a] : [a, b, c, d, e];
+    const inPercent = result.exec(pct), inMass = result.exec(mass);
+    const v = inPercent ? Number(inPercent[1]) : 0;
+    /* The % has three decimals, so it may sit half a thousandth from the ug/g
+       figure (34.9 beside 0.00300); 0.0006 leaves that a hair of room. */
+    if (!(below.test(pct) && below.test(mass))
+        && !(inPercent && inMass && Math.abs(Number(inMass[1]) / 10000 - v) <= Math.max(0.0006, v * 0.005))) return null;
+    if (!(figure.test(loq) && figure.test(lod) && Number(lod) < Number(loq))) return null;
+    const upper = canonicalAnalyte(name), key = ANALYTE_MAP[upper];
+    if (!(key || UNMODELLED.test(upper)) || seen.has(upper)) return null;
+    seen.add(upper);
+    rows.push({ key, upper });
+    if (inPercent && inPercent[2]) estimated += v; else totalled += v;
+    if (key) terps[key] = (terps[key] || 0) + v; else unmodelled += v;
+  }
+  if (keysPrintedBothWays(rows).size || Math.abs(totalled - total) > total * RECONCILE_TOLERANCE) return null;
+  const top = Object.entries(topTen).filter(([, v]) => v > 0);
+  if (top.length < MIN_ANALYTES_INHALABLE
+      || !top.every(([key, v]) => Math.abs((terps[key] || 0) - v) < 1e-9)) return null;
+  Object.keys(terps).forEach(key => { terps[key] = round(terps[key]); });
+  return { terps, unmodelledTotal: round(unmodelled), estimated: round(estimated),
+    mappedTotal: round(Object.values(terps).reduce((x, y) => x + y, 0)) };
+}
+
 function parseCoa(text){
-  const lines = cutTwoUpPanel(normalize(text));
+  const all = normalize(text);
+  const lines = cutTwoUpPanel(all);
   const terps = {};
   const unmapped = new Set();      // diagnostic only — never enters the vector
   let unmodelledTotal = 0;
@@ -1440,6 +1490,20 @@ function parseCoa(text){
       layout = 'column';
     }
   }
+  /* Method's full panel, where all of it reads, replaces the top ten the passes
+     above read. */
+  const panel = readTwoUpPanel(all, terps, totalTerpenes);
+  if (panel){
+    Object.keys(terps).forEach(k => delete terps[k]);
+    Object.assign(terps, panel.terps);
+    unmodelledTotal = panel.unmodelledTotal;
+    mappedTotal = panel.mappedTotal;
+    readBy = 'panel';
+  }
+  /* The J rows a Method panel prints are not in its total, so the two checks
+     that compare the rows with that total leave them aside: counting them is no
+     failure to close (report MTL-FLW-011, 101.6% with them, 99.8% without). */
+  const leftOut = panel ? panel.estimated / totalTerpenes : 0;
   /* Two different questions, previously answered by one number.
    *
    *   measuredCoverage - did we recover the lab's terpene table at all?
@@ -1485,7 +1549,7 @@ function parseCoa(text){
      "the lab printed a short list" from "we did not read the list". */
   if (measuredCoverage != null && measuredCoverage < MIN_MEASURED_COVERAGE)
     rejectReasons.push(`only ${(measuredCoverage * 100).toFixed(1)}% of the lab's own terpene total was recovered — the table was not read completely`);
-  if (measuredCoverage != null && measuredCoverage > MAX_MEASURED_COVERAGE)
+  if (measuredCoverage != null && measuredCoverage - leftOut > MAX_MEASURED_COVERAGE)
     warnings.push(`the terpene rows on this report add up to ${(measuredCoverage * 100).toFixed(1)}% of the total the lab printed — the individual figures are as listed, but the report's own arithmetic does not close`);
   /* Applies to UNKNOWN too. Two terpenes on a full panel is implausible
      whatever the product is, and the documents that defeat classification are
@@ -1550,7 +1614,7 @@ function parseCoa(text){
   for (const key of summedDisagree)
     rejectReasons.push(`this report lists ${printedName(key)} both as a total and as separate rows, and the two disagree, so NOSE cannot tell which to use`);
 
-  if (coverage != null && coverage > COVERAGE_CEILING)
+  if (coverage != null && coverage - leftOut > COVERAGE_CEILING)
     rejectReasons.push(`the terpene figures NOSE read add up to more than the total this report prints (${(coverage * 100).toFixed(1)}%), so the table was probably misread`);
   /* Coverage alone is only an INTERNAL consistency check: it compares two
      numbers that can both be wrong. Terpene figures are percentages of mass,

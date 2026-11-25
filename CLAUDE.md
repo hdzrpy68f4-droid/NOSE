@@ -48,8 +48,8 @@ bash build.sh                        # must end "OK — ready to deploy"
 There is no test framework. Each test is a plain Node script, so run one by itself with `node test/<name>-test.js` (or `.mjs`). Each prints one exact success line, usually `<name> clean`. `gates.sh` passes a gate only on that exact line, and the expected counts are hard-coded there. The core parser checks:
 
 ```bash
-node test/coa-gate-test.js test/fixtures/extracted netlify/functions/lib/parse-coa.js | tail -1   # 102 accepted / 3 rejected
-node test/extraction-parity.js test/fixtures/pdf                                                 # 102 match / 0 differ
+node test/coa-gate-test.js test/fixtures/extracted netlify/functions/lib/parse-coa.js | tail -1   # 103 accepted / 3 rejected
+node test/extraction-parity.js test/fixtures/pdf                                                 # 103 match / 0 differ
 node test/fixture-lint.js                                                                        # corpus clean
 ```
 
@@ -84,7 +84,7 @@ Shared front-end modules, each with one home:
 
 - Below-limit markers (`<LOQ`, `ND`, `BQL`, `<0.200`) are **0**; a figure the lab marks J (its estimate, between its two limits) is counted as printed (owner, 2026-11-25). cis- and trans-nerolidol are summed. Cannabinoids never enter the terpene vector. Total terpenes is a separate intensity axis; profiles are compared as share of total. **Names match exactly** (caryophyllene oxide ≠ caryophyllene).
 - **Fail closed:** a correct reading or a clear refusal, never a believable wrong fingerprint.
-- Columns are chosen by **reconciliation** (which column sums to the lab's own printed total), not by position. The readers form an **ordered pipeline** (forward → column-major → backward), not a scoring contest; a contest was tried and broke ACS and TerpLife. The empirical constants each come from a real failure, so changing one needs a fixture that justifies it.
+- Columns are chosen by **reconciliation** (which column sums to the lab's own printed total), not by position. The readers form an **ordered pipeline** (forward → column-major → backward, then Method's full panel where all of it reads), not a scoring contest; a contest was tried and broke ACS and TerpLife. The empirical constants each come from a real failure, so changing one needs a fixture that justifies it.
 - **A change that fixes one lab and breaks another is not a fix.** Revert it. Parity also compares `readBy`, `productClass`, `moisture`, `waterActivity` and `warnings`, so a change of route shows up as DIFFER and needs deliberate re-baselining in `test/fixtures/coa-baseline.json`.
 - The output field names (§7) are read by the app by name; renaming one breaks it silently. `rejectReasons` and `warnings` are shown to users **verbatim**, so write them as plain English with no internal class names.
 - **A new terpene key takes two edits:** `ANALYTE_MAP` in the parser **and** `TERPENES` in `js/match-math.*.js`. Otherwise `sanitizeTerps()` silently drops it. It changes scores, so regenerate the golden file with `node test/match-golden-make.js --why "<what changed>"`. Farnesene itself is done. The stale draft that sat in `wip/` was deleted on 2026-11-14.

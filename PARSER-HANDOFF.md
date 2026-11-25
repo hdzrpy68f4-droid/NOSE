@@ -36,10 +36,10 @@ is exactly what the parser sees.
 ## 2. Current state
 
 ```
-102 accepted / 3 rejected     (105 COA fixtures)
-102 match / 0 differ          (extraction parity, unpdf vs pdftotext)
+103 accepted / 3 rejected     (106 COA fixtures)
+103 match / 0 differ          (extraction parity, unpdf vs pdftotext)
 corpus clean                  (fixture lint)
-63 mutation failures          (mutation harness, 816 cases - see §9)
+63 mutation failures          (mutation harness, 824 cases - see §9)
 ```
 
 The first 14 real scans joined on 2026-11-19, each checked by hand against its
@@ -79,7 +79,7 @@ Live scanning works end to end: camera → QR → viewer-page resolution → fet
 unpdf → parse → confirmation card, including the warnings row, which has been
 seen rendering on a real scanned jar.
 
-All 100 source PDFs are tracked in git, so the corpus is reproducible from a clone:
+All 106 source PDFs are tracked in git, so the corpus is reproducible from a clone:
 `node test/extract-dump.js` regenerates `test/fixtures/extracted/` in about a
 minute. This was proven the hard way when a Codespace container failed and the
 whole workspace had to be rebuilt from the remote.
@@ -87,13 +87,14 @@ whole workspace had to be rebuilt from the remote.
 **Which reader serves which documents**, from `readBy`:
 
 ```
-forward      69      the plain name-then-value pass
+forward      67      the plain name-then-value pass
 multicolumn  31      Kaycha's three-column rows
 backward      2      value-before-name layouts
-columnmajor   0      dead - declines on all 105, unreached on 102
+panel         3      Method's full two-up panel, read whole (§6)
+columnmajor   0      dead - declines on all 106, unreached on 103
 
-Counts are of ACCEPTED fixtures (69+31+2 = 102), measured 2026-11-24. Rejected
-documents also carry a `readBy`, so counting all 105 gives 72 forward. The table
+Counts are of ACCEPTED fixtures (67+31+2+3 = 103), measured 2026-11-25. Rejected
+documents also carry a `readBy`, so counting all 106 gives 70 forward. The table
 before 2026-11-19 said 43 forward of 53 accepted, while the 56 then accepted read
 46 forward: it had drifted, so re-count rather than add.
 ```
@@ -114,7 +115,7 @@ Three accepted-but-wrong faults were found and fixed this session - see §11.
 No lint failures remain.
 
 1. **The column-major reader is dead.** `test/columnmajor-audit.js` shows it
-declines on all 105 fixtures and is never reached on 102 - it runs only when
+declines on all 106 fixtures and is never reached on 103 - it runs only when
 `rowPassLooksWrong`. Its own comment names ACS, ACT Florida and TerpLife, NOT
 Modern Canna, and all three now read `forward` and accept, so the row-wise
 reconciler superseded it. Keeping it costs nothing on the 70 passing fixtures.
@@ -209,7 +210,7 @@ node test/extraction-parity.js test/fixtures/pdf 2>&1 | grep -v "^Warning:" | ta
 node test/fixture-lint.js | tail -2
 ```
 
-Expect `102 accepted / 3 rejected`, `102 match / 0 differ`, and `corpus clean`.
+Expect `103 accepted / 3 rejected`, `103 match / 0 differ`, and `corpus clean`.
 Also run `node test/resolver-test.js` - expect `resolver clean`, and
 `bash build.sh` - expect `OK - ready to deploy`.
 
@@ -368,12 +369,27 @@ against a correct 1.00. Scoring them as equals lets a shifted reading win a
 tie-break. **Do not replace this with a scoring contest** — it was tried and it
 broke ACS and TerpLife.
 
-**Method's two-up panel is cut, not read.** When a Method report prints its
-full terpene panel as two half-tables side by side (`TERPENES`, `TESTED`, two
-`Analyte` headings in a row, a `Total Terpenes:` line before any other section
-opens), the text layer interleaves the two halves' cells and no reader of names
-and cells in text order gets them right. The panel is removed before reading
-and the top-ten summary above it is what the report is read from, as every
+**Method's two-up panel is cut from the row readers, then read by its own
+order.** When a Method report prints its full terpene panel as two half-tables
+side by side (`TERPENES`, `TESTED`, two `Analyte` headings in a row, a
+`Total Terpenes:` line before any other section opens), the text layer
+interleaves the two halves' cells and no reader of names and cells in text
+order gets them right. So the panel is removed before reading, and the top-ten
+summary above it is read as before. Then `readTwoUpPanel` reads the removed
+panel in the order its text comes in: rows alternate, left half `%, LOQ, LOD,
+name, ug/g`, right half `ug/g, %, name, LOQ, LOD`. It replaces the top ten
+(`readBy` `panel`) only when all of it fits: its headings exactly, every cell
+in a row of that shape up to `Total Terpenes:`, each LOD below its LOQ, the two
+result figures agreeing, every name known and none twice (nor a terpene both as
+a total and as its isomers), the rows not marked J adding up to the printed
+total, and every terpene of the top ten printing the same figure there. The J
+rows are counted (§4) but are not in Method's total, so the two checks that hold
+the rows against it (the "arithmetic does not close" warning and the coverage
+ceiling) set their mass aside. Anything else leaves the top ten as the reading
+(`test/shifted-rows-test.js`, section 10). Only the layout with an LOQ column
+is read; an older one without it keeps the top ten (open.md).
+
+The cut itself is as it was: without a panel read, a report is read as every
 one-page Method report is - the top ten at 95-99% of the printed total, not the
 panel's remaining rows. Anything short of the exact signature is left whole
 (`test/shifted-rows-test.js`, section 7).
@@ -450,7 +466,7 @@ usable  rejectReasons  warnings  novelty
   themselves are never shown - they are written for the review queue, not for
   someone holding a jar.
 - `readBy` names which reader produced the surviving values: `forward`,
-  `multicolumn`, `backward` or `columnmajor`. Purely descriptive — nothing
+  `multicolumn`, `backward`, `columnmajor` or `panel` (§6). Purely descriptive — nothing
   branches on it — but it is recorded in the baseline and compared by parity, so
   a change of route is reported even when the numbers agree. `layout` only
   separates column-major from everything else, which left the three row-wise
@@ -527,9 +543,10 @@ reportDate  client  parserVersion  harvestOn  reportOn  testedOn
   status tile is never read. The first row with a value is read; a later row
   never stands in for an unreadable one. Computed after the reading and read
   by nothing in the parser: with `coa-dates.js` unavailable it is null and
-  every other field identical. On the corpus 100 of 105 fixtures carry one
-  (since 2026-11-24): every accepted fixture but the two TerpLife reports (their
-  finish day is `reportOn`), and none of the three refusals. **B2B keeps it too**, since 2026-10-14: a store's
+  every other field identical. On the corpus 100 of 106 fixtures carry one
+  (measured 2026-11-25): every accepted fixture but the two TerpLife reports
+  (their finish day is `reportOn`) and `MTL-FLW-011` (signed by an assistant
+  director, whose block is not read), and none of the three refusals. **B2B keeps it too**, since 2026-10-14: a store's
   reading holds it as `b2b.batch_reads.tested_on`, whatever the verdict, and
   the feed carries it as `tested_on`, after `harvest_on`, from the current
   reading only (§14, "The day the lab finished, in a store's readings").
@@ -640,7 +657,7 @@ fifth pattern.
 - **Every accepted fixture now reconciles** against its own printed total.
 `MCL-FLW-002` is the sole exception at 103.8%, and that is the lab's arithmetic,
 not the parser's - it warns rather than refusing.
-- **63 mutation failures** out of 816 (~8%), in two unrelated groups. The
+- **63 mutation failures** out of 824 (~8%), in two unrelated groups. The
   FIRST group, fourteen until 2026-11-20, was down from 19 - see the `gamma-`
   fault in the log below, which accounted for five. A re-run on 2026-11-19
   found those fourteen are six `destructive/shuffleValues`, seven
@@ -1133,6 +1150,24 @@ fixture, because no fixture can currently reach it
   fixture's `testedOn` moves from null to 2024-10-21, and is pinned. The
   assistant director's block (a title over three lines) has no fixture and is
   not read.
+- **Method was read from its top ten, and its estimated figures not at all**
+  (changed 2026-11-25, the owner wanting the fuller panel). A J figure is a
+  value (§4): `VALUE_LINE` takes a trailing ` J`, so Method's "0.00300 J" is no
+  longer a row with no result. And the full panel of the autumn 2026 six-page
+  reports is read whole (§6). Kaycha's readings are untouched. Of 27 accepted
+  Method reports on disk, six have six pages, five of them with this panel: they
+  go from 7-10 terpenes to 10-14, each equal to a reading of the PDF by page
+  position, the same jar at least 99.9% alike. Only one top ten printed a J
+  terpene (`MTL-AIO-001`'s alpha-humulene). Method's total leaves its J rows
+  out - on the five panels the rows come to 100.1-101.6% with them and
+  99.8-100.0% without - so report 06 would have gained "the report's own
+  arithmetic does not close"; it is `MTL-FLW-011`, which pins that it does not.
+  The parser before and after, over the fixtures, the 33 reports read from the
+  stores and the 1,773 saved reports, differ only on those five reports. Fourteen
+  made-up cases in `shifted-rows-test`, section 10; each of the reader's
+  conditions, removed from a scratch copy, fails one of them. The mutation
+  harness fails the same 63 cases before and after, of 824 now. 103 accepted / 3
+  rejected and 103 match.
 
 ## 12. The fetcher — `netlify/functions/lib/fetch-report.js`, called by `coa.js`
 

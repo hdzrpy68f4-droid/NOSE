@@ -221,5 +221,62 @@ check('...a different figure beside the pair: that one is the result',
 check('...two different figures beside the pair: which is the result is not known, not read',
   [awOf(['Pass', '0.65', '0.65', '0.52', '0.58'])], [null]);
 
+/* --- 10. Method's full panel, read whole (2026-11-25) ------------------------
+ * The six-page reports' two half-tables alternate in the text: left rows
+ * %, LOQ, LOD, name, ug/g and right rows ug/g, %, name, LOQ, LOD
+ * (MTL-AIO-001, -FLW-009, -011). Made-up values; each condition of the reader
+ * is one case here that fails without it. The top ten above holds the first
+ * seven rows, so a reading that fell back to it has no camphene. */
+const PHEAD = ['Analyte', 'Analyte', 'LOQ', 'LOD', 'Result', 'Result', '(ug/g)', '%', '(ug/g)', '(ug/g)', '%',
+  '(ug/g)', '(ug/g)', '(ug/g)', 'Result', 'Result', 'LOQ', 'LOD'];
+const LISTED = DESC.map(([n, v]) => [n, v]);
+const pct = (v, j) => (j ? v.toFixed(5) + ' J' : v > 0 ? f(v) : '<LOD');
+const ugg = (v, j) => (j ? (v * 10000).toFixed(1) + ' J' : v > 0 ? String(Math.round(v * 10000)) : '<LOD');
+const panelCells = rows => rows.flatMap(([n, v, j, loq = '50.0', mass = ugg(v, j)], i) =>
+  (i % 2 ? [mass, pct(v, j), n, loq, '15.0'] : [pct(v, j), loq, '15.0', n, mass]));
+const topRows = rows => rows.flatMap(([n, v, j]) => [n, ugg(v, j), pct(v, j)]);
+const PANEL = [...LISTED, ['Terpineol', 0.004, true], ['Ocimenes', 0]];
+const report = ({ top = LISTED.slice(0, 7), rows = PANEL, total = TOTAL, head = PHEAD, cut = c => c } = {}) => read([
+  'Some New Lab LLC', 'Certificate of Analysis', 'Matrix: Flower', 'TERPENES SUMMARY', 'Analyte', 'Result', 'Result',
+  ...topRows(top), `Total Terpenes: ${total}%`, 'TERPENES', 'TESTED', ...head, ...cut(panelCells(rows)), 'Total Terpenes:', total + ' %']).r;
+const row = (name, change) => PANEL.map(r => (r[0] === name ? change(r) : r));
+const fellBack = r => [r.readBy, r.usable, r.terps.camphene === undefined];
+const TOPTEN = ['forward', true, true];
+
+let p = report();
+check('the whole panel reads: its smaller rows and its J row are in, with no warning',
+  [p.readBy, p.usable, p.terps.camphene, p.terps.terpineol, p.terps.ocimene, p.warnings], ['panel', true, 0.012, 0.004, 0, []]);
+p = report({ rows: [...LISTED, ['Terpineol', 0.08, true], ['Fenchyl Alcohol', 0.08, true]] });
+check('...J rows the total leaves out, 8% of it: still accepted, and no sum is said not to close',
+  [p.readBy, p.usable, p.warnings], ['panel', true, []]);
+p = report({ total: '1.960' });
+check('...rows the total does count, 2% over it: read, and the warning stands',
+  [p.readBy, p.warnings.length, /add up to/.test(p.warnings[0] || '')], ['panel', 1, true]);
+check('a heading the panel does not have: the top ten is read',
+  fellBack(report({ head: PHEAD.map((h, i) => (i === 6 ? '(mg/g)' : h)) })), TOPTEN);
+check('...a stray line between two rows: the top ten',
+  fellBack(report({ cut: c => [...c.slice(0, 20), 'Page 2', ...c.slice(20)] })), TOPTEN);
+check('...a row whose two result figures disagree: the top ten',
+  fellBack(report({ rows: row('Camphene', ([n, v]) => [n, v, false, '50.0', '900']) })), TOPTEN);
+check('...a row whose LOD is not below its LOQ: the top ten',
+  fellBack(report({ rows: row('Guaiol', ([n, v]) => [n, v, false, '10.0']) })), TOPTEN);
+check('...a name nobody knows: the top ten',
+  fellBack(report({ rows: [...PANEL, ['Madeupene', 0]] })), TOPTEN);
+check('...a name twice: the top ten',
+  fellBack(report({ rows: [...PANEL, ['Ocimenes', 0]] })), TOPTEN);
+check('...a terpene as a total and as an isomer: the top ten',
+  fellBack(report({ rows: [...PANEL, ['Nerolidol', 0], ['E-Nerolidol', 0]] })), TOPTEN);
+check('...rows that miss the printed total by 9%: the top ten',
+  fellBack(report({ total: '2.200' })), TOPTEN);
+check('...a figure that differs from the top ten above: the top ten',
+  fellBack(report({ rows: row('Limonene', ([n]) => [n, 0.413]) })), TOPTEN);
+p = report({ top: LISTED.slice(0, 2) });
+check('...a top ten of two terpenes checks too little: it is read, and refused as before',
+  [p.readBy, p.usable], ['forward', false]);
+p = read(['Some New Lab LLC', 'Certificate of Analysis', 'Matrix: Flower', 'TERPENES SUMMARY', 'Analyte', 'Result', 'Result',
+  ...topRows([...LISTED, ['Terpineol', 0.003, true]]), `Total Terpenes: ${TOTAL}%`]).r;
+check('a J figure in a top ten, "30.0 J" and "0.00300 J": read, from the % column',
+  [p.readBy, p.usable, p.terps.terpineol], ['forward', true, 0.003]);
+
 if (failures) { console.log(`\nshifted-rows: ${failures} failure${failures === 1 ? '' : 's'}`); process.exit(1); }
 console.log('\nshifted-rows clean');

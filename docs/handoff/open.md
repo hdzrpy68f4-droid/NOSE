@@ -5,10 +5,10 @@ What is known and not yet done, moved here from PARSER-HANDOFF.md on 2026-11-14 
 ## Reports from the St. Petersburg stores: what is left (2026-11-24)
 
 A local read of 26 reports from five stores refused 12; the fixes and the
-three fixtures are in PARSER-HANDOFF.md §11, "Twelve refused reports, three
+first three fixtures are in PARSER-HANDOFF.md §11, "Twelve refused reports, three
 faults". The PDFs are in `coa-crawl-out\` (git-ignored); only `01`, `08` and
-`19` became fixtures (`MTL-FLW-008`, `MTL-AIO-001`, `TLL-FLW-001`); `02`, `06`,
-`07`, `09`, `10`, `16`-`18` and `20` print the same layouts and now read.
+`19` became fixtures then (`MTL-FLW-008`, `MTL-AIO-001`, `TLL-FLW-001`), and
+`06` on 2026-11-25 (`MTL-FLW-011`); `02`, `07`, `09`, `10`, `16`-`18` and `20` print the same layouts and now read.
 
 - **Live, reparsed.** On `main` as `9518bc8` (CI, promote and live-check
   green), and `8afafcd` since (the flower class rule and `MTL-FLW-009`, `-010`;
@@ -31,22 +31,17 @@ faults". The PDFs are in `coa-crawl-out\` (git-ignored); only `01`, `08` and
   and `MTL-FLW-010` (Georgia Runtz, with the class rule below). The other five
   are not - their layouts are pinned. All seven PDFs and their links are in
   `coa-crawl-out` (git-ignored) as `new-01` to `new-07` and `new-links.txt`.
-- **Method's J rows are not read; Kaycha's are.** A cell such as `0.00300 J`
-  (detected between the limit of detection and of quantitation) is not a
-  result token in the forward look-ahead: the same made-up row reads 0.003
-  without the J and is dropped with it. Kaycha's J rows are read as printed,
-  as section 4 now says (2026-11-25). `MTL-AIO-001` pins the Method side:
-  its alpha-Humulene (0.00300 J) is absent, and the reading closes at 99.8%
-  of 4.46.
 - **Method's autumn 2026 reports: strain, batch and lab ID are null** (their
   labels are printed apart from their values, as on `Method_DulceDeUva_flower`).
   The finish day is read since 2026-11-24 from the director's sign-off (the date
   drawn before a bare "Lab Director"); the assistant director's block, a title
-  over three lines, has no fixture and is not read, so a report signed by one is
-  still undated.
-- **Method's six-page reports are read from the top ten.** The full panel is
-  cut (§6); the summary reads at 95.5-99.8% of the printed total on the seven
-  reports. The panel's smaller rows are not in the fingerprint.
+  over three lines, is not read, so a report signed by one is still undated;
+  `MTL-FLW-011` prints it (2026-11-25), so a rule now has a fixture to pin it.
+- **Method's older six-page layout is still read from the top ten.** The full
+  panel of the autumn 2026 reports is read since 2026-11-25 (§6). A June 2026
+  six-page report (read `10`, a concentrate) prints its panel without an LOQ
+  column, with "ND" and "< LOQ" as markers: its top ten stands. No fixture has
+  that panel.
 - **Trulieve's kief reads as flower** (a Modern Canna report whose
   "Sample Matrix: Kief" sits over "Testing Matrix: Usable Whole Flower
   Marijuana"; the flower rule matches the second). Recorded, not changed: no
@@ -104,7 +99,10 @@ lab". What remains:
 - **A late-July 2026 Kaycha report says its arithmetic does not close**
   (`KAY-PRR-002` 110.1%, `KAY-AIO-007` 102.8%). Under the lab's rule for those
   weeks - the total counts only the quantified rows - it does close. The
-  warning is literally true; a sentence for this case is its own change.
+  warning is literally true; a sentence for this case is its own change. Since
+  2026-11-25 Method's panel sets its J rows aside from that comparison (§6);
+  doing the same for Kaycha would end this warning, and was left for its own
+  change (the owner's word, that day).
 - **Known and left in the parser**: a Kaycha row with a blank LOD cell is lost
   by the multicolumn reader (12837, a 2023 pre-roll, farnesene 0.011); lining
   short rows up from the right fixed it and cost five mutation verdicts, so it
