@@ -658,7 +658,7 @@ async function main() {
       breaking(s => ({
         async getWithMetadata(k, o) {
           const got = await s.getWithMetadata(k, o);
-          await new Promise(go => { waiting.push(go); if (waiting.length === 2) waiting.forEach(f => f()); });
+          await new Promise(go => { waiting.push(go); if (waiting.length >= 2) waiting.forEach(f => f()); });
           return got;
         },
       }));
@@ -688,6 +688,33 @@ async function main() {
     check('login still fails open: with a throttle store that throws on read and write, a good password signs in',
       [r.status, r.data.status, /^nose_session=/.test(r.cookie || '')], [200, 'signed-in', true]);
     SECRETS.push('a strict-count password', '111111', '222222');
+
+    /* The whole site's brake (since 2026-11-25): 300 code tries an hour from
+       all addresses together, past which every code is refused and the link
+       still works. */
+    const MIA = 'mia@example.test', MIA_CODE = '135791';
+    SECRETS.push(MIA, MIA_CODE);
+    addUser(MIA, PASSWORD);
+    supa.otp.set(`signup:${MIA}`, MIA_CODE);
+    const siteKey = `rl/codesite/${crypto.createHash('sha256').update('all').digest('hex').slice(0, 32)}`;
+    // The store was emptied just above; one wrong try starts both counts.
+    await call(confirm, 'POST', { email: MIA, code: '000000' });
+    check('site brake: a code try is counted once in one record for the whole site, holding no address',
+      blobs.read('auth-ratelimit', siteKey), { start: blobs.read('auth-ratelimit', siteKey).start, count: 1 });
+    rl.get(siteKey).text = JSON.stringify({ start: Date.now(), count: 300 });
+    n = verifies();
+    r = await call(confirm, 'POST', { email: MIA, code: MIA_CODE });
+    const miaKey = `rl/code/${crypto.createHash('sha256').update(MIA).digest('hex').slice(0, 32)}`;
+    check('site brake: past 300 tries in the hour, the right code for a fresh address gets the one refusal and Supabase is not asked',
+      [answer(r), verifies() - n, supa.otp.has(`signup:${MIA}`), blobs.read('auth-ratelimit', miaKey).count],
+      [answer({ status: 400, data: REFUSED, cookie: null }), 0, true, 2]);
+    n = verifies();
+    r = await call(resetFinish, 'POST', { email: MIA, code: MIA_CODE, password: 'a strict-count password' });
+    check('site brake: ...a reset by code the same', [answer(r), verifies() - n], [answer({ status: 400, data: REFUSED, cookie: null }), 0]);
+    rl.get(siteKey).text = JSON.stringify({ start: Date.now() - 3601e3, count: 300 });
+    r = await call(confirm, 'POST', { email: MIA, code: MIA_CODE });
+    check('site brake: once its hour has ended, the right code signs in again',
+      [r.status, r.data, blobs.read('auth-ratelimit', siteKey).count], [200, { status: 'signed-in' }, 1]);
   }
 
   /* ---- auth-reset ---- */

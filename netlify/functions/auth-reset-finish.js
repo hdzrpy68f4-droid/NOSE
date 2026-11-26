@@ -25,7 +25,9 @@
 //      after the password passes isPassword (a short one uses no try), and
 //      only inside the 'code' count, five tries an hour per address, shared
 //      with auth-confirm and strict (a lost race or a failing store refuses
-//      the try); then POST /verify, type recovery, email, token. A
+//      the try), then inside the whole site's brake, 300 tries an hour from
+//      all addresses (codeTryAllowed); then POST /verify, type recovery,
+//      email, token. A
 //      wrong, expired or wrong-shaped code, an address with no account and a
 //      try over the count get the one same answer (codeRefused).
 //   2. With that session, the password is set (PUT /user).
@@ -37,7 +39,7 @@
 
 import {
   gotrue, isPassword, readJsonBody, destroyAllSessions, fromThisSite, crossSite, TOKEN_HASH,
-  OTP_CODE, isEmail, normaliseEmail, rateLimit, codeRefused,
+  OTP_CODE, isEmail, normaliseEmail, codeTryAllowed, codeRefused,
 } from '../lib/auth.js';
 import { json, methodNotAllowed } from '../lib/http.js';
 
@@ -67,7 +69,7 @@ export default async (request) => {
     const email = normaliseEmail(body.data.email);
     const code = typeof body.data.code === 'string' ? body.data.code.trim() : '';
     if (!isEmail(email) || !OTP_CODE.test(code)) return codeRefused();
-    if (!(await rateLimit('code', email, { limit: 5, windowSeconds: 3600, strict: true }))) return codeRefused();
+    if (!(await codeTryAllowed(email))) return codeRefused();
     const verified = await gotrue('/verify', { body: { type: 'recovery', email, token: code } });
     if (verified.networkError) {
       console.error('[auth-reset-finish] supabase unreachable', verified.networkError);

@@ -2204,6 +2204,7 @@ under the cap.
 - [A water activity at its limit prints, and Method's autumn sign-off dates its reports, 2026-11-24](docs/handoff/13-records.md#a-water-activity-at-its-limit-prints-and-methods-autumn-sign-off-dates-its-reports-2026-11-24)
 - [Method's full panel is read and J figures count, 2026-11-25](docs/handoff/13-records.md#methods-full-panel-is-read-and-j-figures-count-2026-11-25)
 - [Six-digit email codes on /account/, 2026-11-25](docs/handoff/13-records.md#six-digit-email-codes-on-account-2026-11-25)
+- [A site-wide brake on email codes, 2026-11-25](docs/handoff/13-records.md#a-site-wide-brake-on-email-codes-2026-11-25)
 
 ## 14. Dispensary integration
 

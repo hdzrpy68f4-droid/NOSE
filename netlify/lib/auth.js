@@ -307,7 +307,11 @@ export async function purgeExpiredSessions(now = Date.now()) {
    auth-confirm and auth-reset-finish together. Every call to Supabase comes
    from Netlify, so Supabase's own per-IP limit does not slow a guesser; this
    count is what does. */
-export const THROTTLE_BUCKETS = Object.freeze({ login: 900, signup: 3600, reset: 3600, code: 3600 });
+export const THROTTLE_BUCKETS = Object.freeze({ login: 900, signup: 3600, reset: 3600, code: 3600, codesite: 3600 });
+/* 'codesite' (since 2026-11-25) is one count for the whole site: every code
+   try from every address together. It holds no address, so deleting an
+   account has nothing in it to delete. */
+const SITE_BUCKET = 'codesite';
 const plainDigest = (identity) => createHash('sha256').update(String(identity)).digest('hex').slice(0, 32);
 const throttleDigest = (identity) => {
   const secret = process.env.NOSE_THROTTLE_SECRET;
@@ -357,8 +361,21 @@ export async function deleteThrottles(email) {
      set is under the plain one until its window ends. */
   const digests = [...new Set([throttleDigest(email), plainDigest(email)])];
   for (const digest of digests)
-    for (const bucket of Object.keys(THROTTLE_BUCKETS)) await store.delete(`rl/${bucket}/${digest}`);
+    for (const bucket of Object.keys(THROTTLE_BUCKETS))
+      if (bucket !== SITE_BUCKET) await store.delete(`rl/${bucket}/${digest}`);
 }
+
+/**
+ * May this six-digit code try go to Supabase? Five an hour per address, then
+ * a brake for the whole site: 300 tries an hour from all addresses together.
+ * The per-address count alone lets someone guess across many addresses at
+ * once; past the brake every code is refused until the hour ends, and the
+ * email's link still works. Both counts are strict (fail closed). The site
+ * count is asked only once the address's own count allows the try.
+ */
+export const codeTryAllowed = async (email) =>
+  (await rateLimit('code', email, { limit: 5, windowSeconds: 3600, strict: true }))
+  && rateLimit(SITE_BUCKET, 'all', { limit: 300, windowSeconds: 3600, strict: true });
 
 /**
  * Delete every throttle record whose window has ended, and every record that

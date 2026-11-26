@@ -6464,3 +6464,35 @@ the person in at once.
   counts name entering a code; the Supabase paragraph says each email also
   shows a six-digit code since November 25; Resend receives "link and code
   included"; a fourteenth change says so.
+
+### A site-wide brake on email codes, 2026-11-25
+
+The owner asked whether NOSE needs an IP ban against attacks on the codes
+(c8fb9c8, above). No: it would mean keeping IP addresses, which NOSE does
+not, and is dodged by changing address. The gap was guessing across many
+addresses at once: five tries an hour each, a one-in-a-million chance a try,
+so 1,000 addresses give about 5,000 tries an hour and one success in about
+eight days. The owner chose a brake for the whole site.
+
+- **`codeTryAllowed(email)`** in `netlify/lib/auth.js`, used by both code
+  paths (`auth-confirm`, `auth-reset-finish`): the address's own count (five
+  an hour), then, only if that allows the try, one count for the whole site,
+  bucket `codesite`, 300 tries an hour from all addresses together. Both
+  strict. Past the brake every code is refused with the one answer until the
+  hour ends; the email's link still works. Normal traffic is far below 300.
+- **The cost, accepted:** someone can switch codes off for everyone for an
+  hour by spending 300 tries. Nobody is locked out, since the links work.
+  Under load, two real tries at the same moment can collide on the one
+  record and one is refused; at NOSE's traffic that is rare, and a retry
+  works.
+- The `codesite` record holds `{ start, count }` under a fingerprint of the
+  word "all": no address. `deleteThrottles` skips it (nothing in it belongs
+  to an account); the daily purge covers it like the rest.
+- **Tests:** `accounts-test` gains four checks (one record, no address; past
+  300 a fresh address's right code is refused for confirm and for reset
+  without asking Supabase; a new hour lets it through). With the limit
+  raised to 300000 the last three fail. The race helper releases a third
+  waiting read, which the site count now adds.
+- **Privacy page**, the sentence offered to the owner with this option: the
+  attempt-counts item adds that since November 25 there is "one count of all
+  code tries together, from every address, which holds no address at all".

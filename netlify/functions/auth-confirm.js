@@ -22,7 +22,8 @@
 //      ('code' bucket, five an hour, shared with auth-reset-finish), before
 //      Supabase is asked. Over the count, Supabase is not asked. The count is
 //      strict (rateLimit's strict option): a lost race or a store that fails
-//      refuses the try.
+//      refuses the try. Then the whole site's brake, 300 tries an hour from
+//      all addresses together (codeTryAllowed in lib/auth.js).
 //   2. Supabase checks the code (POST /verify, type signup, email, token).
 //   3. Its session is ended as above, and the person is signed in to NOSE at
 //      once (the owner's decision), as auth-login.js does it: any session
@@ -34,7 +35,7 @@
 
 import {
   gotrue, readJsonBody, fromThisSite, crossSite, TOKEN_HASH, OTP_CODE,
-  isEmail, normaliseEmail, rateLimit, codeRefused,
+  isEmail, normaliseEmail, codeTryAllowed, codeRefused,
   readSession, destroySession, createSession, sessionCookie,
 } from '../lib/auth.js';
 import { json, methodNotAllowed } from '../lib/http.js';
@@ -74,7 +75,7 @@ async function byCode(request, d) {
   const email = normaliseEmail(d.email);
   const code = typeof d.code === 'string' ? d.code.trim() : '';
   if (!isEmail(email) || !OTP_CODE.test(code)) return codeRefused();
-  if (!(await rateLimit('code', email, { limit: 5, windowSeconds: 3600, strict: true }))) return codeRefused();
+  if (!(await codeTryAllowed(email))) return codeRefused();
 
   /* GoTrue's POST /verify with type, email and token. Newer Supabase docs call
      this type "email"; a live sign-up is the first real proof of this body. */
