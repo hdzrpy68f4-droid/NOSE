@@ -26,6 +26,10 @@
  *   - palate-sync: 401 without a session; the limits; one user never reads
  *     another's
  *   - reset: one reply whether or not the address exists
+ *   - six-digit codes (since 2026-11-25): a right one confirms and signs in,
+ *     or sets a new password; wrong, unknown address, wrong shape and the
+ *     sixth try in an hour get one answer, and the sixth never reaches
+ *     Supabase; a short password uses no try
  *   - sessions-purge (since 2026-11-14, "Sessions end when the privacy page
  *     says"): an expired record whose cookie never returns is deleted, a live
  *     one kept, counts only in its log line
@@ -56,7 +60,7 @@ function check(label, actual, expected) {
 
 /* ------------------------------------------------ Supabase, stood in for */
 
-const supa = { users: new Map(), calls: [], down: false, failDelete: false, failAdminGet: false, recovery: new Map(), confirm: new Map(), access: new Map() };
+const supa = { users: new Map(), calls: [], down: false, failDelete: false, failAdminGet: false, recovery: new Map(), confirm: new Map(), access: new Map(), otp: new Map() };
 function addUser(email, password, meta = {}) {
   const user = { id: crypto.randomUUID(), email, password, user_metadata: meta, created_at: '2026-01-02T03:04:05.000Z' };
   supa.users.set(email, user);
@@ -86,6 +90,16 @@ globalThis.fetch = async (url, init = {}) => {
   /* The reset's three calls (since 2026-11-14): a recovery code verified once,
      the password set with the session that answer carries, that session ended. */
   if (p === '/verify' && call.method === 'POST') {
+    /* a six-digit code from the email (since 2026-11-25): { type, email,
+       token }, used once; supa.otp holds "<type>:<address>" -> code */
+    if (body.token !== undefined) {
+      const key = `${body.type}:${body.email}`;
+      if (!supa.users.has(body.email) || supa.otp.get(key) !== body.token) return reply(403, { error_code: 'otp_expired', msg: 'Token has expired or is invalid' });
+      supa.otp.delete(key);
+      const t = 'access-' + crypto.randomBytes(8).toString('hex');
+      supa.access.set(t, body.email);
+      return reply(200, { access_token: t, refresh_token: 'r', user: { id: supa.users.get(body.email).id, email: body.email } });
+    }
     /* a sign-up confirmation code (since 2026-11-16), used once */
     if (body.type === 'signup' && supa.confirm.has(body.token_hash)) {
       const who = supa.confirm.get(body.token_hash);
@@ -197,7 +211,7 @@ async function main() {
   check('signup: refused for a body that is not an object', [r.status, r.data], [400, { error: 'rejected', reason: 'not-an-object' }]);
   check('signup: none of those reached Supabase', supa.calls.length, 0);
 
-  const NEUTRAL = { status: 'submitted', message: 'Check your email to finish setting up your account.' };
+  const NEUTRAL = { status: 'submitted', message: 'Check your email for a six-digit code, or use the link in it.' };
   const fresh = await call(signup, 'POST', { email: ' New@Example.test ', password: PASSWORD, ageAttested: true });
   const sent = supa.calls.at(-1);
   check('signup: the call to Supabase is POST /auth/v1/signup with the address trimmed and lower-cased',
@@ -501,8 +515,183 @@ async function main() {
     SECRETS.push('third new', 'fourth new');
   }
 
+  /* ---- six-digit codes (since 2026-11-25, "Six-digit email codes on /account/") ---- */
+  {
+    const HAL = 'hal@example.test', IVY = 'ivy@example.test', KIM = 'kim@example.test', NOBODY = 'nobody@example.test';
+    const HAL_CODE = '482913', IVY_CODE = '771204', KIM_CODE = '305518', NEWPASS = 'a code-set password';
+    SECRETS.push(HAL, IVY, KIM, HAL_CODE, IVY_CODE, KIM_CODE, NEWPASS);
+    addUser(HAL, PASSWORD); addUser(IVY, PASSWORD); addUser(KIM, PASSWORD);
+    /* signIn() empties every throttle record, so every sign-in comes first. */
+    const ivyCookie = await signIn(IVY), k1 = await signIn(KIM), k2 = await signIn(KIM);
+    const REFUSED = { error: 'code-refused', message: 'That code is wrong or has expired. Check the newest email, or use the link in it. After five tries, wait an hour.' };
+    const answer = x => JSON.stringify([x.status, x.data, x.cookie]);
+    const verifies = () => supa.calls.filter(c => c.path === '/auth/v1/verify' && c.body && c.body.token !== undefined).length;
+    const from = logged.length;
+
+    supa.otp.set(`signup:${HAL}`, HAL_CODE);
+    let n = verifies();
+    const shapes = [];
+    for (const b of [{ email: HAL, code: '48291' }, { email: HAL, code: 'abcdef' }, { email: HAL, code: 482913 }, { email: 'not-an-address', code: HAL_CODE }, { email: HAL }, { code: HAL_CODE }])
+      shapes.push(answer(await call(confirm, 'POST', b)));
+    check('confirm by code: a code of the wrong shape, or no good address, gets the one refusal and never reaches Supabase',
+      [[...new Set(shapes)], verifies() - n, supa.otp.has(`signup:${HAL}`)], [[answer({ status: 400, data: REFUSED, cookie: null })], 0, true]);
+    const wrong = await call(confirm, 'POST', { email: HAL, code: '000000' });
+    const unknown = await call(confirm, 'POST', { email: NOBODY, code: HAL_CODE });
+    check('confirm by code: a wrong code and an address with no account get the same refusal, word for word',
+      [answer(wrong), answer(unknown)], [answer({ status: 400, data: REFUSED, cookie: null }), answer({ status: 400, data: REFUSED, cookie: null })]);
+    r = await call(confirm, 'POST', { email: HAL, code: HAL_CODE }, undefined, { 'sec-fetch-site': 'cross-site' });
+    check('confirm by code: refused from another site, the code not used up', [r.status, supa.otp.has(`signup:${HAL}`)], [403, true]);
+
+    const at = supa.calls.length;
+    r = await call(confirm, 'POST', { email: ' Hal@Example.test ', code: ` ${HAL_CODE} ` }, ivyCookie);
+    const halId = sessionOf(r);
+    check('confirm by code: the right code is verified as a sign-up with the address and code, then Supabase\'s session ended',
+      [r.status, r.data, supa.calls.slice(at).map(c => `${c.method} ${c.path}`), supa.calls[at].body],
+      [200, { status: 'signed-in' }, ['POST /auth/v1/verify', 'POST /auth/v1/logout?scope=global'], { type: 'signup', email: HAL, token: HAL_CODE }]);
+    check('confirm by code: ...and the person is signed in at once - a session cookie, word for word, for that account',
+      [r.cookie === `nose_session=${halId}; ${COOKIE}`, blobs.read('auth-sessions', `sessions/${halId}`).userId === supa.users.get(HAL).id,
+        (await call(me, 'GET', undefined, `nose_session=${halId}`)).data.email], [true, true, HAL]);
+    check('confirm by code: ...the session this browser had before is destroyed',
+      (await call(me, 'GET', undefined, ivyCookie)).data.signedIn, false);
+    r = await call(confirm, 'POST', { email: HAL, code: HAL_CODE });
+    check('confirm by code: the same code a second time is refused', answer(r), answer({ status: 400, data: REFUSED, cookie: null }));
+
+    /* The count: five tries an hour per address, with or without an account. */
+    for (const [who, code] of [[IVY, IVY_CODE], ['none@example.test', '123456']]) {   // NOBODY has one try counted already
+      if (who === IVY) supa.otp.set(`signup:${IVY}`, IVY_CODE);
+      n = verifies();
+      const tries = [];
+      for (let i = 0; i < 5; i++) tries.push(answer(await call(confirm, 'POST', { email: who, code: '999999' })));
+      const reached = verifies() - n;
+      const sixth = await call(confirm, 'POST', { email: who, code });
+      check(`confirm by code: for ${who === IVY ? 'an address with an account' : 'an address with none'}, five wrong tries reach Supabase; the sixth, the right code or not, gets the same refusal and does not`,
+        [[...new Set([...tries, answer(sixth)])], reached, verifies() - n], [[answer({ status: 400, data: REFUSED, cookie: null })], 5, 5]);
+    }
+    check('confirm by code: ...and the right code was not used up by the sixth try', supa.otp.has(`signup:${IVY}`), true);
+    supa.otp.delete(`signup:${IVY}`);
+    supa.down = true;
+    r = await call(confirm, 'POST', { email: KIM, code: '123456' });
+    supa.down = false;
+    check('confirm by code: Supabase unreachable is a 503, not a refusal', [r.status, r.data], [503, { error: 'unavailable' }]);
+
+    /* A reset by code; the count is the same one (KIM has one try in it now). */
+    const kimKey = `rl/code/${crypto.createHash('sha256').update(KIM).digest('hex').slice(0, 32)}`;
+    const countOf = () => (blobs.keys('auth-ratelimit').includes(kimKey) ? blobs.read('auth-ratelimit', kimKey).count : 0);
+    supa.otp.set(`recovery:${KIM}`, KIM_CODE);
+    n = verifies();
+    const before = countOf();
+    r = await call(resetFinish, 'POST', { email: KIM, code: KIM_CODE, password: 'short' });
+    check('reset by code: a password under 10 characters is refused before the count and Supabase, and the code is not used up',
+      [r.status, r.data.error, countOf() - before, verifies() - n, supa.otp.has(`recovery:${KIM}`)], [400, 'bad-password', 0, 0, true]);
+    r = await call(resetFinish, 'POST', { email: KIM, code: '000000', password: NEWPASS });
+    const shape = await call(resetFinish, 'POST', { email: KIM, code: '30551', password: NEWPASS });
+    const none = await call(resetFinish, 'POST', { email: 'nobody-else@example.test', code: KIM_CODE, password: NEWPASS });
+    check('reset by code: a wrong code, a wrong shape and an address with no account get the one refusal confirm gives',
+      [...new Set([answer(r), answer(shape), answer(none)])], [answer({ status: 400, data: REFUSED, cookie: null })]);
+    const at2 = supa.calls.length;
+    r = await call(resetFinish, 'POST', { email: KIM, code: KIM_CODE, password: NEWPASS });
+    check('reset by code: the right code verified as a recovery, the password set, Supabase\'s session ended - in that order',
+      [r.status, r.data, r.cookie, supa.calls.slice(at2).map(c => `${c.method} ${c.path}`), supa.calls[at2].body],
+      [200, { status: 'password-set', message: 'Your password is changed, and every device was signed out. Sign in with the new one.' }, null,
+        ['POST /auth/v1/verify', 'PUT /auth/v1/user', 'POST /auth/v1/logout?scope=global'], { type: 'recovery', email: KIM, token: KIM_CODE }]);
+    check('reset by code: ...both NOSE sessions from before are gone',
+      [(await call(me, 'GET', undefined, k1)).data.signedIn, (await call(me, 'GET', undefined, k2)).data.signedIn], [false, false]);
+    check('reset by code: ...and the count is shared with confirm: one confirm try, the wrong code and the right one make three (the wrong shape counts none)',
+      countOf(), 3);
+    for (let i = 0; i < 2; i++) await call(confirm, 'POST', { email: KIM, code: '999999' });
+    supa.otp.set(`recovery:${KIM}`, KIM_CODE);
+    n = verifies();
+    r = await call(resetFinish, 'POST', { email: KIM, code: KIM_CODE, password: 'yet another password' });
+    check('reset by code: the sixth try in the hour, across both functions, gets the refusal and does not reach Supabase',
+      [answer(r), verifies() - n, supa.otp.has(`recovery:${KIM}`)], [answer({ status: 400, data: REFUSED, cookie: null }), 0, true]);
+    check('reset by code: ...and the new password signs in, the old one does not',
+      [(await call(login, 'POST', { email: KIM, password: NEWPASS })).status, (await call(login, 'POST', { email: KIM, password: PASSWORD })).status], [200, 400]);
+    check('six-digit codes: the throttle key is a hash, not the address, under the bucket "code"',
+      blobs.keys('auth-ratelimit').filter(k => k.startsWith('rl/code/')).every(k => /^rl\/code\/[0-9a-f]{32}$/.test(k)) && blobs.keys('auth-ratelimit').some(k => k === kimKey), true);
+    check('six-digit codes: no console line holds an address, a code or the password',
+      logged.slice(from).filter(l => SECRETS.some(s => l.includes(s)) || /@example\.test/.test(l)), []);
+    SECRETS.push('yet another password', 'nobody-else@example.test');
+  }
+
+  /* ---- the code count is strict (since 2026-11-25): it fails closed ---- */
+  {
+    const LEO = 'leo@example.test', LEO_CODE = '246810';
+    SECRETS.push(LEO, LEO_CODE);
+    addUser(LEO, PASSWORD);
+    supa.otp.set(`signup:${LEO}`, LEO_CODE);
+    const REFUSED = { error: 'code-refused', message: 'That code is wrong or has expired. Check the newest email, or use the link in it. After five tries, wait an hour.' };
+    const answer = x => JSON.stringify([x.status, x.data, x.cookie]);
+    const verifies = () => supa.calls.filter(c => c.path === '/auth/v1/verify' && c.body && c.body.token !== undefined).length;
+    /* The throttle store, with some of its calls replaced; every getStore() asks blobs.getStore. */
+    const realGetStore = blobs.getStore;
+    const breaking = how => {
+      blobs.getStore = o => {
+        const s = realGetStore(o);
+        return (typeof o === 'string' ? o : o.name) === 'auth-ratelimit' ? { ...s, ...how(s) } : s;
+      };
+    };
+    const restore = () => { blobs.getStore = realGetStore; };
+    const refuse = async () => { throw new Error('stand-in: refused'); };
+    const leoKey = `rl/code/${crypto.createHash('sha256').update(LEO).digest('hex').slice(0, 32)}`;
+
+    breaking(() => ({ get: refuse, getWithMetadata: refuse }));
+    let n = verifies();
+    r = await call(confirm, 'POST', { email: LEO, code: LEO_CODE });
+    restore();
+    check('strict count: a throttle store whose read throws refuses the code try with the one answer, and Supabase is not asked',
+      [answer(r), verifies() - n, supa.otp.has(`signup:${LEO}`)], [answer({ status: 400, data: REFUSED, cookie: null }), 0, true]);
+
+    breaking(() => ({ set: refuse, setJSON: refuse }));
+    n = verifies();
+    r = await call(resetFinish, 'POST', { email: LEO, code: LEO_CODE, password: 'a strict-count password' });
+    restore();
+    check('strict count: a throttle store whose write throws refuses the try the same way, and Supabase is not asked',
+      [answer(r), verifies() - n, blobs.keys('auth-ratelimit').includes(leoKey)], [answer({ status: 400, data: REFUSED, cookie: null }), 0, false]);
+
+    /* Two tries that both read the record before either writes: the second
+       write finds the first one's etag (or, with no record, the first one's
+       record) and is refused. */
+    const req = body => new Request('https://nose-app.com/.netlify/functions/x',
+      { method: 'POST', headers: { 'content-type': 'application/json', 'sec-fetch-site': 'same-origin' }, body: JSON.stringify(body) });
+    const race = async () => {
+      const waiting = [];
+      breaking(s => ({
+        async getWithMetadata(k, o) {
+          const got = await s.getWithMetadata(k, o);
+          await new Promise(go => { waiting.push(go); if (waiting.length === 2) waiting.forEach(f => f()); });
+          return got;
+        },
+      }));
+      const at = verifies();
+      const raced = await quietly(() => Promise.all([confirm(req({ email: LEO, code: '111111' })), confirm(req({ email: LEO, code: '222222' }))]));
+      restore();
+      logged.push(...raced.lines);
+      const bodies = await Promise.all(raced.value.map(x => x.json()));
+      return [raced.value.map(x => x.status), bodies.every(b => JSON.stringify(b) === JSON.stringify(REFUSED)), verifies() - at];
+    };
+    check('strict count: two tries that read no record at once - exactly one is counted and reaches Supabase (onlyIfNew)',
+      [...await race(), blobs.read('auth-ratelimit', leoKey).count], [[400, 400], true, 1, 1]);
+    check('strict count: two tries that read the same record at once - exactly one is counted and reaches Supabase (onlyIfMatch)',
+      [...await race(), blobs.read('auth-ratelimit', leoKey).count], [[400, 400], true, 1, 2]);
+    /* An ended window's record is replaced on its etag. */
+    const rl = blobs.stores.get('auth-ratelimit');
+    rl.get(leoKey).text = JSON.stringify({ start: Date.now() - 3601e3, count: 5 });
+    n = verifies();
+    r = await call(confirm, 'POST', { email: LEO, code: LEO_CODE });
+    check('strict count: a record whose hour has ended starts the count again, and the right code signs in',
+      [r.status, r.data, verifies() - n, blobs.read('auth-ratelimit', leoKey).count], [200, { status: 'signed-in' }, 1, 1]);
+
+    breaking(() => ({ get: refuse, getWithMetadata: refuse, set: refuse, setJSON: refuse }));
+    if (blobs.stores.has('auth-ratelimit')) blobs.stores.get('auth-ratelimit').clear();
+    r = await call(login, 'POST', { email: LEO, password: PASSWORD });
+    restore();
+    check('login still fails open: with a throttle store that throws on read and write, a good password signs in',
+      [r.status, r.data.status, /^nose_session=/.test(r.cookie || '')], [200, 'signed-in', true]);
+    SECRETS.push('a strict-count password', '111111', '222222');
+  }
+
   /* ---- auth-reset ---- */
-  const RESET = { status: 'submitted', message: 'If that address has an account, a reset link is on its way.' };
+  const RESET = { status: 'submitted', message: 'If that address has an account, an email with a six-digit code is on its way.' };
   const known = await call(reset, 'POST', { email: ALICE });
   const unknown = await call(reset, 'POST', { email: 'nobody@example.test' });
   const malformed = await call(reset, 'POST', { email: 'not-an-address' });
@@ -555,9 +744,9 @@ async function main() {
   r = await call(accountDelete, 'POST', { confirm: 'DELETE' }, alice);
   const steps = blobs.calls.slice(at.blobs).filter(c => c[0] === 'delete' || c[0] === 'list').map(c => `${c[0]} ${c[1]}`);
   check('account-delete: deleted, the cookie cleared', [r.status, r.data, r.cookie], [200, { status: 'deleted' }, CLEARED]);
-  check('account-delete: the order is palate, then sessions, then identity, then the address\'s three throttle records',
-    [steps[0], steps[1], steps.slice(2, -3).every(s => s === 'delete auth-sessions'), steps.slice(-3), supa.calls.slice(at.supa).map(c => `${c.method} ${c.path}`)],
-    ['delete palates', 'list auth-sessions', true, ['delete auth-ratelimit', 'delete auth-ratelimit', 'delete auth-ratelimit'], [`DELETE /auth/v1/admin/users/${aliceUser}`]]);
+  check('account-delete: the order is palate, then sessions, then identity, then the address\'s four throttle records',
+    [steps[0], steps[1], steps.slice(2, -4).every(s => s === 'delete auth-sessions'), steps.slice(-4), supa.calls.slice(at.supa).map(c => `${c.method} ${c.path}`)],
+    ['delete palates', 'list auth-sessions', true, Array(4).fill('delete auth-ratelimit'), [`DELETE /auth/v1/admin/users/${aliceUser}`]]);
   check('account-delete: the address\'s login throttle record is gone',
     blobs.keys('auth-ratelimit').includes(`rl/login/${require('crypto').createHash('sha256').update(ALICE).digest('hex').slice(0, 32)}`), false);
   check('account-delete: the palate, every session on every device and the identity are gone; another user\'s are not',

@@ -17,9 +17,11 @@ import { json, methodNotAllowed } from '../lib/http.js';
 
 const RESET_PAGE = 'https://nose-app.com/account/reset/';
 
+/* Since 2026-11-25 the email carries a six-digit code beside its link, typed
+   on /account/ with the new password (auth-reset-finish). */
 const NEUTRAL = {
   status: 'submitted',
-  message: 'If that address has an account, a reset link is on its way.',
+  message: 'If that address has an account, an email with a six-digit code is on its way.',
 };
 
 export default async (request) => {

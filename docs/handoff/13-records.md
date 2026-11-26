@@ -6371,3 +6371,96 @@ fixture.
   (through #473), 77 unchanged, 1 values changed (`cf451c7a`, `testedOn`), 0
   accepted to rejected, 0 rejected to accepted, 0 failed; a dry run after it
   read 78 unchanged. The branch `method-full-panel` was deleted, merged.
+
+### Six-digit email codes on /account/, 2026-11-25
+
+Asked: let a person confirm a new account, or reset a password, by typing the
+six-digit code from the email on /account/ itself, with the links and both
+link pages working as before. The owner decided that a confirmed code signs
+the person in at once.
+
+- **Server.** `netlify/lib/auth.js` gains `OTP_CODE` (`^\d{6}$`), a throttle
+  bucket `code` (an hour; the daily purge and `deleteThrottles` cover it, so
+  deleting an account now deletes four throttle records, not three) and
+  `codeRefused()`, the one answer for a code that is wrong, expired, of the
+  wrong shape, for an address with no account, or past the count: 400
+  `code-refused`, "That code is wrong or has expired. Check the newest email,
+  or use the link in it. After five tries, wait an hour."
+  - `auth-confirm` also takes `{ email, code }`: the try is counted for the
+    address (five an hour, with or without an account) before Supabase is
+    asked, and over the count Supabase is not asked; then `/verify` with
+    `{ type: 'signup', email, token }`, Supabase's session ended as before,
+    any NOSE session on the browser destroyed and a new one set, as
+    `auth-login` does: 200 `{ status: 'signed-in' }` with the cookie. The
+    `{ token_hash }` path is unchanged and still sets no cookie.
+  - `auth-reset-finish` also takes `{ email, code, password }`. The password
+    is checked first, so a short one uses no try; then the same count, shared
+    with `auth-confirm`; then `/verify` with `{ type: 'recovery', email,
+    token }` and the flow as before (PUT `/user`, `/logout`, every NOSE
+    session destroyed, "password-set"; the person signs in with the new
+    password).
+  - Why a count at all: every call to Supabase comes from Netlify, so
+    Supabase's per-IP limit does not slow a guesser of six digits. The
+    `token_hash` paths keep none: that code is unguessable.
+  - The count is strict (`rateLimit(..., { strict: true })`, the `code`
+    bucket only; login, signup and reset still fail open as before). The
+    record is read with its etag (`getWithMetadata`) and the new count
+    written with `onlyIfNew` (no record) or `onlyIfMatch` on that etag (a
+    record, an ended window's included). A read or write that throws, or a
+    write that comes back `modified: false`, refuses the try with
+    `codeRefused()` before Supabase is asked; there is no retry. So a burst
+    of parallel tries cannot pass more than five in an hour.
+  - `/verify` uses the code up before PUT `/user`. If Supabase then refuses
+    the new password, trying again needs a new code; the link flow already
+    behaves this way.
+  - The link stays in both emails for good: anyone can use up an address's
+    five tries in an hour, and the link is the way round that.
+  - `auth-signup` now answers "Check your email for a six-digit code, or use
+    the link in it." and `auth-reset` "If that address has an account, an
+    email with a six-digit code is on its way." Each is still one answer for
+    every outcome.
+- **Page.** After a sign-up, the sign-up card's form gives way to a code step
+  (the address, one code field with `autocomplete="one-time-code"`,
+  "Confirm", "Start again"); a sign-in answered `email-not-confirmed` opens
+  the same step for the address typed. After a reset request, the reset card
+  asks for the code and a new password ("Set new password"), then shows
+  sign-in with the address filled in and the server's sentence. Focus moves
+  to the code field when a step appears; Enter sends; the field describes
+  itself by the address line and its status line. "Send reset link" is "Send
+  reset code". No new CSS.
+- **Tests.** `accounts-test`: the stand-in's `/verify` takes `{ type, email,
+  token }`; 20 checks for the codes - a right one confirms and signs in (the
+  cookie word for word, the browser's old session gone), wrong code, unknown
+  address, wrong shape and the sixth try give one answer word for word, the
+  sixth reaches no Supabase and leaves the right code unused, a reset by code
+  sets the password and ends the sessions, a short password counts no try,
+  and the count is shared. Six more for the strict count, on the harness's
+  Blobs stand-in (which honours `onlyIfNew` / `onlyIfMatch` and returns
+  etags): a store whose read throws, and one whose write throws, refuse the
+  try without asking Supabase; two tries that read at once, with no record
+  and then with one, let exactly one reach Supabase; an ended window starts
+  again; and login with a throwing store still signs in (fails open). With
+  `strict` taken out of `auth-confirm`, five of them fail.
+  `input-paths-test` drives /account/ with every
+  account function stood in for: both code steps, the sign-in way back,
+  "Start again", a code or password refused on the page, and what is sent
+  (11 checks, run in Chromium, Firefox and WebKit on Windows).
+- **Not yet seen live:** a real email with a code in it, and the `/verify`
+  body `{ type, email, token }` against real Supabase. Newer Supabase docs
+  call the confirmation type `email`; `signup` is sent here, and a live
+  sign-up is the first proof. If it is refused, the type is the first thing
+  to try.
+- **Dashboard, done 2026-11-25 with the owner's OK** (accounts project,
+  saved and read back after a reload). Authentication → Emails → Templates:
+  one paragraph added after the link, which stays - Confirm sign up: `<p>Or
+  type this six-digit code on the page where you signed up:
+  <strong>{{ .Token }}</strong></p>`; Reset password: the same with "where
+  you asked for the reset". Sign In / Providers → Email: **Email OTP length
+  was 8, now 6**; Email OTP expiration 3600 seconds, unchanged.
+- **Rollout order:** the templates carry the code before this change is
+  pushed, because the page and both functions' answers promise one. Six
+  digits in a real email are not yet seen.
+- **Privacy page**, wording approved by the owner 2026-11-25: the attempt
+  counts name entering a code; the Supabase paragraph says each email also
+  shows a six-digit code since November 25; Resend receives "link and code
+  included"; a fourteenth change says so.

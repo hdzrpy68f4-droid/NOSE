@@ -26,10 +26,11 @@ import { json, methodNotAllowed } from '../lib/http.js';
    URLs, or Supabase sends the link to its Site URL instead. */
 const CONFIRM_PAGE = 'https://nose-app.com/account/confirmed/';
 
-// Deliberately identical for every outcome.
+// Deliberately identical for every outcome. Since 2026-11-25 the email
+// carries a six-digit code beside its link, typed on /account/ (auth-confirm).
 const NEUTRAL = {
   status: 'submitted',
-  message: 'Check your email to finish setting up your account.',
+  message: 'Check your email for a six-digit code, or use the link in it.',
 };
 
 /* Netlify's rate limit at its edge, counted per IP address over 60 seconds,

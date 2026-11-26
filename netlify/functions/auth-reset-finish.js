@@ -15,19 +15,29 @@
 //     NOSE") links /account/reset/#token_hash=...&type=recovery:
 //     the page sends { token_hash } only when the button is pressed, so an
 //     email scanner that opens the link first does not use the code up.
+// And one way without the link, since 2026-11-25 (13-records, "Six-digit
+// email codes on /account/"): the six-digit code from the same email, typed on
+// /account/ with the address and the new password - { email, code, password }.
 // Here:
 //   1. A token_hash is checked by Supabase (POST /verify, type recovery); an
 //      access_token is used as it is. A used, expired or made-up one is
-//      refused with one plain sentence.
+//      refused with one plain sentence. A six-digit code is checked only
+//      after the password passes isPassword (a short one uses no try), and
+//      only inside the 'code' count, five tries an hour per address, shared
+//      with auth-confirm and strict (a lost race or a failing store refuses
+//      the try); then POST /verify, type recovery, email, token. A
+//      wrong, expired or wrong-shaped code, an address with no account and a
+//      try over the count get the one same answer (codeRefused).
 //   2. With that session, the password is set (PUT /user).
 //   3. That Supabase session is ended (POST /logout, scope global), and every
 //      NOSE session of the account is destroyed: whoever had the old password
 //      is signed out everywhere. The person then signs in with the new one.
-// Nothing is kept: no code, no password, no address. Console lines name a step
-// and a status, never the address.
+// Nothing is kept but that count: no code, no password, no address. Console
+// lines name a step and a status, never the address.
 
 import {
   gotrue, isPassword, readJsonBody, destroyAllSessions, fromThisSite, crossSite, TOKEN_HASH,
+  OTP_CODE, isEmail, normaliseEmail, rateLimit, codeRefused,
 } from '../lib/auth.js';
 import { json, methodNotAllowed } from '../lib/http.js';
 
@@ -47,11 +57,26 @@ export default async (request) => {
   const { token_hash: tokenHash, access_token: given, password } = body.data;
   const byHash = typeof tokenHash === 'string' && TOKEN_HASH.test(tokenHash);
   const bySession = typeof given === 'string' && given.length <= 4096 && ACCESS_TOKEN.test(given);
-  if (!byHash && !bySession) return json(EXPIRED, 400);
+  const byCode = tokenHash === undefined && given === undefined
+    && (body.data.code !== undefined || body.data.email !== undefined);
+  if (!byHash && !bySession && !byCode) return json(EXPIRED, 400);
   if (!isPassword(password)) return json({ error: 'bad-password', message: 'Use at least 10 characters.' }, 400);
 
   let accessToken, userId;
-  if (byHash) {
+  if (byCode) {
+    const email = normaliseEmail(body.data.email);
+    const code = typeof body.data.code === 'string' ? body.data.code.trim() : '';
+    if (!isEmail(email) || !OTP_CODE.test(code)) return codeRefused();
+    if (!(await rateLimit('code', email, { limit: 5, windowSeconds: 3600, strict: true }))) return codeRefused();
+    const verified = await gotrue('/verify', { body: { type: 'recovery', email, token: code } });
+    if (verified.networkError) {
+      console.error('[auth-reset-finish] supabase unreachable', verified.networkError);
+      return json({ error: 'unavailable' }, 503);
+    }
+    accessToken = verified.ok && verified.data && verified.data.access_token;
+    userId = verified.ok && verified.data && verified.data.user && verified.data.user.id;
+    if (!accessToken || !userId) return codeRefused();
+  } else if (byHash) {
     const verified = await gotrue('/verify', { body: { type: 'recovery', token_hash: tokenHash } });
     if (verified.networkError) {
       console.error('[auth-reset-finish] supabase unreachable', verified.networkError);
@@ -73,7 +98,7 @@ export default async (request) => {
     console.error('[auth-reset-finish] supabase unreachable', updated.networkError);
     return json({ error: 'unavailable' }, 503);
   }
-  if (!byHash && updated.status === 401) return json(EXPIRED, 400);
+  if (bySession && updated.status === 401) return json(EXPIRED, 400);
   if (!updated.ok) {
     console.warn('[auth-reset-finish] password update refused', { status: updated.status });
     const weak = updated.data && /password/i.test(String(updated.data.error_code || updated.data.msg || ''));

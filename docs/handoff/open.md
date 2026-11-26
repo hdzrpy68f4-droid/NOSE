@@ -293,6 +293,13 @@ schema comment if wanted.
   template" in the dashboard, or a new template (invite, magic link, email
   change - none is used), puts Supabase's own link back, and the privacy
   page would then be wrong.
+- **Six-digit email codes are not yet seen live** (2026-11-25; 13-records,
+  "Six-digit email codes on /account/"). Both templates carry `{{ .Token }}`
+  beside the link (which stays for good) and the Email OTP length is 6
+  (was 8), expiry 3600 seconds. Still to see: six digits in a real email,
+  and a real sign-up and a real reset by code, which prove the `/verify`
+  body `{ type, email, token }` (type `signup` for a confirmation; newer
+  docs say `email`).
 - **Two real scans have no PDF** (documents #3 and #184, found 2026-11-19 by
   `export-candidate.js --real`): kept before PDFs were, or their PDF write
   failed. Neither can be checked by hand or become a fixture unless its jar

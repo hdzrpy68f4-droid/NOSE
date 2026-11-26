@@ -83,6 +83,7 @@
       <!-- Create account -->
       <div class="acct-card" id="panel-signup" role="tabpanel" aria-labelledby="tab-signup" hidden>
         <h2>Create an account</h2>
+        <div id="signup-form">
         <div class="acct-field">
           <label for="signup-email">Email</label>
           <input type="email" id="signup-email" name="email" autocomplete="email" spellcheck="false" required>
@@ -102,20 +103,52 @@
           <button class="button button-primary" id="signup-submit" type="button">Create account</button>
         </div>
         <p class="acct-fine">By creating an account you accept our <a href="/terms/">terms</a>. Read the <a href="/privacy/">privacy page</a> first &mdash; it says exactly what an account stores and what it does not.</p>
+        </div>
+        <div id="signup-code" hidden>
+          <p id="signup-code-sent"></p>
+          <div class="acct-field">
+            <label for="signup-code-input">Six-digit code</label>
+            <input type="text" id="signup-code-input" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="\d{6}" spellcheck="false" aria-describedby="signup-code-sent signup-code-message" required>
+          </div>
+          <p class="acct-message" id="signup-code-message" role="status" aria-live="polite" hidden></p>
+          <div class="buttons">
+            <button class="button button-primary" id="signup-code-submit" type="button">Confirm</button>
+            <button class="button button-secondary" id="signup-code-restart" type="button">Start again</button>
+          </div>
+        </div>
       </div>
 
       <!-- Reset -->
       <div class="acct-card" id="panel-reset" hidden>
         <h2>Reset your password</h2>
-        <p>Enter your email and we will send a reset link, if that address has an account.</p>
+        <div id="reset-request">
+        <p>Enter your email and we will send a six-digit code, if that address has an account.</p>
         <div class="acct-field">
           <label for="reset-email">Email</label>
           <input type="email" id="reset-email" name="email" autocomplete="email" spellcheck="false" required>
         </div>
         <p class="acct-message" id="reset-message" role="status" aria-live="polite" hidden></p>
         <div class="buttons">
-          <button class="button button-primary" id="reset-submit" type="button">Send reset link</button>
+          <button class="button button-primary" id="reset-submit" type="button">Send reset code</button>
           <button class="button button-secondary" id="hide-reset" type="button">Back to sign in</button>
+        </div>
+        </div>
+        <div id="reset-code" hidden>
+          <p id="reset-code-sent"></p>
+          <div class="acct-field">
+            <label for="reset-code-input">Six-digit code</label>
+            <input type="text" id="reset-code-input" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="\d{6}" spellcheck="false" aria-describedby="reset-code-sent reset-code-message" required>
+          </div>
+          <div class="acct-field">
+            <label for="reset-password">New password</label>
+            <input type="password" id="reset-password" name="new-password" autocomplete="new-password" minlength="10" aria-describedby="reset-password-hint" required>
+            <p class="acct-hint" id="reset-password-hint">At least 10 characters. Every device signed in to your account will be signed out.</p>
+          </div>
+          <p class="acct-message" id="reset-code-message" role="status" aria-live="polite" hidden></p>
+          <div class="buttons">
+            <button class="button button-primary" id="reset-code-submit" type="button">Set new password</button>
+            <button class="button button-secondary" id="reset-code-back" type="button">Back to sign in</button>
+          </div>
         </div>
       </div>
     </div>
@@ -182,7 +215,7 @@
     </div>
   </footer>
 <!-- /nose:footer -->
-<script src="/js/account.3f7b6490.js" defer></script>
+<script src="/js/account.dbf0f486.js" defer></script>
 <script src="/js/menu.6e9f8bdc.js" defer></script>
 </body>
 </html>

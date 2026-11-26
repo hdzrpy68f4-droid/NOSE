@@ -122,7 +122,43 @@
     $('tab-login').addEventListener('click', function () { selectTab('login'); });
     $('tab-signup').addEventListener('click', function () { selectTab('signup'); });
 
+    /* The six-digit codes in the confirmation and reset emails, typed here
+       (since 2026-11-25; 13-records, "Six-digit email codes on /account/").
+       The email's link still works as before. Spaces in a pasted code are
+       dropped; anything but six digits is not sent. */
+    function codeIn(id) { return $(id).value.replace(/\s+/g, ''); }
+    var SIX = /^\d{6}$/;
+    var codeEmail = '';    // the address a sign-up code is for
+    var resetEmail = '';   // the address a reset code is for
+
+    function showSignupCode(email, text, tone) {
+      codeEmail = email;
+      selectTab('signup');
+      show($('signup-form'), false);
+      show($('signup-code'), true);
+      $('signup-code-sent').textContent = 'Enter the code from the email to ' + email + '.';
+      $('signup-code-input').value = '';
+      message($('signup-code-message'), text, tone);
+      $('signup-code-input').focus();
+    }
+
+    function hideSignupCode() {
+      show($('signup-code'), false);
+      show($('signup-form'), true);
+      message($('signup-code-message'), '', null);
+    }
+
+    function resetToRequest() {
+      show($('reset-code'), false);
+      show($('reset-request'), true);
+      $('reset-code-input').value = '';
+      $('reset-password').value = '';
+      message($('reset-code-message'), '', null);
+      message($('reset-message'), '', null);
+    }
+
     $('show-reset').addEventListener('click', function () {
+      resetToRequest();
       show($('panel-login'), false);
       show($('panel-signup'), false);
       show($('panel-reset'), true);
@@ -131,6 +167,10 @@
     });
 
     $('hide-reset').addEventListener('click', function () { selectTab('login'); });
+    $('reset-code-back').addEventListener('click', function () {
+      resetToRequest();
+      selectTab('login');
+    });
 
     // --- sign in
     function doLogin() {
@@ -151,6 +191,14 @@
         if (res.ok) {
           $('login-password').value = '';
           refresh();
+          return;
+        }
+        /* Not confirmed yet: the way back to the code step for someone who
+           closed the tab after signing up. */
+        if (res.status === 403 && res.data && res.data.error === 'email-not-confirmed') {
+          $('login-password').value = '';
+          message($('login-message'), '', null);
+          showSignupCode(email, res.data.message || 'Confirm your email address first.', 'error');
           return;
         }
         message($('login-message'),
@@ -192,11 +240,12 @@
           if (res.ok) {
             $('signup-password').value = '';
             // The server answers identically whether or not the address was
-            // already registered, so this message must stay identical too —
-            // varying it here would undo the enumeration resistance the
-            // endpoint was written to provide.
-            message($('signup-message'),
-              (res.data && res.data.message) || 'Check your email to finish setting up your account.',
+            // already registered, so this message and the code step must stay
+            // identical too — varying them here would undo the enumeration
+            // resistance the endpoint was written to provide.
+            message($('signup-message'), '', null);
+            showSignupCode(email,
+              (res.data && res.data.message) || 'Check your email for a six-digit code, or use the link in it.',
               'ok');
             // If confirmation is disabled server-side a session already exists.
             setTimeout(refresh, 600);
@@ -206,6 +255,38 @@
             (res.data && res.data.message) || 'That did not work. Check the address and try again.',
             'error');
         });
+    });
+
+    // --- confirm a new account by its code: signed in at once
+    function doConfirmCode() {
+      var btn = $('signup-code-submit');
+      var code = codeIn('signup-code-input');
+      if (!SIX.test(code)) {
+        message($('signup-code-message'), 'Enter the six-digit code from the email.', 'error');
+        return;
+      }
+      message($('signup-code-message'), '', null);
+      busy(btn, true, 'Confirming…');
+      post('/auth-confirm', { email: codeEmail, code: code }).then(function (res) {
+        busy(btn, false);
+        if (res.ok) {
+          hideSignupCode();
+          refresh();
+          return;
+        }
+        message($('signup-code-message'),
+          (res.data && res.data.message) || 'Your address could not be confirmed just now. Try again in a moment.',
+          'error');
+      });
+    }
+
+    $('signup-code-submit').addEventListener('click', doConfirmCode);
+    $('signup-code-input').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') doConfirmCode();
+    });
+    $('signup-code-restart').addEventListener('click', function () {
+      hideSignupCode();
+      $('signup-email').focus();
     });
 
     // --- reset
@@ -219,9 +300,60 @@
       busy(btn, true, 'Sending…');
       post('/auth-reset', { email: email }).then(function (res) {
         busy(btn, false);
-        message($('reset-message'),
-          (res.data && res.data.message) || 'If that address has an account, a reset link is on its way.',
+        if (!res.ok) {
+          message($('reset-message'),
+            (res.data && res.data.message) || 'That did not work. Try again in a moment.', 'error');
+          return;
+        }
+        // One answer for every address (auth-reset.js), so one step for all.
+        resetEmail = email;
+        message($('reset-message'), '', null);
+        show($('reset-request'), false);
+        show($('reset-code'), true);
+        $('reset-code-sent').textContent = 'Enter the code from the email to ' + email + ', and a new password.';
+        message($('reset-code-message'),
+          (res.data && res.data.message) || 'If that address has an account, an email with a six-digit code is on its way.',
           'ok');
+        $('reset-code-input').focus();
+      });
+    });
+
+    // --- finish a reset by its code; then sign in with the new password
+    function doResetCode() {
+      var btn = $('reset-code-submit');
+      var code = codeIn('reset-code-input');
+      var password = $('reset-password').value;
+      if (!SIX.test(code)) {
+        message($('reset-code-message'), 'Enter the six-digit code from the email.', 'error');
+        return;
+      }
+      if (password.length < 10) {
+        message($('reset-code-message'), 'Use at least 10 characters.', 'error');
+        return;
+      }
+      message($('reset-code-message'), '', null);
+      busy(btn, true, 'Setting…');
+      post('/auth-reset-finish', { email: resetEmail, code: code, password: password }).then(function (res) {
+        busy(btn, false);
+        if (res.ok) {
+          resetToRequest();
+          selectTab('login');
+          $('login-email').value = resetEmail;
+          $('login-password').value = '';
+          message($('login-message'),
+            (res.data && res.data.message) || 'Your password is changed. Sign in with the new one.', 'ok');
+          $('login-password').focus();
+          return;
+        }
+        message($('reset-code-message'),
+          (res.data && res.data.message) || 'The password could not be set. Try again in a moment.', 'error');
+      });
+    }
+
+    $('reset-code-submit').addEventListener('click', doResetCode);
+    ['reset-code-input', 'reset-password'].forEach(function (id) {
+      $(id).addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') doResetCode();
       });
     });
 

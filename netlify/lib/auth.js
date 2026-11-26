@@ -100,6 +100,11 @@ export const normaliseEmail = (v) => String(v).trim().toLowerCase();
    One of the wrong shape never reaches Supabase. */
 export const TOKEN_HASH = /^[A-Za-z0-9_-]{16,256}$/;
 
+/* The six-digit code in the same emails (Supabase's {{ .Token }}, since
+   2026-11-25), typed on /account/. Six digits can be guessed where a
+   token_hash cannot, so every try is counted (the 'code' bucket below). */
+export const OTP_CODE = /^\d{6}$/;
+
 // An auth request's body: a JSON object of at most 4096 characters, read by
 // http.js's readJsonBody - the beacons' reader too, each with its own limit.
 const MAX_BODY_CHARS = 4096;
@@ -276,8 +281,17 @@ export async function purgeExpiredSessions(now = Date.now()) {
  * is honest: this throttles attacks against one account, not a distributed
  * spray across many. Supabase applies its own limits behind this.
  *
- * Read-modify-write, so concurrent hits can under-count by one or two. That is
- * acceptable for a throttle and not worth a locking scheme.
+ * Read-modify-write, so concurrent hits can under-count by one or two, and a
+ * store that fails lets the try through (fail open). That is acceptable for
+ * login, signup and reset, where a password or an email stands behind it.
+ *
+ * `strict: true` (since 2026-11-25) is for the 'code' bucket only, the one
+ * guard on a six-digit code: the record is read with its etag and the new
+ * count written only if nobody wrote in between (onlyIfNew when there was no
+ * record, onlyIfMatch on its etag when there was, an ended window included).
+ * A lost race, a read or a write that throws, or a write that comes back
+ * modified: false refuses the try. No retry: a parallel burst cannot pass
+ * more than `limit` tries in a window.
  *
  * Each record holds { start, count } under a fingerprint of the identity: a
  * SHA-256, or, once NOSE_THROTTLE_SECRET is set, an HMAC-SHA-256 keyed with
@@ -289,18 +303,40 @@ export async function purgeExpiredSessions(now = Date.now()) {
  * (purgeExpiredThrottles, run by sessions-purge.js), and deleting an account
  * deletes its address's records (deleteThrottles). Security audit item 14.
  */
-export const THROTTLE_BUCKETS = Object.freeze({ login: 900, signup: 3600, reset: 3600 });
+/* 'code' (since 2026-11-25) counts tries of an email's six-digit code, in
+   auth-confirm and auth-reset-finish together. Every call to Supabase comes
+   from Netlify, so Supabase's own per-IP limit does not slow a guesser; this
+   count is what does. */
+export const THROTTLE_BUCKETS = Object.freeze({ login: 900, signup: 3600, reset: 3600, code: 3600 });
 const plainDigest = (identity) => createHash('sha256').update(String(identity)).digest('hex').slice(0, 32);
 const throttleDigest = (identity) => {
   const secret = process.env.NOSE_THROTTLE_SECRET;
   return secret ? createHmac('sha256', secret).update(String(identity)).digest('hex').slice(0, 32) : plainDigest(identity);
 };
 
-export async function rateLimit(bucket, identity, { limit, windowSeconds }) {
+export async function rateLimit(bucket, identity, { limit, windowSeconds, strict = false }) {
   const digest = throttleDigest(identity);
   const key = `rl/${bucket}/${digest}`;
   const store = strongStore(RATELIMIT_STORE);
   const now = Date.now();
+
+  if (strict) {
+    /* Fails CLOSED, with no retry: a read or write that throws, or a write
+       another try got in before (modified: false), refuses this try. */
+    try {
+      const got = await store.getWithMetadata(key, { type: 'json' });
+      const old = got && got.data;
+      const live = old && typeof old.start === 'number' && Number.isInteger(old.count)
+        && now - old.start <= windowSeconds * 1000;
+      const rec = live ? { start: old.start, count: old.count + 1 } : { start: now, count: 1 };
+      if (rec.count > limit) return false;
+      if (got && !got.etag) return false;
+      const res = await store.setJSON(key, rec, got ? { onlyIfMatch: got.etag } : { onlyIfNew: true });
+      return Boolean(res && res.modified);
+    } catch {
+      return false;
+    }
+  }
 
   let rec = null;
   try { rec = await store.get(key, { type: 'json' }); } catch { rec = null; }
@@ -359,6 +395,12 @@ export const palateStore = () => strongStore(PALATES_STORE);
 
 export const tooMany = () =>
   json({ error: 'rate-limited', message: 'Too many attempts. Wait a few minutes and try again.' }, 429);
+
+/* One answer for a six-digit code that is wrong, expired, of the wrong shape,
+   for an address with no account, or past the 'code' throttle (since
+   2026-11-25): none of them may tell a caller which it was. */
+export const codeRefused = () =>
+  json({ error: 'code-refused', message: 'That code is wrong or has expired. Check the newest email, or use the link in it. After five tries, wait an hour.' }, 400);
 
 export const unauthenticated = () =>
   json({ error: 'unauthenticated' }, 401, { 'set-cookie': clearedCookie() });

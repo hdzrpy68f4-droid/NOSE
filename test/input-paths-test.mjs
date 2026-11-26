@@ -68,6 +68,10 @@
  *   - no Upload tab, panel or file input (taken out 2026-11-17: reading a
  *     file was never built), and the matcher opens on Scan QR with the
  *     camera off and its button saying "Start camera"
+ *   - /account/ with every account function stood in for (since 2026-11-25,
+ *     "Six-digit email codes on /account/"): the code step after sign-up and
+ *     after a sign-in not yet confirmed, "Start again", the reset by code and
+ *     new password, and exactly what each sends
  *   - no uncaught error on the page
  *
  * coa-link.png encodes https://lab.example/coa/input-paths-test.pdf (a
@@ -1423,6 +1427,100 @@ try {
     await p.goto(`${BASE}/account/confirmed/`);
     check('confirmed page: opened without a link, it says the email\'s link is needed',
       [await vis(), confirmCalls.length], [[false, false, true], 0]);
+
+    /* /account/: the six-digit codes from the confirmation and reset emails
+       (since 2026-11-25, "Six-digit email codes on /account/"). Every
+       account function is stood in for; what the page sends is recorded. */
+    await p.unroute('**/.netlify/functions/auth-reset-finish');
+    const posted = {};
+    let signedIn = false, codeOk = false;
+    const REFUSED_TEXT = 'That code is wrong or has expired. Check the newest email, or use the link in it. After five tries, wait an hour.';
+    const stub = (name, reply) => p.route(`**/${name}`, async route => {
+      (posted[name] = posted[name] || []).push(JSON.parse(route.request().postData() || '{}'));
+      const [status, body] = reply();
+      await route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
+    });
+    await p.route('**/.netlify/functions/auth-me', route => route.fulfill({ status: 200, contentType: 'application/json',
+      body: JSON.stringify(signedIn ? { signedIn: true, email: 'new@example.test', subscription: 'free' } : { signedIn: false, subscription: 'none' }) }));
+    await stub('api/auth-signup', () => [200, { status: 'submitted', message: 'Check your email for a six-digit code, or use the link in it.' }]);
+    await stub('api/auth-login', () => [403, { error: 'email-not-confirmed', message: 'Confirm your email address first — check your inbox.' }]);
+    await stub('.netlify/functions/auth-confirm', () => {
+      if (codeOk) signedIn = true;
+      return codeOk ? [200, { status: 'signed-in' }] : [400, { error: 'code-refused', message: REFUSED_TEXT }];
+    });
+    await stub('.netlify/functions/auth-reset', () => [200, { status: 'submitted', message: 'If that address has an account, an email with a six-digit code is on its way.' }]);
+    await stub('.netlify/functions/auth-reset-finish', () => [200, { status: 'password-set', message: 'Your password is changed, and every device was signed out. Sign in with the new one.' }]);
+    const focused = () => p.evaluate(() => document.activeElement && document.activeElement.id);
+    const val = sel => p.inputValue(sel);
+    await p.goto(`${BASE}/account/`);
+    await p.waitForSelector('#state-signedout', { state: 'visible' });
+    await p.click('#tab-signup');
+    await p.fill('#signup-email', 'new@example.test');
+    await p.fill('#signup-password', 'a long enough password');
+    await p.check('#signup-age');
+    await p.click('#signup-submit');
+    await p.waitForSelector('#signup-code', { state: 'visible' });
+    check('account page: after sign-up, the form gives way to the code step, focus on the code, the address and the message shown',
+      [await p.isVisible('#signup-form'), await focused(), await t('#signup-code-sent'), await t('#signup-code-message'),
+        await p.getAttribute('#signup-code-input', 'autocomplete'), await p.getAttribute('#signup-code-input', 'inputmode'), await t('label[for="signup-code-input"]')],
+      [false, 'signup-code-input', 'Enter the code from the email to new@example.test.', 'Check your email for a six-digit code, or use the link in it.',
+        'one-time-code', 'numeric', 'Six-digit code']);
+    await p.fill('#signup-code-input', '12345');
+    await p.click('#signup-code-submit');
+    check('account page: a code that is not six digits is refused on the page, and nothing is sent',
+      [await t('#signup-code-message'), (posted['.netlify/functions/auth-confirm'] || []).length], ['Enter the six-digit code from the email.', 0]);
+    await p.fill('#signup-code-input', '000000');
+    await p.press('#signup-code-input', 'Enter');
+    await p.waitForFunction(t => document.getElementById('signup-code-message').textContent === t, REFUSED_TEXT);
+    check('account page: Enter sends the address and the code; a refused code shows the server\'s sentence',
+      posted['.netlify/functions/auth-confirm'], [{ email: 'new@example.test', code: '000000' }]);
+    codeOk = true;
+    await p.fill('#signup-code-input', '482913');
+    await p.click('#signup-code-submit');
+    await p.waitForSelector('#state-signedin', { state: 'visible' });
+    check('account page: the right code signs the person in, and the signed-in view shows',
+      [posted['.netlify/functions/auth-confirm'].at(-1), await p.isVisible('#state-signedout'), await t('#acct-email')],
+      [{ email: 'new@example.test', code: '482913' }, false, 'new@example.test']);
+
+    signedIn = false;
+    await p.goto(`${BASE}/account/`);
+    await p.waitForSelector('#state-signedout', { state: 'visible' });
+    check('account page: opened again, sign-in shows, and no code step',
+      [await p.isVisible('#panel-login'), await p.isVisible('#signup-code')], [true, false]);
+    await p.fill('#login-email', 'old@example.test');
+    await p.fill('#login-password', 'a long enough password');
+    await p.click('#login-submit');
+    await p.waitForSelector('#signup-code', { state: 'visible' });
+    check('account page: signing in to an address not yet confirmed opens the code step for that address, with the server\'s sentence',
+      [await p.getAttribute('#tab-signup', 'aria-selected'), await focused(), await t('#signup-code-sent'), await t('#signup-code-message'), await t('#login-message')],
+      ['true', 'signup-code-input', 'Enter the code from the email to old@example.test.', 'Confirm your email address first — check your inbox.', '']);
+    await p.click('#signup-code-restart');
+    check('account page: "Start again" goes back to the sign-up form',
+      [await p.isVisible('#signup-form'), await p.isVisible('#signup-code'), await focused()], [true, false, 'signup-email']);
+
+    await p.click('#tab-login');
+    await p.click('#show-reset');
+    await p.fill('#reset-email', 'kim@example.test');
+    await p.click('#reset-submit');
+    await p.waitForSelector('#reset-code', { state: 'visible' });
+    check('account page: after a reset request, a code and a new password are asked for, focus on the code',
+      [await p.isVisible('#reset-request'), await focused(), await t('#reset-code-message'), await p.getAttribute('#reset-password', 'autocomplete'), await p.getAttribute('#reset-password', 'minlength')],
+      [false, 'reset-code-input', 'If that address has an account, an email with a six-digit code is on its way.', 'new-password', '10']);
+    await p.fill('#reset-code-input', '305518');
+    await p.fill('#reset-password', 'short');
+    await p.click('#reset-code-submit');
+    check('account page: a new password under 10 characters is refused on the page, and nothing is sent',
+      [await t('#reset-code-message'), (posted['.netlify/functions/auth-reset-finish'] || []).length], ['Use at least 10 characters.', 0]);
+    await p.fill('#reset-password', 'a brand new password');
+    await p.press('#reset-password', 'Enter');
+    await p.waitForSelector('#panel-login', { state: 'visible' });
+    check('account page: the code, the address and the password are sent once; then sign-in shows with the address and the server\'s sentence',
+      [posted['.netlify/functions/auth-reset-finish'], await p.isVisible('#panel-reset'), await val('#login-email'), await t('#login-message'), await focused()],
+      [[{ email: 'kim@example.test', code: '305518', password: 'a brand new password' }], false, 'kim@example.test',
+        'Your password is changed, and every device was signed out. Sign in with the new one.', 'login-password']);
+    check('account page: none of it sent a token_hash, and the reset went to auth-reset once',
+      [JSON.stringify(posted).includes('token_hash'), posted['.netlify/functions/auth-reset']], [false, [{ email: 'kim@example.test' }]]);
+    for (const name of ['.netlify/functions/auth-me', ...Object.keys(posted)]) await p.unroute(`**/${name}`);
 
     /* A result across product forms says so (since 2026-11-16). Three jars
        as a confirmed report saves them, two with a form. */
